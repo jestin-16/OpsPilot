@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock } from 'lucide-react';
 import { Logo } from '../components/Logo';
-import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
+import { LoginBackground3D } from '../components/LoginBackground3D';
+import { LoginTiltPanel } from '../components/LoginTiltPanel';
+import '../styles/login-3d.css';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -54,70 +56,74 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#090D16] flex items-center justify-center p-4 selection:bg-[#38BDF8]/30 selection:text-[#38BDF8]">
-      <div className="w-full max-w-md flex flex-col gap-6">
-        <div className="flex flex-col items-center gap-2 text-center">
-          <Logo size="lg" />
-          <p className="text-xs font-medium text-[#CBD5E1] mt-1">
-            Sign in to access your unified internal developer platform
-          </p>
-        </div>
+    <div className="login-3d-root flex items-center justify-center p-4 md:p-8">
+      <LoginBackground3D />
 
-        <Card className="border-[#374151]">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
-            <Input
-              label="Email address"
-              type="email"
-              placeholder="alex.mercer@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={errors.email}
-              icon={<Mail className="w-4 h-4 text-[#94A3B8]" />}
-            />
-
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={errors.password}
-              icon={<Lock className="w-4 h-4 text-[#94A3B8]" />}
-            />
-
-            <div className="flex items-center justify-between text-xs font-medium">
-              <label className="flex items-center gap-2 cursor-pointer text-[#CBD5E1] hover:text-[#F9FAFB]">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded bg-[#1E293B] border-[#475569] text-[#38BDF8] focus:ring-1 focus:ring-[#38BDF8] focus:ring-offset-0 cursor-pointer"
-                />
-                Remember me
-              </label>
-              <a
-                href="#forgot"
-                onClick={(e) => e.preventDefault()}
-                className="text-[#38BDF8] hover:underline font-semibold"
-              >
-                Forgot password?
-              </a>
-            </div>
-
-            <Button type="submit" variant="primary" fullWidth isLoading={isLoading}>
-              Sign in
-            </Button>
-          </form>
-
-          <div className="mt-6 pt-5 border-t border-[#374151] text-center text-xs text-[#CBD5E1]">
-            Don't have an account?{' '}
-            <Link to="/signup" className="text-[#38BDF8] font-bold hover:underline">
-              Sign up
-            </Link>
+      <div className="login-3d-content w-full max-w-lg flex flex-col items-center gap-6">
+        <LoginTiltPanel>
+          <div className="login-tilt-depth-logo flex flex-col items-center gap-2 text-center mb-6 [transform-style:preserve-3d]">
+            <Logo size="lg" />
+            <p className="text-xs font-medium text-op-muted mt-1 max-w-sm">
+              Sign in to access your unified internal developer platform
+            </p>
           </div>
-        </Card>
 
-        <p className="text-center text-xs text-[#94A3B8]">
+          <div className="login-tilt-depth-form relative [transform-style:preserve-3d]">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5" noValidate>
+              <Input
+                label="Email address"
+                type="email"
+                placeholder="alex.mercer@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                error={errors.email}
+                icon={<Mail className="w-4 h-4 text-op-subtle" />}
+              />
+
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                error={errors.password}
+                icon={<Lock className="w-4 h-4 text-op-subtle" />}
+              />
+
+              <div className="flex items-center justify-between text-xs font-medium">
+                <label className="flex items-center gap-2 cursor-pointer text-op-muted hover:text-op-fg">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded bg-op-input border-op-border-strong text-op-accent focus:ring-1 focus:ring-op-accent focus:ring-offset-0 cursor-pointer"
+                  />
+                  Remember me
+                </label>
+                <a
+                  href="#forgot"
+                  onClick={(e) => e.preventDefault()}
+                  className="text-op-accent hover:underline font-semibold"
+                >
+                  Forgot password?
+                </a>
+              </div>
+
+              <Button type="submit" variant="primary" fullWidth isLoading={isLoading}>
+                Sign in
+              </Button>
+            </form>
+
+            <div className="login-tilt-depth-footer mt-6 pt-5 border-t border-op-border text-center text-xs text-op-muted [transform-style:preserve-3d]">
+              Don&apos;t have an account?{' '}
+              <Link to="/signup" className="text-op-accent font-bold hover:underline">
+                Sign up
+              </Link>
+            </div>
+          </div>
+        </LoginTiltPanel>
+
+        <p className="text-center text-xs text-op-subtle">
           OpsPilot IDP &copy; {new Date().getFullYear()} • AWS, K8s, Jenkins & Docker Unified
         </p>
       </div>

@@ -18,15 +18,15 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-semibold rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] focus:ring-offset-2 focus:ring-offset-[#090D16] disabled:opacity-50 disabled:cursor-not-allowed py-2.5 px-4 cursor-pointer';
+    'inline-flex items-center justify-center font-semibold rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-op-accent focus:ring-offset-2 focus:ring-offset-op-bg disabled:opacity-50 disabled:cursor-not-allowed py-2.5 px-4 cursor-pointer';
 
   const variants = {
     primary:
-      'bg-[#0EA5E9] text-[#090D16] font-bold hover:bg-[#38BDF8] active:bg-[#0284C7] border border-transparent shadow-md',
+      'bg-op-accent text-op-accent-fg font-bold hover:bg-op-accent-hover active:bg-op-accent-active border border-transparent shadow-md',
     secondary:
-      'bg-[#111827] text-[#F9FAFB] border border-[#374151] hover:bg-[#1F2937] hover:border-[#0EA5E9]/50 active:bg-[#111827]',
+      'bg-op-surface text-op-fg border border-op-border hover:bg-op-raised hover:border-op-accent/50 active:bg-op-surface',
     ghost:
-      'bg-transparent text-[#CBD5E1] hover:text-[#F9FAFB] hover:bg-[#1F2937] border border-transparent',
+      'bg-transparent text-op-muted hover:text-op-fg hover:bg-op-raised border border-transparent',
   };
 
   const widthStyle = fullWidth ? 'w-full' : '';

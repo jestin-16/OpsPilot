@@ -30,9 +30,9 @@ export const Signup: React.FC = () => {
     if (/[0-9]/.test(password)) score += 1;
     if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
-    if (score <= 1) return { label: 'Weak', score: 33, color: 'bg-red-500' };
-    if (score <= 3) return { label: 'Medium', score: 66, color: 'bg-amber-500' };
-    return { label: 'Strong', score: 100, color: 'bg-emerald-500' };
+    if (score <= 1) return { label: 'Weak', score: 33, color: 'bg-op-danger' };
+    if (score <= 3) return { label: 'Medium', score: 66, color: 'bg-op-warn' };
+    return { label: 'Strong', score: 100, color: 'bg-op-success' };
   }, [password]);
 
   const validate = () => {
@@ -91,16 +91,16 @@ export const Signup: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#090D16] flex items-center justify-center p-4 selection:bg-[#38BDF8]/30 selection:text-[#38BDF8] py-8">
+    <div className="min-h-screen flex items-center justify-center p-4 py-8">
       <div className="w-full max-w-md flex flex-col gap-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <Logo size="lg" />
-          <p className="text-xs font-medium text-[#CBD5E1] mt-1">
+          <p className="text-xs font-medium text-op-muted mt-1">
             Create an account to manage deployments, K8s, and pipelines
           </p>
         </div>
 
-        <Card className="border-[#374151]">
+        <Card>
           <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
             <Input
               label="Full name"
@@ -109,7 +109,7 @@ export const Signup: React.FC = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               error={errors.name}
-              icon={<User className="w-4 h-4 text-[#94A3B8]" />}
+              icon={<User className="w-4 h-4 text-op-subtle" />}
             />
 
             <Input
@@ -119,7 +119,7 @@ export const Signup: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               error={errors.email}
-              icon={<Mail className="w-4 h-4 text-[#94A3B8]" />}
+              icon={<Mail className="w-4 h-4 text-op-subtle" />}
             />
 
             <div className="flex flex-col gap-1.5 text-left">
@@ -130,16 +130,16 @@ export const Signup: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 error={errors.password}
-                icon={<Lock className="w-4 h-4 text-[#94A3B8]" />}
+                icon={<Lock className="w-4 h-4 text-op-subtle" />}
               />
 
               {password && (
                 <div className="mt-1 flex flex-col gap-1">
-                  <div className="flex justify-between items-center text-xs text-[#CBD5E1]">
+                  <div className="flex justify-between items-center text-xs text-op-muted">
                     <span>Password strength:</span>
                     <span className="font-bold">{passwordStrength.label}</span>
                   </div>
-                  <div className="w-full bg-[#1E293B] h-2 rounded-full overflow-hidden border border-[#475569]">
+                  <div className="w-full bg-op-input h-2 rounded-full overflow-hidden border border-op-border-strong">
                     <div
                       className={`h-full ${passwordStrength.color} transition-all duration-300`}
                       style={{ width: `${passwordStrength.score}%` }}
@@ -156,21 +156,21 @@ export const Signup: React.FC = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               error={errors.confirmPassword}
-              icon={<Lock className="w-4 h-4 text-[#94A3B8]" />}
+              icon={<Lock className="w-4 h-4 text-op-subtle" />}
             />
 
             <div className="w-full flex flex-col gap-1.5 text-left">
-              <label className="text-xs font-semibold text-[#CBD5E1] tracking-wide">
+              <label className="text-xs font-semibold text-op-muted tracking-wide">
                 Primary Role (RBAC)
               </label>
               <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-op-subtle">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <select
                   value={role}
-                  onChange={(e) => setRole(e.target.value as any)}
-                  className="w-full bg-[#1E293B] text-[#F9FAFB] text-sm font-medium rounded-lg border border-[#475569] pl-9 pr-3 py-2.5 outline-none focus:ring-2 focus:ring-[#38BDF8]/40 focus:border-[#38BDF8] cursor-pointer appearance-none"
+                  onChange={(e) => setRole(e.target.value as typeof role)}
+                  className="w-full bg-op-input text-op-fg text-sm font-medium rounded-lg border border-op-border-strong pl-9 pr-3 py-2.5 outline-none focus:ring-2 focus:ring-op-accent/40 focus:border-op-accent cursor-pointer appearance-none"
                 >
                   <option value="Developer">Developer</option>
                   <option value="DevOps Engineer">DevOps Engineer</option>
@@ -184,15 +184,15 @@ export const Signup: React.FC = () => {
             </Button>
           </form>
 
-          <div className="mt-6 pt-5 border-t border-[#374151] text-center text-xs text-[#CBD5E1]">
+          <div className="mt-6 pt-5 border-t border-op-border text-center text-xs text-op-muted">
             Already have an account?{' '}
-            <Link to="/login" className="text-[#38BDF8] font-bold hover:underline">
+            <Link to="/login" className="text-op-accent font-bold hover:underline">
               Sign in
             </Link>
           </div>
         </Card>
 
-        <p className="text-center text-xs text-[#94A3B8]">
+        <p className="text-center text-xs text-op-subtle">
           OpsPilot IDP &copy; {new Date().getFullYear()} • Standardized Cloud Operations
         </p>
       </div>

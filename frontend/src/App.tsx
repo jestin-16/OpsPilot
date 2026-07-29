@@ -7,13 +7,15 @@ import { Home } from './pages/Home';
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
+      <div className="min-h-screen bg-op-bg text-op-fg antialiased selection:bg-op-accent/30 selection:text-op-accent">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   );
 };

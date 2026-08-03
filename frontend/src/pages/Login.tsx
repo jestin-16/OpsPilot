@@ -8,13 +8,15 @@ import {
   Zap,
   Activity,
   CheckCircle2,
-  Box,
   Cloud,
   GitBranch,
 } from 'lucide-react';
 import { Logo } from '../components/Logo';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
+import { LoginBackground3D } from '../components/LoginBackground3D';
+import { LoginTiltPanel } from '../components/LoginTiltPanel';
+import '../styles/login-3d.css';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -100,113 +102,71 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-op-bg text-op-fg flex flex-col justify-between font-sans selection:bg-op-accent/30 selection:text-op-accent relative overflow-hidden">
-      {/* Ambient DevOps Background Glow Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(20,184,166,0.15),rgba(255,255,255,0))]" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#363d4d12_1px,transparent_1px),linear-gradient(to_bottom,#363d4d12_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+    <div className="login-3d-root bg-op-bg text-op-fg font-sans selection:bg-op-accent/30 selection:text-op-accent flex min-h-screen flex-col">
+      <LoginBackground3D />
 
-      {/* Header Bar */}
-      <header className="px-6 py-4 relative z-10 flex items-center justify-between border-b border-op-border/50 backdrop-blur-md bg-op-surface/50">
-        <Logo size="md" />
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-op-raised text-op-success border border-op-success/30">
-            <span className="w-2 h-2 rounded-full bg-op-success animate-pulse" />
-            Control Plane Online
+      <header className="login-3d-content flex items-center justify-between px-5 py-5 sm:px-8">
+        <Logo size="md" showBadge={false} />
+        <div className="flex items-center gap-4 text-xs font-semibold">
+          <span className="hidden items-center gap-2 text-op-muted sm:flex">
+            <span className="h-2 w-2 rounded-full bg-op-success shadow-[0_0_12px_var(--color-op-success)]" />
+            All systems operational
           </span>
-          <Link
-            to="/signup"
-            className="text-xs font-bold text-op-accent hover:text-op-accent-hover transition-colors"
-          >
-            Create Account &rarr;
+          <Link to="/signup" className="rounded-full border border-op-border bg-op-surface/60 px-4 py-2 text-op-fg transition hover:border-op-accent hover:text-op-accent">
+            Create account
           </Link>
         </div>
       </header>
 
-      {/* Main Split Layout */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-        
-        {/* Left Column: DevOps Cloud Control HUD (7 cols) */}
-        <div className="lg:col-span-7 flex flex-col gap-6 pr-0 lg:pr-6">
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-bold bg-op-accent/15 text-op-accent border border-op-accent/30 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5" /> AI-Assisted Internal Developer Platform
-            </span>
+      <main className="login-3d-content mx-auto grid w-full max-w-7xl flex-1 items-center gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[1fr_440px] lg:gap-20 lg:py-12">
+        <section className="hidden max-w-xl lg:block">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-op-accent/30 bg-op-accent/10 px-3 py-1.5 text-xs font-bold text-op-accent">
+            <Sparkles className="h-3.5 w-3.5" /> Intelligent infrastructure control
           </div>
-
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-op-fg tracking-tight leading-tight">
-            Unify Your Cloud DevOps & <span className="text-transparent bg-clip-text bg-gradient-to-r from-op-accent via-teal-300 to-op-highlight">Kubernetes Operations</span>
+          <h1 className="text-5xl font-black leading-[1.04] tracking-tight text-op-fg">
+            Your platform,<br />
+            <span className="bg-gradient-to-r from-op-accent via-teal-200 to-op-highlight bg-clip-text text-transparent">in command.</span>
           </h1>
-
-          <p className="text-sm sm:text-base text-op-muted leading-relaxed max-w-2xl">
-            OpsPilot orchestrates your microservices across AWS, Kubernetes, Docker, Jenkins, and Prometheus into a single intelligent workspace with real-time telemetry and AI incident response.
+          <p className="mt-6 max-w-lg text-base leading-relaxed text-op-muted">
+            A calm, connected view of your cloud operations—deployments, observability, and AI diagnostics in one workspace.
           </p>
 
-          {/* Interactive Live Control HUD Preview Card */}
-          <div className="bg-gradient-to-b from-op-surface/90 to-op-raised/90 border border-op-border-strong rounded-2xl p-5 shadow-2xl backdrop-blur-xl flex flex-col gap-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-op-accent/10 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="flex items-center justify-between pb-3 border-b border-op-border text-xs font-mono">
-              <div className="flex items-center gap-2">
-                <Server className="w-4 h-4 text-op-accent" />
-                <span className="font-bold text-op-fg">cluster-us-east.opspilot.internal</span>
-              </div>
-              <span className="text-op-success font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> 99.98% SLA
-              </span>
+          <div className="mt-10 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl border border-white/8 bg-op-surface/50 p-4 backdrop-blur-sm">
+              <Server className="h-4 w-4 text-op-accent" />
+              <p className="mt-5 text-2xl font-bold">12</p>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-op-subtle">Clusters online</p>
             </div>
-
-            {/* Microservice Live Status Tiles */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="bg-op-bg/80 p-3 rounded-xl border border-op-border/70 flex flex-col gap-1">
-                <span className="text-[10px] uppercase font-bold text-op-subtle flex items-center gap-1">
-                  <Box className="w-3 h-3 text-op-accent" /> Docker
-                </span>
-                <span className="text-xs font-mono font-bold text-op-fg">42 Containers</span>
-                <span className="text-[10px] text-op-success font-semibold">Active & Healthy</span>
-              </div>
-
-              <div className="bg-op-bg/80 p-3 rounded-xl border border-op-border/70 flex flex-col gap-1">
-                <span className="text-[10px] uppercase font-bold text-op-subtle flex items-center gap-1">
-                  <Server className="w-3 h-3 text-op-accent" /> Kubernetes
-                </span>
-                <span className="text-xs font-mono font-bold text-op-fg">3 Node Pods</span>
-                <span className="text-[10px] text-op-success font-semibold">Ready</span>
-              </div>
-
-              <div className="bg-op-bg/80 p-3 rounded-xl border border-op-border/70 flex flex-col gap-1">
-                <span className="text-[10px] uppercase font-bold text-op-subtle flex items-center gap-1">
-                  <Activity className="w-3 h-3 text-op-highlight" /> Prometheus
-                </span>
-                <span className="text-xs font-mono font-bold text-op-fg">38ms Latency</span>
-                <span className="text-[10px] text-op-muted font-semibold">p99 Target Met</span>
-              </div>
-
-              <div className="bg-op-bg/80 p-3 rounded-xl border border-op-border/70 flex flex-col gap-1">
-                <span className="text-[10px] uppercase font-bold text-op-subtle flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-op-highlight" /> AI Brain
-                </span>
-                <span className="text-xs font-mono font-bold text-op-fg">Root-Cause</span>
-                <span className="text-[10px] text-op-highlight font-semibold">Phase 2 Active</span>
-              </div>
+            <div className="rounded-2xl border border-white/8 bg-op-surface/50 p-4 backdrop-blur-sm">
+              <Activity className="h-4 w-4 text-op-highlight" />
+              <p className="mt-5 text-2xl font-bold">99.98%</p>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-op-subtle">Platform health</p>
+            </div>
+            <div className="rounded-2xl border border-white/8 bg-op-surface/50 p-4 backdrop-blur-sm">
+              <CheckCircle2 className="h-4 w-4 text-op-success" />
+              <p className="mt-5 text-2xl font-bold">38ms</p>
+              <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-op-subtle">P99 latency</p>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Right Column: DevOps Authentication Form Panel (5 cols) */}
-        <div className="lg:col-span-5 w-full">
-          <div className="bg-op-surface/95 border border-op-border-strong rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-2xl flex flex-col gap-6 relative">
-            
-            <div>
-              <h2 className="text-xl font-bold text-op-fg tracking-tight">Platform Sign In</h2>
-              <p className="text-xs text-op-muted mt-1">
-                Access your OpsPilot internal developer workspace
-              </p>
+        <LoginTiltPanel className="mx-auto lg:mx-0">
+          <div className="login-tilt-depth-form relative flex flex-col gap-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-op-accent">Welcome back</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-op-fg">Sign in to OpsPilot</h2>
+                <p className="mt-1 text-sm text-op-muted">Choose a demo workspace or use your credentials.</p>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-op-accent/30 bg-op-accent/10 text-op-accent">
+                <Zap className="h-5 w-5" />
+              </div>
             </div>
-
+            
             {/* Quick Demo Persona Switcher */}
             <div className="flex flex-col gap-2">
-              <span className="text-[11px] font-bold text-op-subtle uppercase tracking-wider flex items-center gap-1">
-                <Zap className="w-3 h-3 text-op-accent" /> Quick Single-Click Demo Personas:
+              <span className="text-[11px] font-bold text-op-subtle uppercase tracking-wider">
+                Explore a demo workspace
               </span>
               <div className="grid grid-cols-3 gap-2">
                 {demoPersonas.map((persona) => (
@@ -214,7 +174,7 @@ export const Login: React.FC = () => {
                     key={persona.email}
                     type="button"
                     onClick={() => handleSelectPersona(persona)}
-                    className="bg-op-raised hover:bg-op-accent/20 border border-op-border hover:border-op-accent/50 p-2 rounded-xl flex flex-col items-center gap-1 text-center transition-all cursor-pointer group"
+                    className="bg-op-raised/70 hover:bg-op-accent/15 border border-op-border hover:border-op-accent/50 p-2.5 rounded-xl flex flex-col items-center gap-1 text-center transition-all cursor-pointer group"
                   >
                     <div className="w-7 h-7 rounded-full bg-op-input text-op-accent font-bold text-xs flex items-center justify-center group-hover:scale-105 transition-transform border border-op-accent/40">
                       {persona.avatar}
@@ -228,8 +188,8 @@ export const Login: React.FC = () => {
 
             <div className="relative flex items-center justify-center my-1">
               <div className="border-t border-op-border w-full" />
-              <span className="bg-op-surface px-3 text-[11px] font-semibold text-op-subtle uppercase whitespace-nowrap absolute">
-                or sign in with email
+              <span className="bg-op-surface/90 px-3 text-[11px] font-semibold text-op-subtle uppercase whitespace-nowrap absolute">
+                or continue with email
               </span>
             </div>
 
@@ -300,20 +260,18 @@ export const Login: React.FC = () => {
               </button>
             </div>
 
-            <div className="pt-4 border-t border-op-border text-center text-xs text-op-muted">
+            <div className="login-tilt-depth-footer pt-4 border-t border-op-border text-center text-xs text-op-muted">
               Don&apos;t have an OpsPilot workspace yet?{' '}
               <Link to="/signup" className="text-op-accent font-bold hover:underline">
                 Create Account
               </Link>
             </div>
           </div>
-        </div>
-
+        </LoginTiltPanel>
       </main>
 
-      {/* Footer */}
-      <footer className="px-6 py-4 relative z-10 border-t border-op-border/50 text-center text-xs text-op-subtle bg-op-surface/30">
-        OpsPilot IDP &copy; {new Date().getFullYear()} • Cloud-Native AWS, K8s, Docker, Jenkins & Prometheus Orchestration
+      <footer className="login-3d-content px-5 py-5 text-center text-xs text-op-subtle sm:px-8">
+        OpsPilot IDP &copy; {new Date().getFullYear()} <span className="mx-2 text-op-border">•</span> Secure developer infrastructure
       </footer>
     </div>
   );

@@ -1,56 +1,47 @@
 @import "tailwindcss";
 
-@theme {
-  /* Surfaces */
-  --color-op-bg: #0f1218;
-  --color-op-surface: #181c24;
-  --color-op-raised: #222831;
-  --color-op-input: #2a3140;
-
-  /* Borders */
-  --color-op-border: #363d4d;
-  --color-op-border-strong: #4a5568;
-
-  /* Text */
-  --color-op-fg: #f0f2f5;
-  --color-op-muted: #b4bbc8;
-  --color-op-subtle: #8891a0;
-
-  /* Brand */
-  --color-op-accent: #14b8a6;
-  --color-op-accent-hover: #2dd4bf;
-  --color-op-accent-active: #0f766e;
-  --color-op-accent-fg: #042f2e;
-  --color-op-highlight: #fb7185;
-
-  /* Semantic */
-  --color-op-warn: #fbbf24;
-  --color-op-success: #34d399;
-  --color-op-danger: #f87171;
-}
-
 @layer base {
+  :root {
+    --bg-main: #060B18;
+    --bg-card: #0F1B2E;
+    --border-color: #1E2D45;
+    --accent-cyan: #38BDF8;
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+  }
+
   body {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: var(--color-op-bg);
-    color: var(--color-op-fg);
+    background-color: #060B18;
+    color: #F8FAFC;
+    margin: 0;
+    padding: 0;
   }
 }
 
+/* Custom Utilities for strict OpsPilot Theme */
+.bg-op-bg { background-color: #060B18; }
+.bg-op-card { background-color: #0F1B2E; }
+.border-op-border { border-color: #1E2D45; }
+.text-op-cyan { color: #38BDF8; }
+.bg-op-cyan { background-color: #38BDF8; }
+.text-op-main { color: #F8FAFC; }
+.text-op-muted { color: #94A3B8; }
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-op-bg);
+  background: #060B18;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-op-border);
+  background: #1E2D45;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-op-accent);
+  background: #38BDF8;
 }

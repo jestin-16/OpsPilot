@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+if [ -z "$JAVA_HOME" ] ; then
+    JAVACMD=`which java`
+else
+    JAVACMD="$JAVA_HOME/bin/java"
+fi
+
+BASE_DIR=`pwd`
+WRAPPER_JAR="$BASE_DIR/.mvn/wrapper/maven-wrapper.jar"
+
+exec "$JAVACMD" "-Dmaven.multiModuleProjectDirectory=$BASE_DIR" -classpath "$WRAPPER_JAR" org.apache.maven.wrapper.MavenWrapperMain "$@"

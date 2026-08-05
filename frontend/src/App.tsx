@@ -7,6 +7,9 @@ import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
 import { DockerManagement } from './pages/DockerManagement';
 import { KubernetesManagement } from './pages/KubernetesManagement';
+import { MonitoringDashboard } from './pages/MonitoringDashboard';
+import { LogManagement } from './pages/LogManagement';
+import { NotificationCenter } from './pages/NotificationCenter';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -74,6 +77,30 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <KubernetesManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/monitoring"
+            element={
+              <ProtectedRoute>
+                <MonitoringDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/logs"
+            element={
+              <ProtectedRoute>
+                <LogManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationCenter />
               </ProtectedRoute>
             }
           />

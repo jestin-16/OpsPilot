@@ -12,6 +12,7 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/User.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/DeploymentResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/AuthController.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AiDiagnosisResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/PodRepository.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/DeploymentService.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/RegisterRequest.java
@@ -45,11 +46,14 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/DeploymentRequest.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/ContainerRepository.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/AuthService.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/AiAssistantService.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AiQueryRequest.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/config/SecurityConfig.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/LogRepository.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/WebhookController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/DockerService.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/GlobalExceptionHandler.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/AiAssistantController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/ResourceNotFoundException.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/OpsPilotApplication.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/DeploymentController.java

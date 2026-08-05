@@ -42,7 +42,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { name: 'Log management', path: '/logs', icon: FileText, enabled: true },
     { name: 'Notification center', path: '/notifications', icon: Bell, enabled: true },
     { name: 'CI/CD integration', path: '/cicd', icon: GitBranch, enabled: true },
-    { name: 'AI assistant', path: '#', icon: Bot, enabled: false, ai: true },
+    { name: 'AI assistant', path: '/ai', icon: Bot, enabled: true, ai: true },
     { name: 'Settings', path: '#', icon: Settings, enabled: false },
   ];
 
@@ -91,8 +91,8 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                   to={item.path}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
                     isActive
-                      ? 'bg-[#38BDF8] text-[#060B18] font-semibold'
-                      : 'text-[#F8FAFC] hover:bg-[#1E2D45]'
+                      ? item.ai ? 'bg-[#A78BFA] text-[#060B18] font-bold' : 'bg-[#38BDF8] text-[#060B18] font-semibold'
+                      : item.ai ? 'text-[#A78BFA] hover:bg-violet-950/30 font-semibold' : 'text-[#F8FAFC] hover:bg-[#1E2D45]'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

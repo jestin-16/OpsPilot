@@ -55,6 +55,38 @@ export interface Pod {
   memoryUsage: string;
 }
 
+export interface LogEntry {
+  logId: number;
+  sourceService: string;
+  logLevel: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface NotificationItem {
+  notificationId: number;
+  message: string;
+  type: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface MetricPoint {
+  time: string;
+  cpu: number;
+  memory: number;
+  requests: number;
+}
+
+export interface MetricsData {
+  cpuUsagePercent: number;
+  memoryUsedMb: number;
+  memoryTotalMb: number;
+  activeRequests: number;
+  totalDeployments: number;
+  history: MetricPoint[];
+}
+
 const getHeaders = () => {
   const token = localStorage.getItem('opspilot_token');
   const headers: Record<string, string> = {
@@ -99,9 +131,7 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/projects`, {
       headers: getHeaders(),
     });
-    if (!res.ok) {
-      throw new Error('Failed to fetch projects');
-    }
+    if (!res.ok) throw new Error('Failed to fetch projects');
     return res.json();
   },
 
@@ -109,9 +139,7 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/projects/${id}`, {
       headers: getHeaders(),
     });
-    if (!res.ok) {
-      throw new Error('Failed to fetch project details');
-    }
+    if (!res.ok) throw new Error('Failed to fetch project details');
     return res.json();
   },
 
@@ -157,9 +185,7 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/projects/${projectId}/deployments`, {
       headers: getHeaders(),
     });
-    if (!res.ok) {
-      throw new Error('Failed to fetch deployments');
-    }
+    if (!res.ok) throw new Error('Failed to fetch deployments');
     return res.json();
   },
 
@@ -176,7 +202,7 @@ export const api = {
     return res.json();
   },
 
-  // Docker Management
+  // Docker
   getDockerContainers: async (): Promise<Container[]> => {
     const res = await fetch(`${API_BASE_URL}/docker/containers`, {
       headers: getHeaders(),
@@ -212,12 +238,63 @@ export const api = {
     return res.json();
   },
 
-  // Kubernetes Management
+  // Kubernetes
   getKubernetesPods: async (): Promise<Pod[]> => {
     const res = await fetch(`${API_BASE_URL}/kubernetes/pods`, {
       headers: getHeaders(),
     });
     if (!res.ok) throw new Error('Failed to fetch kubernetes pods');
+    return res.json();
+  },
+
+  // Logs
+  getLogs: async (params?: { sourceService?: string; logLevel?: string; query?: string }): Promise<LogEntry[]> => {
+    const url = new URL(`${API_BASE_URL}/logs`);
+    if (params?.sourceService) url.searchParams.append('sourceService', params.sourceService);
+    if (params?.logLevel) url.searchParams.append('logLevel', params.logLevel);
+    if (params?.query) url.searchParams.append('query', params.query);
+
+    const res = await fetch(url.toString(), {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch system logs');
+    return res.json();
+  },
+
+  createLog: async (data: { sourceService: string; logLevel: string; message: string }): Promise<LogEntry> => {
+    const res = await fetch(`${API_BASE_URL}/logs`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Failed to post log entry');
+    return res.json();
+  },
+
+  // Notifications
+  getNotifications: async (): Promise<NotificationItem[]> => {
+    const res = await fetch(`${API_BASE_URL}/notifications`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch notifications');
+    return res.json();
+  },
+
+  markNotificationRead: async (id: number): Promise<NotificationItem> => {
+    const res = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+      method: 'PUT',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to mark notification as read');
+    return res.json();
+  },
+
+  // Monitoring
+  getMetrics: async (): Promise<MetricsData> => {
+    const res = await fetch(`${API_BASE_URL}/monitoring/metrics`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch monitoring metrics');
     return res.json();
   },
 };

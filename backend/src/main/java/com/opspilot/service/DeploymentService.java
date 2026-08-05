@@ -2,16 +2,9 @@ package com.opspilot.service;
 
 import com.opspilot.dto.DeploymentRequest;
 import com.opspilot.dto.DeploymentResponse;
-import com.opspilot.entity.ContainerEntity;
-import com.opspilot.entity.Deployment;
-import com.opspilot.entity.PodEntity;
-import com.opspilot.entity.Project;
-import com.opspilot.entity.User;
+import com.opspilot.entity.*;
 import com.opspilot.exception.ResourceNotFoundException;
-import com.opspilot.repository.ContainerRepository;
-import com.opspilot.repository.DeploymentRepository;
-import com.opspilot.repository.PodRepository;
-import com.opspilot.repository.ProjectRepository;
+import com.opspilot.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +29,12 @@ public class DeploymentService {
     @Autowired
     private PodRepository podRepository;
 
+    @Autowired
+    private LogRepository logRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
+
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
 
     public DeploymentResponse createDeployment(Long projectId, DeploymentRequest request, User currentUser) {
@@ -53,7 +52,15 @@ public class DeploymentService {
         Deployment savedDeployment = deploymentRepository.save(deployment);
         Long deploymentId = savedDeployment.getId();
 
-        // Immediately provision initial container and pod in DRAFT status
+        // Emit log
+        logRepository.save(new LogEntity(savedDeployment, "deployment-service", "INFO",
+                "Deployment #" + deploymentId + " initiated for project " + project.getProjectName() + " (" + request.getEnvironment() + " - " + request.getVersion() + ")"));
+
+        // Emit notification
+        notificationRepository.save(new NotificationEntity(currentUser, savedDeployment,
+                "Deployment #" + deploymentId + " (" + project.getProjectName() + ") triggered for " + request.getEnvironment(), "DEPLOYMENT_INITIATED"));
+
+        // Immediately provision initial container and pod
         provisionContainerAndPod(savedDeployment);
 
         // Schedule status progression
@@ -87,7 +94,16 @@ public class DeploymentService {
         try {
             deploymentRepository.findById(deploymentId).ifPresent(d -> {
                 d.setStatus(status);
-                deploymentRepository.save(d);
+                Deployment updated = deploymentRepository.save(d);
+
+                // Log status transition
+                logRepository.save(new LogEntity(updated, "deployment-service", "INFO",
+                        "Deployment #" + deploymentId + " status updated to " + status));
+
+                if ("Running".equalsIgnoreCase(status)) {
+                    notificationRepository.save(new NotificationEntity(d.getDeployedBy(), updated,
+                            "Deployment #" + deploymentId + " (" + d.getProject().getProjectName() + ") is now RUNNING on " + d.getEnvironment(), "DEPLOYMENT_SUCCESS"));
+                }
 
                 // Update mapped container status as well
                 List<ContainerEntity> containers = containerRepository.findByDeploymentId(deploymentId);
@@ -113,6 +129,9 @@ public class DeploymentService {
 
             PodEntity pod = new PodEntity(savedContainer, "minikube-node-1", "Running", "125m", "256Mi");
             podRepository.save(pod);
+
+            logRepository.save(new LogEntity(deployment, "kubernetes-service", "INFO",
+                    "Provisioned pod #pod-" + pod.getPodId() + " on node minikube-node-1 for image " + imageName));
         } catch (Exception e) {
             System.err.println("Error provisioning container/pod: " + e.getMessage());
         }

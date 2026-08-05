@@ -12,6 +12,7 @@ import { LogManagement } from './pages/LogManagement';
 import { NotificationCenter } from './pages/NotificationCenter';
 import { CiCdIntegration } from './pages/CiCdIntegration';
 import { AiAssistantPage } from './pages/AiAssistantPage';
+import { PlatformGuide } from './pages/PlatformGuide';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -119,6 +120,14 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <AiAssistantPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/guide"
+            element={
+              <ProtectedRoute>
+                <PlatformGuide />
               </ProtectedRoute>
             }
           />

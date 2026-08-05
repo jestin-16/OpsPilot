@@ -2,53 +2,41 @@
 
 @layer base {
   :root {
-    --bg-main: #060B18;
-    --bg-card: #0F1B2E;
-    --bg-panel: #13233B;
-    --border-color: #1E2D45;
-    --accent-cyan: #38BDF8;
-    --accent-violet: #A78BFA;
-    --accent-amber: #F59E0B;
-    --text-main: #F8FAFC;
-    --text-muted: #94A3B8;
+    --bg-main: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --bg-panel: #F1F5F9;
+    --border-color: #E2E8F0;
+    --accent-primary: #4F46E5;
+    --accent-violet: #7C3AED;
+    --accent-amber: #D97706;
+    --text-main: #0F172A;
+    --text-muted: #64748B;
   }
 
   body {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #060B18;
-    color: #F8FAFC;
+    background-color: #F8FAFC;
+    color: #0F172A;
     margin: 0;
     padding: 0;
   }
 }
 
-/* Custom Palette Utility Classes */
-.bg-op-bg { background-color: #060B18; }
-.bg-op-card { background-color: #0F1B2E; }
-.bg-op-panel { background-color: #13233B; }
-.border-op-border { border-color: #1E2D45; }
-.text-op-cyan { color: #38BDF8; }
-.bg-op-cyan { background-color: #38BDF8; }
-.text-op-violet { color: #A78BFA; }
-.bg-op-violet { background-color: #A78BFA; }
-.text-op-amber { color: #F59E0B; }
-.text-op-main { color: #F8FAFC; }
-.text-op-muted { color: #94A3B8; }
-
+/* Scrollbar styling for Light Theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #060B18;
+  background: #F8FAFC;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1E2D45;
+  background: #CBD5E1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #38BDF8;
+  background: #4F46E5;
 }

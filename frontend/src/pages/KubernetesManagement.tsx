@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Pod } from '../services/api';
-import { Boxes, Cpu, HardDrive, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { Boxes, RefreshCw, AlertCircle, Cpu, HardDrive } from 'lucide-react';
 
 export const KubernetesManagement: React.FC = () => {
   const [pods, setPods] = useState<Pod[]>([]);
@@ -9,12 +9,11 @@ export const KubernetesManagement: React.FC = () => {
   const [error, setError] = useState('');
 
   const fetchPods = async () => {
-    setLoading(true);
     try {
       const data = await api.getKubernetesPods();
       setPods(data);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch Kubernetes pods');
+      setError(err.message || 'Failed to fetch kubernetes pods');
     } finally {
       setLoading(false);
     }
@@ -28,79 +27,82 @@ export const KubernetesManagement: React.FC = () => {
 
   return (
     <SidebarLayout>
-      <div className="p-8 max-w-7xl mx-auto space-y-8">
+      <div className="p-8 max-w-7xl mx-auto space-y-8 bg-[#F8FAFC]">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#1E2D45] pb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#E2E8F0] pb-6">
           <div>
             <div className="flex items-center gap-3">
-              <Boxes className="w-6 h-6 text-[#38BDF8]" />
-              <h1 className="text-2xl font-bold text-[#F8FAFC]">Kubernetes management</h1>
+              <Boxes className="w-6 h-6 text-[#4F46E5]" />
+              <h1 className="text-2xl font-bold text-[#0F172A]">Kubernetes management</h1>
             </div>
-            <p className="text-sm text-[#94A3B8] mt-1">
-              Inspect cluster pods, node scheduling, and runtime resource utilization
+            <p className="text-sm text-[#64748B] mt-1">
+              Minikube cluster pod allocations, node placement, and container resource limits
             </p>
           </div>
           <button
             onClick={fetchPods}
-            className="px-3.5 py-2 bg-[#0F1B2E] border border-[#1E2D45] hover:bg-[#1E2D45] text-[#F8FAFC] text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-2"
+            className="px-3.5 py-2 bg-[#FFFFFF] border border-[#E2E8F0] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-2 shadow-sm"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-[#38BDF8]" />
+            <RefreshCw className="w-3.5 h-3.5 text-[#4F46E5]" />
             <span>Refresh pods</span>
           </button>
         </div>
 
         {error && (
-          <div className="p-3.5 bg-red-950/40 border border-red-800/60 rounded-lg flex items-center gap-3 text-red-400 text-sm">
+          <div className="p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-600 text-sm">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Pod Table Card */}
-        <div className="bg-[#0F1B2E] border border-[#1E2D45] rounded-xl p-6">
+        {/* Pods Table Card */}
+        <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-[#F8FAFC]">Active kubernetes pods ({pods.length})</h2>
-            <span className="text-xs font-mono text-[#38BDF8]">Cluster: minikube/local</span>
+            <h2 className="text-base font-bold text-[#0F172A]">Cluster pods ({pods.length})</h2>
+            <span className="text-xs font-mono text-[#4F46E5]">Cluster: Minikube (Local Target)</span>
           </div>
 
           {loading && pods.length === 0 ? (
-            <div className="py-12 text-center text-[#94A3B8] text-sm">Querying Kubernetes cluster...</div>
+            <div className="py-12 text-center text-[#64748B] text-sm">Querying Kubernetes API Server...</div>
           ) : pods.length === 0 ? (
-            <div className="py-12 text-center text-[#94A3B8] text-sm border border-dashed border-[#1E2D45] rounded-lg">
-              No Kubernetes pods deployed yet. Trigger a project deployment in Projects page to deploy pod instances.
+            <div className="py-12 text-center text-[#64748B] text-sm border border-dashed border-[#E2E8F0] rounded-lg">
+              No Kubernetes pods provisioned yet. Trigger a deployment from the Projects page.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-[#F8FAFC]">
-                <thead className="bg-[#060B18] text-[#94A3B8] uppercase text-[10px] tracking-wider border-b border-[#1E2D45]">
+              <table className="w-full text-left text-xs text-[#0F172A]">
+                <thead className="bg-[#F8FAFC] text-[#64748B] uppercase text-[10px] tracking-wider border-b border-[#E2E8F0]">
                   <tr>
-                    <th className="py-3 px-4">Pod ID</th>
-                    <th className="py-3 px-4">Node name</th>
-                    <th className="py-3 px-4">Pod status</th>
-                    <th className="py-3 px-4">CPU allocation</th>
-                    <th className="py-3 px-4">Memory allocation</th>
+                    <th className="py-3 px-4">Pod Name</th>
+                    <th className="py-3 px-4">Node Name</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">CPU Usage</th>
+                    <th className="py-3 px-4">Memory Usage</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#1E2D45]">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {pods.map((p) => (
-                    <tr key={p.podId} className="hover:bg-[#060B18]/50">
-                      <td className="py-3.5 px-4 font-mono text-[#38BDF8]">#pod-{p.podId}</td>
-                      <td className="py-3.5 px-4 font-mono text-[#F8FAFC]">{p.nodeName}</td>
+                    <tr key={p.podId} className="hover:bg-[#F8FAFC]">
+                      <td className="py-3.5 px-4 font-mono text-[#4F46E5]">pod-{p.podId}-{p.nodeName}</td>
+                      <td className="py-3.5 px-4 font-mono text-[#0F172A]">{p.nodeName}</td>
                       <td className="py-3.5 px-4">
-                        <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-800/60 inline-flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>{p.podStatus}</span>
+                        <span
+                          className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                            p.podStatus === 'Running'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : 'bg-amber-50 text-amber-700 border border-amber-200'
+                          }`}
+                        >
+                          {p.podStatus}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-[#F8FAFC]">
-                        <div className="flex items-center gap-1.5">
-                          <Cpu className="w-3.5 h-3.5 text-[#38BDF8]" />
-                          <span>{p.cpuUsage}</span>
-                        </div>
+                      <td className="py-3.5 px-4 font-mono text-[#0F172A] flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-[#0284C7]" />
+                        <span>{p.cpuUsage}</span>
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-[#F8FAFC]">
+                      <td className="py-3.5 px-4 font-mono text-[#0F172A]">
                         <div className="flex items-center gap-1.5">
-                          <HardDrive className="w-3.5 h-3.5 text-[#A78BFA]" />
+                          <HardDrive className="w-3.5 h-3.5 text-[#7C3AED]" />
                           <span>{p.memoryUsage}</span>
                         </div>
                       </td>

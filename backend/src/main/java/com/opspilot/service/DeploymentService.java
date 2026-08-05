@@ -2,15 +2,18 @@ package com.opspilot.service;
 
 import com.opspilot.dto.DeploymentRequest;
 import com.opspilot.dto.DeploymentResponse;
+import com.opspilot.entity.ContainerEntity;
 import com.opspilot.entity.Deployment;
+import com.opspilot.entity.PodEntity;
 import com.opspilot.entity.Project;
 import com.opspilot.entity.User;
 import com.opspilot.exception.ResourceNotFoundException;
+import com.opspilot.repository.ContainerRepository;
 import com.opspilot.repository.DeploymentRepository;
+import com.opspilot.repository.PodRepository;
 import com.opspilot.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -27,9 +30,14 @@ public class DeploymentService {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private ContainerRepository containerRepository;
+
+    @Autowired
+    private PodRepository podRepository;
+
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
 
-    @Transactional
     public DeploymentResponse createDeployment(Long projectId, DeploymentRequest request, User currentUser) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
@@ -45,7 +53,10 @@ public class DeploymentService {
         Deployment savedDeployment = deploymentRepository.save(deployment);
         Long deploymentId = savedDeployment.getId();
 
-        // Simulate status progression: Draft -> Building -> Deploying -> Running
+        // Immediately provision initial container and pod in DRAFT status
+        provisionContainerAndPod(savedDeployment);
+
+        // Schedule status progression
         scheduleStatusProgression(deploymentId);
 
         return mapToResponse(savedDeployment);
@@ -77,10 +88,33 @@ public class DeploymentService {
             deploymentRepository.findById(deploymentId).ifPresent(d -> {
                 d.setStatus(status);
                 deploymentRepository.save(d);
+
+                // Update mapped container status as well
+                List<ContainerEntity> containers = containerRepository.findByDeploymentId(deploymentId);
+                for (ContainerEntity c : containers) {
+                    if ("Running".equalsIgnoreCase(status)) {
+                        c.setContainerStatus("RUNNING");
+                    } else if ("Building".equalsIgnoreCase(status) || "Deploying".equalsIgnoreCase(status)) {
+                        c.setContainerStatus("STARTING");
+                    }
+                    containerRepository.save(c);
+                }
             });
         } catch (Exception e) {
-            // Log warning if error occurs during async background update
             System.err.println("Failed to update deployment status to " + status + ": " + e.getMessage());
+        }
+    }
+
+    private void provisionContainerAndPod(Deployment deployment) {
+        try {
+            String imageName = "opspilot/" + deployment.getProject().getProjectName().toLowerCase().replaceAll("[^a-z0-9]", "-") + ":" + deployment.getVersion();
+            ContainerEntity container = new ContainerEntity(deployment, imageName, "STARTING");
+            ContainerEntity savedContainer = containerRepository.save(container);
+
+            PodEntity pod = new PodEntity(savedContainer, "minikube-node-1", "Running", "125m", "256Mi");
+            podRepository.save(pod);
+        } catch (Exception e) {
+            System.err.println("Error provisioning container/pod: " + e.getMessage());
         }
     }
 

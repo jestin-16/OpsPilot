@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../services/api';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Terminal, Lock, Mail, AlertCircle } from 'lucide-react';
+import { api } from '../services/api';
+import { Terminal, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -18,44 +19,39 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const data = await api.login({ email, password });
-      login(data);
+      const res = await api.login({ email, password });
+      login(res);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Failed to authenticate');
+      setError(err.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#060B18] flex flex-col justify-center items-center p-4">
-      {/* Brand Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-lg bg-[#38BDF8] flex items-center justify-center text-[#060B18]">
-          <Terminal className="w-6 h-6 font-bold" />
+    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center p-4">
+      {/* Container */}
+      <div className="w-full max-w-md bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl shadow-xl p-8 space-y-6">
+        {/* Brand Header */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex p-3 rounded-xl bg-[#EEF2FF] text-[#4F46E5] mb-2">
+            <Terminal className="w-8 h-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-[#0F172A]">Welcome back to OpsPilot</h1>
+          <p className="text-xs text-[#64748B]">Sign in to access your developer platform</p>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-[#F8FAFC]">OpsPilot</h1>
-          <p className="text-xs text-[#94A3B8]">Internal developer platform</p>
-        </div>
-      </div>
-
-      {/* Login Card */}
-      <div className="w-full max-w-md bg-[#0F1B2E] border border-[#1E2D45] rounded-xl p-8 shadow-none">
-        <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">Welcome back</h2>
-        <p className="text-sm text-[#94A3B8] mb-6">Sign in to access your developer portal</p>
 
         {error && (
-          <div className="mb-6 p-3 bg-red-950/40 border border-red-800/60 rounded-lg flex items-center gap-3 text-red-400 text-sm">
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600 text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-1.5">
               Email address
             </label>
             <div className="relative">
@@ -67,14 +63,14 @@ export const Login: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="developer@opspilot.io"
-                className="w-full pl-10 pr-4 py-2.5 bg-[#060B18] border border-[#1E2D45] rounded-lg text-[#F8FAFC] text-sm focus:outline-none focus:border-[#38BDF8] placeholder-[#94A3B8]/50"
+                placeholder="alex.dev@opspilot.io"
+                className="w-full pl-9 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[#0F172A] text-xs focus:outline-none focus:border-[#4F46E5] focus:bg-[#FFFFFF] placeholder-[#94A3B8]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
+            <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -87,7 +83,7 @@ export const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 bg-[#060B18] border border-[#1E2D45] rounded-lg text-[#F8FAFC] text-sm focus:outline-none focus:border-[#38BDF8] placeholder-[#94A3B8]/50"
+                className="w-full pl-9 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[#0F172A] text-xs focus:outline-none focus:border-[#4F46E5] focus:bg-[#FFFFFF] placeholder-[#94A3B8]"
               />
             </div>
           </div>
@@ -95,16 +91,17 @@ export const Login: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-[#38BDF8] hover:bg-[#38BDF8]/90 text-[#060B18] font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 mt-2 cursor-pointer"
+            className="w-full py-2.5 bg-[#4F46E5] hover:bg-[#4338CA] text-[#FFFFFF] font-semibold text-xs rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
           >
-            {loading ? 'Authenticating...' : 'Sign in'}
+            <span>{loading ? 'Authenticating...' : 'Sign in'}</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-[#1E2D45] text-center text-sm text-[#94A3B8]">
+        <div className="pt-4 border-t border-[#E2E8F0] text-center text-xs text-[#64748B]">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-[#38BDF8] font-medium hover:underline">
-            Register here
+          <Link to="/signup" className="text-[#4F46E5] font-bold hover:underline">
+            Register now
           </Link>
         </div>
       </div>

@@ -10,6 +10,7 @@ import { KubernetesManagement } from './pages/KubernetesManagement';
 import { MonitoringDashboard } from './pages/MonitoringDashboard';
 import { LogManagement } from './pages/LogManagement';
 import { NotificationCenter } from './pages/NotificationCenter';
+import { CiCdIntegration } from './pages/CiCdIntegration';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -101,6 +102,14 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <NotificationCenter />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cicd"
+            element={
+              <ProtectedRoute>
+                <CiCdIntegration />
               </ProtectedRoute>
             }
           />

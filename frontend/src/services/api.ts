@@ -87,6 +87,17 @@ export interface MetricsData {
   history: MetricPoint[];
 }
 
+export interface PipelineRun {
+  runId: number;
+  eventType: string;
+  branch: string;
+  commitSha: string;
+  commitMessage: string;
+  author: string;
+  status: string;
+  createdAt: string;
+}
+
 const getHeaders = () => {
   const token = localStorage.getItem('opspilot_token');
   const headers: Record<string, string> = {
@@ -295,6 +306,42 @@ export const api = {
       headers: getHeaders(),
     });
     if (!res.ok) throw new Error('Failed to fetch monitoring metrics');
+    return res.json();
+  },
+
+  // CI/CD
+  getPipelineRuns: async (): Promise<PipelineRun[]> => {
+    const res = await fetch(`${API_BASE_URL}/cicd/runs`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch pipeline runs');
+    return res.json();
+  },
+
+  simulateGitHubWebhook: async (eventType: string = 'push'): Promise<any> => {
+    const res = await fetch(`${API_BASE_URL}/webhooks/github`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-GitHub-Event': eventType,
+      },
+      body: JSON.stringify({
+        ref: 'refs/heads/main',
+        repository: {
+          name: 'payment-engine',
+          html_url: 'https://github.com/opspilot/payment-engine',
+        },
+        head_commit: {
+          id: '8f3e4d29a01',
+          message: 'feat(core): Optimize payment gateway latency',
+          author: {
+            name: 'GitHub Webhook Bot',
+            email: 'bot@github.com',
+          },
+        },
+      }),
+    });
+    if (!res.ok) throw new Error('Failed to send webhook event');
     return res.json();
   },
 };

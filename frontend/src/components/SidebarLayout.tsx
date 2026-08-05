@@ -41,7 +41,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { name: 'Monitoring dashboard', path: '/monitoring', icon: Activity, enabled: true },
     { name: 'Log management', path: '/logs', icon: FileText, enabled: true },
     { name: 'Notification center', path: '/notifications', icon: Bell, enabled: true },
-    { name: 'CI/CD integration', path: '#', icon: GitBranch, enabled: false },
+    { name: 'CI/CD integration', path: '/cicd', icon: GitBranch, enabled: true },
     { name: 'AI assistant', path: '#', icon: Bot, enabled: false, ai: true },
     { name: 'Settings', path: '#', icon: Settings, enabled: false },
   ];

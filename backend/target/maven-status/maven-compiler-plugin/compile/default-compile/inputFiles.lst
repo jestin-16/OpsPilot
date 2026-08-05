@@ -17,6 +17,7 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/RegisterRequest.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/NotificationController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/ForbiddenException.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/PipelineRunEntity.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/ProjectController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/DockerController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/ContainerEntity.java
@@ -29,8 +30,11 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/ProjectResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/config/JwtAuthenticationFilter.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/KubernetesController.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/CiCdController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AuthResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AuthRequest.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/WebhookPayload.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/PipelineRunRepository.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/MetricsResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/NotificationEntity.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/ProjectRepository.java
@@ -43,6 +47,7 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/AuthService.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/config/SecurityConfig.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/LogRepository.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/WebhookController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/DockerService.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/GlobalExceptionHandler.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/ResourceNotFoundException.java

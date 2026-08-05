@@ -98,6 +98,17 @@ export interface PipelineRun {
   createdAt: string;
 }
 
+export interface AiDiagnosisResponse {
+  query: string;
+  rootCause: string;
+  confidence: string;
+  summary: string;
+  suggestedRemediation: string;
+  correlatedDeploymentId: number | null;
+  correlatedDeploymentVersion: string | null;
+  correlatedLogs: LogEntry[];
+}
+
 const getHeaders = () => {
   const token = localStorage.getItem('opspilot_token');
   const headers: Record<string, string> = {
@@ -182,7 +193,6 @@ export const api = {
 
   deleteProject: async (id: number): Promise<void> => {
     const res = await fetch(`${API_BASE_URL}/projects/${id}`, {
-      method: 'DELETE',
       headers: getHeaders(),
     });
     if (!res.ok) {
@@ -342,6 +352,20 @@ export const api = {
       }),
     });
     if (!res.ok) throw new Error('Failed to send webhook event');
+    return res.json();
+  },
+
+  // AI Assistant
+  queryAiAssistant: async (data: { prompt: string; deploymentId?: number }): Promise<AiDiagnosisResponse> => {
+    const res = await fetch(`${API_BASE_URL}/ai/query`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'AI Assistant query failed' }));
+      throw new Error(err.message || 'AI Assistant query failed');
+    }
     return res.json();
   },
 };

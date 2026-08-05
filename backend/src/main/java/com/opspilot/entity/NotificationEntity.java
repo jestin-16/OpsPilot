@@ -15,7 +15,7 @@ public class NotificationEntity {
     private Long notificationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "roles"})
     private User user;
 

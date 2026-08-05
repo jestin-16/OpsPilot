@@ -11,6 +11,7 @@ import { MonitoringDashboard } from './pages/MonitoringDashboard';
 import { LogManagement } from './pages/LogManagement';
 import { NotificationCenter } from './pages/NotificationCenter';
 import { CiCdIntegration } from './pages/CiCdIntegration';
+import { AiAssistantPage } from './pages/AiAssistantPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -110,6 +111,14 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <CiCdIntegration />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai"
+            element={
+              <ProtectedRoute>
+                <AiAssistantPage />
               </ProtectedRoute>
             }
           />

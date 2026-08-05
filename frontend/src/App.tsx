@@ -5,6 +5,8 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
+import { DockerManagement } from './pages/DockerManagement';
+import { KubernetesManagement } from './pages/KubernetesManagement';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
@@ -56,6 +58,22 @@ export const App: React.FC = () => {
             element={
               <ProtectedRoute>
                 <Projects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/docker"
+            element={
+              <ProtectedRoute>
+                <DockerManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/kubernetes"
+            element={
+              <ProtectedRoute>
+                <KubernetesManagement />
               </ProtectedRoute>
             }
           />

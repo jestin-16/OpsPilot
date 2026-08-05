@@ -40,6 +40,21 @@ export interface Deployment {
   deployedAt: string;
 }
 
+export interface Container {
+  containerId: number;
+  imageName: string;
+  containerStatus: string;
+  createdAt: string;
+}
+
+export interface Pod {
+  podId: number;
+  nodeName: string;
+  podStatus: string;
+  cpuUsage: string;
+  memoryUsage: string;
+}
+
 const getHeaders = () => {
   const token = localStorage.getItem('opspilot_token');
   const headers: Record<string, string> = {
@@ -158,6 +173,51 @@ export const api = {
       const err = await res.json().catch(() => ({ message: 'Failed to trigger deployment' }));
       throw new Error(err.message || 'Failed to trigger deployment');
     }
+    return res.json();
+  },
+
+  // Docker Management
+  getDockerContainers: async (): Promise<Container[]> => {
+    const res = await fetch(`${API_BASE_URL}/docker/containers`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch docker containers');
+    return res.json();
+  },
+
+  startContainer: async (id: number): Promise<Container> => {
+    const res = await fetch(`${API_BASE_URL}/docker/containers/${id}/start`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to start container');
+    return res.json();
+  },
+
+  stopContainer: async (id: number): Promise<Container> => {
+    const res = await fetch(`${API_BASE_URL}/docker/containers/${id}/stop`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to stop container');
+    return res.json();
+  },
+
+  restartContainer: async (id: number): Promise<Container> => {
+    const res = await fetch(`${API_BASE_URL}/docker/containers/${id}/restart`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to restart container');
+    return res.json();
+  },
+
+  // Kubernetes Management
+  getKubernetesPods: async (): Promise<Pod[]> => {
+    const res = await fetch(`${API_BASE_URL}/kubernetes/pods`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch kubernetes pods');
     return res.json();
   },
 };

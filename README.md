@@ -1,113 +1,174 @@
-# OpsPilot — AI-Assisted Internal Developer Platform
+# OpsPilot — AI-Assisted Internal Developer Platform (IDP)
 
-OpsPilot is a unified Internal Developer Platform (IDP) designed to streamline application lifecycle management, project orchestration, and deployment automation.
-
----
-
-## Architecture & Technology Stack
-
-- **Backend**: Java 17+, Spring Boot 3+, Spring Security (JWT), Spring Data JPA, Maven, PostgreSQL.
-- **Frontend**: React 18+, TypeScript, Tailwind CSS (Custom Dark Theme), React Router, Lucide Icons.
-- **Infrastructure**: Docker Compose (PostgreSQL 15).
+OpsPilot is an enterprise-grade Internal Developer Platform (IDP) designed to unify project management, continuous deployment, Docker container orchestrations, Kubernetes cluster monitoring, Actuator system metrics, structured JSON logging, Kafka event notifications, GitHub Actions webhooks, and AI-assisted root-cause diagnosis into a single cohesive, high-performance web dashboard.
 
 ---
 
-## Project Structure
+## 🏗️ System Architecture
 
-```text
-OpsPilot/
-├── docker-compose.yml       # Local PostgreSQL database setup
-├── README.md                # Project documentation and setup guide
-├── PROGRESS.md              # Milestone 1 completion progress report
-├── backend/                 # Spring Boot REST API
-│   ├── pom.xml              # Maven dependencies & build configuration
-│   ├── mvnw                 # Maven wrapper script
-│   └── src/
-│       ├── main/java/com/opspilot/
-│       │   ├── config/      # Security, JWT, Data Initializer
-│       │   ├── controller/  # Auth, Project, Deployment REST controllers
-│       │   ├── dto/         # Request & Response DTOs
-│       │   ├── entity/      # User, Role, Project, Deployment JPA entities
-│       │   ├── exception/   # Global Exception Handler & Custom Exceptions
-│       │   ├── repository/ # Spring Data JPA repositories
-│       │   └── service/    # Auth, Project, Deployment business logic
-│       └── test/java/com/opspilot/ # Unit tests
-└── frontend/                # React 18 + Vite SPA
-    ├── package.json
-    ├── vite.config.ts
-    └── src/
-        ├── components/      # SidebarLayout and shared components
-        ├── context/         # AuthContext provider
-        ├── pages/           # Login, Signup, Dashboard, Projects
-        └── services/        # API service layer
+```mermaid
+graph TD
+    Client[React 18 SPA + TypeScript + Tailwind CSS]
+    Gateway[Spring Cloud Gateway API Gateway / JWT Security]
+    
+    subgraph "Backend Core (Spring Boot 3 + Java 17+)"
+        AuthService[Auth & RBAC Service]
+        ProjService[Project & Audit Service]
+        DeployService[Deployment Engine]
+        DockerService[Docker Container Service]
+        K8sService[Kubernetes Service]
+        LogService[Structured JSON Log Service]
+        NotifService[Notification & Kafka Event Service]
+        MonitorService[Actuator Prometheus Monitoring]
+        CiCdService[GitHub Actions Webhook Receiver]
+        AiService[AI Root-Cause Correlation Engine]
+    end
+
+    subgraph "Data & Event Persistence"
+        PostgreSQL[(PostgreSQL 3NF Store / H2 DB)]
+        Redis[(Redis Cache / Sessions)]
+        Kafka[(Apache Kafka Event Bus)]
+    end
+
+    Client --> Gateway
+    Gateway --> AuthService
+    Gateway --> ProjService
+    Gateway --> DeployService
+    Gateway --> DockerService
+    Gateway --> K8sService
+    Gateway --> LogService
+    Gateway --> NotifService
+    Gateway --> MonitorService
+    Gateway --> CiCdService
+    Gateway --> AiService
+
+    DeployService --> PostgreSQL
+    DeployService --> Kafka
+    NotifService --> Kafka
+    LogService --> PostgreSQL
+    AiService --> LogService
+    AiService --> DeployService
 ```
 
 ---
 
-## Quick Start Guide
+## 🗄️ Relational 3NF Database Schema Overview
 
-### 1. Database Setup (PostgreSQL)
+OpsPilot enforces strict Third Normal Form (3NF) relational integrity across all platform entities:
 
-Start PostgreSQL using Docker Compose:
-
-```bash
-docker compose up -d
-```
-
-*Database connection credentials:*
-- **Host**: `localhost:5432`
-- **Database**: `opspilot`
-- **User**: `opspilot`
-- **Password**: `opspilot`
+- **`Users`**: `(user_id PK, name, email UNIQUE, password_hash, created_at)`
+- **`Roles`**: `(role_id PK, role_name UNIQUE)` — Pre-seeded roles: `Admin`, `Developer`, `DevOps`
+- **`User_Roles`**: `(user_id FK, role_id FK)`
+- **`Projects`**: `(project_id PK, project_name, description, repository_url, owner_id FK->Users, status, created_at)`
+- **`Deployments`**: `(deployment_id PK, project_id FK->Projects, deployed_by FK->Users, version, environment, status, deployed_at)`
+- **`Containers`**: `(container_id PK, deployment_id FK->Deployments, image_name, container_status, created_at)`
+- **`Pods`**: `(pod_id PK, container_id FK->Containers, node_name, pod_status, cpu_usage, memory_usage)`
+- **`Logs`**: `(log_id PK, deployment_id FK->Deployments NULLABLE, source_service, log_level, message, timestamp)`
+- **`Notifications`**: `(notification_id PK, user_id FK->Users NULLABLE, deployment_id FK->Deployments NULLABLE, message, type, is_read, created_at)`
+- **`Pipeline_Runs`**: `(run_id PK, project_id FK->Projects, event_type, branch, commit_sha, commit_message, author, status, created_at)`
+- **`Audit_Logs`**: `(audit_id PK, user_id FK->Users, action, details, timestamp)`
 
 ---
 
-### 2. Backend Setup (Spring Boot)
+## 📡 REST API Reference
 
-Navigate to the `/backend` directory and start the server:
+### Authentication & RBAC
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/auth/register` | Public | Register a new user (`Admin`, `Developer`, `DevOps`) |
+| `POST` | `/api/auth/login` | Public | Authenticate user and issue JWT token |
 
+### Project Management
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/projects` | Authenticated | List all projects |
+| `GET` | `/api/projects/{id}` | Authenticated | Get project details |
+| `POST` | `/api/projects` | Admin, Developer | Create a new microservice project |
+| `PUT` | `/api/projects/{id}` | Project Owner / Admin | Update project details |
+| `DELETE` | `/api/projects/{id}` | Project Owner / Admin | Delete project |
+
+### Deployment Engine
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/projects/{id}/deployments` | Authenticated | Get deployment history for a project |
+| `POST` | `/api/projects/{id}/deployments` | Admin, Developer | Trigger a deployment pipeline |
+
+### Infrastructure Management
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/docker/containers` | Authenticated | List active Docker containers |
+| `POST` | `/api/docker/containers/{id}/start` | DevOps, Admin | Start a Docker container |
+| `POST` | `/api/docker/containers/{id}/stop` | DevOps, Admin | Stop a Docker container |
+| `POST` | `/api/docker/containers/{id}/restart` | DevOps, Admin | Restart a Docker container |
+| `GET` | `/api/kubernetes/pods` | Authenticated | List Minikube / K8s pods |
+
+### Monitoring, Logs & Notifications
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/monitoring/metrics` | Authenticated | Get Actuator CPU, memory & HTTP metrics |
+| `GET` | `/api/logs` | Authenticated | Search structured JSON logs by service/level/query |
+| `POST` | `/api/logs` | Authenticated | Ingest custom log entries |
+| `GET` | `/api/notifications` | Authenticated | Get Kafka deployment event notifications |
+| `PUT` | `/api/notifications/{id}/read` | Authenticated | Mark notification as read |
+
+### CI/CD & AI Assistant
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/webhooks/github` | Public | Webhook listener for GitHub Actions push/workflow events |
+| `GET` | `/api/cicd/runs` | Authenticated | Fetch GitHub Actions pipeline runs |
+| `POST` | `/api/ai/query` | Authenticated | Run timestamp-correlation AI root cause diagnosis |
+
+---
+
+## 🎨 Locked Dark Theme Design System
+
+OpsPilot strictly implements a high-contrast dark theme optimized for DevOps operations:
+
+| Token Name | Hex Code | Usage |
+|---|---|---|
+| Main Background | `#060B18` | Application background |
+| Card Background | `#0F1B2E` | Component cards and panels |
+| Panel Secondary | `#13233B` | Input fields, dropdowns, and table headers |
+| Borders | `#1E2D45` | Card and divider borders |
+| Primary Accent | `#38BDF8` | Buttons, links, primary indicators (Cyan) |
+| AI Accent | `#A78BFA` | AI Assistant badges, cards, and highlights (Violet) |
+| Warning Accent | `#F59E0B` | Warning badges and alerts (Amber) |
+| Primary Text | `#F8FAFC` | Headings, labels, and table content |
+| Muted Text | `#94A3B8` | Subtitles, metadata, and placeholder text |
+
+---
+
+## 🚀 Quickstart Run Instructions
+
+### Prerequisites
+- Java 17+ / Java 26
+- Maven 3.9+ (`./mvnw`)
+- Node.js 18+ & npm
+
+### 1. Run Spring Boot Backend
 ```bash
 cd backend
-./mvnw spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.profiles=h2
 ```
+The backend server runs on `http://localhost:8080`.
 
-*The backend REST API will run on `http://localhost:8080`.*
-
-To run unit tests:
-
-```bash
-./mvnw test
-```
-
----
-
-### 3. Frontend Setup (React + Vite)
-
-Navigate to the `/frontend` directory, install dependencies, and start the development server:
-
+### 2. Run React Frontend
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-*The web application will run on `http://localhost:5173`.*
+The frontend application will be accessible at `http://localhost:5173`.
 
 ---
 
-## API Endpoints
+## 🧪 Test Suite Execution
 
-### Authentication & RBAC
-- `POST /api/auth/register` — Register a new user (`Developer`, `DevOps Engineer`, or `Administrator`).
-- `POST /api/auth/login` — Authenticate user credentials and receive a JWT token.
-
-### Project Management
-- `GET /api/projects` — List accessible projects.
-- `GET /api/projects/{id}` — Get single project details.
-- `POST /api/projects` — Create a new project.
-- `PUT /api/projects/{id}` — Update a project (*Owner or Administrator only*).
-- `DELETE /api/projects/{id}` — Delete a project (*Owner or Administrator only*).
-
-### Deployment Center
-- `POST /api/projects/{projectId}/deployments` — Trigger a deployment (`Dev`, `Staging`, `Production`). Simulates pipeline status progression: `Draft` → `Building` → `Deploying` → `Running`.
-- `GET /api/projects/{projectId}/deployments` — List deployment execution history.
+- **Backend Unit Tests**:
+  ```bash
+  cd backend && ./mvnw test
+  ```
+- **Frontend Typecheck & Production Build**:
+  ```bash
+  cd frontend && npm run build
+  ```

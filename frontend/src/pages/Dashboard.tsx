@@ -31,13 +31,13 @@ export const Dashboard: React.FC = () => {
                 {roleName}
               </span>
             </div>
-            <p className="text-sm text-[#94A3B8]">OpsPilot Developer Dashboard & Governance Portal</p>
+            <p className="text-sm text-[#94A3B8]">OpsPilot developer dashboard & governance portal</p>
           </div>
           <Link
             to="/projects"
             className="px-4 py-2 bg-[#38BDF8] hover:bg-[#38BDF8]/90 text-[#060B18] font-semibold text-sm rounded-lg flex items-center gap-2 transition-colors"
           >
-            <span>View All Projects</span>
+            <span>View all projects</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -46,7 +46,7 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-[#0F1B2E] border border-[#1E2D45] rounded-xl p-5 flex items-center justify-between">
             <div>
-              <div className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">Total Projects</div>
+              <div className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">Total projects</div>
               <div className="text-2xl font-bold text-[#F8FAFC] mt-1">{projects.length}</div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-[#1E2D45] flex items-center justify-center text-[#38BDF8]">
@@ -57,7 +57,7 @@ export const Dashboard: React.FC = () => {
           <div className="bg-[#0F1B2E] border border-[#1E2D45] rounded-xl p-5 flex items-center justify-between">
             <div>
               <div className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">Deployments</div>
-              <div className="text-2xl font-bold text-[#F8FAFC] mt-1">Active Pipeline</div>
+              <div className="text-2xl font-bold text-[#F8FAFC] mt-1">Active pipeline</div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-[#1E2D45] flex items-center justify-center text-[#38BDF8]">
               <Rocket className="w-5 h-5" />
@@ -76,7 +76,7 @@ export const Dashboard: React.FC = () => {
 
           <div className="bg-[#0F1B2E] border border-[#1E2D45] rounded-xl p-5 flex items-center justify-between">
             <div>
-              <div className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">RBAC Status</div>
+              <div className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">RBAC status</div>
               <div className="text-2xl font-bold text-emerald-400 mt-1">Enforced</div>
             </div>
             <div className="w-10 h-10 rounded-lg bg-[#1E2D45] flex items-center justify-center text-emerald-400">
@@ -88,9 +88,9 @@ export const Dashboard: React.FC = () => {
         {/* Recent Projects Section */}
         <div className="bg-[#0F1B2E] border border-[#1E2D45] rounded-xl p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-[#F8FAFC]">Your Projects</h2>
+            <h2 className="text-lg font-bold text-[#F8FAFC]">Your projects</h2>
             <Link to="/projects" className="text-xs font-semibold text-[#38BDF8] hover:underline">
-              Manage Projects →
+              Manage projects →
             </Link>
           </div>
 

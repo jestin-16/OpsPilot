@@ -1,6 +1,6 @@
-# OpsPilot Milestone 1 Progress Report (30% Scope Complete)
+# OpsPilot Milestone 1 Progress Report (30% Scope Complete - Light Theme)
 
-**Status**: Milestone 1 Complete  
+**Status**: Milestone 1 Complete (Updated with Light Theme)  
 **Date**: August 5, 2026  
 
 ---
@@ -32,7 +32,7 @@
 - [x] `GET /api/projects/{projectId}/deployments` - Retrieves deployment history for a project.
 
 ### 4. Frontend Application (React 18 + TypeScript + Tailwind CSS)
-- [x] **Dark Design System**: Background `#060B18`, card `#0F1B2E`, borders `#1E2D45`, primary cyan `#38BDF8`, text `#F8FAFC` / muted `#94A3B8`, `rounded-lg` inputs/buttons, `rounded-xl` cards, Inter font, flat design.
+- [x] **Light Design System**: Main background `#F8FAFC`, card background `#FFFFFF`, borders `#E2E8F0`, primary accent `#0284C7` (Sky Blue), main text `#0F172A`, muted text `#64748B`, `rounded-lg` inputs/buttons, `rounded-xl` cards, Inter font, flat modern layout.
 - [x] `/login` and `/signup` pages with role selector.
 - [x] `/dashboard` with sidebar featuring active items (Dashboard, Projects, Deployments) and disabled "Coming Soon" nav items (Docker, Kubernetes, Monitoring, Logs, Notifications, AI Assistant, Settings).
 - [x] `/projects` page with card grid, "New Project" modal, project detail view, deployment history table, and "Trigger Deployment" modal.
@@ -41,14 +41,4 @@
 - [x] `docker-compose.yml` for local PostgreSQL database.
 - [x] Root `README.md` with complete setup and execution instructions.
 - [x] 9 Unit Tests passing (`AuthServiceTest`, `ProjectServiceTest`).
-- [x] Full automated Playwright browser verification suite passed cleanly with screenshot artifacts captured.
-
----
-
-## Out of Scope for Milestone 1 (Planned for Future Milestones)
-- Docker & Container orchestration integration
-- Kubernetes cluster management
-- Prometheus / Grafana monitoring dashboards
-- Centralized log viewing (Elasticsearch / Loki)
-- CI/CD & Jenkins integration
-- AI Operational Assistant & Incident Analysis
+- [x] Automated Playwright browser verification suite passed cleanly in Light Theme with screenshot artifacts captured.

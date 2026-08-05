@@ -4,8 +4,11 @@
   :root {
     --bg-main: #060B18;
     --bg-card: #0F1B2E;
+    --bg-panel: #13233B;
     --border-color: #1E2D45;
     --accent-cyan: #38BDF8;
+    --accent-violet: #A78BFA;
+    --accent-amber: #F59E0B;
     --text-main: #F8FAFC;
     --text-muted: #94A3B8;
   }
@@ -19,12 +22,16 @@
   }
 }
 
-/* Custom Utilities for strict OpsPilot Theme */
+/* Custom Palette Utility Classes */
 .bg-op-bg { background-color: #060B18; }
 .bg-op-card { background-color: #0F1B2E; }
+.bg-op-panel { background-color: #13233B; }
 .border-op-border { border-color: #1E2D45; }
 .text-op-cyan { color: #38BDF8; }
 .bg-op-cyan { background-color: #38BDF8; }
+.text-op-violet { color: #A78BFA; }
+.bg-op-violet { background-color: #A78BFA; }
+.text-op-amber { color: #F59E0B; }
 .text-op-main { color: #F8FAFC; }
 .text-op-muted { color: #94A3B8; }
 

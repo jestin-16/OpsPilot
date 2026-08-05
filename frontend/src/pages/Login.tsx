@@ -37,7 +37,7 @@ export const Login: React.FC = () => {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-[#F8FAFC]">OpsPilot</h1>
-          <p className="text-xs text-[#94A3B8]">Internal Developer Platform</p>
+          <p className="text-xs text-[#94A3B8]">Internal developer platform</p>
         </div>
       </div>
 
@@ -56,7 +56,7 @@ export const Login: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
-              Email Address
+              Email address
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#94A3B8]">
@@ -97,7 +97,7 @@ export const Login: React.FC = () => {
             disabled={loading}
             className="w-full py-2.5 bg-[#38BDF8] hover:bg-[#38BDF8]/90 text-[#060B18] font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 mt-2 cursor-pointer"
           >
-            {loading ? 'Authenticating...' : 'Sign In'}
+            {loading ? 'Authenticating...' : 'Sign in'}
           </button>
         </form>
 

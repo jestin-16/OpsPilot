@@ -2,6 +2,7 @@ com/opspilot/exception/GlobalExceptionHandler.class
 com/opspilot/dto/ProjectRequest.class
 com/opspilot/entity/User.class
 com/opspilot/config/SecurityConfig.class
+com/opspilot/entity/AuditLog.class
 com/opspilot/exception/ResourceNotFoundException.class
 com/opspilot/dto/AuthRequest.class
 com/opspilot/dto/RegisterRequest.class
@@ -23,6 +24,7 @@ com/opspilot/config/JwtAuthenticationFilter.class
 com/opspilot/service/ProjectService.class
 com/opspilot/dto/DeploymentRequest.class
 com/opspilot/service/AuthService.class
+com/opspilot/repository/AuditLogRepository.class
 com/opspilot/config/JwtTokenProvider.class
 com/opspilot/repository/RoleRepository.class
 com/opspilot/service/DeploymentService.class

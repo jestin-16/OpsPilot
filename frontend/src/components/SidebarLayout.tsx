@@ -10,6 +10,7 @@ import {
   Activity,
   FileText,
   Bell,
+  GitBranch,
   Bot,
   Settings,
   LogOut,
@@ -35,12 +36,13 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, enabled: true },
     { name: 'Projects', path: '/projects', icon: FolderGit2, enabled: true },
     { name: 'Deployments', path: '/projects', icon: Rocket, enabled: true },
-    { name: 'Docker', path: '#', icon: Container, enabled: false },
-    { name: 'Kubernetes', path: '#', icon: Boxes, enabled: false },
-    { name: 'Monitoring', path: '#', icon: Activity, enabled: false },
-    { name: 'Logs', path: '#', icon: FileText, enabled: false },
-    { name: 'Notifications', path: '#', icon: Bell, enabled: false },
-    { name: 'AI Assistant', path: '#', icon: Bot, enabled: false },
+    { name: 'Docker management', path: '#', icon: Container, enabled: false },
+    { name: 'Kubernetes management', path: '#', icon: Boxes, enabled: false },
+    { name: 'Monitoring dashboard', path: '#', icon: Activity, enabled: false },
+    { name: 'Log management', path: '#', icon: FileText, enabled: false },
+    { name: 'Notification center', path: '#', icon: Bell, enabled: false },
+    { name: 'CI/CD integration', path: '#', icon: GitBranch, enabled: false },
+    { name: 'AI assistant', path: '#', icon: Bot, enabled: false, ai: true },
     { name: 'Settings', path: '#', icon: Settings, enabled: false },
   ];
 
@@ -56,12 +58,12 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             </div>
             <div>
               <span className="font-bold text-lg text-[#F8FAFC]">OpsPilot</span>
-              <span className="text-xs block text-[#94A3B8]">Developer Platform</span>
+              <span className="text-xs block text-[#94A3B8]">Developer platform</span>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="p-4 space-y-1.5">
+          <nav className="p-4 space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path && item.enabled;
@@ -70,13 +72,15 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 return (
                   <div
                     key={item.name}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-lg text-[#94A3B8] opacity-50 cursor-not-allowed select-none hover:bg-transparent"
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-[#94A3B8] opacity-50 cursor-not-allowed select-none ${
+                      item.ai ? 'hover:bg-violet-950/20' : 'hover:bg-transparent'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-medium">{item.name}</span>
+                      <Icon className={`w-4 h-4 ${item.ai ? 'text-[#A78BFA]' : ''}`} />
+                      <span className={`text-xs font-medium ${item.ai ? 'text-[#A78BFA]' : ''}`}>{item.name}</span>
                     </div>
-                    <span className="text-[10px] bg-[#1E2D45] text-[#94A3B8] px-1.5 py-0.5 rounded font-mono">SOON</span>
+                    <span className="text-[9px] bg-[#1E2D45] text-[#94A3B8] px-1.5 py-0.5 rounded font-mono uppercase">Soon</span>
                   </div>
                 );
               }
@@ -85,7 +89,7 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
                     isActive
                       ? 'bg-[#38BDF8] text-[#060B18] font-semibold'
                       : 'text-[#F8FAFC] hover:bg-[#1E2D45]'
@@ -107,14 +111,14 @@ export const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
                 <UserIcon className="w-4 h-4" />
               </div>
               <div className="truncate">
-                <div className="text-sm font-medium text-[#F8FAFC] truncate">{user?.name || 'User'}</div>
-                <div className="text-xs text-[#94A3B8] truncate">{user?.email}</div>
+                <div className="text-xs font-semibold text-[#F8FAFC] truncate">{user?.name || 'User'}</div>
+                <div className="text-[11px] text-[#94A3B8] truncate">{user?.email}</div>
               </div>
             </div>
             <button
               onClick={handleLogout}
               title="Log out"
-              className="p-1.5 rounded-lg hover:bg-[#1E2D45] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors"
+              className="p-1.5 rounded-lg hover:bg-[#1E2D45] text-[#94A3B8] hover:text-[#F8FAFC] transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>

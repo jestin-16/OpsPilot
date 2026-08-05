@@ -39,13 +39,13 @@ export const Signup: React.FC = () => {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-[#F8FAFC]">OpsPilot</h1>
-          <p className="text-xs text-[#94A3B8]">Internal Developer Platform</p>
+          <p className="text-xs text-[#94A3B8]">Internal developer platform</p>
         </div>
       </div>
 
       {/* Signup Card */}
       <div className="w-full max-w-md bg-[#0F1B2E] border border-[#1E2D45] rounded-xl p-8 shadow-none">
-        <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">Create Account</h2>
+        <h2 className="text-xl font-bold text-[#F8FAFC] mb-2">Create account</h2>
         <p className="text-sm text-[#94A3B8] mb-6">Select your role and register for platform access</p>
 
         {error && (
@@ -58,7 +58,7 @@ export const Signup: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
-              Full Name
+              Full name
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#94A3B8]">
@@ -77,7 +77,7 @@ export const Signup: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
-              Email Address
+              Email address
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#94A3B8]">
@@ -115,7 +115,7 @@ export const Signup: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
-              Platform Role
+              Platform role
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#94A3B8]">
@@ -138,7 +138,7 @@ export const Signup: React.FC = () => {
             disabled={loading}
             className="w-full py-2.5 bg-[#38BDF8] hover:bg-[#38BDF8]/90 text-[#060B18] font-semibold rounded-lg text-sm transition-colors disabled:opacity-50 mt-4 cursor-pointer"
           >
-            {loading ? 'Registering...' : 'Create Account'}
+            {loading ? 'Registering...' : 'Create account'}
           </button>
         </form>
 

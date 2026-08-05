@@ -6,8 +6,10 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/Role.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/Deployment.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/config/JwtAuthenticationFilter.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/AuditLog.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AuthResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AuthRequest.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/AuditLogRepository.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/User.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/DeploymentResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/AuthController.java

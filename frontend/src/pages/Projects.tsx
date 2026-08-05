@@ -133,7 +133,7 @@ export const Projects: React.FC = () => {
       }
       await fetchProjects();
     } catch (err: any) {
-      alert(err.message || 'Action Forbidden: Only owner or Administrator can delete');
+      alert(err.message || 'Action forbidden: Only owner or Administrator can delete');
     }
   };
 
@@ -177,7 +177,7 @@ export const Projects: React.FC = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#1E2D45] pb-6">
           <div>
-            <h1 className="text-2xl font-bold text-[#F8FAFC]">Project Management</h1>
+            <h1 className="text-2xl font-bold text-[#F8FAFC]">Project management</h1>
             <p className="text-sm text-[#94A3B8]">Create, manage, and trigger deployments for your repositories</p>
           </div>
           <button
@@ -185,7 +185,7 @@ export const Projects: React.FC = () => {
             className="px-4 py-2.5 bg-[#38BDF8] hover:bg-[#38BDF8]/90 text-[#060B18] font-semibold text-sm rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>New Project</span>
+            <span>New project</span>
           </button>
         </div>
 
@@ -200,14 +200,14 @@ export const Projects: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Projects List Column */}
           <div className="lg:col-span-1 space-y-4">
-            <h2 className="text-sm font-semibold text-[#94A3B8] uppercase tracking-wider">Project Repositories</h2>
+            <h2 className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">Project repositories</h2>
             {loading ? (
               <div className="p-6 bg-[#0F1B2E] border border-[#1E2D45] rounded-xl text-center text-[#94A3B8] text-sm">
                 Loading projects...
               </div>
             ) : projects.length === 0 ? (
               <div className="p-6 bg-[#0F1B2E] border border-[#1E2D45] rounded-xl text-center text-[#94A3B8] text-sm">
-                No projects found. Click "New Project" to add your first repository.
+                No projects found. Click "New project" to add your first repository.
               </div>
             ) : (
               <div className="space-y-3">
@@ -267,12 +267,12 @@ export const Projects: React.FC = () => {
                         className="px-3.5 py-2 bg-[#38BDF8] hover:bg-[#38BDF8]/90 text-[#060B18] font-semibold text-xs rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <Rocket className="w-3.5 h-3.5" />
-                        <span>Trigger Deployment</span>
+                        <span>Trigger deployment</span>
                       </button>
                       <button
                         onClick={() => handleDeleteProject(selectedProject.id)}
                         className="p-2 bg-red-950/40 hover:bg-red-900/60 border border-red-800/60 text-red-400 rounded-lg text-xs transition-colors cursor-pointer"
-                        title="Delete Project (Owner/Admin only)"
+                        title="Delete project (Owner/Admin only)"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -293,7 +293,7 @@ export const Projects: React.FC = () => {
                       </a>
                     </div>
                     <div>
-                      <span className="block font-semibold text-[#F8FAFC]/70 uppercase tracking-wider text-[10px]">Project Owner</span>
+                      <span className="block font-semibold text-[#F8FAFC]/70 uppercase tracking-wider text-[10px]">Project owner</span>
                       <span className="text-[#F8FAFC] mt-0.5 block">{selectedProject.ownerName} ({selectedProject.ownerEmail})</span>
                     </div>
                   </div>
@@ -303,7 +303,7 @@ export const Projects: React.FC = () => {
                 <div className="bg-[#0F1B2E] border border-[#1E2D45] rounded-xl p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-base font-bold text-[#F8FAFC]">Deployment History</h3>
+                      <h3 className="text-base font-bold text-[#F8FAFC]">Deployment history</h3>
                       <p className="text-xs text-[#94A3B8]">Simulated pipeline execution states (Draft → Building → Deploying → Running)</p>
                     </div>
                     <button
@@ -329,7 +329,7 @@ export const Projects: React.FC = () => {
                             <th className="py-3 px-4">Environment</th>
                             <th className="py-3 px-4">Version</th>
                             <th className="py-3 px-4">Status</th>
-                            <th className="py-3 px-4">Deployed By</th>
+                            <th className="py-3 px-4">Deployed by</th>
                             <th className="py-3 px-4">Timestamp</th>
                           </tr>
                         </thead>
@@ -366,7 +366,7 @@ export const Projects: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
           <div className="bg-[#0F1B2E] border border-[#1E2D45] rounded-xl w-full max-w-lg p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-[#1E2D45] pb-4">
-              <h3 className="text-lg font-bold text-[#F8FAFC]">Create New Project</h3>
+              <h3 className="text-lg font-bold text-[#F8FAFC]">Create new project</h3>
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="text-[#94A3B8] hover:text-[#F8FAFC]"
@@ -378,7 +378,7 @@ export const Projects: React.FC = () => {
             <form onSubmit={handleCreateProject} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
-                  Project Name *
+                  Project name *
                 </label>
                 <input
                   type="text"
@@ -430,7 +430,7 @@ export const Projects: React.FC = () => {
                   disabled={createSubmitting}
                   className="px-4 py-2 bg-[#38BDF8] hover:bg-[#38BDF8]/90 text-[#060B18] text-sm font-semibold rounded-lg disabled:opacity-50"
                 >
-                  {createSubmitting ? 'Creating...' : 'Create Project'}
+                  {createSubmitting ? 'Creating...' : 'Create project'}
                 </button>
               </div>
             </form>
@@ -443,7 +443,7 @@ export const Projects: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
           <div className="bg-[#0F1B2E] border border-[#1E2D45] rounded-xl w-full max-w-md p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-[#1E2D45] pb-4">
-              <h3 className="text-lg font-bold text-[#F8FAFC]">Trigger Deployment</h3>
+              <h3 className="text-lg font-bold text-[#F8FAFC]">Trigger deployment</h3>
               <button
                 onClick={() => setShowDeployModal(false)}
                 className="text-[#94A3B8] hover:text-[#F8FAFC]"
@@ -455,7 +455,7 @@ export const Projects: React.FC = () => {
             <form onSubmit={handleTriggerDeployment} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
-                  Target Environment *
+                  Target environment *
                 </label>
                 <select
                   value={deployEnvironment}
@@ -470,7 +470,7 @@ export const Projects: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-2">
-                  Version Tag *
+                  Version tag *
                 </label>
                 <input
                   type="text"
@@ -495,7 +495,7 @@ export const Projects: React.FC = () => {
                   disabled={deploySubmitting}
                   className="px-4 py-2 bg-[#38BDF8] hover:bg-[#38BDF8]/90 text-[#060B18] text-sm font-semibold rounded-lg disabled:opacity-50"
                 >
-                  {deploySubmitting ? 'Triggering...' : 'Trigger Pipeline'}
+                  {deploySubmitting ? 'Triggering...' : 'Trigger pipeline'}
                 </button>
               </div>
             </form>

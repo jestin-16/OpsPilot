@@ -1,5 +1,6 @@
 package com.opspilot.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -62,6 +63,13 @@ public class SecurityConfig {
             .cors(Customizer.withDefaults())
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Authentication token is missing or invalid\"}");
+                })
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**", "/api/v1/auth/**", "/api/webhooks/**", "/h2-console/**", "/error", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

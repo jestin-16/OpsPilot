@@ -20,9 +20,9 @@ public class UnauthorizedAccessIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    @DisplayName("Verify unauthenticated request to protected endpoint returns HTTP 403 / 401")
+    @DisplayName("Verify unauthenticated request to protected endpoint returns HTTP 401 Unauthorized")
     public void testUnauthenticatedAccessIsBlocked() throws Exception {
         mockMvc.perform(get("/api/v1/projects"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

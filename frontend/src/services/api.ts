@@ -1,5 +1,112 @@
-const API_BASE_URL = 'http://localhost:8080/api';
+import axios, { AxiosError } from 'axios';
+import { z } from 'zod';
 
+const API_BASE_URL = 'http://localhost:8080/api/v1';
+
+// Axios Instance with Credentials for httpOnly Cookies
+export const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request Interceptor: Attach Access Token
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('opspilot_token');
+  if (token && config.headers) {
+    config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Response Interceptor: 401 Auto-Refresh Loop
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else if (token) {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest: any = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/register') && !originalRequest.url?.includes('/auth/refresh')) {
+      originalRequest._retry = true;
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({
+            resolve: (token: string) => {
+              originalRequest.headers['Authorization'] = `Bearer ${token}`;
+              resolve(axiosInstance(originalRequest));
+            },
+            reject: (err) => reject(err),
+          });
+        });
+      }
+
+      isRefreshing = true;
+
+      try {
+        const { data } = await axios.post<AuthResponse>(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+        localStorage.setItem('opspilot_token', data.token);
+        localStorage.setItem('opspilot_user', JSON.stringify({ id: data.id, name: data.name, email: data.email, roles: data.roles }));
+
+        processQueue(null, data.token);
+        isRefreshing = false;
+
+        originalRequest.headers['Authorization'] = `Bearer ${data.token}`;
+        return axiosInstance(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        isRefreshing = false;
+        localStorage.removeItem('opspilot_token');
+        localStorage.removeItem('opspilot_user');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(refreshErr);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// Zod Validation Schemas (Item 5.2)
+export const RegisterSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  email: z.string().email('Invalid email address format'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters long')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/, 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 digit'),
+  role: z.string().min(1, 'Role is required'),
+});
+
+export const LoginSchema = z.object({
+  email: z.string().email('Invalid email address format'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+export const ProjectSchema = z.object({
+  projectName: z.string().min(2, 'Project name must be at least 2 characters'),
+  description: z.string().min(5, 'Description must be at least 5 characters'),
+  repositoryUrl: z.string().url('Invalid repository URL format'),
+});
+
+// TypeScript Interfaces
 export interface User {
   id: number;
   name: string;
@@ -26,6 +133,15 @@ export interface Project {
   ownerEmail: string;
   status: string;
   createdAt: string;
+}
+
+export interface PagedResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
 }
 
 export interface Deployment {
@@ -109,233 +225,131 @@ export interface AiDiagnosisResponse {
   correlatedLogs: LogEntry[];
 }
 
-const getHeaders = () => {
-  const token = localStorage.getItem('opspilot_token');
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-};
-
 export const api = {
   // Auth
-  register: async (data: { name: string; email: string; password: string; role: string }): Promise<AuthResponse> => {
-    const res = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Registration failed' }));
-      throw new Error(err.message || 'Registration failed');
-    }
-    return res.json();
+  register: async (data: z.infer<typeof RegisterSchema>): Promise<AuthResponse> => {
+    RegisterSchema.parse(data);
+    const res = await axiosInstance.post<AuthResponse>('/auth/register', data);
+    return res.data;
   },
 
-  login: async (data: { email: string; password: string }): Promise<AuthResponse> => {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Invalid credentials' }));
-      throw new Error(err.message || 'Invalid credentials');
-    }
-    return res.json();
+  login: async (data: z.infer<typeof LoginSchema>): Promise<AuthResponse> => {
+    LoginSchema.parse(data);
+    const res = await axiosInstance.post<AuthResponse>('/auth/login', data);
+    return res.data;
   },
 
   // Projects
   getProjects: async (): Promise<Project[]> => {
-    const res = await fetch(`${API_BASE_URL}/projects`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch projects');
-    return res.json();
+    const res = await axiosInstance.get<PagedResponse<Project>>('/projects');
+    return res.data.content;
+  },
+
+  getPaginatedProjects: async (page = 0, size = 10, sortBy = 'id', sortDir = 'asc'): Promise<PagedResponse<Project>> => {
+    const res = await axiosInstance.get<PagedResponse<Project>>(`/projects?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`);
+    return res.data;
   },
 
   getProjectById: async (id: number): Promise<Project> => {
-    const res = await fetch(`${API_BASE_URL}/projects/${id}`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch project details');
-    return res.json();
+    const res = await axiosInstance.get<Project>(`/projects/${id}`);
+    return res.data;
   },
 
-  createProject: async (data: { projectName: string; description: string; repositoryUrl: string; status?: string }): Promise<Project> => {
-    const res = await fetch(`${API_BASE_URL}/projects`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
+  createProject: async (data: z.infer<typeof ProjectSchema> & { status?: string }): Promise<Project> => {
+    ProjectSchema.parse({
+      projectName: data.projectName,
+      description: data.description,
+      repositoryUrl: data.repositoryUrl,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Failed to create project' }));
-      throw new Error(err.message || 'Failed to create project');
-    }
-    return res.json();
+    const res = await axiosInstance.post<Project>('/projects', data);
+    return res.data;
   },
 
-  updateProject: async (id: number, data: { projectName?: string; description?: string; repositoryUrl?: string; status?: string }): Promise<Project> => {
-    const res = await fetch(`${API_BASE_URL}/projects/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Failed to update project' }));
-      throw new Error(err.message || 'Failed to update project');
-    }
-    return res.json();
+  updateProject: async (id: number, data: Partial<z.infer<typeof ProjectSchema>> & { status?: string }): Promise<Project> => {
+    const res = await axiosInstance.put<Project>(`/projects/${id}`, data);
+    return res.data;
   },
 
   deleteProject: async (id: number): Promise<void> => {
-    const res = await fetch(`${API_BASE_URL}/projects/${id}`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Failed to delete project' }));
-      throw new Error(err.message || 'Failed to delete project');
-    }
+    await axiosInstance.delete(`/projects/${id}`);
   },
 
   // Deployments
   getDeployments: async (projectId: number): Promise<Deployment[]> => {
-    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/deployments`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch deployments');
-    return res.json();
+    const res = await axiosInstance.get<Deployment[]>(`/projects/${projectId}/deployments`);
+    return res.data;
   },
 
   triggerDeployment: async (projectId: number, data: { version: string; environment: string }): Promise<Deployment> => {
-    const res = await fetch(`${API_BASE_URL}/projects/${projectId}/deployments`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'Failed to trigger deployment' }));
-      throw new Error(err.message || 'Failed to trigger deployment');
-    }
-    return res.json();
+    const res = await axiosInstance.post<Deployment>(`/projects/${projectId}/deployments`, data);
+    return res.data;
   },
 
   // Docker
   getDockerContainers: async (): Promise<Container[]> => {
-    const res = await fetch(`${API_BASE_URL}/docker/containers`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch docker containers');
-    return res.json();
+    const res = await axiosInstance.get<Container[]>('/docker/containers');
+    return res.data;
   },
 
   startContainer: async (id: number): Promise<Container> => {
-    const res = await fetch(`${API_BASE_URL}/docker/containers/${id}/start`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to start container');
-    return res.json();
+    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/start`);
+    return res.data;
   },
 
   stopContainer: async (id: number): Promise<Container> => {
-    const res = await fetch(`${API_BASE_URL}/docker/containers/${id}/stop`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to stop container');
-    return res.json();
+    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/stop`);
+    return res.data;
   },
 
   restartContainer: async (id: number): Promise<Container> => {
-    const res = await fetch(`${API_BASE_URL}/docker/containers/${id}/restart`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to restart container');
-    return res.json();
+    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/restart`);
+    return res.data;
   },
 
   // Kubernetes
   getKubernetesPods: async (): Promise<Pod[]> => {
-    const res = await fetch(`${API_BASE_URL}/kubernetes/pods`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch kubernetes pods');
-    return res.json();
+    const res = await axiosInstance.get<Pod[]>('/kubernetes/pods');
+    return res.data;
   },
 
   // Logs
   getLogs: async (params?: { sourceService?: string; logLevel?: string; query?: string }): Promise<LogEntry[]> => {
-    const url = new URL(`${API_BASE_URL}/logs`);
-    if (params?.sourceService) url.searchParams.append('sourceService', params.sourceService);
-    if (params?.logLevel) url.searchParams.append('logLevel', params.logLevel);
-    if (params?.query) url.searchParams.append('query', params.query);
-
-    const res = await fetch(url.toString(), {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch system logs');
-    return res.json();
+    const res = await axiosInstance.get<LogEntry[]>('/logs', { params });
+    return res.data;
   },
 
   createLog: async (data: { sourceService: string; logLevel: string; message: string }): Promise<LogEntry> => {
-    const res = await fetch(`${API_BASE_URL}/logs`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error('Failed to post log entry');
-    return res.json();
+    const res = await axiosInstance.post<LogEntry>('/logs', data);
+    return res.data;
   },
 
   // Notifications
   getNotifications: async (): Promise<NotificationItem[]> => {
-    const res = await fetch(`${API_BASE_URL}/notifications`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch notifications');
-    return res.json();
+    const res = await axiosInstance.get<NotificationItem[]>('/notifications');
+    return res.data;
   },
 
   markNotificationRead: async (id: number): Promise<NotificationItem> => {
-    const res = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
-      method: 'PUT',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to mark notification as read');
-    return res.json();
+    const res = await axiosInstance.put<NotificationItem>(`/notifications/${id}/read`);
+    return res.data;
   },
 
   // Monitoring
   getMetrics: async (): Promise<MetricsData> => {
-    const res = await fetch(`${API_BASE_URL}/monitoring/metrics`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch monitoring metrics');
-    return res.json();
+    const res = await axiosInstance.get<MetricsData>('/monitoring/metrics');
+    return res.data;
   },
 
   // CI/CD
   getPipelineRuns: async (): Promise<PipelineRun[]> => {
-    const res = await fetch(`${API_BASE_URL}/cicd/runs`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch pipeline runs');
-    return res.json();
+    const res = await axiosInstance.get<PipelineRun[]>('/cicd/runs');
+    return res.data;
   },
 
-  simulateGitHubWebhook: async (eventType: string = 'push'): Promise<any> => {
-    const res = await fetch(`${API_BASE_URL}/webhooks/github`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-GitHub-Event': eventType,
-      },
-      body: JSON.stringify({
+  simulateGitHubWebhook: async (eventType = 'push'): Promise<any> => {
+    const res = await axiosInstance.post(
+      '/webhooks/github',
+      {
         ref: 'refs/heads/main',
         repository: {
           name: 'payment-engine',
@@ -349,23 +363,19 @@ export const api = {
             email: 'bot@github.com',
           },
         },
-      }),
-    });
-    if (!res.ok) throw new Error('Failed to send webhook event');
-    return res.json();
+      },
+      {
+        headers: {
+          'X-GitHub-Event': eventType,
+        },
+      }
+    );
+    return res.data;
   },
 
   // AI Assistant
   queryAiAssistant: async (data: { prompt: string; deploymentId?: number }): Promise<AiDiagnosisResponse> => {
-    const res = await fetch(`${API_BASE_URL}/ai/query`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: 'AI Assistant query failed' }));
-      throw new Error(err.message || 'AI Assistant query failed');
-    }
-    return res.json();
+    const res = await axiosInstance.post<AiDiagnosisResponse>('/ai/query', data);
+    return res.data;
   },
 };

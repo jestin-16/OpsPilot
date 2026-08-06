@@ -9,8 +9,7 @@ public class AuditLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "audit_id")
-    private Long auditId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -19,11 +18,14 @@ public class AuditLog {
     @Column(nullable = false)
     private String action;
 
-    @Column(name = "entity_affected", nullable = false)
-    private String entityAffected;
+    @Column(name = "resource_type", nullable = false)
+    private String resourceType;
 
-    @Column(name = "entity_id")
-    private Long entityId;
+    @Column(name = "resource_id")
+    private String resourceId;
+
+    @Column(columnDefinition = "TEXT")
+    private String details;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
@@ -32,20 +34,21 @@ public class AuditLog {
         this.timestamp = LocalDateTime.now();
     }
 
-    public AuditLog(User user, String action, String entityAffected, Long entityId) {
+    public AuditLog(User user, String action, String resourceType, String resourceId, String details) {
         this.user = user;
         this.action = action;
-        this.entityAffected = entityAffected;
-        this.entityId = entityId;
+        this.resourceType = resourceType;
+        this.resourceId = resourceId;
+        this.details = details;
         this.timestamp = LocalDateTime.now();
     }
 
-    public Long getAuditId() {
-        return auditId;
+    public Long getId() {
+        return id;
     }
 
-    public void setAuditId(Long auditId) {
-        this.auditId = auditId;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public User getUser() {
@@ -64,20 +67,28 @@ public class AuditLog {
         this.action = action;
     }
 
-    public String getEntityAffected() {
-        return entityAffected;
+    public String getResourceType() {
+        return resourceType;
     }
 
-    public void setEntityAffected(String entityAffected) {
-        this.entityAffected = entityAffected;
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 
-    public Long getEntityId() {
-        return entityId;
+    public String getResourceId() {
+        return resourceId;
     }
 
-    public void setEntityId(Long entityId) {
-        this.entityId = entityId;
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
     }
 
     public LocalDateTime getTimestamp() {

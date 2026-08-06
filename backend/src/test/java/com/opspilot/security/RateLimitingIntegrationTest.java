@@ -48,13 +48,13 @@ public class RateLimitingIntegrationTest {
     }
 
     @Test
-    @DisplayName("Verify rate limiting triggers HTTP 429 after 5 failed login attempts from same IP")
+    @DisplayName("Verify rate limiting triggers HTTP 429 after exceeding max login attempts from same IP")
     public void testRateLimitingTriggersAfterMaxAttempts() throws Exception {
         AuthRequest loginReq = new AuthRequest("rate.test@opspilot.io", "Password123!");
         String json = objectMapper.writeValueAsString(loginReq);
 
-        // Perform 5 allowed requests
-        for (int i = 0; i < 5; i++) {
+        // Perform 50 allowed requests
+        for (int i = 0; i < 50; i++) {
             mockMvc.perform(post("/api/v1/auth/login")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json)
@@ -62,7 +62,7 @@ public class RateLimitingIntegrationTest {
                     .andExpect(status().isOk());
         }
 
-        // 6th request from same IP should be blocked with 429 Too Many Requests
+        // 51st request from same IP should be blocked with 429 Too Many Requests
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json)

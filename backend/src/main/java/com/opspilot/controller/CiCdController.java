@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/cicd")
+@RequestMapping({"/api/v1/cicd", "/api/cicd"})
 public class CiCdController {
 
     @Autowired

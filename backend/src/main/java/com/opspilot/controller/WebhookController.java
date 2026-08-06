@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/webhooks")
+@RequestMapping({"/api/v1/webhooks", "/api/webhooks"})
 public class WebhookController {
 
     @Autowired

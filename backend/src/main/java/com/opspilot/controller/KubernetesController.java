@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/kubernetes")
+@RequestMapping({"/api/v1/kubernetes", "/api/kubernetes"})
 public class KubernetesController {
 
     @Autowired

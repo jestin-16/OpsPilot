@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/monitoring")
+@RequestMapping({"/api/v1/monitoring", "/api/monitoring"})
 public class MonitoringController {
 
     @Autowired

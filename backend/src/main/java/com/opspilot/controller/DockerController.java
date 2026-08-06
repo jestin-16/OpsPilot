@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/docker")
+@RequestMapping({"/api/v1/docker", "/api/docker"})
 public class DockerController {
 
     @Autowired

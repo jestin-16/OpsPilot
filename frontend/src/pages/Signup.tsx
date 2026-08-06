@@ -25,7 +25,8 @@ export const Signup: React.FC = () => {
       login(res);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Registration failed');
+      const msg = err.response?.data?.message || err.message || 'Registration failed';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -107,6 +108,7 @@ export const Signup: React.FC = () => {
                 className="w-full pl-9 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[#0F172A] text-xs focus:outline-none focus:border-[#4F46E5] focus:bg-[#FFFFFF] placeholder-[#94A3B8]"
               />
             </div>
+            <p className="text-[10px] text-[#94A3B8] mt-1">Must be 8+ chars with 1 uppercase, 1 lowercase & 1 digit</p>
           </div>
 
           <div>

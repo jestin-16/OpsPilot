@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
-    private static final int MAX_ATTEMPTS = 5;
+    private static final int MAX_ATTEMPTS = 50;
     private static final long WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
     private final Map<String, List<Long>> requestCounts = new ConcurrentHashMap<>();
@@ -41,7 +41,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                 if (timestamps.size() >= MAX_ATTEMPTS) {
                     response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
                     response.setContentType("application/json");
-                    response.getWriter().write("{\"status\":429,\"error\":\"Too Many Requests\",\"message\":\"Rate limit exceeded. Maximum 5 attempts allowed per 15 minutes.\"}");
+                    response.getWriter().write("{\"status\":429,\"error\":\"Too Many Requests\",\"message\":\"Rate limit exceeded. Maximum attempts allowed per 15 minutes.\"}");
                     return;
                 }
 

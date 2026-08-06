@@ -23,7 +23,8 @@ export const Login: React.FC = () => {
       login(res);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Invalid credentials');
+      const msg = err.response?.data?.message || err.message || 'Invalid credentials';
+      setError(msg);
     } finally {
       setLoading(false);
     }

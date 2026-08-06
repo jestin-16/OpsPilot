@@ -41,9 +41,11 @@ public class DeploymentService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
 
+        User effectiveUser = currentUser != null ? currentUser : project.getOwner();
+
         Deployment deployment = new Deployment(
                 project,
-                currentUser,
+                effectiveUser,
                 request.getVersion(),
                 request.getEnvironment(),
                 "Draft"
@@ -138,12 +140,15 @@ public class DeploymentService {
     }
 
     private DeploymentResponse mapToResponse(Deployment deployment) {
+        Long userAuthId = deployment.getDeployedBy() != null ? deployment.getDeployedBy().getId() : (deployment.getProject().getOwner() != null ? deployment.getProject().getOwner().getId() : 1L);
+        String userAuthName = deployment.getDeployedBy() != null ? deployment.getDeployedBy().getName() : (deployment.getProject().getOwner() != null ? deployment.getProject().getOwner().getName() : "System");
+
         return new DeploymentResponse(
                 deployment.getId(),
                 deployment.getProject().getId(),
                 deployment.getProject().getProjectName(),
-                deployment.getDeployedBy().getId(),
-                deployment.getDeployedBy().getName(),
+                userAuthId,
+                userAuthName,
                 deployment.getVersion(),
                 deployment.getEnvironment(),
                 deployment.getStatus(),

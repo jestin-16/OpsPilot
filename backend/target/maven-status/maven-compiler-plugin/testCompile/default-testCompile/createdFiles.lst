@@ -1,2 +1,6 @@
-com/opspilot/service/AuthServiceTest.class
+com/opspilot/integration/AbstractPostgresIntegrationTest.class
+com/opspilot/security/UnauthorizedAccessIntegrationTest.class
 com/opspilot/service/ProjectServiceTest.class
+com/opspilot/security/RateLimitingIntegrationTest.class
+com/opspilot/security/SecurityPayloadTest.class
+com/opspilot/service/AuthServiceTest.class

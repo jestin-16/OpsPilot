@@ -7,15 +7,19 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/Deployment.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/LogService.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/AuditLog.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/RefreshTokenRepository.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/NotificationService.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/AuditLogRepository.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/User.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/DeploymentResponse.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/config/RateLimitingFilter.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/AuthController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AiDiagnosisResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/PodRepository.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/event/AuditEventListener.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/DeploymentService.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/RegisterRequest.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/event/AuditEvent.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/NotificationController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/ForbiddenException.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/PipelineRunEntity.java
@@ -23,6 +27,7 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/DockerController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/ContainerEntity.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/MonitoringController.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/PagedResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/ProjectRequest.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/repository/DeploymentRepository.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/service/ProjectService.java
@@ -32,6 +37,8 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/config/JwtAuthenticationFilter.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/KubernetesController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/CiCdController.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/UnauthorizedException.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/config/OpenApiConfig.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AuthResponse.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/AuthRequest.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/dto/WebhookPayload.java
@@ -55,5 +62,6 @@
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/GlobalExceptionHandler.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/AiAssistantController.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/exception/ResourceNotFoundException.java
+/home/jestin/OpsPilot/backend/src/main/java/com/opspilot/entity/RefreshToken.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/OpsPilotApplication.java
 /home/jestin/OpsPilot/backend/src/main/java/com/opspilot/controller/DeploymentController.java

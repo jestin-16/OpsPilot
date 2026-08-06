@@ -1,2 +1,6 @@
 /home/jestin/OpsPilot/backend/src/test/java/com/opspilot/service/ProjectServiceTest.java
+/home/jestin/OpsPilot/backend/src/test/java/com/opspilot/security/UnauthorizedAccessIntegrationTest.java
+/home/jestin/OpsPilot/backend/src/test/java/com/opspilot/integration/AbstractPostgresIntegrationTest.java
 /home/jestin/OpsPilot/backend/src/test/java/com/opspilot/service/AuthServiceTest.java
+/home/jestin/OpsPilot/backend/src/test/java/com/opspilot/security/SecurityPayloadTest.java
+/home/jestin/OpsPilot/backend/src/test/java/com/opspilot/security/RateLimitingIntegrationTest.java

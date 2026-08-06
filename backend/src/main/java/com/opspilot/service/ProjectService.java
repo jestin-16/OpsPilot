@@ -4,10 +4,12 @@ import com.opspilot.dto.ProjectRequest;
 import com.opspilot.dto.ProjectResponse;
 import com.opspilot.entity.Project;
 import com.opspilot.entity.User;
+import com.opspilot.event.AuditEvent;
 import com.opspilot.exception.ForbiddenException;
 import com.opspilot.exception.ResourceNotFoundException;
 import com.opspilot.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,15 +22,12 @@ public class ProjectService {
     @Autowired
     private ProjectRepository projectRepository;
 
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     public List<ProjectResponse> getAllProjectsForUser(User currentUser) {
-        // If administrator, return all projects, otherwise return projects created by user or all accessible projects
         boolean isAdmin = isAdministrator(currentUser);
         List<Project> projects = isAdmin ? projectRepository.findAll() : projectRepository.findByOwner(currentUser);
-
-        // Fallback: If non-admin user has no created projects yet, show all projects or their own
-        if (!isAdmin && projects.isEmpty()) {
-            projects = projectRepository.findAll();
-        }
 
         return projects.stream()
                 .map(this::mapToResponse)
@@ -38,6 +37,9 @@ public class ProjectService {
     public ProjectResponse getProjectById(Long id, User currentUser) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+
+        verifyOwnerOrAdmin(project, currentUser);
+
         return mapToResponse(project);
     }
 
@@ -52,6 +54,13 @@ public class ProjectService {
         );
 
         Project savedProject = projectRepository.save(project);
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new AuditEvent(
+                    this, currentUser, "PROJECT_CREATE", "PROJECT", savedProject.getId().toString(), "Created project: " + savedProject.getProjectName()
+            ));
+        }
+
         return mapToResponse(savedProject);
     }
 
@@ -76,6 +85,13 @@ public class ProjectService {
         }
 
         Project updatedProject = projectRepository.save(project);
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new AuditEvent(
+                    this, currentUser, "PROJECT_UPDATE", "PROJECT", updatedProject.getId().toString(), "Updated project: " + updatedProject.getProjectName()
+            ));
+        }
+
         return mapToResponse(updatedProject);
     }
 
@@ -87,6 +103,12 @@ public class ProjectService {
         verifyOwnerOrAdmin(project, currentUser);
 
         projectRepository.delete(project);
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new AuditEvent(
+                    this, currentUser, "PROJECT_DELETE", "PROJECT", id.toString(), "Deleted project: " + project.getProjectName()
+            ));
+        }
     }
 
     public void verifyOwnerOrAdmin(Project project, User currentUser) {
@@ -94,7 +116,7 @@ public class ProjectService {
         boolean isAdmin = isAdministrator(currentUser);
 
         if (!isOwner && !isAdmin) {
-            throw new ForbiddenException("Only the project owner or an Administrator can update/delete a project");
+            throw new ForbiddenException("Only the project owner or an Administrator can access/update/delete this project");
         }
     }
 

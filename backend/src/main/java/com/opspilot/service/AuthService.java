@@ -41,6 +41,9 @@ public class AuthService {
     @Autowired
     private JwtTokenProvider tokenProvider;
 
+    @Autowired
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -78,6 +81,12 @@ public class AuthService {
                 .map(Role::getRoleName)
                 .collect(Collectors.toSet());
 
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.opspilot.event.AuditEvent(
+                    this, savedUser, "USER_REGISTER", "USER", savedUser.getId().toString(), "User registered successfully: " + savedUser.getEmail()
+            ));
+        }
+
         return new AuthResponse(accessToken, savedUser.getId(), savedUser.getName(), savedUser.getEmail(), roleNames);
     }
 
@@ -103,6 +112,12 @@ public class AuthService {
         Set<String> roleNames = user.getRoles().stream()
                 .map(Role::getRoleName)
                 .collect(Collectors.toSet());
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.opspilot.event.AuditEvent(
+                    this, user, "USER_LOGIN", "USER", user.getId().toString(), "User authenticated successfully: " + user.getEmail()
+            ));
+        }
 
         return new AuthResponse(accessToken, user.getId(), user.getName(), user.getEmail(), roleNames);
     }

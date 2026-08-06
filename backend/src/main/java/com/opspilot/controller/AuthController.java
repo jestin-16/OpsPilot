@@ -6,6 +6,8 @@ import com.opspilot.dto.RegisterRequest;
 import com.opspilot.entity.RefreshToken;
 import com.opspilot.exception.UnauthorizedException;
 import com.opspilot.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -21,7 +23,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping({"/api/v1/auth", "/api/auth"})
+@Tag(name = "Authentication & RBAC", description = "Endpoints for user registration, authentication, token rotation, and logout")
 public class AuthController {
 
     @Autowired
@@ -50,6 +53,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
+    @Operation(summary = "Register a new user account with role-based access")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response) {
         AuthResponse authResponse = authService.register(request);
         RefreshToken refreshToken = authService.createRefreshToken(authResponse.getId());
@@ -59,6 +63,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Authenticate user credentials and issue access + refresh tokens")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request, HttpServletResponse response) {
         AuthResponse authResponse = authService.login(request);
         RefreshToken refreshToken = authService.createRefreshToken(authResponse.getId());
@@ -68,6 +73,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
+    @Operation(summary = "Rotate refresh token and issue new short-lived access token")
     public ResponseEntity<AuthResponse> refresh(HttpServletRequest request, HttpServletResponse response) {
         String refreshTokenStr = null;
         if (request.getCookies() != null) {
@@ -91,6 +97,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "Invalidate refresh token and clear authentication cookie")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         if (request.getCookies() != null) {
             Arrays.stream(request.getCookies())

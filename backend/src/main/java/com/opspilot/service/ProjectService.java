@@ -34,6 +34,33 @@ public class ProjectService {
                 .collect(Collectors.toList());
     }
 
+    public com.opspilot.dto.PagedResponse<ProjectResponse> getPaginatedProjectsForUser(
+            User currentUser, int page, int size, String sortBy, String sortDir) {
+        org.springframework.data.domain.Sort sort = sortDir.equalsIgnoreCase("desc")
+                ? org.springframework.data.domain.Sort.by(sortBy).descending()
+                : org.springframework.data.domain.Sort.by(sortBy).ascending();
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+
+        boolean isAdmin = isAdministrator(currentUser);
+        org.springframework.data.domain.Page<Project> projectPage = isAdmin
+                ? projectRepository.findAll(pageable)
+                : projectRepository.findByOwner(currentUser, pageable);
+
+        List<ProjectResponse> content = projectPage.getContent().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+
+        return new com.opspilot.dto.PagedResponse<>(
+                content,
+                projectPage.getNumber(),
+                projectPage.getSize(),
+                projectPage.getTotalElements(),
+                projectPage.getTotalPages(),
+                projectPage.isLast()
+        );
+    }
+
     public ProjectResponse getProjectById(Long id, User currentUser) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));

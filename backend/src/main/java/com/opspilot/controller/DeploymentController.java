@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/projects/{projectId}/deployments")
+@RequestMapping({"/api/v1/projects/{projectId}/deployments", "/api/projects/{projectId}/deployments"})
 public class DeploymentController {
 
     @Autowired

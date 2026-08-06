@@ -15,11 +15,16 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${app.jwt.secret}")
+    @Value("${app.jwt.secret:9a6f8b12c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration-ms}")
+    // Short-lived access token duration: 15 minutes (900000 ms)
+    @Value("${app.jwt.expiration-ms:900000}")
     private long jwtExpirationMs;
+
+    // Refresh token duration: 7 days (604800000 ms)
+    @Value("${app.jwt.refresh-expiration-ms:604800000}")
+    private long jwtRefreshExpirationMs;
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
@@ -32,6 +37,10 @@ public class JwtTokenProvider {
                 .map(GrantedAuthority::getAuthority)
                 .toList();
 
+        return generateTokenFromEmail(email, roles);
+    }
+
+    public String generateTokenFromEmail(String email, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
@@ -44,13 +53,13 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String generateTokenFromEmail(String email, List<String> roles) {
+    public String generateRefreshTokenFromEmail(String email) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+        Date expiryDate = new Date(now.getTime() + jwtRefreshExpirationMs);
 
         return Jwts.builder()
                 .subject(email)
-                .claim("roles", roles)
+                .claim("type", "refresh")
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
@@ -77,5 +86,9 @@ public class JwtTokenProvider {
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
+    }
+
+    public long getJwtRefreshExpirationMs() {
+        return jwtRefreshExpirationMs;
     }
 }

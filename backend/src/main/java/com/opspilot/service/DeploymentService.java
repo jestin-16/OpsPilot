@@ -35,13 +35,22 @@ public class DeploymentService {
     @Autowired
     private NotificationRepository notificationRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
 
     public DeploymentResponse createDeployment(Long projectId, DeploymentRequest request, User currentUser) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
 
-        User effectiveUser = currentUser != null ? currentUser : project.getOwner();
+        User effectiveUser = currentUser;
+        if (effectiveUser == null) {
+            effectiveUser = project.getOwner();
+        }
+        if (effectiveUser == null) {
+            effectiveUser = userRepository.findAll().stream().findFirst().orElse(null);
+        }
 
         Deployment deployment = new Deployment(
                 project,

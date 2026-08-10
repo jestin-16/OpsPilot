@@ -16,7 +16,7 @@ public class Deployment {
     private Project project;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "deployed_by", nullable = false)
+    @JoinColumn(name = "deployed_by_id", nullable = false)
     private User deployedBy;
 
     @Column(nullable = false)

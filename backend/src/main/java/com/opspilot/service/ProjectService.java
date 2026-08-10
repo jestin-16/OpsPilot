@@ -65,7 +65,9 @@ public class ProjectService {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
 
-        verifyOwnerOrAdmin(project, currentUser);
+        if (currentUser != null) {
+            verifyOwnerOrAdmin(project, currentUser);
+        }
 
         return mapToResponse(project);
     }
@@ -155,6 +157,7 @@ public class ProjectService {
     }
 
     private ProjectResponse mapToResponse(Project project) {
+        String deployedUrl = "http://localhost:8080/api/v1/projects/" + project.getId() + "/output";
         return new ProjectResponse(
                 project.getId(),
                 project.getProjectName(),
@@ -163,6 +166,7 @@ public class ProjectService {
                 project.getOwner().getId(),
                 project.getOwner().getName(),
                 project.getOwner().getEmail(),
+                deployedUrl,
                 project.getStatus(),
                 project.getCreatedAt()
         );

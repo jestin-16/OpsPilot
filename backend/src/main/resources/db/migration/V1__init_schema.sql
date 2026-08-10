@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS containers (
 -- Pods Table
 CREATE TABLE IF NOT EXISTS pods (
     pod_id BIGSERIAL PRIMARY KEY,
-    deployment_id BIGINT REFERENCES deployments(id) ON DELETE SET NULL,
+    container_id BIGINT REFERENCES containers(container_id) ON DELETE SET NULL,
     node_name VARCHAR(255) NOT NULL,
     pod_status VARCHAR(50) NOT NULL,
     cpu_usage VARCHAR(50) NOT NULL,
@@ -81,13 +81,14 @@ CREATE TABLE IF NOT EXISTS notifications (
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     message TEXT NOT NULL,
     type VARCHAR(50) NOT NULL,
-    read BOOLEAN NOT NULL DEFAULT FALSE,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Pipeline_Runs Table
 CREATE TABLE IF NOT EXISTS pipeline_runs (
     run_id BIGSERIAL PRIMARY KEY,
+    project_id BIGINT REFERENCES projects(id) ON DELETE CASCADE,
     event_type VARCHAR(50) NOT NULL,
     branch VARCHAR(255) NOT NULL,
     commit_sha VARCHAR(100) NOT NULL,

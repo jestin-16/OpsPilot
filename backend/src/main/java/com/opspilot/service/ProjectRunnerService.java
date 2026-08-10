@@ -326,25 +326,81 @@ public class ProjectRunnerService {
 
     /** Launch a minimal demo HTTP server using netcat or Python (always available). */
     private ProcessBuilder buildDemoServer(int port) {
-        // Use Python to serve a tiny JSON response
-        String script = String.format(
-                "import http.server, json, time, threading\n" +
-                "start = time.time()\n" +
-                "class H(http.server.BaseHTTPRequestHandler):\n" +
-                "    def do_GET(self):\n" +
-                "        body = json.dumps({'service':'OpsPilot Demo','status':'ONLINE','uptimeSeconds':round(time.time()-start),'path':self.path,'port':%d}).encode()\n" +
-                "        self.send_response(200)\n" +
-                "        self.send_header('Content-Type','application/json')\n" +
-                "        self.send_header('Access-Control-Allow-Origin','*')\n" +
-                "        self.end_headers()\n" +
-                "        self.wfile.write(body)\n" +
-                "    def log_message(self,fmt,*args): print('[HTTP]',fmt%%args,flush=True)\n" +
-                "print('OpsPilot demo server running on port %d',flush=True)\n" +
-                "http.server.HTTPServer(('',  %d),H).serve_forever()\n",
-                port, port, port
-        );
+        // Serves a proper HTML dashboard at / and JSON at /api
+        String script =
+            "import http.server, json, time, html as h\n" +
+            "start = time.time()\n" +
+            "PAGE = '''<!DOCTYPE html>\n" +
+            "<html lang=en><head><meta charset=UTF-8>\n" +
+            "<title>OpsPilot Live App</title>\n" +
+            "<link href=https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap rel=stylesheet>\n" +
+            "<style>\n" +
+            "*{box-sizing:border-box;margin:0;padding:0}\n" +
+            "body{font-family:Inter,sans-serif;background:#060B18;color:#E2E8F0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}\n" +
+            ".card{background:#0D1829;border:1px solid #1C2E4A;border-radius:1rem;padding:2.5rem;max-width:480px;width:100%;text-align:center}\n" +
+            ".badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(34,197,94,.12);color:#22C55E;border:1px solid rgba(34,197,94,.3);padding:.3rem .9rem;border-radius:999px;font-size:.75rem;font-weight:700;margin-bottom:1.5rem;letter-spacing:.05em}\n" +
+            ".dot{width:7px;height:7px;border-radius:50%;background:#22C55E;animation:p 1.5s ease-in-out infinite}\n" +
+            "@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}\n" +
+            "h1{font-size:1.5rem;font-weight:700;margin-bottom:.5rem}\n" +
+            "p.sub{color:#64748B;font-size:.875rem;margin-bottom:2rem}\n" +
+            ".grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem}\n" +
+            ".stat{background:#060B18;border:1px solid #1C2E4A;border-radius:.5rem;padding:.9rem}\n" +
+            ".stat-label{font-size:.7rem;color:#64748B;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem}\n" +
+            ".stat-val{font-size:1.2rem;font-weight:700;font-family:monospace;color:#38BDF8}\n" +
+            ".endpoint{background:#060B18;border:1px solid #1C2E4A;border-radius:.5rem;padding:.75rem;text-align:left;margin-bottom:.5rem}\n" +
+            ".ep-method{font-size:.7rem;font-weight:700;color:#22C55E;font-family:monospace}\n" +
+            ".ep-path{font-size:.8rem;color:#E2E8F0;font-family:monospace}\n" +
+            ".ep-desc{font-size:.72rem;color:#64748B;margin-top:.2rem}\n" +
+            "footer{margin-top:1.5rem;font-size:.72rem;color:#64748B}\n" +
+            "</style></head><body>\n" +
+            "<div class=card>\n" +
+            "  <div class=badge><span class=dot></span>LIVE &mdash; RUNNING</div>\n" +
+            "  <h1>&#x1F680; OpsPilot Demo App</h1>\n" +
+            "  <p class=sub>This project is running live under OpsPilot container orchestrator on port PORT_NUM.</p>\n" +
+            "  <div class=grid>\n" +
+            "    <div class=stat><div class=stat-label>Status</div><div class=stat-val>ONLINE</div></div>\n" +
+            "    <div class=stat><div class=stat-label>Port</div><div class=stat-val>PORT_NUM</div></div>\n" +
+            "    <div class=stat id=up><div class=stat-label>Uptime</div><div class=stat-val id=uv>0s</div></div>\n" +
+            "    <div class=stat><div class=stat-label>Node</div><div class=stat-val style=font-size:.9rem>minikube-1</div></div>\n" +
+            "  </div>\n" +
+            "  <div class=endpoint>\n" +
+            "    <div><span class=ep-method>GET</span> <span class=ep-path>/</span></div>\n" +
+            "    <div class=ep-desc>HTML dashboard (this page)</div>\n" +
+            "  </div>\n" +
+            "  <div class=endpoint>\n" +
+            "    <div><span class=ep-method>GET</span> <span class=ep-path>/api</span></div>\n" +
+            "    <div class=ep-desc>JSON health payload</div>\n" +
+            "  </div>\n" +
+            "  <footer>Managed by <strong>OpsPilot</strong> &bull; Container #ctr-1 &bull; Image opspilot/demo:v1.0.0</footer>\n" +
+            "</div>\n" +
+            "<script>\n" +
+            "const s=Date.now();\n" +
+            "setInterval(()=>{\n" +
+            "  const sec=Math.round((Date.now()-s)/1000);\n" +
+            "  const t=sec<60?sec+'s':sec<3600?Math.floor(sec/60)+'m '+sec%60+'s':Math.floor(sec/3600)+'h '+Math.floor(sec%3600/60)+'m';\n" +
+            "  document.getElementById('uv').textContent=t;\n" +
+            "},500);\n" +
+            "</script></body></html>'''\n" +
+            "class H(http.server.BaseHTTPRequestHandler):\n" +
+            "    def do_GET(self):\n" +
+            "        uptime = round(time.time()-start)\n" +
+            "        if self.path.startswith('/api'):\n" +
+            "            body = json.dumps({'service':'OpsPilot Demo','status':'ONLINE','uptimeSeconds':uptime,'path':self.path,'port':" + port + "}).encode()\n" +
+            "            ctype = 'application/json'\n" +
+            "        else:\n" +
+            "            body = PAGE.replace('PORT_NUM','" + port + "').encode()\n" +
+            "            ctype = 'text/html; charset=utf-8'\n" +
+            "        self.send_response(200)\n" +
+            "        self.send_header('Content-Type',ctype)\n" +
+            "        self.send_header('Access-Control-Allow-Origin','*')\n" +
+            "        self.end_headers()\n" +
+            "        self.wfile.write(body)\n" +
+            "    def log_message(self,fmt,*args): print('[HTTP] '+fmt%args,flush=True)\n" +
+            "print('OpsPilot demo server running on port " + port + "',flush=True)\n" +
+            "http.server.HTTPServer((''," + port + "),H).serve_forever()\n";
         return new ProcessBuilder("python3", "-c", script);
     }
+
 
     private void pipeToLog(InputStream is, Consumer<String> log, String prefix) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {

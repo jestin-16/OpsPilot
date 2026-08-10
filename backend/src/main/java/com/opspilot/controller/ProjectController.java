@@ -17,6 +17,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Map;
 
 @RestController
@@ -108,6 +111,57 @@ public class ProjectController {
     @Operation(summary = "Server-Sent Events stream of live stdout/stderr for the project")
     public SseEmitter streamLogs(@PathVariable Long id) {
         return runnerService.subscribe(id);
+    }
+
+    /**
+     * Reverse proxy: fetches a path from the running project's port and streams
+     * it back to the browser.  This lets the workbench iframe bypass CORS
+     * and mixed-content restrictions.
+     *
+     * GET /api/v1/projects/{id}/proxy?path=/some/endpoint
+     */
+    @GetMapping("/{id}/proxy")
+    @Operation(summary = "Proxy a request to the running project application")
+    public ResponseEntity<byte[]> proxyRequest(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "/") String path) {
+        if (!runnerService.isRunning(id)) {
+            return ResponseEntity.status(503)
+                    .header("Content-Type", "text/html")
+                    .body(notRunningHtml(id).getBytes());
+        }
+        int port = runnerService.getPort(id);
+        try {
+            String targetUrl = "http://localhost:" + port + path;
+            HttpURLConnection conn = (HttpURLConnection) new URL(targetUrl).openConnection();
+            conn.setConnectTimeout(3000);
+            conn.setReadTimeout(10000);
+            conn.setRequestMethod("GET");
+            int status = conn.getResponseCode();
+            String contentType = conn.getContentType();
+            if (contentType == null) contentType = "text/plain";
+            InputStream is = status >= 400 ? conn.getErrorStream() : conn.getInputStream();
+            byte[] body = is != null ? is.readAllBytes() : new byte[0];
+            return ResponseEntity.status(status)
+                    .header("Content-Type", contentType)
+                    .header("Access-Control-Allow-Origin", "*")
+                    .body(body);
+        } catch (Exception e) {
+            String errHtml = "<html><body style='font-family:monospace;background:#060B18;color:#EF4444;padding:2rem'>" +
+                    "<h3>Proxy Error</h3><p>" + esc(e.getMessage()) + "</p>" +
+                    "<p style='color:#64748B;font-size:.85rem'>The app may still be starting up. Wait a moment and reload.</p></body></html>";
+            return ResponseEntity.status(502)
+                    .header("Content-Type", "text/html")
+                    .body(errHtml.getBytes());
+        }
+    }
+
+    private String notRunningHtml(Long id) {
+        return "<html><body style='font-family:monospace;background:#060B18;color:#64748B;" +
+               "display:flex;align-items:center;justify-content:center;height:100vh;text-align:center'>" +
+               "<div><div style='font-size:3rem;margin-bottom:1rem'>&#x23F9;</div>" +
+               "<h3 style='color:#E2E8F0;margin-bottom:.5rem'>Project Not Running</h3>" +
+               "<p>Click <strong style='color:#38BDF8'>&#x25B6; Run Application</strong> in the workbench to start it.</p></div></body></html>";
     }
 
     // ─── Workbench HTML ────────────────────────────────────────────────────────
@@ -358,10 +412,11 @@ public class ProjectController {
         "  document.getElementById('sb-url').textContent=currentPort>0?'localhost:'+currentPort:'\\u2014';\n" +
         "  if(running&&currentPort>0){\n" +
         "    const appUrl='http://localhost:'+currentPort;\n" +
+        "    const proxyUrl=BASE_URL+'/proxy?path=/';\n" +
         "    document.getElementById('apiUrl').value=appUrl+'/';\n" +
         "    document.getElementById('previewUrlBar').textContent=appUrl;\n" +
         "    document.getElementById('openExternal').href=appUrl;\n" +
-        "    showPreviewFrame(appUrl);\n" +
+        "    showPreviewFrame(proxyUrl);\n" +
         "  } else {\n" +
         "    document.getElementById('previewUrlBar').textContent='\\u2014';\n" +
         "    hidePreviewFrame();\n" +
@@ -378,7 +433,7 @@ public class ProjectController {
         "}\n" +
         "function reloadPreview(){\n" +
         "  const f=document.getElementById('preview-frame');\n" +
-        "  if(f.src&&f.style.display!=='none')f.src=f.src;\n" +
+        "  if(f.style.display!=='none'){const u=BASE_URL+'/proxy?path=/&t='+Date.now();f.src=u;}\n" +
         "}\n" +
         "function openPreviewTab(){\n" +
         "  document.querySelectorAll('.tab-btn')[2].click();\n" +

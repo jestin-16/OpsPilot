@@ -71,7 +71,7 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/v1/auth/**", "/api/webhooks/**", "/api/v1/webhooks/**", "/h2-console/**", "/error", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers("/api/auth/**", "/api/v1/auth/**", "/api/webhooks/**", "/api/v1/webhooks/**", "/api/projects/*/output", "/api/v1/projects/*/output", "/h2-console/**", "/error", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             );

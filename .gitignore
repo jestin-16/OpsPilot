@@ -1,7 +1,8 @@
 # Target & Build outputs
-/backend/target/
-/frontend/dist/
-/frontend/dist-ssr/
+backend/target/
+**/target/
+frontend/dist/
+frontend/dist-ssr/
 *.tsbuildinfo
 
 # Node dependencies

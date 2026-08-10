@@ -11,6 +11,7 @@ public class ProjectResponse {
     private Long ownerId;
     private String ownerName;
     private String ownerEmail;
+    private String deployedUrl;
     private String status;
     private LocalDateTime createdAt;
 
@@ -19,6 +20,12 @@ public class ProjectResponse {
 
     public ProjectResponse(Long id, String projectName, String description, String repositoryUrl,
                            Long ownerId, String ownerName, String ownerEmail, String status, LocalDateTime createdAt) {
+        this(id, projectName, description, repositoryUrl, ownerId, ownerName, ownerEmail,
+             "http://localhost:8080/api/v1/projects/" + id + "/output", status, createdAt);
+    }
+
+    public ProjectResponse(Long id, String projectName, String description, String repositoryUrl,
+                           Long ownerId, String ownerName, String ownerEmail, String deployedUrl, String status, LocalDateTime createdAt) {
         this.id = id;
         this.projectName = projectName;
         this.description = description;
@@ -26,6 +33,7 @@ public class ProjectResponse {
         this.ownerId = ownerId;
         this.ownerName = ownerName;
         this.ownerEmail = ownerEmail;
+        this.deployedUrl = deployedUrl;
         this.status = status;
         this.createdAt = createdAt;
     }
@@ -84,6 +92,14 @@ public class ProjectResponse {
 
     public void setOwnerEmail(String ownerEmail) {
         this.ownerEmail = ownerEmail;
+    }
+
+    public String getDeployedUrl() {
+        return deployedUrl;
+    }
+
+    public void setDeployedUrl(String deployedUrl) {
+        this.deployedUrl = deployedUrl;
     }
 
     public String getStatus() {

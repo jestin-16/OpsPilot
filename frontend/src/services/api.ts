@@ -132,6 +132,7 @@ export interface Project {
   ownerId: number;
   ownerName: string;
   ownerEmail: string;
+  deployedUrl?: string;
   status: string;
   createdAt: string;
 }

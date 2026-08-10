@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
 import { api, type Project, type Deployment } from '../services/api';
-import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play } from 'lucide-react';
+import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText } from 'lucide-react';
 
 export const Projects: React.FC = () => {
   const { user } = useAuth();
@@ -169,24 +170,46 @@ export const Projects: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
-                  <button
-                    onClick={() => openDeployModal(project)}
-                    className="px-3 py-1.5 bg-[#EEF2FF] hover:bg-[#E0E7FF] text-[#4F46E5] text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Rocket className="w-3.5 h-3.5" />
-                    <span>Trigger deployment</span>
-                  </button>
-
-                  {canEdit(project.ownerId) && (
+                <div className="space-y-2 pt-3 border-t border-[#E2E8F0]">
+                  <div className="flex items-center justify-between gap-2">
                     <button
-                      onClick={() => handleDeleteProject(project.id)}
-                      title="Delete project"
-                      className="p-1.5 text-[#94A3B8] hover:text-red-600 transition-colors cursor-pointer rounded"
+                      onClick={() => openDeployModal(project)}
+                      className="flex-1 px-3 py-1.5 bg-[#EEF2FF] hover:bg-[#E0E7FF] text-[#4F46E5] text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Rocket className="w-3.5 h-3.5" />
+                      <span>Deploy</span>
                     </button>
-                  )}
+
+                    <a
+                      href={project.deployedUrl || `http://localhost:8080/api/v1/projects/${project.id}/output`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 px-3 py-1.5 bg-[#ECFDF5] hover:bg-[#D1FAE5] text-[#059669] text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Live Output</span>
+                    </a>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <Link
+                      to={`/logs?query=${encodeURIComponent(project.projectName)}`}
+                      className="flex-1 px-3 py-1.5 bg-[#F8FAFC] border border-[#E2E8F0] hover:bg-[#F1F5F9] text-[#475569] text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-[#4F46E5]" />
+                      <span>View Logs</span>
+                    </Link>
+
+                    {canEdit(project.ownerId) && (
+                      <button
+                        onClick={() => handleDeleteProject(project.id)}
+                        title="Delete project"
+                        className="p-1.5 text-[#94A3B8] hover:text-red-600 transition-colors cursor-pointer rounded border border-transparent hover:border-[#E2E8F0]"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

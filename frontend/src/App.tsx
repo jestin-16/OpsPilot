@@ -142,7 +142,7 @@ export const App: React.FC = () => {
                 </ProtectedRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/monitoring" replace />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

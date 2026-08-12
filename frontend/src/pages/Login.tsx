@@ -21,7 +21,7 @@ export const Login: React.FC = () => {
     try {
       const res = await api.login({ email, password });
       login(res);
-      navigate('/dashboard');
+      navigate('/monitoring');
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Invalid credentials';
       setError(msg);
@@ -36,108 +36,94 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex flex-col justify-center items-center p-4">
-      {/* Container */}
-      <div className="w-full max-w-md bg-[#FFFFFF] border border-[#E2E8F0] rounded-2xl shadow-xl p-8 space-y-6">
+    <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center p-4 relative overflow-hidden font-sans">
+      {/* Dynamic Background */}
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-indigo-300/30 blur-[120px] animate-pulse-slow" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-cyan-300/30 blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-[20%] right-[20%] w-[30%] h-[30%] rounded-full bg-purple-300/20 blur-[90px] animate-float" />
+
+      {/* Glass Container */}
+      <div className="w-full max-w-md glass-panel rounded-[2rem] p-10 space-y-8 relative z-10 animate-fade-in-up">
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex p-3 rounded-xl bg-[#EEF2FF] text-[#4F46E5] mb-2">
-            <Terminal className="w-8 h-8" />
+        <div className="text-center space-y-3">
+          <div className="inline-flex w-16 h-16 rounded-3xl bg-white text-white shadow-xl shadow-indigo-500/10 mb-2 transform transition-transform hover:scale-105 overflow-hidden border border-slate-100">
+            <img src="/opspilot-logo.png" alt="OpsPilot Logo" className="w-full h-full object-cover scale-[1.2]" />
           </div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">Welcome back to OpsPilot</h1>
-          <p className="text-xs text-[#64748B]">Sign in to access your developer platform</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-800">OpsPilot</h1>
+          <p className="text-sm font-medium text-slate-500">Sign in to your developer platform</p>
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-600 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div className="p-4 bg-rose-50/80 backdrop-blur-sm border border-rose-200 rounded-xl flex items-center gap-3 text-rose-600 text-sm font-medium shadow-sm animate-fade-in-up">
+            <AlertCircle className="w-5 h-5 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Demo Account Selector */}
-        <div className="p-3 bg-[#EEF2FF]/60 border border-[#C7D2FE]/60 rounded-xl space-y-2">
-          <div className="text-[11px] font-bold text-[#4F46E5] uppercase tracking-wider flex items-center gap-1.5">
-            <UserCheck className="w-3.5 h-3.5" />
+        <div className="p-4 bg-indigo-50/50 border border-indigo-100/50 rounded-2xl space-y-3">
+          <div className="text-[11px] font-bold text-indigo-500 uppercase tracking-widest flex items-center gap-2">
+            <UserCheck className="w-4 h-4" />
             <span>Quick Demo Accounts</span>
           </div>
           <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => setDemoAccount('admin@opspilot.io')}
-              className="px-2 py-1.5 bg-[#FFFFFF] border border-[#CBD5E1] hover:border-[#4F46E5] text-[#0F172A] text-[11px] font-medium rounded-md shadow-xs transition-colors cursor-pointer"
-            >
-              Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => setDemoAccount('developer@opspilot.io')}
-              className="px-2 py-1.5 bg-[#FFFFFF] border border-[#CBD5E1] hover:border-[#4F46E5] text-[#0F172A] text-[11px] font-medium rounded-md shadow-xs transition-colors cursor-pointer"
-            >
-              Developer
-            </button>
-            <button
-              type="button"
-              onClick={() => setDemoAccount('devops@opspilot.io')}
-              className="px-2 py-1.5 bg-[#FFFFFF] border border-[#CBD5E1] hover:border-[#4F46E5] text-[#0F172A] text-[11px] font-medium rounded-md shadow-xs transition-colors cursor-pointer"
-            >
-              DevOps
-            </button>
+            {['Admin', 'Developer', 'DevOps'].map((role) => (
+              <button
+                key={role} type="button"
+                onClick={() => setDemoAccount(`${role.toLowerCase()}@opspilot.io`)}
+                className="px-2 py-2 bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-md text-slate-700 hover:text-indigo-600 text-[11px] font-bold rounded-xl transition-all"
+              >
+                {role}
+              </button>
+            ))}
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-1.5">
-              Email address
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">
+              Work Email
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#94A3B8]">
-                <Mail className="w-4 h-4" />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                <Mail className="w-5 h-5" />
               </div>
               <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@opspilot.io"
-                className="w-full pl-9 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[#0F172A] text-xs focus:outline-none focus:border-[#4F46E5] focus:bg-[#FFFFFF] placeholder-[#94A3B8]"
+                type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="jane@opspilot.io"
+                className="w-full pl-11 pr-4 py-3.5 bg-white/50 backdrop-blur-sm border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all placeholder-slate-400 shadow-sm"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-[#475569] uppercase tracking-wider mb-1.5">
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">
               Password
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[#94A3B8]">
-                <Lock className="w-4 h-4" />
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                <Lock className="w-5 h-5" />
               </div>
               <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-3.5 py-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[#0F172A] text-xs focus:outline-none focus:border-[#4F46E5] focus:bg-[#FFFFFF] placeholder-[#94A3B8]"
+                className="w-full pl-11 pr-4 py-3.5 bg-white/50 backdrop-blur-sm border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all placeholder-slate-400 shadow-sm"
               />
             </div>
           </div>
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-[#4F46E5] hover:bg-[#4338CA] text-[#FFFFFF] font-semibold text-xs rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+            type="submit" disabled={loading}
+            className="w-full py-3.5 bg-slate-900 hover:bg-indigo-600 text-white font-bold text-sm rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 group"
           >
-            <span>{loading ? 'Authenticating...' : 'Sign in'}</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>{loading ? 'Authenticating...' : 'Sign In'}</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </form>
 
-        <div className="pt-4 border-t border-[#E2E8F0] text-center text-xs text-[#64748B]">
+        <div className="pt-6 text-center text-sm font-medium text-slate-500">
           Don't have an account?{' '}
-          <Link to="/signup" className="text-[#4F46E5] font-bold hover:underline">
+          <Link to="/signup" className="text-indigo-600 font-bold hover:text-indigo-700 hover:underline transition-colors">
             Register now
           </Link>
         </div>

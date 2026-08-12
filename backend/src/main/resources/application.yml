@@ -28,3 +28,15 @@ app:
     secret: 9a6f8b12c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1
     expiration-ms: 900000 # 15 minutes
     refresh-expiration-ms: 604800000 # 7 days
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}

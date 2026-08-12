@@ -80,6 +80,7 @@ public class SecurityConfig {
                     "/api/projects/*/stop",   "/api/v1/projects/*/stop",
                     "/api/projects/*/status", "/api/v1/projects/*/status",
                     "/api/projects/*/proxy",  "/api/v1/projects/*/proxy",
+                    "/api/monitoring/probe", "/api/v1/monitoring/probe",
                     "/h2-console/**", "/error", "/swagger-ui/**", "/v3/api-docs/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**,/api/v1/auth/**
+        - id: core-service
+          uri: lb://core-service
+          predicates:
+            - Path=/api/projects/**,/api/deployments/**,/api/docker/**,/api/kubernetes/**,/api/cicd/**,/api/v1/projects/**,/api/v1/deployments/**,/api/v1/docker/**,/api/v1/kubernetes/**,/api/v1/cicd/**
+        - id: observability-service
+          uri: lb://observability-service
+          predicates:
+            - Path=/api/logs/**,/api/metrics/**,/api/notifications/**,/api/webhooks/**,/api/ai/**,/api/v1/logs/**,/api/v1/metrics/**,/api/v1/notifications/**,/api/v1/webhooks/**,/api/v1/ai/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/

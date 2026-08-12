@@ -355,12 +355,12 @@ export const api = {
 
   simulateGitHubWebhook: async (eventType = 'push'): Promise<any> => {
     const res = await axiosInstance.post(
-      '/webhooks/github',
+      '/cicd/webhooks/github',
       {
         ref: 'refs/heads/main',
         repository: {
           name: 'payment-engine',
-          html_url: 'https://github.com/opspilot/payment-engine',
+          clone_url: 'https://github.com/opspilot/payment-engine',
         },
         head_commit: {
           id: '8f3e4d29a01',

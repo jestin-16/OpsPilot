@@ -17,7 +17,7 @@ public class LogService {
     public List<LogEntity> searchLogs(String sourceService, String logLevel, String query) {
         String serviceParam = (sourceService == null || sourceService.trim().isEmpty() || "ALL".equalsIgnoreCase(sourceService)) ? null : sourceService;
         String levelParam = (logLevel == null || logLevel.trim().isEmpty() || "ALL".equalsIgnoreCase(logLevel)) ? null : logLevel;
-        String queryParam = (query == null || query.trim().isEmpty()) ? null : query;
+        String queryParam = (query == null || query.trim().isEmpty()) ? null : "%" + query.toLowerCase() + "%";
 
         return logRepository.searchLogs(serviceParam, levelParam, queryParam);
     }

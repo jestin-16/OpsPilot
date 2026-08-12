@@ -342,6 +342,11 @@ export const api = {
     return res.data;
   },
 
+  probeUrl: async (url: string): Promise<{ success: number; duration: number; httpStatus: number; sslExpiry: number }> => {
+    const res = await axiosInstance.get(`/monitoring/probe?url=${encodeURIComponent(url)}`);
+    return res.data;
+  },
+
   // CI/CD
   getPipelineRuns: async (): Promise<PipelineRun[]> => {
     const res = await axiosInstance.get<PipelineRun[]>('/cicd/runs');

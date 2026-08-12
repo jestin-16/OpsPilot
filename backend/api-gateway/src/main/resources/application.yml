@@ -9,9 +9,10 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOrigins: "http://localhost:5173"
             allowedMethods: "*"
             allowedHeaders: "*"
+            allowCredentials: true
       routes:
         - id: auth-service
           uri: lb://auth-service
@@ -24,7 +25,7 @@ spring:
         - id: observability-service
           uri: lb://observability-service
           predicates:
-            - Path=/api/logs/**,/api/metrics/**,/api/notifications/**,/api/webhooks/**,/api/ai/**,/api/v1/logs/**,/api/v1/metrics/**,/api/v1/notifications/**,/api/v1/webhooks/**,/api/v1/ai/**
+            - Path=/api/logs/**,/api/metrics/**,/api/notifications/**,/api/webhooks/**,/api/ai/**,/api/monitoring/**,/api/v1/logs/**,/api/v1/metrics/**,/api/v1/notifications/**,/api/v1/webhooks/**,/api/v1/ai/**,/api/v1/monitoring/**
 
 eureka:
   client:

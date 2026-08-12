@@ -28,3 +28,15 @@ app:
     secret: ***REMOVED-JWT-SECRET***
     expiration-ms: 900000 # 15 minutes
     refresh-expiration-ms: 604800000 # 7 days
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}

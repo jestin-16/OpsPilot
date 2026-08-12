@@ -14,6 +14,7 @@ import { NotificationCenter } from './pages/NotificationCenter';
 import { CiCdIntegration } from './pages/CiCdIntegration';
 import { AiAssistantPage } from './pages/AiAssistantPage';
 import { PlatformGuide } from './pages/PlatformGuide';
+import { DistributedTracing } from './pages/DistributedTracing';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -131,6 +132,14 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <AiAssistantPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tracing"
+              element={
+                <ProtectedRoute>
+                  <DistributedTracing />
                 </ProtectedRoute>
               }
             />

@@ -95,16 +95,16 @@ const Panel: React.FC<{
   title: string; subtitle?: string; children: React.ReactNode;
   className?: string; badge?: React.ReactNode; icon?: React.ReactNode;
 }> = ({ title, subtitle, children, className = '', badge, icon }) => (
-  <div className={`bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col shadow-sm ${className}`}>
-    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/50">
-      <div className="flex items-center gap-2 min-w-0">
-        {icon && <span className="text-slate-400 flex-shrink-0">{icon}</span>}
-        <span className="text-[11px] font-semibold text-slate-700 uppercase tracking-widest truncate">{title}</span>
-        {subtitle && <span className="text-[10px] text-slate-500 truncate hidden sm:inline">— {subtitle}</span>}
+  <div className={`glass-panel rounded-2xl overflow-hidden flex flex-col shadow-sm ${className}`}>
+    <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white/50 backdrop-blur-sm">
+      <div className="flex items-center gap-3 min-w-0">
+        {icon && <span className="text-indigo-400 flex-shrink-0 bg-indigo-50 p-1.5 rounded-lg">{icon}</span>}
+        <span className="text-xs font-bold text-slate-800 uppercase tracking-widest truncate">{title}</span>
+        {subtitle && <span className="text-[11px] font-medium text-slate-500 truncate hidden sm:inline">— {subtitle}</span>}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">{badge ?? <RealBadge />}</div>
     </div>
-    <div className="flex-1 p-4">{children}</div>
+    <div className="flex-1 p-5">{children}</div>
   </div>
 );
 
@@ -242,12 +242,11 @@ export const MonitoringDashboard: React.FC = () => {
 
   return (
     <SidebarLayout>
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-800 font-sans flex flex-col">
-
+      <div className="min-h-screen p-8 max-w-[1500px] mx-auto space-y-6 font-sans flex flex-col animate-fade-in-up">
         {/* ── Top bar ─────────────────────────────────────────────────── */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-6 py-4 bg-white border-b border-slate-200">
-          <div className="flex-1 flex items-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 min-w-[280px] focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5 glass-panel rounded-2xl shadow-sm">
+          <div className="flex-1 flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 min-w-[320px] focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all shadow-inner">
               <Globe className="w-4 h-4 text-slate-400 flex-shrink-0" />
               <input type="text" value={url} onChange={e => setUrl(e.target.value)} disabled={probing}
                 placeholder="https://target.com"
@@ -297,10 +296,10 @@ export const MonitoringDashboard: React.FC = () => {
         </div>
 
         {/* ── Main Content ────────────────────────────────────────────── */}
-        <div className="flex-1 p-6 space-y-6">
+        <div className="flex-1 space-y-6">
 
           {/* Row 1 — Core Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
             {[
               { label: 'Uptime', val: totalChecks > 0 ? `${uptimePct}%` : '—', sub: `${successChecks}/${totalChecks} OK`, color: parseFloat(uptimePct as string) >= 99 ? 'text-emerald-600' : 'text-amber-600', badge: <CalcBadge /> },
               { label: 'Last Latency', val: last ? `${last.latency}ms` : '—', sub: latTrend ? (latTrend === 'up' ? 'Slowing down' : 'Getting faster') : 'Waiting...', color: 'text-indigo-600', badge: <RealBadge /> },
@@ -309,12 +308,12 @@ export const MonitoringDashboard: React.FC = () => {
               { label: 'SSL Expiry', val: sslDays !== null ? `${sslDays} days` : '—', sub: sslDays !== null && sslDays < 30 ? '⚠️ Renew soon' : '✅ Valid', color: sslDays !== null && sslDays < 14 ? 'text-rose-600' : sslDays !== null && sslDays < 30 ? 'text-amber-600' : 'text-emerald-600', badge: <RealBadge /> },
               { label: 'Protocol', val: current?.httpVersion ?? '—', sub: current?.ipProtocol ?? '', color: 'text-violet-600', badge: <RealBadge /> },
             ].map(c => (
-              <div key={c.label} className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col gap-2 shadow-sm transition-shadow hover:shadow-md">
+              <div key={c.label} className="glass-panel rounded-2xl p-5 flex flex-col gap-2 shadow-sm transition-transform hover:-translate-y-1 duration-300">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{c.label}</span>
                   {c.badge}
                 </div>
-                <div className={`font-mono font-bold text-3xl ${c.color} tracking-tight`}>{c.val}</div>
+                <div className={`font-mono font-black text-3xl ${c.color} tracking-tight`}>{c.val}</div>
                 <div className="text-[11px] text-slate-500 font-medium">{c.sub}</div>
               </div>
             ))}

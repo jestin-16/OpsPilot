@@ -16,7 +16,7 @@ public interface LogRepository extends JpaRepository<LogEntity, Long> {
     @Query("SELECT l FROM LogEntity l WHERE " +
            "(:sourceService IS NULL OR l.sourceService = :sourceService) AND " +
            "(:logLevel IS NULL OR l.logLevel = :logLevel) AND " +
-           "(:query IS NULL OR LOWER(l.message) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+           "(:query IS NULL OR LOWER(l.message) LIKE :query) " +
            "ORDER BY l.timestamp DESC")
     List<LogEntity> searchLogs(
             @Param("sourceService") String sourceService,

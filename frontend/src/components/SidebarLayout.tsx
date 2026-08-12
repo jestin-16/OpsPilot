@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, FolderGit2, Rocket, Container, Boxes,
   Activity, FileText, Bell, GitBranch, Bot, BookOpen,
-  Settings, LogOut, User as UserIcon, Terminal
+  Settings, LogOut, User as UserIcon, Terminal, Network
 } from 'lucide-react';
 
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -25,6 +25,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { name: 'Kubernetes management', path: '/kubernetes', icon: Boxes, enabled: true },
     { name: 'Monitoring dashboard', path: '/monitoring', icon: Activity, enabled: true },
     { name: 'Log management', path: '/logs', icon: FileText, enabled: true },
+    { name: 'Distributed tracing', path: '/tracing', icon: Network, enabled: true },
     { name: 'Notification center', path: '/notifications', icon: Bell, enabled: true },
     { name: 'CI/CD integration', path: '/cicd', icon: GitBranch, enabled: true },
     { name: 'AI assistant', path: '/ai', icon: Bot, enabled: true, ai: true },

@@ -2,7 +2,11 @@
 
 echo "Starting OpsPilot Microservices..."
 
-# Build shared library first
+# Install parent POM first
+echo "Installing parent POM..."
+./mvnw clean install -N
+
+# Build shared library
 echo "Building shared-lib..."
 ./mvnw clean install -pl shared-lib
 

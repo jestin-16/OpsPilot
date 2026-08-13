@@ -49,6 +49,16 @@ interface ProbeResult {
   certSANs: string | null; certSHA256: string | null;
   resolvedIps: string[]; ipv6Supported: boolean;
   geo?: GeoInfo; headers?: HeaderInfo;
+  browser?: {
+    consoleErrors: string[];
+    waterfallCount: number;
+    lcp: number;
+    firstPaint: number;
+    browserError?: string;
+  };
+  openPorts?: number[];
+  sqliVulnerable?: boolean;
+  dnsChain?: string[];
   error?: string;
 }
 
@@ -154,6 +164,7 @@ export const MonitoringDashboard: React.FC = () => {
   const [successChecks, setSuccessChecks] = useState(0);
   const [startTime]                       = useState(() => Date.now());
   const [elapsedSec, setElapsedSec]       = useState(0);
+  const [serviceStatus, setServiceStatus] = useState<'ready' | 'starting' | 'error'>('ready');
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -176,6 +187,7 @@ export const MonitoringDashboard: React.FC = () => {
       const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
       try {
         const data: ProbeResult = await api.probeUrl(url);
+        if (serviceStatus !== 'ready') setServiceStatus('ready');
         setCurrent(data);
         const latMs = data.duration * 1000;
         const isUp  = data.success === 1.0;
@@ -195,15 +207,22 @@ export const MonitoringDashboard: React.FC = () => {
         if (isUp) {
           const geo = data.geo ? ` · 📍 ${data.geo.city}, ${data.geo.countryCode} (${data.geo.isp})` : '';
           const cdn = data.headers?.cdn && data.headers.cdn !== 'None detected' ? ` · CDN: ${data.headers.cdn}` : '';
+          const ports = data.openPorts ? ` · Ports: [${data.openPorts.join(',')}]` : '';
           addLog(
-            `✅ HTTP ${data.httpStatus} · ${fmt(latMs,0)}ms · ${data.httpVersion} · ${data.tlsVersion ?? 'TLS?'}${geo}${cdn}`,
+            `✅ HTTP ${data.httpStatus} · ${fmt(latMs,0)}ms · ${data.httpVersion} · ${data.tlsVersion ?? 'TLS?'}${geo}${cdn}${ports}`,
             'success'
           );
         } else {
           addLog(`❌ UNREACHABLE — ${data.resolvedIps?.length ? `resolved ${data.resolvedIps.length} IPs` : 'DNS failed'}`, 'error');
         }
-      } catch {
-        addLog(`❌ Backend probe API unreachable`, 'error');
+      } catch (err: any) {
+        if (err?.response?.status === 503 || err?.message?.includes('503') || err?.message?.includes('Network Error')) {
+          setServiceStatus('starting');
+          addLog(`⏳ Backend starting up or downloading dependencies... (503)`, 'warn');
+        } else {
+          setServiceStatus('error');
+          addLog(`❌ Backend probe API unreachable`, 'error');
+        }
       }
     };
     run();
@@ -243,6 +262,28 @@ export const MonitoringDashboard: React.FC = () => {
   return (
     <SidebarLayout>
       <div className="min-h-screen p-8 max-w-[1500px] mx-auto space-y-6 font-sans flex flex-col animate-fade-in-up">
+        
+        {/* Status Banner */}
+        {serviceStatus === 'starting' && (
+          <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded shadow-sm flex items-center gap-3">
+            <RefreshCw className="w-5 h-5 text-amber-500 animate-spin" />
+            <div>
+              <h3 className="text-amber-800 font-bold text-sm">Backend Starting Up...</h3>
+              <p className="text-amber-700 text-xs mt-0.5">The observability service is booting up or downloading browser binaries (Playwright). Please wait...</p>
+            </div>
+          </div>
+        )}
+
+        {serviceStatus === 'error' && (
+          <div className="bg-rose-50 border-l-4 border-rose-500 p-4 rounded shadow-sm flex items-center gap-3">
+            <XCircle className="w-5 h-5 text-rose-500" />
+            <div>
+              <h3 className="text-rose-800 font-bold text-sm">API Unreachable</h3>
+              <p className="text-rose-700 text-xs mt-0.5">The backend microservices are currently down or unreachable.</p>
+            </div>
+          </div>
+        )}
+
         {/* ── Top bar ─────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5 glass-panel rounded-2xl shadow-sm">
           <div className="flex-1 flex items-center gap-4 flex-wrap">
@@ -299,12 +340,9 @@ export const MonitoringDashboard: React.FC = () => {
         <div className="flex-1 space-y-6">
 
           {/* Row 1 — Core Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6">
             {[
-              { label: 'Uptime', val: totalChecks > 0 ? `${uptimePct}%` : '—', sub: `${successChecks}/${totalChecks} OK`, color: parseFloat(uptimePct as string) >= 99 ? 'text-emerald-600' : 'text-amber-600', badge: <CalcBadge /> },
               { label: 'Last Latency', val: last ? `${last.latency}ms` : '—', sub: latTrend ? (latTrend === 'up' ? 'Slowing down' : 'Getting faster') : 'Waiting...', color: 'text-indigo-600', badge: <RealBadge /> },
-              { label: 'Avg Latency', val: avgLat > 0 ? `${avgLat}ms` : '—', sub: `p95: ${p95}ms`, color: 'text-blue-600', badge: <CalcBadge /> },
-              { label: 'Error Rate', val: `${errorRate}%`, sub: `${totalChecks - successChecks} failures`, color: parseFloat(errorRate) > 0 ? 'text-rose-600' : 'text-emerald-600', badge: <CalcBadge /> },
               { label: 'SSL Expiry', val: sslDays !== null ? `${sslDays} days` : '—', sub: sslDays !== null && sslDays < 30 ? '⚠️ Renew soon' : '✅ Valid', color: sslDays !== null && sslDays < 14 ? 'text-rose-600' : sslDays !== null && sslDays < 30 ? 'text-amber-600' : 'text-emerald-600', badge: <RealBadge /> },
               { label: 'Protocol', val: current?.httpVersion ?? '—', sub: current?.ipProtocol ?? '', color: 'text-violet-600', badge: <RealBadge /> },
             ].map(c => (
@@ -338,8 +376,6 @@ export const MonitoringDashboard: React.FC = () => {
                     <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} unit="ms" />
                     <RTooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: 8, fontSize: 12, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       formatter={(v: number) => [`${v}ms`, 'Latency']} />
-                    {avgLat > 0 && <ReferenceLine y={avgLat} stroke="#4F46E5" strokeDasharray="4 4" 
-                      label={{ value: `avg ${avgLat}ms`, position: 'insideTopRight', fontSize: 10, fill: '#64748b' }} />}
                     <Area type="monotone" dataKey="latency" stroke="#4F46E5" strokeWidth={2.5} fill="url(#gLat)" dot={false} activeDot={{ r: 5, fill: '#4F46E5' }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -425,8 +461,39 @@ export const MonitoringDashboard: React.FC = () => {
                   <KV k="Certificate" v={current.certIssuer?.split(',')[0]} badge={<RealBadge />} />
                   <KV k="HSTS Enforced" v={current.headers?.security.hsts ? '✅ Yes' : '❌ No'} badge={<RealBadge />} />
                   <KV k="Content Security" v={current.headers?.security.csp ? '✅ Yes' : '❌ No'} badge={<RealBadge />} />
+                  <div className="border-t border-slate-100 my-2 pt-2"></div>
+                  <KV k="SQLi Vuln Test" v={current.sqliVulnerable ? '⚠️ VULNERABLE' : '✅ SECURE'} badge={<RealBadge />} />
+                  <KV k="Open Ports" v={current.openPorts?.join(', ') || 'None'} badge={<RealBadge />} />
                 </div>
               ) : <div className="text-slate-400 text-sm py-4 text-center">Data populated on probe</div>}
+            </Panel>
+
+            <Panel title="Browser Rendering" subtitle="LCP, FID & Waterfall" icon={<Globe className="w-4 h-4" />}>
+              {current?.browser && !current.browser.browserError ? (
+                <div className="space-y-0.5">
+                  <KV k="LCP (Largest Contentful Paint)" v={`${fmt(current.browser.lcp, 1)}ms`} badge={<RealBadge />} />
+                  <KV k="First Paint" v={`${fmt(current.browser.firstPaint, 1)}ms`} badge={<RealBadge />} />
+                  <KV k="Waterfall Requests" v={`${current.browser.waterfallCount} assets loaded`} badge={<RealBadge />} />
+                  <KV k="Console Errors" v={current.browser.consoleErrors.length > 0 ? `⚠️ ${current.browser.consoleErrors.length} Errors` : '✅ Clean'} badge={<RealBadge />} />
+                  {current.browser.consoleErrors.length > 0 && (
+                    <div className="mt-2 p-2 bg-slate-900 text-rose-400 font-mono text-[9px] rounded h-16 overflow-y-auto">
+                      {current.browser.consoleErrors.map((err, i) => (
+                        <div key={i}>&gt; {err}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : <div className="text-slate-400 text-sm py-4 text-center">{current?.browser?.browserError || 'Loading browser metrics...'}</div>}
+            </Panel>
+
+            <Panel title="DNS Routing Chain" subtitle="dnsjava trace" icon={<Layers className="w-4 h-4" />}>
+              {current?.dnsChain ? (
+                <div className="p-2 bg-slate-900 text-slate-300 font-mono text-[9px] rounded h-40 overflow-y-auto space-y-1">
+                  {current.dnsChain.map((record, i) => (
+                    <div key={i}>{record}</div>
+                  ))}
+                </div>
+              ) : <div className="text-slate-400 text-sm py-4 text-center">Resolving DNS chain...</div>}
             </Panel>
           </div>
 

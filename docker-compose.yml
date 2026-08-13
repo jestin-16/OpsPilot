@@ -1,3 +1,4 @@
+
 version: '3.8'
 
 services:
@@ -44,6 +45,9 @@ services:
     container_name: opspilot-blackbox
     ports:
       - "9115:9115"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     volumes:
       - ./blackbox.yml:/config/blackbox.yml
     command: --config.file=/config/blackbox.yml

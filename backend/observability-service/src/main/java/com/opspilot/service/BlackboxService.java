@@ -5,7 +5,13 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 
 import java.net.InetAddress;
+import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.util.*;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Type;
+import org.xbill.DNS.Record;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Aggregates real data from:
@@ -20,6 +26,9 @@ public class BlackboxService {
     private final RestTemplate restTemplate = new RestTemplate();
     private static final String BLACKBOX_URL = "http://localhost:9115/probe";
     private static final String GEOIP_URL    = "http://ip-api.com/json/";
+
+    @Autowired
+    private BrowserProbeService browserProbeService;
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -51,11 +60,67 @@ public class BlackboxService {
             result.put("geo", geo);
         }
 
-        // 4. HTTP headers inspection
+        // 4. HTTP headers inspection & API checks
         Map<String, Object> headers = inspectHeaders(url);
         result.put("headers", headers);
 
+        // 5. Browser Probe
+        Map<String, Object> browserData = browserProbeService.probeWithBrowser(url);
+        result.put("browser", browserData);
+
+        // 6. Security (Port Scan & Basic SQLi)
+        if (!ips.isEmpty()) {
+            result.put("openPorts", scanPorts(ips.get(0)));
+        }
+        result.put("sqliVulnerable", checkSqli(url));
+
+        // 7. Advanced DNS (dnsjava)
+        result.put("dnsChain", traceDns(hostname));
+
         return result;
+    }
+
+    // ── Advanced Security & DNS ───────────────────────────────────────────────
+
+    private List<Integer> scanPorts(String ip) {
+        List<Integer> openPorts = new ArrayList<>();
+        int[] ports = {22, 80, 443, 3306, 5432, 27017, 8080};
+        for (int port : ports) {
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(ip, port), 500);
+                openPorts.add(port);
+            } catch (Exception ignored) {}
+        }
+        return openPorts;
+    }
+
+    private boolean checkSqli(String url) {
+        try {
+            String testUrl = url + (url.contains("?") ? "&" : "?") + "q=' OR '1'='1";
+            ResponseEntity<String> resp = restTemplate.getForEntity(testUrl, String.class);
+            String body = resp.getBody();
+            if (body != null) {
+                String lower = body.toLowerCase();
+                return lower.contains("syntax error") || lower.contains("mysql_fetch") || lower.contains("ora-01756");
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
+    private List<String> traceDns(String hostname) {
+        List<String> chain = new ArrayList<>();
+        try {
+            Lookup lookup = new Lookup(hostname, Type.A);
+            Record[] records = lookup.run();
+            if (records != null) {
+                for (Record r : records) {
+                    chain.add(r.toString());
+                }
+            }
+        } catch (Exception e) {
+            chain.add("DNS Lookup Failed: " + e.getMessage());
+        }
+        return chain;
     }
 
     // ── Blackbox parsing ───────────────────────────────────────────────────────

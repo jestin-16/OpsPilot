@@ -31,6 +31,9 @@ public class LogEntity {
     @Column(nullable = false)
     private LocalDateTime timestamp;
 
+    @Transient
+    private String providerSource = "local";
+
     public LogEntity() {
         this.timestamp = LocalDateTime.now();
     }
@@ -89,5 +92,13 @@ public class LogEntity {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getProviderSource() {
+        return providerSource;
+    }
+
+    public void setProviderSource(String providerSource) {
+        this.providerSource = providerSource;
     }
 }

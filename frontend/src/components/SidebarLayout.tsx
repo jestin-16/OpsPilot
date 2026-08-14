@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, FolderGit2, Rocket, Container, Boxes,
   Activity, FileText, Bell, GitBranch, Bot, BookOpen,
-  Settings, LogOut, User as UserIcon, Terminal, Network
+  Settings, LogOut, User as UserIcon, Terminal, Network, Server, Globe
 } from 'lucide-react';
 
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,16 +21,13 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, enabled: true },
     { name: 'Projects', path: '/projects', icon: FolderGit2, enabled: true },
     { name: 'Deployments', path: '/projects', icon: Rocket, enabled: true },
-    { name: 'Docker management', path: '/docker', icon: Container, enabled: true },
-    { name: 'Kubernetes management', path: '/kubernetes', icon: Boxes, enabled: true },
-    { name: 'Monitoring dashboard', path: '/monitoring', icon: Activity, enabled: true },
+    { name: 'Live project dashboard', path: '/monitoring', icon: Activity, enabled: true },
+    { name: 'Whitebox monitoring', path: '/whitebox', icon: Server, enabled: true },
+    { name: 'Blackbox monitoring', path: '/blackbox', icon: Globe, enabled: true },
     { name: 'Log management', path: '/logs', icon: FileText, enabled: true },
-    { name: 'Distributed tracing', path: '/tracing', icon: Network, enabled: true },
     { name: 'Notification center', path: '/notifications', icon: Bell, enabled: true },
-    { name: 'CI/CD integration', path: '/cicd', icon: GitBranch, enabled: true },
-    { name: 'AI assistant', path: '/ai', icon: Bot, enabled: true, ai: true },
     { name: 'Platform guide', path: '/guide', icon: BookOpen, enabled: true },
-    { name: 'Settings', path: '#', icon: Settings, enabled: false },
+    { name: 'Organization settings', path: '/settings', icon: Settings, enabled: true },
   ];
 
   return (

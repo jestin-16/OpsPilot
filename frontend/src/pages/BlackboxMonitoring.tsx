@@ -153,7 +153,7 @@ const StatusPill: React.FC<{ status: number; label: string; probing: boolean }> 
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
-export const MonitoringDashboard: React.FC = () => {
+export const BlackboxMonitoring: React.FC = () => {
   const [url, setUrl]                     = useState('https://amazon.in');
   const [probing, setProbing]             = useState(false);
   const [refreshMs, setRefreshMs]         = useState(5000);

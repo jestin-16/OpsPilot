@@ -6,15 +6,13 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
-import { DockerManagement } from './pages/DockerManagement';
-import { KubernetesManagement } from './pages/KubernetesManagement';
-import { MonitoringDashboard } from './pages/MonitoringDashboard';
+import { BlackboxMonitoring } from './pages/BlackboxMonitoring';
+import { WhiteboxMonitoring } from './pages/WhiteboxMonitoring';
+import { LiveProjectDashboard } from './pages/LiveProjectDashboard';
+import { OrganizationSettings } from './pages/OrganizationSettings';
 import { LogManagement } from './pages/LogManagement';
 import { NotificationCenter } from './pages/NotificationCenter';
-import { CiCdIntegration } from './pages/CiCdIntegration';
-import { AiAssistantPage } from './pages/AiAssistantPage';
 import { PlatformGuide } from './pages/PlatformGuide';
-import { DistributedTracing } from './pages/DistributedTracing';
 import { LandingPage } from './pages/LandingPage';
 
 const queryClient = new QueryClient({
@@ -89,26 +87,26 @@ export const App: React.FC = () => {
               }
             />
             <Route
-              path="/docker"
-              element={
-                <ProtectedRoute>
-                  <DockerManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/kubernetes"
-              element={
-                <ProtectedRoute>
-                  <KubernetesManagement />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/monitoring"
               element={
                 <ProtectedRoute>
-                  <MonitoringDashboard />
+                  <LiveProjectDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/whitebox"
+              element={
+                <ProtectedRoute>
+                  <WhiteboxMonitoring />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/blackbox"
+              element={
+                <ProtectedRoute>
+                  <BlackboxMonitoring />
                 </ProtectedRoute>
               }
             />
@@ -129,34 +127,18 @@ export const App: React.FC = () => {
               }
             />
             <Route
-              path="/cicd"
-              element={
-                <ProtectedRoute>
-                  <CiCdIntegration />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/ai"
-              element={
-                <ProtectedRoute>
-                  <AiAssistantPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/tracing"
-              element={
-                <ProtectedRoute>
-                  <DistributedTracing />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/guide"
               element={
                 <ProtectedRoute>
                   <PlatformGuide />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <OrganizationSettings />
                 </ProtectedRoute>
               }
             />

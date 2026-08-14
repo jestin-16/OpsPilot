@@ -102,9 +102,12 @@ export const LoginSchema = z.object({
 });
 
 export const ProjectSchema = z.object({
-  projectName: z.string().min(2, 'Project name must be at least 2 characters'),
-  description: z.string().min(5, 'Description must be at least 5 characters'),
-  repositoryUrl: z.string().url('Invalid repository URL format'),
+  projectName: z.string().min(1, 'Project name is required'),
+  description: z.string().optional(),
+  repositoryUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  awsLogGroupName: z.string().optional(),
+  githubRepoName: z.string().optional(),
+  lokiAppLabel: z.string().optional(),
 });
 
 // TypeScript Interfaces
@@ -132,7 +135,10 @@ export interface Project {
   ownerId: number;
   ownerName: string;
   ownerEmail: string;
-  deployedUrl?: string;
+  deployedUrl: string;
+  awsLogGroupName?: string;
+  githubRepoName?: string;
+  lokiAppLabel?: string;
   status: string;
   createdAt: string;
 }
@@ -179,6 +185,7 @@ export interface LogEntry {
   logLevel: string;
   message: string;
   timestamp: string;
+  providerSource?: string;
 }
 
 export interface NotificationItem {
@@ -225,6 +232,15 @@ export interface AiDiagnosisResponse {
   correlatedDeploymentId: number | null;
   correlatedDeploymentVersion: string | null;
   correlatedLogs: LogEntry[];
+}
+
+export interface IntegrationSettings {
+  id?: number;
+  providerType: string;
+  name: string;
+  configJson: string;
+  active: boolean;
+  createdAt?: string;
 }
 
 export const api = {
@@ -315,7 +331,7 @@ export const api = {
   },
 
   // Logs
-  getLogs: async (params?: { sourceService?: string; logLevel?: string; query?: string }): Promise<LogEntry[]> => {
+  getLogs: async (params?: { providerName?: string; sourceService?: string; projectId?: number; logLevel?: string; query?: string; limit?: number }): Promise<LogEntry[]> => {
     const res = await axiosInstance.get<LogEntry[]>('/logs', { params });
     return res.data;
   },
@@ -337,8 +353,8 @@ export const api = {
   },
 
   // Monitoring
-  getMetrics: async (): Promise<MetricsData> => {
-    const res = await axiosInstance.get<MetricsData>('/monitoring/metrics');
+  getMetrics: async (providerName = 'local'): Promise<MetricsData> => {
+    const res = await axiosInstance.get<MetricsData>(`/monitoring/metrics?providerName=${providerName}`);
     return res.data;
   },
 
@@ -383,6 +399,17 @@ export const api = {
   // AI Assistant
   queryAiAssistant: async (data: { prompt: string; deploymentId?: number }): Promise<AiDiagnosisResponse> => {
     const res = await axiosInstance.post<AiDiagnosisResponse>('/ai/query', data);
+    return res.data;
+  },
+
+  // Integration Settings
+  getIntegrations: async (): Promise<IntegrationSettings[]> => {
+    const res = await axiosInstance.get<IntegrationSettings[]>('/integrations');
+    return res.data;
+  },
+
+  saveIntegration: async (data: IntegrationSettings): Promise<IntegrationSettings> => {
+    const res = await axiosInstance.post<IntegrationSettings>('/integrations', data);
     return res.data;
   },
 };

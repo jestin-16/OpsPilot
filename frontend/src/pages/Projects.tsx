@@ -16,6 +16,9 @@ export const Projects: React.FC = () => {
   const [projectName, setProjectName] = useState('');
   const [description, setDescription] = useState('');
   const [repositoryUrl, setRepositoryUrl] = useState('');
+  const [awsLogGroupName, setAwsLogGroupName] = useState('');
+  const [githubRepoName, setGithubRepoName] = useState('');
+  const [lokiAppLabel, setLokiAppLabel] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Trigger Deployment Modal State
@@ -44,11 +47,14 @@ export const Projects: React.FC = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await api.createProject({ projectName, description, repositoryUrl });
+      await api.createProject({ projectName, description, repositoryUrl, awsLogGroupName, githubRepoName, lokiAppLabel });
       setIsModalOpen(false);
       setProjectName('');
       setDescription('');
       setRepositoryUrl('');
+      setAwsLogGroupName('');
+      setGithubRepoName('');
+      setLokiAppLabel('');
       await fetchProjects();
     } catch (err: any) {
       alert(err.message || 'Failed to create project');
@@ -260,6 +266,33 @@ export const Projects: React.FC = () => {
                     placeholder="https://github.com/opspilot/auth-service"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">
+                      AWS Log Group (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={awsLogGroupName}
+                      onChange={(e) => setAwsLogGroupName(e.target.value)}
+                      placeholder="/ecs/my-app"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">
+                      GitHub Repo (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={githubRepoName}
+                      onChange={(e) => setGithubRepoName(e.target.value)}
+                      placeholder="org/repo"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
                 </div>
 
                 <div>

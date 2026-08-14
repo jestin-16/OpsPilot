@@ -12,6 +12,9 @@ public class ProjectResponse {
     private String ownerName;
     private String ownerEmail;
     private String deployedUrl;
+    private String awsLogGroupName;
+    private String githubRepoName;
+    private String lokiAppLabel;
     private String status;
     private LocalDateTime createdAt;
 
@@ -25,7 +28,7 @@ public class ProjectResponse {
     }
 
     public ProjectResponse(Long id, String projectName, String description, String repositoryUrl,
-                           Long ownerId, String ownerName, String ownerEmail, String deployedUrl, String status, LocalDateTime createdAt) {
+                           Long ownerId, String ownerName, String ownerEmail, String deployedUrl, String awsLogGroupName, String githubRepoName, String lokiAppLabel, String status, LocalDateTime createdAt) {
         this.id = id;
         this.projectName = projectName;
         this.description = description;
@@ -34,6 +37,9 @@ public class ProjectResponse {
         this.ownerName = ownerName;
         this.ownerEmail = ownerEmail;
         this.deployedUrl = deployedUrl;
+        this.awsLogGroupName = awsLogGroupName;
+        this.githubRepoName = githubRepoName;
+        this.lokiAppLabel = lokiAppLabel;
         this.status = status;
         this.createdAt = createdAt;
     }
@@ -116,5 +122,29 @@ public class ProjectResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAwsLogGroupName() {
+        return awsLogGroupName;
+    }
+
+    public void setAwsLogGroupName(String awsLogGroupName) {
+        this.awsLogGroupName = awsLogGroupName;
+    }
+
+    public String getGithubRepoName() {
+        return githubRepoName;
+    }
+
+    public void setGithubRepoName(String githubRepoName) {
+        this.githubRepoName = githubRepoName;
+    }
+
+    public String getLokiAppLabel() {
+        return lokiAppLabel;
+    }
+
+    public void setLokiAppLabel(String lokiAppLabel) {
+        this.lokiAppLabel = lokiAppLabel;
     }
 }

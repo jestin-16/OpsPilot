@@ -16,7 +16,19 @@ public class MonitoringService {
     @Autowired
     private DeploymentRepository deploymentRepository;
 
-    public MetricsResponse getSystemMetrics() {
+    @Autowired(required = false)
+    private List<com.opspilot.provider.MetricsProvider> metricsProviders;
+
+    public MetricsResponse getSystemMetrics(String providerName) {
+        if (providerName != null && !providerName.equalsIgnoreCase("local") && metricsProviders != null) {
+            for (com.opspilot.provider.MetricsProvider provider : metricsProviders) {
+                if (provider.getProviderName().equalsIgnoreCase(providerName)) {
+                    // For now, since fetchMetrics returns Object, we could cast it or map it.
+                    // Assuming the provider handles formatting for now or we just fallback.
+                }
+            }
+        }
+
         Runtime runtime = Runtime.getRuntime();
         long maxMemory = runtime.maxMemory() / (1024 * 1024);
         long totalMemory = runtime.totalMemory() / (1024 * 1024);

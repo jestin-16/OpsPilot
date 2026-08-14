@@ -25,6 +25,9 @@ public class ProjectService {
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
+    @Autowired
+    private io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
     public List<ProjectResponse> getAllProjectsForUser(User currentUser) {
         boolean isAdmin = isAdministrator(currentUser);
         List<Project> projects = isAdmin ? projectRepository.findAll() : projectRepository.findByOwner(currentUser);
@@ -81,6 +84,9 @@ public class ProjectService {
                 currentUser,
                 request.getStatus() != null ? request.getStatus() : "Active"
         );
+        project.setAwsLogGroupName(request.getAwsLogGroupName());
+        project.setGithubRepoName(request.getGithubRepoName());
+        project.setLokiAppLabel(request.getLokiAppLabel());
 
         Project savedProject = projectRepository.save(project);
 
@@ -89,6 +95,8 @@ public class ProjectService {
                     this, currentUser, "PROJECT_CREATE", "PROJECT", savedProject.getId().toString(), "Created project: " + savedProject.getProjectName()
             ));
         }
+
+        meterRegistry.counter("project.create.success").increment();
 
         return mapToResponse(savedProject);
     }
@@ -111,6 +119,15 @@ public class ProjectService {
         }
         if (request.getStatus() != null) {
             project.setStatus(request.getStatus());
+        }
+        if (request.getAwsLogGroupName() != null) {
+            project.setAwsLogGroupName(request.getAwsLogGroupName());
+        }
+        if (request.getGithubRepoName() != null) {
+            project.setGithubRepoName(request.getGithubRepoName());
+        }
+        if (request.getLokiAppLabel() != null) {
+            project.setLokiAppLabel(request.getLokiAppLabel());
         }
 
         Project updatedProject = projectRepository.save(project);
@@ -167,6 +184,9 @@ public class ProjectService {
                 project.getOwner().getName(),
                 project.getOwner().getEmail(),
                 deployedUrl,
+                project.getAwsLogGroupName(),
+                project.getGithubRepoName(),
+                project.getLokiAppLabel(),
                 project.getStatus(),
                 project.getCreatedAt()
         );

@@ -11,15 +11,24 @@ public class ProjectRequest {
 
     private String repositoryUrl;
 
+    private String awsLogGroupName;
+
+    private String githubRepoName;
+
+    private String lokiAppLabel;
+
     private String status; // Active, Archived
 
     public ProjectRequest() {
     }
 
-    public ProjectRequest(String projectName, String description, String repositoryUrl, String status) {
+    public ProjectRequest(String projectName, String description, String repositoryUrl, String awsLogGroupName, String githubRepoName, String lokiAppLabel, String status) {
         this.projectName = projectName;
         this.description = description;
         this.repositoryUrl = repositoryUrl;
+        this.awsLogGroupName = awsLogGroupName;
+        this.githubRepoName = githubRepoName;
+        this.lokiAppLabel = lokiAppLabel;
         this.status = status;
     }
 
@@ -53,5 +62,29 @@ public class ProjectRequest {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getAwsLogGroupName() {
+        return awsLogGroupName;
+    }
+
+    public void setAwsLogGroupName(String awsLogGroupName) {
+        this.awsLogGroupName = awsLogGroupName;
+    }
+
+    public String getGithubRepoName() {
+        return githubRepoName;
+    }
+
+    public void setGithubRepoName(String githubRepoName) {
+        this.githubRepoName = githubRepoName;
+    }
+
+    public String getLokiAppLabel() {
+        return lokiAppLabel;
+    }
+
+    public void setLokiAppLabel(String lokiAppLabel) {
+        this.lokiAppLabel = lokiAppLabel;
     }
 }

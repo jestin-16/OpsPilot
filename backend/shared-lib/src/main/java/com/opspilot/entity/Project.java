@@ -24,6 +24,15 @@ public class Project {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
+    @Column(name = "aws_log_group_name")
+    private String awsLogGroupName;
+
+    @Column(name = "github_repo_name")
+    private String githubRepoName;
+
+    @Column(name = "loki_app_label")
+    private String lokiAppLabel;
+
     @Column(nullable = false)
     private String status = "Active";
 
@@ -96,5 +105,29 @@ public class Project {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getAwsLogGroupName() {
+        return awsLogGroupName;
+    }
+
+    public void setAwsLogGroupName(String awsLogGroupName) {
+        this.awsLogGroupName = awsLogGroupName;
+    }
+
+    public String getGithubRepoName() {
+        return githubRepoName;
+    }
+
+    public void setGithubRepoName(String githubRepoName) {
+        this.githubRepoName = githubRepoName;
+    }
+
+    public String getLokiAppLabel() {
+        return lokiAppLabel;
+    }
+
+    public void setLokiAppLabel(String lokiAppLabel) {
+        this.lokiAppLabel = lokiAppLabel;
     }
 }

@@ -16,7 +16,9 @@ public class MonitoringController {
     private MonitoringService monitoringService;
 
     @GetMapping("/metrics")
-    public ResponseEntity<MetricsResponse> getMetrics() {
-        return ResponseEntity.ok(monitoringService.getSystemMetrics());
+    public ResponseEntity<MetricsResponse> getMetrics(
+            @org.springframework.web.bind.annotation.RequestParam(required = false, defaultValue = "local") String providerName
+    ) {
+        return ResponseEntity.ok(monitoringService.getSystemMetrics(providerName));
     }
 }

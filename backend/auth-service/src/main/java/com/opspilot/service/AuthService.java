@@ -44,6 +44,9 @@ public class AuthService {
     @Autowired
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
+    @Autowired
+    private io.micrometer.core.instrument.MeterRegistry meterRegistry;
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -96,6 +99,7 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            meterRegistry.counter("auth.login.failure").increment();
             throw new IllegalArgumentException("Invalid email or password");
         }
 
@@ -118,6 +122,8 @@ public class AuthService {
                     this, user, "USER_LOGIN", "USER", user.getId().toString(), "User authenticated successfully: " + user.getEmail()
             ));
         }
+
+        meterRegistry.counter("auth.login.success").increment();
 
         return new AuthResponse(accessToken, user.getId(), user.getName(), user.getEmail(), roleNames);
     }

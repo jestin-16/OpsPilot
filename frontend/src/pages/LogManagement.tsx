@@ -11,6 +11,7 @@ export const LogManagement: React.FC = () => {
   const [sourceService, setSourceService] = useState('ALL');
   const [logLevel, setLogLevel] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [providerName, setProviderName] = useState('local');
   const [isSimulating, setIsSimulating] = useState(false);
 
   const fetchLogs = async () => {
@@ -20,6 +21,7 @@ export const LogManagement: React.FC = () => {
         sourceService: sourceService !== 'ALL' ? sourceService : undefined,
         logLevel: logLevel !== 'ALL' ? logLevel : undefined,
         query: searchQuery.trim() !== '' ? searchQuery.trim() : undefined,
+        providerName: providerName,
       });
       setLogs(data);
     } catch (err: any) {
@@ -31,7 +33,7 @@ export const LogManagement: React.FC = () => {
 
   useEffect(() => {
     fetchLogs();
-  }, [sourceService, logLevel]);
+  }, [sourceService, logLevel, providerName]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +135,23 @@ export const LogManagement: React.FC = () => {
 
         {/* Filter Controls Card */}
         <div className="glass-panel rounded-2xl p-6 shadow-sm hover:-translate-y-1 transition-transform duration-300">
-          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end">
+          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-6 items-end">
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                Data Source
+              </label>
+              <select
+                value={providerName}
+                onChange={(e) => setProviderName(e.target.value)}
+                className="w-full px-4 py-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 font-bold text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer shadow-inner"
+              >
+                <option value="local">OpsPilot Local (PostgreSQL)</option>
+                <option value="loki">Grafana Loki</option>
+                <option value="aws">AWS CloudWatch</option>
+                <option value="elasticsearch">Elasticsearch (ELK)</option>
+              </select>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                 Source Service

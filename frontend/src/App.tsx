@@ -15,6 +15,7 @@ import { CiCdIntegration } from './pages/CiCdIntegration';
 import { AiAssistantPage } from './pages/AiAssistantPage';
 import { PlatformGuide } from './pages/PlatformGuide';
 import { DistributedTracing } from './pages/DistributedTracing';
+import { LandingPage } from './pages/LandingPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,14 @@ export const App: React.FC = () => {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            <Route
+              path="/"
+              element={
+                <PublicRoute>
+                  <LandingPage />
+                </PublicRoute>
+              }
+            />
             <Route
               path="/login"
               element={

@@ -213,6 +213,61 @@ export const PlatformGuide: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Section 4: Whitebox Monitoring */}
+        <div className="bg-[#FFFFFF] border border-[#E2E8F0] rounded-xl p-6 shadow-sm space-y-6">
+          <div className="flex items-center gap-3 border-b border-[#E2E8F0] pb-4">
+            <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] flex items-center justify-center text-[#4F46E5]">
+              <Activity className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-[#0F172A]">4. Whitebox Monitoring</h2>
+              <p className="text-xs text-[#64748B]">Internal system metrics, application performance, and diagnostic tracing</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-[#0F172A]">
+                <Activity className="w-4 h-4 text-[#4F46E5]" />
+                <span>1. Spring Boot Actuator Metrics</span>
+              </div>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Applications expose internal state via `/actuator/metrics`. OpsPilot continuously polls this to track memory usage, CPU load, and thread pools to detect resource exhaustion before it causes a crash.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-[#0F172A]">
+                <Layers className="w-4 h-4 text-[#0284C7]" />
+                <span>2. Distributed Tracing</span>
+              </div>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                By integrating Micrometer and Zipkin, trace IDs are propagated across microservice boundaries. This allows you to track a single request from the API Gateway all the way down to database queries.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-[#0F172A]">
+                <Terminal className="w-4 h-4 text-[#4F46E5]" />
+                <span>3. Log Aggregation</span>
+              </div>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Application logs are ingested centrally. OpsPilot correlates log severity spikes with deployment events and utilizes AI to determine root causes for unhandled exceptions.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-[#0F172A]">
+                <CheckCircle2 className="w-4 h-4 text-[#7C3AED]" />
+                <span>4. Health Endpoints</span>
+              </div>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                The `/actuator/health` endpoint provides readiness and liveness probes for Kubernetes. OpsPilot leverages this to understand if dependencies (like Databases or Kafka) are down.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </SidebarLayout>
   );

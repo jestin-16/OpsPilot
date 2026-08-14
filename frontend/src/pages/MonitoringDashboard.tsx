@@ -59,6 +59,7 @@ interface ProbeResult {
   openPorts?: number[];
   sqliVulnerable?: boolean;
   dnsChain?: string[];
+
   error?: string;
 }
 
@@ -183,10 +184,15 @@ export const MonitoringDashboard: React.FC = () => {
 
   useEffect(() => {
     if (!probing) return;
+    let active = true;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const run = async () => {
+      if (!active) return;
       const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
       try {
         const data: ProbeResult = await api.probeUrl(url);
+        if (!active) return;
         if (serviceStatus !== 'ready') setServiceStatus('ready');
         setCurrent(data);
         const latMs = data.duration * 1000;
@@ -216,6 +222,7 @@ export const MonitoringDashboard: React.FC = () => {
           addLog(`❌ UNREACHABLE — ${data.resolvedIps?.length ? `resolved ${data.resolvedIps.length} IPs` : 'DNS failed'}`, 'error');
         }
       } catch (err: any) {
+        if (!active) return;
         if (err?.response?.status === 503 || err?.message?.includes('503') || err?.message?.includes('Network Error')) {
           setServiceStatus('starting');
           addLog(`⏳ Backend starting up or downloading dependencies... (503)`, 'warn');
@@ -224,10 +231,18 @@ export const MonitoringDashboard: React.FC = () => {
           addLog(`❌ Backend probe API unreachable`, 'error');
         }
       }
+
+      if (active) {
+        timeoutId = setTimeout(run, refreshMs);
+      }
     };
+    
     run();
-    const id = setInterval(run, refreshMs);
-    return () => clearInterval(id);
+    
+    return () => {
+      active = false;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [probing, url, refreshMs, addLog]);
 
   // Fix: Scroll behavior block: nearest prevents the whole page from jumping
@@ -459,8 +474,8 @@ export const MonitoringDashboard: React.FC = () => {
                   </div>
                   <KV k="TLS Cipher" v={current.tlsCipher} badge={<RealBadge />} />
                   <KV k="Certificate" v={current.certIssuer?.split(',')[0]} badge={<RealBadge />} />
-                  <KV k="HSTS Enforced" v={current.headers?.security.hsts ? '✅ Yes' : '❌ No'} badge={<RealBadge />} />
-                  <KV k="Content Security" v={current.headers?.security.csp ? '✅ Yes' : '❌ No'} badge={<RealBadge />} />
+                  <KV k="HSTS Enforced" v={current.headers?.security?.hsts ? '✅ Yes' : '❌ No'} badge={<RealBadge />} />
+                  <KV k="Content Security" v={current.headers?.security?.csp ? '✅ Yes' : '❌ No'} badge={<RealBadge />} />
                   <div className="border-t border-slate-100 my-2 pt-2"></div>
                   <KV k="SQLi Vuln Test" v={current.sqliVulnerable ? '⚠️ VULNERABLE' : '✅ SECURE'} badge={<RealBadge />} />
                   <KV k="Open Ports" v={current.openPorts?.join(', ') || 'None'} badge={<RealBadge />} />
@@ -495,6 +510,7 @@ export const MonitoringDashboard: React.FC = () => {
                 </div>
               ) : <div className="text-slate-400 text-sm py-4 text-center">Resolving DNS chain...</div>}
             </Panel>
+
           </div>
 
         </div>

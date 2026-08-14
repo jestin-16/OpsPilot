@@ -10,6 +10,8 @@ echo "Installing parent POM..."
 echo "Building shared-lib..."
 ./mvnw clean install -pl shared-lib
 
+export MAVEN_OPTS="-Xmx128m -Djava.net.preferIPv4Stack=true -Dspring-boot.run.jvmArguments=-Djava.net.preferIPv4Stack=true"
+
 # Start Service Registry (Eureka)
 echo "Starting Service Registry on port 8761..."
 ./mvnw spring-boot:run -pl service-registry &

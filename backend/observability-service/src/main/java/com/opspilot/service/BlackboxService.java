@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Record;
@@ -19,16 +20,34 @@ import org.springframework.beans.factory.annotation.Autowired;
  *   2. ip-api.com free GeoIP API  (country, city, ISP, ASN — no key required)
  *   3. Direct HTTP header inspection (server type, CDN, security headers)
  *   4. Java DNS resolution          (IP addresses, IPv6 support)
+ *   4. Java DNS resolution          (IP addresses, IPv6 support)
  */
 @Service
 public class BlackboxService {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
+
+    private final RestTemplate blackboxRestTemplate;
+    private final RestTemplate externalRestTemplate;
+
+    public BlackboxService() {
+        this.restTemplate = new RestTemplate();
+        org.springframework.http.client.SimpleClientHttpRequestFactory bbFactory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        bbFactory.setConnectTimeout(6000);
+        bbFactory.setReadTimeout(6000);
+        this.blackboxRestTemplate = new RestTemplate(bbFactory);
+
+        org.springframework.http.client.SimpleClientHttpRequestFactory extFactory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        extFactory.setConnectTimeout(3000);
+        extFactory.setReadTimeout(3000);
+        this.externalRestTemplate = new RestTemplate(extFactory);
+    }
     private static final String BLACKBOX_URL = "http://localhost:9115/probe";
     private static final String GEOIP_URL    = "http://ip-api.com/json/";
 
     @Autowired
     private BrowserProbeService browserProbeService;
+
 
     // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -48,34 +67,52 @@ public class BlackboxService {
             return result;
         }
 
-        // 2. DNS resolution — real IPs
         String hostname = extractHostname(url);
         List<String> ips = resolveIps(hostname);
         result.put("resolvedIps",  ips);
         result.put("ipv6Supported", ips.stream().anyMatch(ip -> ip.contains(":")));
 
-        // 3. GeoIP for first resolved IP
-        if (!ips.isEmpty()) {
-            Map<String, Object> geo = geoLookup(ips.get(0));
-            result.put("geo", geo);
+        // Start all async tasks
+        CompletableFuture<Map<String, Object>> geoFuture = CompletableFuture.supplyAsync(() -> 
+            ips.isEmpty() ? new HashMap<>() : geoLookup(ips.get(0))
+        );
+
+        CompletableFuture<Map<String, Object>> headersFuture = CompletableFuture.supplyAsync(() -> 
+            inspectHeaders(url)
+        );
+
+        CompletableFuture<Map<String, Object>> browserFuture = CompletableFuture.supplyAsync(() -> 
+            browserProbeService.probeWithBrowser(url)
+        );
+
+        CompletableFuture<List<Integer>> portsFuture = CompletableFuture.supplyAsync(() -> 
+            ips.isEmpty() ? new ArrayList<>() : scanPorts(ips.get(0))
+        );
+
+        CompletableFuture<Boolean> sqliFuture = CompletableFuture.supplyAsync(() -> 
+            checkSqli(url)
+        );
+
+        CompletableFuture<List<String>> dnsFuture = CompletableFuture.supplyAsync(() -> 
+            traceDns(hostname)
+        );
+
+        // Wait for all to complete
+        CompletableFuture.allOf(geoFuture, headersFuture, browserFuture, portsFuture, sqliFuture, dnsFuture).join();
+
+        // Populate results
+        try {
+            if (!ips.isEmpty()) {
+                result.put("geo", geoFuture.get());
+                result.put("openPorts", portsFuture.get());
+            }
+            result.put("headers", headersFuture.get());
+            result.put("browser", browserFuture.get());
+            result.put("sqliVulnerable", sqliFuture.get());
+            result.put("dnsChain", dnsFuture.get());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        // 4. HTTP headers inspection & API checks
-        Map<String, Object> headers = inspectHeaders(url);
-        result.put("headers", headers);
-
-        // 5. Browser Probe
-        Map<String, Object> browserData = browserProbeService.probeWithBrowser(url);
-        result.put("browser", browserData);
-
-        // 6. Security (Port Scan & Basic SQLi)
-        if (!ips.isEmpty()) {
-            result.put("openPorts", scanPorts(ips.get(0)));
-        }
-        result.put("sqliVulnerable", checkSqli(url));
-
-        // 7. Advanced DNS (dnsjava)
-        result.put("dnsChain", traceDns(hostname));
 
         return result;
     }

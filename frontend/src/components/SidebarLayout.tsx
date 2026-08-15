@@ -27,7 +27,6 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { name: 'Log management', path: '/logs', icon: FileText, enabled: true },
     { name: 'Notification center', path: '/notifications', icon: Bell, enabled: true },
     { name: 'Platform guide', path: '/guide', icon: BookOpen, enabled: true },
-    { name: 'Organization settings', path: '/settings', icon: Settings, enabled: true },
   ];
 
   return (

@@ -19,6 +19,8 @@ export const Projects: React.FC = () => {
   const [awsLogGroupName, setAwsLogGroupName] = useState('');
   const [githubRepoName, setGithubRepoName] = useState('');
   const [lokiAppLabel, setLokiAppLabel] = useState('');
+  const [ociLogGroupOcid, setOciLogGroupOcid] = useState('');
+  const [credentialsJson, setCredentialsJson] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   // Trigger Deployment Modal State
@@ -47,7 +49,7 @@ export const Projects: React.FC = () => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await api.createProject({ projectName, description, repositoryUrl, awsLogGroupName, githubRepoName, lokiAppLabel });
+      await api.createProject({ projectName, description, repositoryUrl, awsLogGroupName, githubRepoName, lokiAppLabel, ociLogGroupOcid, credentialsJson });
       setIsModalOpen(false);
       setProjectName('');
       setDescription('');
@@ -55,6 +57,8 @@ export const Projects: React.FC = () => {
       setAwsLogGroupName('');
       setGithubRepoName('');
       setLokiAppLabel('');
+      setOciLogGroupOcid('');
+      setCredentialsJson('');
       await fetchProjects();
     } catch (err: any) {
       alert(err.message || 'Failed to create project');
@@ -293,6 +297,31 @@ export const Projects: React.FC = () => {
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500"
                     />
                   </div>
+                  <div className="col-span-2">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">
+                      OCI Log Group OCID (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={ociLogGroupOcid}
+                      onChange={(e) => setOciLogGroupOcid(e.target.value)}
+                      placeholder="ocid1.loggroup.oc1..."
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">
+                    Project Credentials JSON (Optional)
+                  </label>
+                  <p className="text-[10px] text-slate-400 mb-2 ml-1">Paste your AWS Access Keys or OCI API Keys here in JSON format.</p>
+                  <textarea
+                    value={credentialsJson}
+                    onChange={(e) => setCredentialsJson(e.target.value)}
+                    placeholder='{&#10;  "oci": { "tenancy": "...", "user": "..." },&#10;  "aws": { "accessKey": "..." }&#10;}'
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-mono text-sm focus:outline-none focus:border-indigo-500 min-h-[100px]"
+                  />
                 </div>
 
                 <div>

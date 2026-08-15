@@ -33,6 +33,12 @@ public class Project {
     @Column(name = "loki_app_label")
     private String lokiAppLabel;
 
+    @Column(name = "oci_log_group_ocid")
+    private String ociLogGroupOcid;
+
+    @Column(name = "credentials_json", columnDefinition = "TEXT")
+    private String credentialsJson;
+
     @Column(nullable = false)
     private String status = "Active";
 
@@ -129,5 +135,21 @@ public class Project {
 
     public void setLokiAppLabel(String lokiAppLabel) {
         this.lokiAppLabel = lokiAppLabel;
+    }
+
+    public String getOciLogGroupOcid() {
+        return ociLogGroupOcid;
+    }
+
+    public void setOciLogGroupOcid(String ociLogGroupOcid) {
+        this.ociLogGroupOcid = ociLogGroupOcid;
+    }
+
+    public String getCredentialsJson() {
+        return credentialsJson;
+    }
+
+    public void setCredentialsJson(String credentialsJson) {
+        this.credentialsJson = credentialsJson;
     }
 }

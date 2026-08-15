@@ -87,6 +87,8 @@ public class ProjectService {
         project.setAwsLogGroupName(request.getAwsLogGroupName());
         project.setGithubRepoName(request.getGithubRepoName());
         project.setLokiAppLabel(request.getLokiAppLabel());
+        project.setOciLogGroupOcid(request.getOciLogGroupOcid());
+        project.setCredentialsJson(request.getCredentialsJson());
 
         Project savedProject = projectRepository.save(project);
 
@@ -128,6 +130,12 @@ public class ProjectService {
         }
         if (request.getLokiAppLabel() != null) {
             project.setLokiAppLabel(request.getLokiAppLabel());
+        }
+        if (request.getOciLogGroupOcid() != null) {
+            project.setOciLogGroupOcid(request.getOciLogGroupOcid());
+        }
+        if (request.getCredentialsJson() != null) {
+            project.setCredentialsJson(request.getCredentialsJson());
         }
 
         Project updatedProject = projectRepository.save(project);
@@ -187,6 +195,8 @@ public class ProjectService {
                 project.getAwsLogGroupName(),
                 project.getGithubRepoName(),
                 project.getLokiAppLabel(),
+                project.getOciLogGroupOcid(),
+                project.getCredentialsJson(),
                 project.getStatus(),
                 project.getCreatedAt()
         );

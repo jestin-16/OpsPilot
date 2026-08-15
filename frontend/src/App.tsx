@@ -9,7 +9,6 @@ import { Projects } from './pages/Projects';
 import { BlackboxMonitoring } from './pages/BlackboxMonitoring';
 import { WhiteboxMonitoring } from './pages/WhiteboxMonitoring';
 import { LiveProjectDashboard } from './pages/LiveProjectDashboard';
-import { OrganizationSettings } from './pages/OrganizationSettings';
 import { LogManagement } from './pages/LogManagement';
 import { NotificationCenter } from './pages/NotificationCenter';
 import { PlatformGuide } from './pages/PlatformGuide';
@@ -131,14 +130,6 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <PlatformGuide />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <OrganizationSettings />
                 </ProtectedRoute>
               }
             />

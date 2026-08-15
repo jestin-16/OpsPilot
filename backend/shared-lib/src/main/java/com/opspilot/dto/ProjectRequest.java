@@ -17,18 +17,24 @@ public class ProjectRequest {
 
     private String lokiAppLabel;
 
+    private String ociLogGroupOcid;
+
+    private String credentialsJson;
+
     private String status; // Active, Archived
 
     public ProjectRequest() {
     }
 
-    public ProjectRequest(String projectName, String description, String repositoryUrl, String awsLogGroupName, String githubRepoName, String lokiAppLabel, String status) {
+    public ProjectRequest(String projectName, String description, String repositoryUrl, String awsLogGroupName, String githubRepoName, String lokiAppLabel, String ociLogGroupOcid, String credentialsJson, String status) {
         this.projectName = projectName;
         this.description = description;
         this.repositoryUrl = repositoryUrl;
         this.awsLogGroupName = awsLogGroupName;
         this.githubRepoName = githubRepoName;
         this.lokiAppLabel = lokiAppLabel;
+        this.ociLogGroupOcid = ociLogGroupOcid;
+        this.credentialsJson = credentialsJson;
         this.status = status;
     }
 
@@ -86,5 +92,21 @@ public class ProjectRequest {
 
     public void setLokiAppLabel(String lokiAppLabel) {
         this.lokiAppLabel = lokiAppLabel;
+    }
+
+    public String getOciLogGroupOcid() {
+        return ociLogGroupOcid;
+    }
+
+    public void setOciLogGroupOcid(String ociLogGroupOcid) {
+        this.ociLogGroupOcid = ociLogGroupOcid;
+    }
+
+    public String getCredentialsJson() {
+        return credentialsJson;
+    }
+
+    public void setCredentialsJson(String credentialsJson) {
+        this.credentialsJson = credentialsJson;
     }
 }

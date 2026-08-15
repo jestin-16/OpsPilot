@@ -108,6 +108,8 @@ export const ProjectSchema = z.object({
   awsLogGroupName: z.string().optional(),
   githubRepoName: z.string().optional(),
   lokiAppLabel: z.string().optional(),
+  ociLogGroupOcid: z.string().optional(),
+  credentialsJson: z.string().optional(),
 });
 
 // TypeScript Interfaces
@@ -139,6 +141,8 @@ export interface Project {
   awsLogGroupName?: string;
   githubRepoName?: string;
   lokiAppLabel?: string;
+  ociLogGroupOcid?: string;
+  credentialsJson?: string;
   status: string;
   createdAt: string;
 }

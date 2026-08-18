@@ -18,14 +18,14 @@ spring:
           uri: lb://auth-service
           predicates:
             - Path=/api/auth/**, /api/v1/auth/**
+        - id: observability-service
+          uri: lb://observability-service
+          predicates:
+            - Path=/api/logs/**, /api/metrics/**, /api/notifications/**, /api/webhooks/**, /api/ai/**, /api/monitoring/**, /api/v1/logs/**, /api/v1/metrics/**, /api/v1/notifications/**, /api/v1/webhooks/**, /api/v1/ai/**, /api/v1/monitoring/**, /api/v1/log-sources/**, /api/v1/projects/*/log-sources
         - id: core-service
           uri: lb://core-service
           predicates:
             - Path=/api/projects/**, /api/deployments/**, /api/docker/**, /api/kubernetes/**, /api/cicd/**, /api/v1/projects/**, /api/v1/deployments/**, /api/v1/docker/**, /api/v1/kubernetes/**, /api/v1/cicd/**
-        - id: observability-service
-          uri: lb://observability-service
-          predicates:
-            - Path=/api/logs/**, /api/metrics/**, /api/notifications/**, /api/webhooks/**, /api/ai/**, /api/monitoring/**, /api/v1/logs/**, /api/v1/metrics/**, /api/v1/notifications/**, /api/v1/webhooks/**, /api/v1/ai/**, /api/v1/monitoring/**
 
 eureka:
   client:

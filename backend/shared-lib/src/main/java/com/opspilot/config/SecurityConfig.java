@@ -65,6 +65,7 @@ public class SecurityConfig {
                     "/api/projects/*/proxy",  "/api/v1/projects/*/proxy",
                     "/api/monitoring/probe", "/api/v1/monitoring/probe",
                     "/api/monitoring/live-events/**", "/api/v1/monitoring/live-events/**",
+                    "/api/ingest/**", "/api/v1/ingest/**",
                     "/h2-console/**", "/error", "/swagger-ui/**", "/v3/api-docs/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

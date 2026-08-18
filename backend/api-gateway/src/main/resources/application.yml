@@ -21,7 +21,7 @@ spring:
         - id: observability-service
           uri: lb://observability-service
           predicates:
-            - Path=/api/logs/**, /api/metrics/**, /api/notifications/**, /api/webhooks/**, /api/ai/**, /api/monitoring/**, /api/v1/logs/**, /api/v1/metrics/**, /api/v1/notifications/**, /api/v1/webhooks/**, /api/v1/ai/**, /api/v1/monitoring/**, /api/v1/log-sources/**, /api/v1/projects/*/log-sources
+            - Path=/api/logs/**, /api/metrics/**, /api/notifications/**, /api/webhooks/**, /api/ai/**, /api/monitoring/**, /api/v1/logs/**, /api/v1/metrics/**, /api/v1/notifications/**, /api/v1/webhooks/**, /api/v1/ai/**, /api/v1/monitoring/**, /api/v1/log-sources/**, /api/v1/projects/*/log-sources, /api/v1/ingest/**
         - id: core-service
           uri: lb://core-service
           predicates:

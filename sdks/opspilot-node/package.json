@@ -1,0 +1,12 @@
+{
+  "name": "opspilot-logger",
+  "version": "1.0.0",
+  "description": "Official OpsPilot Node.js logging SDK",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": ["opspilot", "logger", "observability"],
+  "author": "OpsPilot",
+  "license": "MIT"
+}

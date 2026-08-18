@@ -56,11 +56,26 @@ public class GenericWebhookIngestController {
 
         // Process async to return 200 OK immediately
         CompletableFuture.runAsync(() -> {
-            Optional<LogEntity> mapped = fieldMappingService.mapPayload(rawPayload, source.getFieldMapping(), source.getSourceName());
-            mapped.ifPresent(log -> {
-                log.setDeployment(null); // Attach to project if possible, but logs schema has deployment_id. Generic sources might just use project context implicitly or we leave deployment_id null.
-                logRepository.save(log);
-            });
+            try {
+                if (rawPayload.trim().startsWith("[")) {
+                    com.fasterxml.jackson.databind.JsonNode arrayNode = objectMapper.readTree(rawPayload);
+                    for (com.fasterxml.jackson.databind.JsonNode node : arrayNode) {
+                        Optional<LogEntity> mapped = fieldMappingService.mapPayload(node.toString(), source.getFieldMapping(), source.getSourceName());
+                        mapped.ifPresent(log -> {
+                            log.setDeployment(null);
+                            logRepository.save(log);
+                        });
+                    }
+                } else {
+                    Optional<LogEntity> mapped = fieldMappingService.mapPayload(rawPayload, source.getFieldMapping(), source.getSourceName());
+                    mapped.ifPresent(log -> {
+                        log.setDeployment(null);
+                        logRepository.save(log);
+                    });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
 
         return ResponseEntity.ok("Accepted");

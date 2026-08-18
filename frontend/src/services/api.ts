@@ -247,6 +247,20 @@ export interface IntegrationSettings {
   createdAt?: string;
 }
 
+export interface LogSource {
+  sourceId: number;
+  sourceName: string;
+  ingestionMode: string;
+  fieldMapping: string;
+  authMethod: string;
+  authConfig?: string;
+  pollEndpointUrl?: string;
+  pollIntervalSeconds?: number;
+  isActive: boolean;
+  lastPolledAt?: string;
+  createdAt?: string;
+}
+
 export const api = {
   // Auth
   register: async (data: z.infer<typeof RegisterSchema>): Promise<AuthResponse> => {
@@ -414,6 +428,33 @@ export const api = {
 
   saveIntegration: async (data: IntegrationSettings): Promise<IntegrationSettings> => {
     const res = await axiosInstance.post<IntegrationSettings>('/integrations', data);
+    return res.data;
+  },
+
+  // Log Sources
+  getLogSources: async (projectId: number): Promise<LogSource[]> => {
+    const res = await axiosInstance.get<LogSource[]>(`/projects/${projectId}/log-sources`);
+    return res.data;
+  },
+
+  createLogSource: async (projectId: number, data: Partial<LogSource>): Promise<LogSource> => {
+    const res = await axiosInstance.post<LogSource>(`/projects/${projectId}/log-sources`, data);
+    return res.data;
+  },
+
+  updateLogSource: async (sourceId: number, data: Partial<LogSource>): Promise<LogSource> => {
+    const res = await axiosInstance.put<LogSource>(`/log-sources/${sourceId}`, data);
+    return res.data;
+  },
+
+  deleteLogSource: async (sourceId: number): Promise<void> => {
+    await axiosInstance.delete(`/log-sources/${sourceId}`);
+  },
+
+  testLogSourceMapping: async (sourceId: number, payload: string): Promise<LogEntry> => {
+    const res = await axiosInstance.post<LogEntry>(`/log-sources/${sourceId}/test`, payload, {
+      headers: { 'Content-Type': 'text/plain' },
+    });
     return res.data;
   },
 };

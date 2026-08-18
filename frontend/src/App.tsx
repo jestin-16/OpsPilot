@@ -13,6 +13,7 @@ import { LogManagement } from './pages/LogManagement';
 import { NotificationCenter } from './pages/NotificationCenter';
 import { PlatformGuide } from './pages/PlatformGuide';
 import { LandingPage } from './pages/LandingPage';
+import { LogSources } from './pages/LogSources';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -82,6 +83,14 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:projectId/log-sources"
+              element={
+                <ProtectedRoute>
+                  <LogSources />
                 </ProtectedRoute>
               }
             />

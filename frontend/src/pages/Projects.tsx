@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
 import { api, type Project, type Deployment } from '../services/api';
-import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText, XCircle } from 'lucide-react';
+import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText, XCircle, Activity } from 'lucide-react';
 
 export const Projects: React.FC = () => {
   const { user } = useAuth();
@@ -213,7 +213,15 @@ export const Projects: React.FC = () => {
                       className="flex-1 px-4 py-2.5 bg-white border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
                     >
                       <FileText className="w-4 h-4 text-indigo-400" />
-                      <span>View Logs</span>
+                      <span>Logs</span>
+                    </Link>
+
+                    <Link
+                      to={`/projects/${project.id}/log-sources`}
+                      className="flex-1 px-4 py-2.5 bg-white border border-slate-200 hover:border-purple-200 hover:bg-purple-50 text-slate-600 hover:text-purple-600 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <Activity className="w-4 h-4 text-purple-400" />
+                      <span>Sources</span>
                     </Link>
 
                     {canEdit(project.ownerId) && (
@@ -235,7 +243,7 @@ export const Projects: React.FC = () => {
         {/* Create Project Modal */}
         {isModalOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in-up">
-            <div className="glass-panel rounded-3xl max-w-lg w-full p-8 shadow-2xl space-y-6">
+            <div className="glass-panel rounded-3xl max-w-lg w-full p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                 <h3 className="text-xl font-bold text-slate-800">Create New Project</h3>
                 <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-800 transition-colors">

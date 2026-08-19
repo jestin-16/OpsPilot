@@ -8,13 +8,20 @@ const originalConsole = {
 
 let config = {
   webhookUrl: null,
+  metricsUrl: null,
   sourceService: 'unknown-service',
   batchSize: 10,
   flushIntervalMs: 5000,
+  metricsIntervalMs: 15000,
 };
 
 let logBuffer = [];
 let flushTimer = null;
+let metricsTimer = null;
+
+// APM Metrics Tracking
+let activeRequests = 0;
+let lastCpuUsage = process.cpuUsage();
 
 function formatMessage(args) {
   return args.map(arg => {
@@ -69,8 +76,59 @@ async function flushLogs() {
   }
 }
 
+async function flushMetrics() {
+  if (!config.metricsUrl) return;
+
+  const memUsage = process.memoryUsage();
+  const currentCpuUsage = process.cpuUsage();
+  
+  // Calculate CPU percentage since last check
+  const userDiff = currentCpuUsage.user - lastCpuUsage.user;
+  const sysDiff = currentCpuUsage.system - lastCpuUsage.system;
+  lastCpuUsage = currentCpuUsage;
+  
+  const cpuPercent = ((userDiff + sysDiff) / 1000) / config.metricsIntervalMs * 100;
+
+  const metrics = {
+    timestamp: new Date().toISOString(),
+    sourceService: config.sourceService,
+    memoryBytes: memUsage.rss,
+    cpuPercent: Math.max(0, cpuPercent),
+    activeRequests: activeRequests,
+  };
+
+  try {
+    const response = await fetch(config.metricsUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(metrics),
+    });
+    
+    if (!response.ok) {
+      originalConsole.error('[OpsPilot] Failed to send metrics:', response.status, response.statusText);
+    }
+  } catch (error) {
+    originalConsole.error('[OpsPilot] Error sending metrics:', error.message);
+  }
+}
+
+// Express Middleware to track active HTTP requests
+function requestTracker(req, res, next) {
+  activeRequests++;
+  res.on('finish', () => { activeRequests--; });
+  res.on('close', () => { activeRequests--; });
+  next();
+}
+
 function initOpsPilot(options = {}) {
   config = { ...config, ...options };
+
+  // Set default metricsUrl if webhookUrl is provided but metricsUrl is not
+  if (config.webhookUrl && !config.metricsUrl) {
+     config.metricsUrl = config.webhookUrl.replace('/webhook/', '/metrics/');
+  }
 
   if (!config.webhookUrl) {
     originalConsole.warn('[OpsPilot] Webhook URL is missing. Logs will not be sent.');
@@ -119,14 +177,20 @@ function initOpsPilot(options = {}) {
     flushLogs();
   });
 
-  // Set up periodic flush
+  // Set up periodic flushes
   if (flushTimer) clearInterval(flushTimer);
   flushTimer = setInterval(flushLogs, config.flushIntervalMs);
   
-  originalConsole.info(`[OpsPilot] Logger initialized for service: ${config.sourceService}`);
+  if (metricsTimer) clearInterval(metricsTimer);
+  if (config.metricsUrl) {
+    metricsTimer = setInterval(flushMetrics, config.metricsIntervalMs);
+  }
+  
+  originalConsole.info(`[OpsPilot] Logger & APM initialized for service: ${config.sourceService}`);
 }
 
 module.exports = {
   initOpsPilot,
-  flushLogs // Exposed for manual flushing if needed (e.g. serverless environments)
+  flushLogs,
+  requestTracker
 };

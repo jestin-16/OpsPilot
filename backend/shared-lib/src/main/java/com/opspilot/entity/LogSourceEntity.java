@@ -17,6 +17,9 @@ public class LogSourceEntity {
     @Column(name = "source_id")
     private Long sourceId;
 
+    @Column(name = "public_id", unique = true)
+    private String publicId;
+
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
@@ -66,6 +69,9 @@ public class LogSourceEntity {
 
     public Long getSourceId() { return sourceId; }
     public void setSourceId(Long sourceId) { this.sourceId = sourceId; }
+
+    public String getPublicId() { return publicId; }
+    public void setPublicId(String publicId) { this.publicId = publicId; }
 
     public Project getProject() { return project; }
     public void setProject(Project project) { this.project = project; }

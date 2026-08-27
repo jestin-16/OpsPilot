@@ -79,6 +79,14 @@ public class ProjectController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{id}/complete-setup")
+    @Operation(summary = "Complete project setup wizard")
+    public ResponseEntity<ProjectResponse> completeProjectSetup(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(projectService.completeProjectSetup(id, currentUser));
+    }
+
     // ─── Live Execution Engine ─────────────────────────────────────────────────
 
     @PostMapping("/{id}/run")

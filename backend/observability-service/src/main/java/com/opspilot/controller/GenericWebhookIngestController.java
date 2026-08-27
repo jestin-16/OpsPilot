@@ -35,11 +35,21 @@ public class GenericWebhookIngestController {
 
     @PostMapping("/webhook/{sourceId}")
     public ResponseEntity<String> handleWebhook(
-            @PathVariable Long sourceId,
+            @PathVariable String sourceId,
             @RequestBody String rawPayload,
             HttpServletRequest request
     ) {
-        Optional<LogSourceEntity> sourceOpt = logSourceRepository.findById(sourceId);
+        Optional<LogSourceEntity> sourceOpt = logSourceRepository.findByPublicId(sourceId);
+        
+        // Fallback to Long ID for legacy webhooks
+        if (sourceOpt.isEmpty()) {
+            try {
+                sourceOpt = logSourceRepository.findById(Long.parseLong(sourceId));
+            } catch (NumberFormatException e) {
+                // Not a number, ignore
+            }
+        }
+
         if (sourceOpt.isEmpty() || !sourceOpt.get().getIsActive()) {
             return ResponseEntity.notFound().build();
         }

@@ -11,18 +11,6 @@ export const Projects: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // New Project Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [projectName, setProjectName] = useState('');
-  const [description, setDescription] = useState('');
-  const [repositoryUrl, setRepositoryUrl] = useState('');
-  const [awsLogGroupName, setAwsLogGroupName] = useState('');
-  const [githubRepoName, setGithubRepoName] = useState('');
-  const [lokiAppLabel, setLokiAppLabel] = useState('');
-  const [ociLogGroupOcid, setOciLogGroupOcid] = useState('');
-  const [credentialsJson, setCredentialsJson] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
   // Trigger Deployment Modal State
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
@@ -44,28 +32,6 @@ export const Projects: React.FC = () => {
   useEffect(() => {
     fetchProjects();
   }, []);
-
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await api.createProject({ projectName, description, repositoryUrl, awsLogGroupName, githubRepoName, lokiAppLabel, ociLogGroupOcid, credentialsJson });
-      setIsModalOpen(false);
-      setProjectName('');
-      setDescription('');
-      setRepositoryUrl('');
-      setAwsLogGroupName('');
-      setGithubRepoName('');
-      setLokiAppLabel('');
-      setOciLogGroupOcid('');
-      setCredentialsJson('');
-      await fetchProjects();
-    } catch (err: any) {
-      alert(err.message || 'Failed to create project');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleDeleteProject = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this project?')) return;
@@ -125,13 +91,13 @@ export const Projects: React.FC = () => {
               Manage your microservices, trigger pipelines, and inspect active deployment status
             </p>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
+          <Link
+            to="/projects/new"
             className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md hover:shadow-indigo-500/30"
           >
             <Plus className="w-4 h-4" />
             <span>New Project</span>
-          </button>
+          </Link>
         </div>
 
         {error && (
@@ -149,12 +115,12 @@ export const Projects: React.FC = () => {
             <FolderGit2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <h3 className="text-sm font-bold text-slate-800">No projects registered yet</h3>
             <p className="text-xs font-medium text-slate-500 mt-1">Add your first project repository to start deploying.</p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="mt-4 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl shadow-md transition-colors"
+            <Link
+              to="/projects/new"
+              className="mt-4 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl shadow-md transition-colors inline-block"
             >
               Add Project
-            </button>
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -237,132 +203,6 @@ export const Projects: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* Create Project Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in-up">
-            <div className="glass-panel rounded-3xl max-w-lg w-full p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                <h3 className="text-xl font-bold text-slate-800">Create New Project</h3>
-                <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-800 transition-colors">
-                  <XCircle className="w-6 h-6" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateProject} className="space-y-5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                    Project Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    placeholder="e.g. Authentication Service"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                    Repository URL
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    value={repositoryUrl}
-                    onChange={(e) => setRepositoryUrl(e.target.value)}
-                    placeholder="https://github.com/opspilot/auth-service"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">
-                      AWS Log Group (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={awsLogGroupName}
-                      onChange={(e) => setAwsLogGroupName(e.target.value)}
-                      placeholder="/ecs/my-app"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">
-                      GitHub Repo (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={githubRepoName}
-                      onChange={(e) => setGithubRepoName(e.target.value)}
-                      placeholder="org/repo"
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">
-                      OCI Log Group OCID (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={ociLogGroupOcid}
-                      onChange={(e) => setOciLogGroupOcid(e.target.value)}
-                      placeholder="ocid1.loggroup.oc1..."
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 ml-1">
-                    Project Credentials JSON (Optional)
-                  </label>
-                  <p className="text-[10px] text-slate-400 mb-2 ml-1">Paste your AWS Access Keys or OCI API Keys here in JSON format.</p>
-                  <textarea
-                    value={credentialsJson}
-                    onChange={(e) => setCredentialsJson(e.target.value)}
-                    placeholder='{&#10;  "oci": { "tenancy": "...", "user": "..." },&#10;  "aws": { "accessKey": "..." }&#10;}'
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-mono text-sm focus:outline-none focus:border-indigo-500 min-h-[100px]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                    Description
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Short summary of application component..."
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-inner resize-none"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-5 py-2.5 bg-indigo-500 text-white font-bold text-sm rounded-xl hover:bg-indigo-600 shadow-md transition-colors disabled:opacity-50"
-                  >
-                    {submitting ? 'Creating...' : 'Create Project'}
-                  </button>
-                </div>
-              </form>
-            </div>
           </div>
         )}
 

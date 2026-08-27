@@ -10,4 +10,5 @@ import java.util.List;
 public interface LogSourceRepository extends JpaRepository<LogSourceEntity, Long> {
     List<LogSourceEntity> findByProject_Id(Long projectId);
     List<LogSourceEntity> findByIngestionModeAndIsActiveTrue(String ingestionMode);
+    java.util.Optional<LogSourceEntity> findByPublicId(String publicId);
 }

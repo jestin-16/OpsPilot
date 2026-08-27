@@ -457,4 +457,14 @@ export const api = {
     });
     return res.data;
   },
+
+  getLogSourceStatus: async (sourceId: number): Promise<{ hasReceivedFirstEvent: boolean; lastEventAt: string | null }> => {
+    const res = await axiosInstance.get(`/log-sources/${sourceId}/status`);
+    return res.data;
+  },
+
+  completeProjectSetup: async (projectId: number): Promise<Project> => {
+    const res = await axiosInstance.put<Project>(`/projects/${projectId}/complete-setup`);
+    return res.data;
+  },
 };

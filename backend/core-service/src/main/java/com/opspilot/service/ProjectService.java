@@ -77,12 +77,22 @@ public class ProjectService {
 
     @Transactional
     public ProjectResponse createProject(ProjectRequest request, User currentUser) {
+        if (projectRepository.existsByProjectNameAndOwner(request.getProjectName(), currentUser)) {
+            throw new IllegalArgumentException("Project name must be unique per user");
+        }
+
+        if (request.getRepositoryUrl() != null && !request.getRepositoryUrl().isEmpty()) {
+            if (!request.getRepositoryUrl().matches(".*(github\\.com|gitlab\\.com).*")) {
+                throw new IllegalArgumentException("Repository URL must be a valid github.com or gitlab.com URL");
+            }
+        }
+
         Project project = new Project(
                 request.getProjectName(),
                 request.getDescription(),
                 request.getRepositoryUrl(),
                 currentUser,
-                request.getStatus() != null ? request.getStatus() : "Active"
+                "SETUP_IN_PROGRESS"
         );
         project.setAwsLogGroupName(request.getAwsLogGroupName());
         project.setGithubRepoName(request.getGithubRepoName());
@@ -163,6 +173,24 @@ public class ProjectService {
                     this, currentUser, "PROJECT_DELETE", "PROJECT", id.toString(), "Deleted project: " + project.getProjectName()
             ));
         }
+    }
+
+    @Transactional
+    public ProjectResponse completeProjectSetup(Long id, User currentUser) {
+        Project project = projectRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
+
+        verifyOwnerOrAdmin(project, currentUser);
+        project.setStatus("ACTIVE");
+        Project updatedProject = projectRepository.save(project);
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new AuditEvent(
+                    this, currentUser, "PROJECT_SETUP_COMPLETE", "PROJECT", updatedProject.getId().toString(), "Completed setup for project: " + updatedProject.getProjectName()
+            ));
+        }
+
+        return mapToResponse(updatedProject);
     }
 
     public void verifyOwnerOrAdmin(Project project, User currentUser) {

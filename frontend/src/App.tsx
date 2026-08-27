@@ -6,6 +6,7 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
+import { ProjectWizard } from './pages/ProjectWizard';
 import { BlackboxMonitoring } from './pages/BlackboxMonitoring';
 import { WhiteboxMonitoring } from './pages/WhiteboxMonitoring';
 import { LiveProjectDashboard } from './pages/LiveProjectDashboard';
@@ -83,6 +84,22 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <Projects />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/new"
+              element={
+                <ProtectedRoute>
+                  <ProjectWizard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/new/:projectId"
+              element={
+                <ProtectedRoute>
+                  <ProjectWizard />
                 </ProtectedRoute>
               }
             />

@@ -30,14 +30,73 @@ public class LogSourceController {
 
     @GetMapping("/projects/{projectId}/log-sources")
     public ResponseEntity<List<LogSourceEntity>> getLogSources(@PathVariable Long projectId) {
-        return ResponseEntity.ok(logSourceRepository.findByProject_Id(projectId));
+        List<LogSourceEntity> sources = logSourceRepository.findByProject_Id(projectId);
+        // Mask the authConfig to avoid returning plaintext secrets
+        sources.forEach(s -> {
+            if (s.getAuthConfig() != null) {
+                s.setAuthConfig("{\"masked\": true}");
+            }
+        });
+        return ResponseEntity.ok(sources);
     }
 
     @PostMapping("/projects/{projectId}/log-sources")
-    public ResponseEntity<LogSourceEntity> createLogSource(@PathVariable Long projectId, @RequestBody LogSourceEntity logSource) {
+    public ResponseEntity<?> createLogSource(@PathVariable Long projectId, @RequestBody LogSourceEntity logSource) {
         Project project = projectRepository.findById(projectId).orElseThrow(() -> new RuntimeException("Project not found"));
         logSource.setProject(project);
-        return ResponseEntity.ok(logSourceRepository.save(logSource));
+
+        String generatedSecret = null;
+        String webhookUrl = null;
+
+        if ("WEBHOOK".equalsIgnoreCase(logSource.getIngestionMode())) {
+            // Generate public ID
+            logSource.setPublicId(java.util.UUID.randomUUID().toString());
+
+            // Generate secret
+            byte[] secretBytes = new byte[32];
+            new java.security.SecureRandom().nextBytes(secretBytes);
+            generatedSecret = java.util.Base64.getEncoder().encodeToString(secretBytes);
+
+            logSource.setAuthMethod("HEADER_SECRET");
+            String authConfigJson = String.format("{\"headerName\":\"x-webhook-secret\", \"secretValue\":\"%s\"}", generatedSecret);
+            logSource.setAuthConfig(authConfigJson);
+
+            webhookUrl = "/api/v1/ingest/webhook/" + logSource.getPublicId();
+        } else if (logSource.getPublicId() == null) {
+             logSource.setPublicId(java.util.UUID.randomUUID().toString());
+        }
+
+        LogSourceEntity saved = logSourceRepository.save(logSource);
+
+        if ("WEBHOOK".equalsIgnoreCase(logSource.getIngestionMode())) {
+            return ResponseEntity.ok(Map.of(
+                    "sourceId", saved.getSourceId(),
+                    "publicId", saved.getPublicId(),
+                    "webhookUrl", webhookUrl,
+                    "secret", generatedSecret
+            ));
+        }
+
+        return ResponseEntity.ok(saved);
+    }
+
+    @Autowired
+    private LogRepository logRepository;
+
+    @GetMapping("/log-sources/{sourceId}/status")
+    public ResponseEntity<?> getLogSourceStatus(@PathVariable Long sourceId) {
+        LogSourceEntity source = logSourceRepository.findById(sourceId)
+                .orElseThrow(() -> new RuntimeException("Source not found"));
+        
+        Optional<LogEntity> latestLog = logRepository.findFirstBySourceServiceOrderByTimestampDesc(source.getSourceName());
+        
+        boolean hasReceived = latestLog.isPresent();
+        Object lastEventAt = hasReceived ? latestLog.get().getTimestamp().toString() : null;
+
+        return ResponseEntity.ok(Map.of(
+                "hasReceivedFirstEvent", hasReceived,
+                "lastEventAt", lastEventAt != null ? lastEventAt : ""
+        ));
     }
 
     @PutMapping("/log-sources/{sourceId}")
@@ -47,11 +106,17 @@ public class LogSourceController {
         existing.setIngestionMode(logSource.getIngestionMode());
         existing.setFieldMapping(logSource.getFieldMapping());
         existing.setAuthMethod(logSource.getAuthMethod());
-        existing.setAuthConfig(logSource.getAuthConfig());
+        // Don't update authConfig if it's masked
+        if (logSource.getAuthConfig() != null && !logSource.getAuthConfig().contains("\"masked\": true")) {
+            existing.setAuthConfig(logSource.getAuthConfig());
+        }
         existing.setPollEndpointUrl(logSource.getPollEndpointUrl());
         existing.setPollIntervalSeconds(logSource.getPollIntervalSeconds());
         existing.setIsActive(logSource.getIsActive());
-        return ResponseEntity.ok(logSourceRepository.save(existing));
+        
+        LogSourceEntity saved = logSourceRepository.save(existing);
+        saved.setAuthConfig("{\"masked\": true}");
+        return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/log-sources/{sourceId}")

@@ -12,6 +12,8 @@ import java.util.List;
 public interface LogRepository extends JpaRepository<LogEntity, Long> {
 
     List<LogEntity> findAllByOrderByTimestampDesc();
+    
+    java.util.Optional<LogEntity> findFirstBySourceServiceOrderByTimestampDesc(String sourceService);
 
     @Query("SELECT l FROM LogEntity l WHERE " +
            "(:sourceService IS NULL OR l.sourceService = :sourceService) AND " +

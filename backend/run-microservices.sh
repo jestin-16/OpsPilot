@@ -2,6 +2,9 @@
 
 echo "Starting OpsPilot Microservices..."
 
+# Trap SIGINT (Ctrl+C) and kill all background jobs
+trap 'echo "Stopping all services..."; kill $(jobs -p); exit' SIGINT SIGTERM
+
 # Install parent POM first
 echo "Installing parent POM..."
 ./mvnw clean install -N

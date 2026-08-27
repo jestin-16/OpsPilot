@@ -8,6 +8,10 @@ import com.opspilot.event.AuditEvent;
 import com.opspilot.exception.ForbiddenException;
 import com.opspilot.exception.ResourceNotFoundException;
 import com.opspilot.repository.ProjectRepository;
+import com.opspilot.repository.DeploymentRepository;
+import com.opspilot.repository.LogRepository;
+import com.opspilot.repository.LogSourceRepository;
+import com.opspilot.repository.PipelineRunRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -24,6 +28,18 @@ public class ProjectService {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private DeploymentRepository deploymentRepository;
+
+    @Autowired
+    private LogRepository logRepository;
+
+    @Autowired
+    private LogSourceRepository logSourceRepository;
+
+    @Autowired
+    private PipelineRunRepository pipelineRunRepository;
 
     @Autowired
     private io.micrometer.core.instrument.MeterRegistry meterRegistry;
@@ -165,6 +181,12 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + id));
 
         verifyOwnerOrAdmin(project, currentUser);
+        
+        // Clean up dependencies to avoid foreign key constraint violations
+        logRepository.deleteLogsByProjectId(id);
+        deploymentRepository.deleteByProjectId(id);
+        pipelineRunRepository.deleteByProject_Id(id);
+        logSourceRepository.deleteByProject_Id(id);
 
         projectRepository.delete(project);
 

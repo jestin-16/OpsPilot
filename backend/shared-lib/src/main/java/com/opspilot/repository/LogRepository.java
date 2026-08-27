@@ -25,4 +25,8 @@ public interface LogRepository extends JpaRepository<LogEntity, Long> {
             @Param("logLevel") String logLevel,
             @Param("query") String query
     );
+    
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("DELETE FROM LogEntity l WHERE l.deployment.project.id = :projectId")
+    void deleteLogsByProjectId(@Param("projectId") Long projectId);
 }

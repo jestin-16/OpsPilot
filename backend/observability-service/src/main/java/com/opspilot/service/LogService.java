@@ -17,7 +17,7 @@ public class LogService {
     @Autowired(required = false)
     private List<com.opspilot.provider.LogProvider> logProviders;
 
-    public List<LogEntity> searchLogs(String sourceService, String logLevel, String query, String providerName) {
+    public List<LogEntity> searchLogs(Long projectId, String sourceService, String logLevel, String query, String providerName) {
         String serviceParam = (sourceService == null || sourceService.trim().isEmpty() || "ALL".equalsIgnoreCase(sourceService)) ? null : sourceService;
         String levelParam = (logLevel == null || logLevel.trim().isEmpty() || "ALL".equalsIgnoreCase(logLevel)) ? null : logLevel;
         String queryParam = (query == null || query.trim().isEmpty()) ? null : "%" + query.toLowerCase() + "%";
@@ -28,7 +28,7 @@ public class LogService {
         boolean fetchExternal = (logProviders != null) && (providerName != null && !providerName.equalsIgnoreCase("local"));
 
         if (fetchLocal) {
-            List<LogEntity> localLogs = logRepository.searchLogs(serviceParam, levelParam, queryParam);
+            List<LogEntity> localLogs = logRepository.searchLogs(projectId, serviceParam, levelParam, queryParam);
             localLogs.forEach(log -> log.setProviderSource("local"));
             mergedLogs.addAll(localLogs);
         }

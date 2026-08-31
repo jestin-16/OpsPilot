@@ -8,6 +8,7 @@ const originalConsole = {
 
 let config = {
   webhookUrl: null,
+  webhookSecret: null,
   metricsUrl: null,
   sourceService: 'unknown-service',
   batchSize: 10,
@@ -59,11 +60,17 @@ async function flushLogs() {
   logBuffer = [];
 
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Bypass-Tunnel-Reminder': 'true',
+    };
+    if (config.webhookSecret) {
+      headers['x-webhook-secret'] = config.webhookSecret;
+    }
+
     const response = await fetch(config.webhookUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       body: JSON.stringify(logsToSend),
     });
     

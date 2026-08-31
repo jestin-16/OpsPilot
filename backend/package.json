@@ -1,0 +1,8 @@
+{
+  "name": "opspilot-backend-utils",
+  "version": "1.0.0",
+  "description": "Utility scripts for OpsPilot Backend",
+  "scripts": {
+    "tunnel": "npx -y localtunnel --port 8080 --subdomain opspilot-jestin"
+  }
+}

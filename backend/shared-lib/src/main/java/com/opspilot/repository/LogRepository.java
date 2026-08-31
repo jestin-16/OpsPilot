@@ -15,12 +15,14 @@ public interface LogRepository extends JpaRepository<LogEntity, Long> {
     
     java.util.Optional<LogEntity> findFirstBySourceServiceOrderByTimestampDesc(String sourceService);
 
-    @Query("SELECT l FROM LogEntity l WHERE " +
+    @Query("SELECT l FROM LogEntity l LEFT JOIN l.deployment d LEFT JOIN d.project p WHERE " +
+           "(:projectId IS NULL OR p.id = :projectId) AND " +
            "(:sourceService IS NULL OR l.sourceService = :sourceService) AND " +
            "(:logLevel IS NULL OR l.logLevel = :logLevel) AND " +
            "(:query IS NULL OR LOWER(l.message) LIKE :query) " +
            "ORDER BY l.timestamp DESC")
     List<LogEntity> searchLogs(
+            @Param("projectId") Long projectId,
             @Param("sourceService") String sourceService,
             @Param("logLevel") String logLevel,
             @Param("query") String query

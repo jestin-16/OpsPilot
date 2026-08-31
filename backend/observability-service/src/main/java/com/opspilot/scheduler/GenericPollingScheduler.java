@@ -87,17 +87,23 @@ public class GenericPollingScheduler {
         ResponseEntity<String> response = restTemplate.exchange(source.getPollEndpointUrl(), HttpMethod.GET, entity, String.class);
 
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            String rawPayload = response.getBody();
-            // Depending on the API, payload might be an array of logs or a single wrapper object.
-            // For simplicity and matching requirements, we assume mapPayload handles it or fieldMapping maps to a single object.
-            // A more advanced implementation might use JSONPath to extract an array of logs and iterate.
+            String rawPayload = response.getBody().trim();
             
-            // To handle arrays properly (which is common for polling), we'll do a simple check.
-            // If the JSON starts with '[', we'd theoretically want to process each item. 
-            // For this implementation, fieldMappingService handles a single JSON block. 
-            // We'll pass the whole payload and rely on JSONPath.
-            Optional<LogEntity> mapped = fieldMappingService.mapPayload(rawPayload, source.getFieldMapping(), source.getSourceName());
-            mapped.ifPresent(log -> logRepository.save(log));
+            if (rawPayload.startsWith("[")) {
+                try {
+                    List<Map<String, Object>> arrayPayload = objectMapper.readValue(rawPayload, List.class);
+                    for (Map<String, Object> item : arrayPayload) {
+                        String itemJson = objectMapper.writeValueAsString(item);
+                        Optional<LogEntity> mapped = fieldMappingService.mapPayload(itemJson, source.getFieldMapping(), source.getSourceName());
+                        mapped.ifPresent(log -> logRepository.save(log));
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to parse JSON array payload: {}", e.getMessage());
+                }
+            } else {
+                Optional<LogEntity> mapped = fieldMappingService.mapPayload(rawPayload, source.getFieldMapping(), source.getSourceName());
+                mapped.ifPresent(log -> logRepository.save(log));
+            }
         }
     }
 }

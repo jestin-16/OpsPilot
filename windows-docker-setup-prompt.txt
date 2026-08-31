@@ -1,0 +1,10 @@
+I want to run this full OpsPilot project on Windows without installing any local dependencies like Node.js, Java, or Maven. I have Docker Desktop installed.
+
+Please containerize the entire application by doing the following:
+
+1. Create a `Dockerfile` for the Vite/React frontend that uses a multi-stage build (Node.js to build, Nginx to serve).
+2. Create `Dockerfile`(s) for the Spring Boot backend microservices. Since it's a multi-module Maven project (shared-lib, service-registry, api-gateway, auth-service, core-service, observability-service), use a multi-stage build that compiles the parent POM and shared libraries first, then packages the individual microservices.
+3. Update the existing `docker-compose.yml` to include the frontend and all backend microservices, alongside the existing infrastructure (postgres, prometheus, grafana, blackbox). 
+4. Ensure all services are properly networked, environment variables are mapped, and the services wait for each other appropriately (e.g., waiting for the database or service registry).
+
+The end goal is that I can run the entire stack with a single `docker compose up --build` command.

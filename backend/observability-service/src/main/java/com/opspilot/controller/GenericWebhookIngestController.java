@@ -76,6 +76,18 @@ public class GenericWebhookIngestController {
                             logRepository.save(log);
                         });
                     }
+                } else if (rawPayload.contains("\n") && !rawPayload.trim().startsWith("{")) {
+                    // NDJSON support
+                    String[] lines = rawPayload.split("\n");
+                    for (String line : lines) {
+                        if (!line.trim().isEmpty()) {
+                            Optional<LogEntity> mapped = fieldMappingService.mapPayload(line.trim(), source.getFieldMapping(), source.getSourceName());
+                            mapped.ifPresent(log -> {
+                                log.setDeployment(null);
+                                logRepository.save(log);
+                            });
+                        }
+                    }
                 } else {
                     Optional<LogEntity> mapped = fieldMappingService.mapPayload(rawPayload, source.getFieldMapping(), source.getSourceName());
                     mapped.ifPresent(log -> {

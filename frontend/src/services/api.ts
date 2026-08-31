@@ -227,6 +227,15 @@ export interface PipelineRun {
   createdAt: string;
 }
 
+export interface CommitLog {
+  commitLogId: number;
+  commitSha: string;
+  branchName: string;
+  author: string;
+  message: string;
+  timestamp: string;
+}
+
 export interface AiDiagnosisResponse {
   query: string;
   rootCause: string;
@@ -356,6 +365,17 @@ export const api = {
 
   createLog: async (data: { sourceService: string; logLevel: string; message: string }): Promise<LogEntry> => {
     const res = await axiosInstance.post<LogEntry>('/logs', data);
+    return res.data;
+  },
+
+  // Commits
+  getCommits: async (projectId: number): Promise<CommitLog[]> => {
+    const res = await axiosInstance.get<CommitLog[]>(`/commits/project/${projectId}`);
+    return res.data;
+  },
+
+  syncCommits: async (projectId: number): Promise<{ synced_count: number }> => {
+    const res = await axiosInstance.post<{ synced_count: number }>(`/commits/project/${projectId}/sync`);
     return res.data;
   },
 

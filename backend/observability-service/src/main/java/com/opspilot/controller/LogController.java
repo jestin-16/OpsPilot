@@ -17,12 +17,13 @@ public class LogController {
 
     @GetMapping
     public ResponseEntity<List<LogEntity>> getLogs(
+            @RequestParam(required = false) Long projectId,
             @RequestParam(required = false) String sourceService,
             @RequestParam(required = false) String logLevel,
             @RequestParam(required = false) String query,
             @RequestParam(required = false, defaultValue = "local") String providerName
     ) {
-        return ResponseEntity.ok(logService.searchLogs(sourceService, logLevel, query, providerName));
+        return ResponseEntity.ok(logService.searchLogs(projectId, sourceService, logLevel, query, providerName));
     }
 
     @PostMapping

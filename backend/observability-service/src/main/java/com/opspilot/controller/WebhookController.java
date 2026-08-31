@@ -9,6 +9,8 @@ import com.opspilot.repository.LogRepository;
 import com.opspilot.repository.NotificationRepository;
 import com.opspilot.repository.PipelineRunRepository;
 import com.opspilot.repository.ProjectRepository;
+import com.opspilot.entity.CommitLogEntity;
+import com.opspilot.repository.CommitLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,6 +34,9 @@ public class WebhookController {
 
     @Autowired
     private NotificationRepository notificationRepository;
+
+    @Autowired
+    private CommitLogRepository commitLogRepository;
 
     @PostMapping("/github")
     public ResponseEntity<Map<String, Object>> handleGitHubWebhook(
@@ -71,6 +76,15 @@ public class WebhookController {
                 "cicd-webhook-service",
                 "INFO",
                 "GitHub Webhook [" + eventType + "] received for repo: " + repoName + " branch: " + branch + " commit: " + commitSha
+        ));
+
+        // Save Commit Log
+        commitLogRepository.save(new CommitLogEntity(
+                matchedProject,
+                commitSha,
+                branch,
+                author,
+                commitMessage
         ));
 
         // Emit Notification

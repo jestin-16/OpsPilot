@@ -1,4 +1,3 @@
-
 version: '3.8'
 
 services:
@@ -14,6 +13,79 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+
+  service-registry:
+    build:
+      context: ./backend
+      dockerfile: service-registry/Dockerfile
+    container_name: opspilot-service-registry
+    ports:
+      - "8761:8761"
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: auth-service/Dockerfile
+    container_name: opspilot-auth-service
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - service-registry
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
+      - SPRING_DATASOURCE_USERNAME=opspilot
+      - SPRING_DATASOURCE_PASSWORD=opspilot
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+
+  core-service:
+    build:
+      context: ./backend
+      dockerfile: core-service/Dockerfile
+    container_name: opspilot-core-service
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - service-registry
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
+      - SPRING_DATASOURCE_USERNAME=opspilot
+      - SPRING_DATASOURCE_PASSWORD=opspilot
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+
+  observability-service:
+    build:
+      context: ./backend
+      dockerfile: observability-service/Dockerfile
+    container_name: opspilot-observability-service
+    ports:
+      - "8083:8083"
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - service-registry
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
+      - SPRING_DATASOURCE_USERNAME=opspilot
+      - SPRING_DATASOURCE_PASSWORD=opspilot
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: api-gateway/Dockerfile
+    container_name: opspilot-api-gateway
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      - service-registry
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
 
   prometheus:
     image: prom/prometheus:latest

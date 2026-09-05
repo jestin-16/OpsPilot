@@ -2,9 +2,9 @@ import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  LayoutDashboard, FolderGit2, Rocket, Container, Boxes,
-  Activity, FileText, Bell, GitBranch, Bot, BookOpen,
-  Settings, LogOut, User as UserIcon, Terminal, Network, Server, Globe
+  LayoutDashboard, FolderGit2, Rocket,
+  Activity, FileText, Bell, BookOpen,
+  LogOut, User as UserIcon, Terminal, Server, Globe
 } from 'lucide-react';
 
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -20,7 +20,8 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, enabled: true },
     { name: 'Projects', path: '/projects', icon: FolderGit2, enabled: true },
-    { name: 'Deployments', path: '/projects', icon: Rocket, enabled: true },
+    { name: 'Deployments', path: '/deployments', icon: Rocket, enabled: true },
+    { name: 'Docker Management', path: '/docker', icon: Terminal, enabled: true },
     { name: 'Live project dashboard', path: '/monitoring', icon: Activity, enabled: true },
     { name: 'Whitebox monitoring', path: '/whitebox', icon: Server, enabled: true },
     { name: 'Blackbox monitoring', path: '/blackbox', icon: Globe, enabled: true },
@@ -69,17 +70,13 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                   to={item.path}
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-semibold transition-all duration-300 transform hover:translate-x-1 ${
                     isActive
-                      ? item.ai 
-                        ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:shadow-lg' 
-                        : 'bg-white text-indigo-600 shadow-sm border border-indigo-100'
-                      : item.ai 
-                        ? 'text-purple-600 hover:bg-purple-50/50 hover:text-purple-700' 
-                        : 'text-slate-600 hover:bg-white/60 hover:text-indigo-600'
+                      ? 'bg-white text-indigo-600 shadow-sm border border-indigo-100'
+                      : 'text-slate-600 hover:bg-white/60 hover:text-indigo-600'
                   }`}
                 >
                   <Icon className={`w-[18px] h-[18px] transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
                   <span>{item.name}</span>
-                  {isActive && !item.ai && (
+                  {isActive && (
                     <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
                   )}
                 </Link>

@@ -15,6 +15,8 @@ import { NotificationCenter } from './pages/NotificationCenter';
 import { PlatformGuide } from './pages/PlatformGuide';
 import { LandingPage } from './pages/LandingPage';
 import { LogSources } from './pages/LogSources';
+import { DockerPage } from './pages/DockerPage';
+import { DeploymentsPage } from './pages/DeploymentsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -156,6 +158,22 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <PlatformGuide />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/docker"
+              element={
+                <ProtectedRoute>
+                  <DockerPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/deployments"
+              element={
+                <ProtectedRoute>
+                  <DeploymentsPage />
                 </ProtectedRoute>
               }
             />

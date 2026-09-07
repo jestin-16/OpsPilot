@@ -23,14 +23,22 @@
             <groupId>com.opspilot</groupId>
             <artifactId>shared-lib</artifactId>
         </dependency>
+        <!-- Use docker-java-core (no Jersey dependency) + httpclient5 transport -->
         <dependency>
             <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java</artifactId>
+            <artifactId>docker-java-core</artifactId>
             <version>3.3.4</version>
+            <exclusions>
+                <!-- jackson-module-jaxb-annotations requires javax.xml.bind.* removed in Java 11 -->
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.module</groupId>
+                    <artifactId>jackson-module-jaxb-annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.docker-java</groupId>
-            <artifactId>docker-java-transport-httpclient5</artifactId>
+            <artifactId>docker-java-transport-zerodep</artifactId>
             <version>3.3.4</version>
         </dependency>
     </dependencies>

@@ -13,6 +13,7 @@ import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Type;
 import org.xbill.DNS.Record;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * Aggregates real data from:
@@ -42,8 +43,10 @@ public class BlackboxService {
         extFactory.setReadTimeout(3000);
         this.externalRestTemplate = new RestTemplate(extFactory);
     }
-    private static final String BLACKBOX_URL = "http://localhost:9115/probe";
     private static final String GEOIP_URL    = "http://ip-api.com/json/";
+
+    @Value("${app.blackbox.url:http://blackbox:9115/probe}")
+    private String blackboxUrl;
 
     @Autowired
     private BrowserProbeService browserProbeService;
@@ -164,8 +167,8 @@ public class BlackboxService {
 
     private String fetchBlackbox(String url) {
         try {
-            String probeUrl = BLACKBOX_URL + "?module=http_2xx&target=" + url;
-            ResponseEntity<String> resp = restTemplate.getForEntity(probeUrl, String.class);
+            String probeUrl = blackboxUrl + "?module=http_2xx&target=" + url;
+            ResponseEntity<String> resp = blackboxRestTemplate.getForEntity(probeUrl, String.class);
             return resp.getBody();
         } catch (Exception e) {
             return null;

@@ -2,6 +2,9 @@ package com.opspilot.service;
 
 import com.microsoft.playwright.*;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -11,13 +14,30 @@ import java.util.concurrent.ConcurrentHashMap;
 @Service
 public class BrowserProbeService {
 
+    private static final Logger logger = LoggerFactory.getLogger(BrowserProbeService.class);
+
+    @Value("${app.browser-probe.enabled:false}")
+    private boolean browserProbeEnabled;
+
     private Playwright playwright;
     private Browser browser;
 
     @PostConstruct
     public void init() {
-        playwright = Playwright.create();
-        browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+        if (!browserProbeEnabled) {
+            return;
+        }
+
+        try {
+            playwright = Playwright.create();
+            browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
+        } catch (RuntimeException e) {
+            logger.warn("Browser probing is unavailable; observability service will start without it", e);
+            if (playwright != null) {
+                playwright.close();
+                playwright = null;
+            }
+        }
     }
 
     @PreDestroy
@@ -30,6 +50,11 @@ public class BrowserProbeService {
         Map<String, Object> result = new LinkedHashMap<>();
         List<String> consoleErrors = new ArrayList<>();
         List<Map<String, Object>> networkWaterfall = new ArrayList<>();
+
+        if (browser == null) {
+            result.put("browserError", "Browser probing is unavailable in this environment");
+            return result;
+        }
 
         try (BrowserContext context = browser.newContext();
              Page page = context.newPage()) {

@@ -186,12 +186,13 @@ export const BlackboxMonitoring: React.FC = () => {
     if (!probing) return;
     let active = true;
     let timeoutId: ReturnType<typeof setTimeout>;
+    const controller = new AbortController();
 
     const run = async () => {
       if (!active) return;
       const ts = new Date().toLocaleTimeString('en-US', { hour12: false });
       try {
-        const data: ProbeResult = await api.probeUrl(url);
+        const data: ProbeResult = await api.probeUrl(url, controller.signal);
         if (!active) return;
         if (serviceStatus !== 'ready') setServiceStatus('ready');
         setCurrent(data);
@@ -223,6 +224,7 @@ export const BlackboxMonitoring: React.FC = () => {
         }
       } catch (err: any) {
         if (!active) return;
+        if (err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') return;
         if (err?.response?.status === 503 || err?.message?.includes('503') || err?.message?.includes('Network Error')) {
           setServiceStatus('starting');
           addLog(`⏳ Backend starting up or downloading dependencies... (503)`, 'warn');
@@ -241,6 +243,7 @@ export const BlackboxMonitoring: React.FC = () => {
     
     return () => {
       active = false;
+      controller.abort();
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [probing, url, refreshMs, addLog]);

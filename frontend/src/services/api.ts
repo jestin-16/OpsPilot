@@ -396,8 +396,8 @@ export const api = {
     return res.data;
   },
 
-  probeUrl: async (url: string): Promise<{ success: number; duration: number; httpStatus: number; sslExpiry: number }> => {
-    const res = await axiosInstance.get(`/monitoring/probe?url=${encodeURIComponent(url)}`);
+  probeUrl: async (url: string, signal?: AbortSignal): Promise<any> => {
+    const res = await axiosInstance.get(`/monitoring/probe?url=${encodeURIComponent(url)}`, { signal });
     return res.data;
   },
 

@@ -17,6 +17,9 @@ import { LandingPage } from './pages/LandingPage';
 import { LogSources } from './pages/LogSources';
 import { DockerPage } from './pages/DockerPage';
 import { DeploymentsPage } from './pages/DeploymentsPage';
+import { UserManagement } from './pages/UserManagement';
+import { AlertProvider } from './components/AlertProvider';
+import { AdminGovernance } from './pages/AdminGovernance';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,15 +31,27 @@ const queryClient = new QueryClient({
 });
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isSessionLoading } = useAuth();
+  if (isSessionLoading) return null;
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
   return <>{children}</>;
 };
 
+const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.roles?.some((role) => {
+    const normalizedRole = role.trim().toUpperCase().replace(/\s+/g, '_');
+    return normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN' || normalizedRole === 'ADMINISTRATOR' || normalizedRole === 'ROLE_ADMINISTRATOR';
+  }) ?? false;
+
+  return isAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
+};
+
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isSessionLoading } = useAuth();
+  if (isSessionLoading) return null;
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -47,8 +62,9 @@ export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+        <AlertProvider>
+          <BrowserRouter>
+            <Routes>
             <Route
               path="/"
               element={
@@ -177,9 +193,24 @@ export const App: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin"
+              element={<ProtectedRoute><AdminRoute><AdminGovernance /></AdminRoute></ProtectedRoute>}
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <AdminRoute>
+                    <UserManagement />
+                  </AdminRoute>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/monitoring" replace />} />
-          </Routes>
-        </BrowserRouter>
+            </Routes>
+          </BrowserRouter>
+        </AlertProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

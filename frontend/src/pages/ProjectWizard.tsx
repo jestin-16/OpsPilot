@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type Project } from '../services/api';
-import { FolderGit2, CheckCircle2, ChevronRight, Loader2, Code, Webhook, FastForward } from 'lucide-react';
+import { api, API_BASE_URL, type Project } from '../services/api';
+import { FolderGit2, CheckCircle2, ChevronRight, ChevronLeft, Loader2, Code, Webhook, FastForward, X } from 'lucide-react';
 
 export const ProjectWizard: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +10,8 @@ export const ProjectWizard: React.FC = () => {
   
   const [step, setStep] = useState(1);
   const [project, setProject] = useState<Project | null>(null);
+  const [createdInWizard, setCreatedInWizard] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Step 1 State
   const [projectName, setProjectName] = useState('');
@@ -83,6 +85,7 @@ export const ProjectWizard: React.FC = () => {
         // Create
         const newProject = await api.createProject({ projectName, description, repositoryUrl });
         setProject(newProject);
+        setCreatedInWizard(true);
         navigate(`/projects/new/${newProject.id}`, { replace: true });
         setStep(2);
       }
@@ -129,6 +132,44 @@ export const ProjectWizard: React.FC = () => {
     } catch (err: any) {
       setError(err.message || 'Failed to complete setup');
     }
+  };
+
+  const handleCancel = async () => {
+    setPolling(false);
+    setCreatingWebhook(false);
+
+    if (!createdInWizard || !project) {
+      navigate('/projects');
+      return;
+    }
+
+    setCancelling(true);
+    setError('');
+    try {
+      await api.deleteProject(project.id);
+      navigate('/projects');
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || 'Failed to cancel project setup');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (step === 3) {
+      setStep(2);
+      return;
+    }
+
+    if (webhookInfo) {
+      setWebhookInfo(null);
+      setPolling(false);
+      setHasReceivedFirstEvent(false);
+      setTimeoutMsg('');
+      return;
+    }
+
+    setStep(1);
   };
 
   return (
@@ -214,10 +255,18 @@ export const ProjectWizard: React.FC = () => {
                 />
               </div>
 
-              <div className="flex justify-end pt-4 border-t border-slate-100">
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  disabled={submitting1 || cancelling}
+                  className="px-4 py-2.5 text-slate-500 hover:text-rose-600 text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
                 <button
                   type="submit"
-                  disabled={submitting1}
+                  disabled={submitting1 || cancelling}
                   className="px-6 py-3 bg-indigo-500 text-white font-bold text-sm rounded-xl hover:bg-indigo-600 shadow-md transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {submitting1 ? 'Saving...' : 'Next Step'} <ChevronRight className="w-4 h-4" />
@@ -288,7 +337,7 @@ export const ProjectWizard: React.FC = () => {
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                   <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Webhook URL</p>
                   <code className="text-sm font-mono text-indigo-600 break-all bg-indigo-50 px-2 py-1 rounded">
-                    http://localhost:8080{webhookInfo.webhookUrl}
+                    {API_BASE_URL.replace(/\/api\/v1$/, '')}{webhookInfo.webhookUrl}
                   </code>
                 </div>
                 
@@ -312,7 +361,7 @@ export const ProjectWizard: React.FC = () => {
                       <pre className="text-xs font-mono text-slate-300">
 <span className="text-purple-400">import</span> {'{ OpsPilot }'} <span className="text-purple-400">from</span> <span className="text-emerald-300">'@opspilot/node-sdk'</span>;<br/><br/>
 <span className="text-purple-400">const</span> client = <span className="text-purple-400">new</span> <span className="text-amber-300">OpsPilot</span>({'{'}<br/>
-{'  '}endpoint: <span className="text-emerald-300">'http://localhost:8080{webhookInfo.webhookUrl}'</span>,<br/>
+{'  '}endpoint: <span className="text-emerald-300">'{API_BASE_URL.replace(/\/api\/v1$/, '')}{webhookInfo.webhookUrl}'</span>,<br/>
 {'  '}secret: <span className="text-emerald-300">'{webhookInfo.secret}'</span><br/>
 {'}'});<br/><br/>
 client.<span className="text-blue-400">log</span>(<span className="text-emerald-300">'INFO'</span>, <span className="text-emerald-300">'Application started successfully'</span>);
@@ -374,6 +423,25 @@ x-webhook-secret: {webhookInfo.secret}<br/><br/>
                 )}
               </div>
             )}
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                type="button"
+                onClick={handleBack}
+                disabled={creatingWebhook || polling}
+                className="px-4 py-2.5 text-slate-500 hover:text-indigo-600 text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" /> Back
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="px-4 py-2.5 text-slate-500 hover:text-rose-600 text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+              >
+                <X className="w-4 h-4" /> Cancel
+              </button>
+            </div>
           </div>
         )}
 
@@ -406,12 +474,30 @@ x-webhook-secret: {webhookInfo.secret}<br/><br/>
               </div>
             </div>
 
-            <button
-              onClick={handleCompleteSetup}
-              className="px-8 py-3.5 bg-indigo-500 text-white font-bold text-sm rounded-xl hover:bg-indigo-600 shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
-            >
-              Go to Dashboard
-            </button>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="px-5 py-3.5 text-slate-500 hover:text-indigo-600 font-bold text-sm transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" /> Back
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={cancelling}
+                className="px-5 py-3.5 text-slate-500 hover:text-rose-600 font-bold text-sm transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <X className="w-4 h-4" /> Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCompleteSetup}
+                className="px-8 py-3.5 bg-indigo-500 text-white font-bold text-sm rounded-xl hover:bg-indigo-600 shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
+              >
+                Go to Dashboard
+              </button>
+            </div>
           </div>
         )}
 

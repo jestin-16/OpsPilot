@@ -158,7 +158,7 @@ const DeployModal: React.FC<DeployModalProps> = ({ projects, onClose, onTriggere
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 p-4">
       <div className="bg-op-surface border border-op-border rounded-2xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-4">
         <h3 className="text-base font-bold text-op-fg flex items-center gap-2">
           <Rocket className="w-5 h-5 text-op-accent" /> Trigger New Deployment
@@ -309,27 +309,35 @@ export const DeploymentsView: React.FC = () => {
     (d) => envFilter === 'all' || d.environment === envFilter
   );
 
+  const runningCount = deployments.filter((d) => d.status === 'Running').length;
+  const failedCount = deployments.filter((d) => d.status === 'Failed').length;
+  const activeCount = activeDeployments.length;
+
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-op-border">
-        <div>
-          <h1 className="text-2xl font-bold text-op-fg flex items-center gap-2 tracking-tight">
-            <Rocket className="w-6 h-6 text-op-accent" /> Deployment Center
+      <div className="relative flex flex-col overflow-hidden rounded-2xl border border-op-border bg-op-surface px-5 py-5 shadow-md md:flex-row md:items-center md:justify-between md:px-6">
+        <div className="pointer-events-none absolute right-0 top-0 h-full w-1/3 bg-gradient-to-l from-op-accent/10 to-transparent" />
+        <div className="relative">
+          <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-op-accent">
+            <span className="h-2 w-2 rounded-full bg-op-success shadow-[0_0_0_4px] shadow-op-success/10" /> Release operations
+          </div>
+          <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight text-op-fg">
+            <Rocket className="h-6 w-6 text-op-accent" /> Deployment Center
           </h1>
-          <p className="text-xs text-op-muted mt-1">
-            Real deployment status polled every 5 seconds from the backend.
+          <p className="mt-1 text-xs text-op-muted">
+            Live deployment state with automatic five-second polling.
             {lastRefreshed && (
-              <span className="ml-2 text-op-subtle inline-flex items-center gap-1">
+              <span className="ml-2 inline-flex items-center gap-1 text-op-subtle">
                 <Clock className="w-3 h-3" />
                 Last updated {lastRefreshed.toLocaleTimeString()}
               </span>
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <Button
             variant="secondary"
             onClick={() => fetchDeployments(false)}
@@ -350,10 +358,12 @@ export const DeploymentsView: React.FC = () => {
 
       {/* Project Selector */}
       {!loadingProjects && (
-        <div className="flex items-center gap-3">
-          <FolderGit2 className="w-4 h-4 text-op-accent shrink-0" />
-          <label className="text-xs font-semibold text-op-muted">Project:</label>
-          <div className="flex items-center bg-op-raised border border-op-border rounded-lg p-0.5 text-xs gap-0.5">
+        <div className="flex flex-col gap-3 rounded-xl border border-op-border bg-op-surface p-3 shadow-sm sm:flex-row sm:items-center">
+          <div className="flex items-center gap-2 px-1 sm:w-32">
+            <FolderGit2 className="h-4 w-4 shrink-0 text-op-accent" />
+            <label className="text-[11px] font-bold uppercase tracking-wider text-op-muted">Project</label>
+          </div>
+          <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto rounded-lg border border-op-border bg-op-raised p-1 text-xs">
             {projects.map((p) => (
               <button
                 key={p.id}
@@ -361,13 +371,28 @@ export const DeploymentsView: React.FC = () => {
                 className={`px-3 py-1.5 rounded-md transition-all font-semibold cursor-pointer ${
                   selectedProjectId === p.id
                     ? 'bg-op-accent text-op-accent-fg shadow-sm'
-                    : 'text-op-muted hover:text-op-fg'
+                    : 'text-op-muted hover:bg-op-surface hover:text-op-fg'
                 }`}
               >
                 {p.projectName}
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {!loadingProjects && selectedProjectId && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[
+            { label: 'Active pipelines', value: activeCount, tone: 'text-op-accent', detail: 'Building or deploying' },
+            { label: 'Running releases', value: runningCount, tone: 'text-op-success', detail: 'Healthy deployments' },
+            { label: 'Failed releases', value: failedCount, tone: failedCount ? 'text-op-danger' : 'text-op-muted', detail: 'Requires attention' },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-xl border border-op-border bg-op-surface px-4 py-3 shadow-sm">
+              <div className="flex items-center justify-between gap-3"><span className="text-[10px] font-bold uppercase tracking-wider text-op-muted">{stat.label}</span><span className={`font-mono text-xl font-black ${stat.tone}`}>{stat.value}</span></div>
+              <p className="mt-1 text-[11px] text-op-subtle">{stat.detail}</p>
+            </div>
+          ))}
         </div>
       )}
 
@@ -412,7 +437,7 @@ export const DeploymentsView: React.FC = () => {
               </h2>
               <div className="grid grid-cols-1 gap-4">
                 {activeDeployments.map((dep) => (
-                  <Card key={dep.id} className="border-l-4 border-l-op-accent bg-op-surface/80">
+                  <Card key={dep.id} className="border-l-4 border-l-op-accent bg-op-surface">
                     <div className="flex flex-col gap-4">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
@@ -498,10 +523,10 @@ export const DeploymentsView: React.FC = () => {
                 )}
               </div>
 
-              <Card className="p-0 overflow-hidden">
+              <Card className="overflow-hidden rounded-2xl border-op-border/80 p-0 shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs text-op-fg">
-                    <thead className="bg-op-raised text-op-subtle uppercase tracking-wider font-semibold border-b border-op-border text-[11px]">
+                    <thead className="bg-op-raised text-op-subtle uppercase tracking-[0.12em] font-bold border-b border-op-border text-[10px]">
                       <tr>
                         <th className="px-4 py-3">Status</th>
                         <th className="px-4 py-3">Project & Version</th>
@@ -517,9 +542,9 @@ export const DeploymentsView: React.FC = () => {
                         const isFailed = dep.status === 'Failed';
 
                         return (
-                          <tr key={dep.id} className="hover:bg-op-raised/60 transition-colors">
+                          <tr key={dep.id} className="transition-colors hover:bg-op-accent/5">
                             {/* Status */}
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-4 align-middle">
                               <div className="flex flex-col gap-1">
                                 <StatusBadge status={dep.status} />
                                 {isFailed && (
@@ -531,7 +556,7 @@ export const DeploymentsView: React.FC = () => {
                             </td>
 
                             {/* Project & Version */}
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-4 align-middle">
                               <div className="flex flex-col">
                                 <span className="font-bold text-op-fg">{dep.projectName}</span>
                                 <span className="text-[11px] font-mono text-op-accent">{dep.version}</span>
@@ -539,18 +564,18 @@ export const DeploymentsView: React.FC = () => {
                             </td>
 
                             {/* Environment */}
-                            <td className="px-4 py-3 font-mono text-[11px] text-op-muted">{dep.environment}</td>
+                            <td className="px-4 py-4 align-middle font-mono text-[11px] text-op-muted">{dep.environment}</td>
 
                             {/* Deployed By */}
-                            <td className="px-4 py-3 text-op-muted">{dep.deployedByName}</td>
+                            <td className="px-4 py-4 align-middle text-op-muted">{dep.deployedByName}</td>
 
                             {/* When */}
-                            <td className="px-4 py-3 font-mono text-[11px] text-op-muted">
+                            <td className="px-4 py-4 align-middle font-mono text-[11px] text-op-muted">
                               {relativeTime(dep.deployedAt)}
                             </td>
 
                             {/* Actions */}
-                            <td className="px-4 py-3 text-right">
+                            <td className="px-4 py-4 text-right align-middle">
                               <div className="flex items-center justify-end gap-2">
                                 {/* Cross-link to Docker when Running */}
                                 {isRunning && (
@@ -588,7 +613,7 @@ export const DeploymentsView: React.FC = () => {
                 </div>
 
                 {/* Polling footer */}
-                <div className="px-4 py-2 bg-op-raised/40 border-t border-op-border flex items-center gap-2 text-[10px] text-op-subtle">
+                <div className="px-4 py-2 bg-op-raised border-t border-op-border flex items-center gap-2 text-[10px] text-op-subtle">
                   <span className="w-1.5 h-1.5 rounded-full bg-op-success animate-pulse" />
                   Auto-refreshing every 5 seconds — status updates from backend appear without manual reload
                 </div>

@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { z } from 'zod';
 
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
 // Axios Instance with Credentials for httpOnly Cookies
 export const axiosInstance = axios.create({
@@ -94,6 +94,13 @@ export const RegisterSchema = z.object({
     .min(8, 'Password must be at least 8 characters long')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/, 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 digit'),
   role: z.string().min(1, 'Role is required'),
+});
+
+export const SignupSchema = RegisterSchema.extend({
+  confirmPassword: z.string().min(1, 'Please confirm your password'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Passwords do not match',
+  path: ['confirmPassword'],
 });
 
 export const LoginSchema = z.object({
@@ -255,6 +262,9 @@ export interface IntegrationSettings {
   active: boolean;
   createdAt?: string;
 }
+export interface AdminOverview { userCount: number; activeUserCount: number; projectCount: number; integrationCount: number; auditEventCount: number; }
+export interface AuditLog { id: number; actorName: string; actorEmail?: string; action: string; resourceType: string; resourceId?: string; details?: string; timestamp: string; }
+export interface PlatformSetting { id: number; settingKey: string; settingValue: string; updatedAt: string; }
 
 export interface LogSource {
   sourceId: number;
@@ -282,6 +292,15 @@ export const api = {
     LoginSchema.parse(data);
     const res = await axiosInstance.post<AuthResponse>('/auth/login', data);
     return res.data;
+  },
+
+  refreshSession: async (): Promise<AuthResponse> => {
+    const res = await axios.post<AuthResponse>(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+    return res.data;
+  },
+
+  logout: async (): Promise<void> => {
+    await axiosInstance.post('/auth/logout');
   },
 
   // Projects
@@ -487,4 +506,11 @@ export const api = {
     const res = await axiosInstance.put<Project>(`/projects/${projectId}/complete-setup`);
     return res.data;
   },
+  getAdminOverview: async (): Promise<AdminOverview> => (await axiosInstance.get('/admin/overview')).data,
+  getAuditLogs: async (): Promise<AuditLog[]> => (await axiosInstance.get('/admin/audit-logs')).data,
+  getAdminIntegrations: async (): Promise<IntegrationSettings[]> => (await axiosInstance.get('/admin/integrations')).data,
+  saveAdminIntegration: async (data: Omit<IntegrationSettings, 'id' | 'createdAt'>): Promise<IntegrationSettings> => (await axiosInstance.post('/admin/integrations', data)).data,
+  deleteAdminIntegration: async (id: number): Promise<void> => { await axiosInstance.delete(`/admin/integrations/${id}`); },
+  getPlatformSettings: async (): Promise<PlatformSetting[]> => (await axiosInstance.get('/admin/settings')).data,
+  savePlatformSetting: async (key: string, value: string): Promise<PlatformSetting> => (await axiosInstance.put(`/admin/settings/${encodeURIComponent(key)}`, { value })).data,
 };

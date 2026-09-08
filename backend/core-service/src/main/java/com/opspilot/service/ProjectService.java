@@ -226,9 +226,8 @@ public class ProjectService {
 
     private boolean isAdministrator(User user) {
         return user.getRoles().stream()
-                .anyMatch(r -> r.getRoleName().equalsIgnoreCase("Administrator") ||
-                               r.getRoleName().equalsIgnoreCase("ROLE_ADMINISTRATOR") ||
-                               r.getRoleName().equalsIgnoreCase("ADMIN"));
+                .anyMatch(r -> r.getRoleName().equalsIgnoreCase("ADMIN") ||
+                               r.getRoleName().equalsIgnoreCase("ROLE_ADMIN"));
     }
 
     private ProjectResponse mapToResponse(Project project) {

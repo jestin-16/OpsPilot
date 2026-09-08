@@ -45,6 +45,105 @@
   animation: pulse-slow 4s ease-in-out infinite;
 }
 
+/* Deployment Center uses a clean dashboard palette with stronger operational hierarchy. */
+.deployment-canvas {
+  --color-op-bg: #f7f9fc;
+  --color-op-surface: #ffffff;
+  --color-op-raised: #f1f5f9;
+  --color-op-input: #ffffff;
+  --color-op-border: #edf2f7;
+  --color-op-border-strong: #e2e8f0;
+  --color-op-fg: #17233b;
+  --color-op-muted: #64748b;
+  --color-op-subtle: #94a3b8;
+  --color-op-accent: #6366f1;
+  --color-op-accent-hover: #4f46e5;
+  --color-op-accent-active: #4338ca;
+  --color-op-accent-fg: #ffffff;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8fbff 0%, #f7f9fc 58%, #fbfaff 100%);
+  color: var(--color-op-fg);
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+.docker-canvas {
+  --color-op-bg: #f7f9fc;
+  --color-op-surface: #ffffff;
+  --color-op-raised: #f1f5f9;
+  --color-op-input: #ffffff;
+  --color-op-border: #edf2f7;
+  --color-op-border-strong: #e2e8f0;
+  --color-op-fg: #17233b;
+  --color-op-muted: #64748b;
+  --color-op-subtle: #94a3b8;
+  --color-op-accent: #6366f1;
+  --color-op-accent-hover: #4f46e5;
+  --color-op-accent-active: #4338ca;
+  --color-op-accent-fg: #ffffff;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8fbff 0%, #f7f9fc 58%, #fbfaff 100%);
+  color: var(--color-op-fg);
+  border-radius: 18px;
+}
+
+.docker-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.7;
+  background: radial-gradient(circle at 82% 4%, rgb(99 102 241 / 0.1), transparent 28%), radial-gradient(circle at 8% 88%, rgb(34 211 238 / 0.07), transparent 24%);
+}
+
+.live-dashboard {
+  --live-bg: #f7f9fc;
+  --live-surface: #ffffff;
+  --live-raised: #f1f5f9;
+  --live-border: #e2e8f0;
+  --live-fg: #17233b;
+  --live-muted: #64748b;
+  min-height: 100%;
+  background: linear-gradient(135deg, #f8fbff 0%, #f7f9fc 58%, #fbfaff 100%);
+  color: var(--live-fg);
+}
+
+.live-dashboard [class*="bg-[#141414]"] { background-color: var(--live-bg) !important; }
+.live-dashboard [class*="bg-[#1c1c1c]"] { background-color: var(--live-surface) !important; }
+.live-dashboard [class*="bg-[#2a2a2a]"] { background-color: var(--live-raised) !important; }
+.live-dashboard [class*="border-[#2a2a2a]"] { border-color: var(--live-border) !important; }
+.live-dashboard [class~="text-white"] { color: var(--live-fg) !important; }
+.live-dashboard [class~="text-slate-200"] { color: #1e293b !important; }
+.live-dashboard [class~="text-slate-300"] { color: #475569 !important; }
+.live-dashboard [class~="text-slate-400"] { color: var(--live-muted) !important; }
+.live-dashboard [class~="text-slate-500"] { color: #94a3b8 !important; }
+
+.deployment-canvas::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.7;
+  background: radial-gradient(circle at 82% 4%, rgb(99 102 241 / 0.1), transparent 28%), radial-gradient(circle at 8% 88%, rgb(34 211 238 / 0.07), transparent 24%);
+}
+
+.deployment-canvas .rounded-2xl,
+.deployment-canvas .rounded-xl,
+.docker-canvas .rounded-2xl,
+.docker-canvas .rounded-xl {
+  border-width: 0 !important;
+}
+
+@keyframes alert-enter {
+  from { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.alert-toast {
+  animation: alert-enter 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Premium Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

@@ -300,7 +300,7 @@ export const DockerView: React.FC = () => {
                       return (
                         <tr
                           key={c.containerId}
-                          className={`hover:bg-op-raised/60 transition-colors ${isActing ? 'opacity-70' : ''}`}
+                          className={`hover:bg-op-raised transition-colors ${isActing ? 'opacity-70' : ''}`}
                         >
                           {/* Status */}
                           <td className="px-4 py-3">
@@ -387,7 +387,7 @@ export const DockerView: React.FC = () => {
               </div>
 
               {/* Table footer: polling indicator */}
-              <div className="px-4 py-2 bg-op-raised/40 border-t border-op-border flex items-center gap-2 text-[10px] text-op-subtle">
+              <div className="px-4 py-2 bg-op-raised border-t border-op-border flex items-center gap-2 text-[10px] text-op-subtle">
                 <span className="w-1.5 h-1.5 rounded-full bg-op-success animate-pulse" />
                 Auto-refreshing every 5 seconds — changes made outside OpsPilot will appear automatically
               </div>
@@ -398,7 +398,7 @@ export const DockerView: React.FC = () => {
 
       {/* Terminal Log Modal */}
       {selectedLogsContainer && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/35 p-4">
           <div className="bg-op-surface border border-op-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold font-mono text-op-fg flex items-center gap-2">

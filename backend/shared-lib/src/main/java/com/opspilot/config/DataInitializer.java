@@ -26,14 +26,14 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Seed Initial Roles
-        Role devRole = roleRepository.findByRoleName("Developer")
-                .orElseGet(() -> roleRepository.save(new Role("Developer", "Software Developer role with standard access")));
+        Role devRole = roleRepository.findByRoleName("DEVELOPER")
+                .orElseGet(() -> roleRepository.save(new Role("DEVELOPER", "Software Developer role with standard access")));
 
-        Role devOpsRole = roleRepository.findByRoleName("DevOps Engineer")
-                .orElseGet(() -> roleRepository.save(new Role("DevOps Engineer", "DevOps Engineer role with deployment management capabilities")));
+        Role devOpsRole = roleRepository.findByRoleName("DEVOPS")
+                .orElseGet(() -> roleRepository.save(new Role("DEVOPS", "DevOps role with deployment management capabilities")));
 
-        Role adminRole = roleRepository.findByRoleName("Administrator")
-                .orElseGet(() -> roleRepository.save(new Role("Administrator", "Administrator role with full system access")));
+        Role adminRole = roleRepository.findByRoleName("ADMIN")
+                .orElseGet(() -> roleRepository.save(new Role("ADMIN", "Admin role with full system access")));
 
         // Seed User Accounts if not present
         if (userRepository.findByEmail("jestinshaji777@gmail.com").isEmpty()) {

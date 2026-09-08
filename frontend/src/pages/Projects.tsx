@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
-import { api, type Project, type Deployment } from '../services/api';
-import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText, XCircle, Activity } from 'lucide-react';
+import { api, API_BASE_URL, type Project, type Deployment } from '../services/api';
+import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText, XCircle, Activity, TriangleAlert } from 'lucide-react';
 
 export const Projects: React.FC = () => {
   const { user } = useAuth();
@@ -17,6 +18,8 @@ export const Projects: React.FC = () => {
   const [version, setVersion] = useState('v1.0.0');
   const [environment, setEnvironment] = useState('Production');
   const [triggering, setTriggering] = useState(false);
+  const [projectPendingDeletion, setProjectPendingDeletion] = useState<Project | null>(null);
+  const [deletingProject, setDeletingProject] = useState(false);
 
   const fetchProjects = async () => {
     try {
@@ -33,13 +36,17 @@ export const Projects: React.FC = () => {
     fetchProjects();
   }, []);
 
-  const handleDeleteProject = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this project?')) return;
+  const handleDeleteProject = async () => {
+    if (!projectPendingDeletion) return;
+    setDeletingProject(true);
     try {
-      await api.deleteProject(id);
+      await api.deleteProject(projectPendingDeletion.id);
       await fetchProjects();
+      setProjectPendingDeletion(null);
     } catch (err: any) {
       alert(err.message || 'Failed to delete project');
+    } finally {
+      setDeletingProject(false);
     }
   };
 
@@ -163,7 +170,7 @@ export const Projects: React.FC = () => {
                     </button>
 
                     <a
-                      href={project.deployedUrl || `http://localhost:8080/api/v1/projects/${project.id}/output`}
+                      href={project.deployedUrl || `${API_BASE_URL}/projects/${project.id}/output`}
                       target="_blank"
                       rel="noreferrer"
                       className="flex-1 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
@@ -192,7 +199,7 @@ export const Projects: React.FC = () => {
 
                     {canEdit(project.ownerId) && (
                       <button
-                        onClick={() => handleDeleteProject(project.id)}
+                        onClick={() => setProjectPendingDeletion(project)}
                         title="Delete project"
                         className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer rounded-xl border border-transparent hover:border-rose-100"
                       >
@@ -204,6 +211,53 @@ export const Projects: React.FC = () => {
               </div>
             ))}
           </div>
+        )}
+
+        {/* Delete Project Confirmation */}
+        {projectPendingDeletion && createPortal(
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-md"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-project-title"
+            aria-describedby="delete-project-description"
+          >
+            <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl shadow-slate-950/30">
+              <div className="p-6 sm:p-7">
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                    <TriangleAlert className="h-6 w-6" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-600">Permanent action</p>
+                    <h2 id="delete-project-title" className="mt-1 text-xl font-bold text-slate-900">Delete project?</h2>
+                    <p id="delete-project-description" className="mt-3 text-sm leading-6 text-slate-600">
+                      You are about to permanently delete <span className="font-bold text-slate-800">{projectPendingDeletion.projectName}</span>, including its deployment history and linked resources.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50 px-6 py-5 sm:flex-row sm:justify-end sm:px-7">
+                <button
+                  type="button"
+                  onClick={() => setProjectPendingDeletion(null)}
+                  disabled={deletingProject}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Keep project
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteProject}
+                  disabled={deletingProject}
+                  className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-600/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {deletingProject ? 'Deleting…' : 'Delete permanently'}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
         )}
 
         {/* Trigger Deployment Modal */}

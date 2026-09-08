@@ -143,7 +143,7 @@ export const LiveProjectDashboard: React.FC = () => {
 
   return (
     <SidebarLayout>
-      <div className="min-h-screen bg-[#141414] -m-2 p-6 font-sans text-slate-300 overflow-x-hidden">
+      <div className="live-dashboard min-h-screen -m-2 p-6 font-sans overflow-x-hidden">
         <div className="max-w-[1600px] mx-auto space-y-4">
           
           {/* Top Bar */}

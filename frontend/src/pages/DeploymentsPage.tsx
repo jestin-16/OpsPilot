@@ -5,7 +5,7 @@ import { DeploymentsView } from '../components/views/DeploymentsView';
 export const DeploymentsPage: React.FC = () => {
   return (
     <SidebarLayout>
-      <div className="p-6 max-w-[1500px] mx-auto space-y-6 animate-fade-in-up">
+      <div className="deployment-canvas -m-2 min-h-full p-6 md:p-8">
         <DeploymentsView />
       </div>
     </SidebarLayout>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { Terminal, Lock, Mail, ArrowRight, AlertCircle, UserCheck } from 'lucide-react';
+import { api, LoginSchema } from '../services/api';
+import { Lock, Mail, ArrowRight, AlertCircle, UserCheck } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +16,13 @@ export const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const validation = LoginSchema.safeParse({ email, password });
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message ?? 'Please check your email and password');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -106,6 +113,7 @@ export const Login: React.FC = () => {
               </div>
               <input
                 type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
                 placeholder="••••••••"
                 className="w-full pl-11 pr-4 py-3.5 bg-white/50 backdrop-blur-sm border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all placeholder-slate-400 shadow-sm"
               />

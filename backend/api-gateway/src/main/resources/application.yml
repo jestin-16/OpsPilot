@@ -7,13 +7,12 @@ spring:
   cloud:
     gateway:
       globalcors:
+        add-to-simple-url-handler-mapping: true
         cors-configurations:
           '[/**]':
-            allowedOrigins: 
+            allowedOrigins:
               - "http://localhost:5173"
-              - "http://localhost"
               - "http://127.0.0.1:5173"
-              - "http://127.0.0.1"
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
@@ -29,7 +28,7 @@ spring:
         - id: core-service
           uri: lb://core-service
           predicates:
-            - Path=/api/projects/**, /api/deployments/**, /api/docker/**, /api/kubernetes/**, /api/cicd/**, /api/v1/projects/**, /api/v1/deployments/**, /api/v1/docker/**, /api/v1/kubernetes/**, /api/v1/cicd/**
+            - Path=/api/projects/**, /api/deployments/**, /api/docker/**, /api/kubernetes/**, /api/cicd/**, /api/users, /api/users/**, /api/admin/**, /api/v1/projects/**, /api/v1/deployments/**, /api/v1/docker/**, /api/v1/kubernetes/**, /api/v1/cicd/**, /api/v1/users, /api/v1/users/**, /api/v1/admin/**
 
 eureka:
   client:

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
-import { Terminal, Lock, Mail, User as UserIcon, Shield, ArrowRight, AlertCircle } from 'lucide-react';
+import { api, SignupSchema } from '../services/api';
+import { Lock, Mail, User as UserIcon, Shield, ArrowRight, AlertCircle } from 'lucide-react';
 
 export const Signup: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('Developer');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,6 +19,13 @@ export const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const validation = SignupSchema.safeParse({ name, email, password, confirmPassword, role });
+    if (!validation.success) {
+      setError(validation.error.issues[0]?.message ?? 'Please check the form and try again');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -99,11 +107,34 @@ export const Signup: React.FC = () => {
                 <Lock className="w-5 h-5" />
               </div>
               <input
-                type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 placeholder="••••••••"
                 className="w-full pl-11 pr-4 py-3.5 bg-white/50 backdrop-blur-sm border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all placeholder-slate-400 shadow-sm"
               />
             </div>
+            <p className="pl-1 text-xs text-slate-500">Use at least 8 characters, including uppercase, lowercase, and a number.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest pl-1">
+              Confirm Password
+            </label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+                <Lock className="w-5 h-5" />
+              </div>
+              <input
+                type="password" required minLength={8} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                aria-invalid={confirmPassword.length > 0 && confirmPassword !== password}
+                placeholder="Confirm your password"
+                className="w-full pl-11 pr-4 py-3.5 bg-white/50 backdrop-blur-sm border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all placeholder-slate-400 shadow-sm"
+              />
+            </div>
+            {confirmPassword.length > 0 && confirmPassword !== password && (
+              <p className="pl-1 text-xs text-rose-600">Passwords do not match.</p>
+            )}
           </div>
 
           <div className="space-y-1.5">

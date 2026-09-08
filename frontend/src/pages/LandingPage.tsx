@@ -1,154 +1,81 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Activity, 
-  Terminal, 
-  ShieldCheck, 
-  Bot, 
-  Globe, 
-  Server,
+import {
+  Activity,
   ArrowRight,
-  MonitorPlay
+  Bot,
+  Check,
+  ChevronRight,
+  Cloud,
+  GitBranch,
+  Menu,
+  Radar,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  X,
 } from 'lucide-react';
+
+const capabilities = [
+  { icon: Radar, eyebrow: 'Observe', title: 'One operational picture', description: 'Bring deployments, logs, uptime checks, containers, and cluster health into one shared view.', tone: 'cyan' },
+  { icon: Bot, eyebrow: 'Understand', title: 'AI-assisted diagnosis', description: 'Let OpsPilot correlate changes, signals, and ownership so the next action is clear.', tone: 'violet' },
+  { icon: Rocket, eyebrow: 'Deliver', title: 'Confident releases', description: 'Move from repository to runtime with visible deployment history and accountable control.', tone: 'amber' },
+];
+
+const workflow = [
+  ['01', 'Connect the work', 'Register a repository, assign ownership, and bring your service signals into the workspace.'],
+  ['02', 'Ship with context', 'Trigger deployments with the project, environment, version, and operator attached.'],
+  ['03', 'Resolve the right thing', 'Use AI summaries and live telemetry to focus the team on the highest-value action.'],
+];
+
+const signalRows = [
+  { label: 'API gateway', detail: 'Latency within SLO', value: '42ms', color: 'bg-emerald-400' },
+  { label: 'Payment service', detail: 'Deployment completed', value: 'Healthy', color: 'bg-cyan-400' },
+  { label: 'Worker queue', detail: 'Memory pressure rising', value: 'Review', color: 'bg-amber-400' },
+];
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const go = (path: string) => { setMenuOpen(false); navigate(path); };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 selection:bg-[#4F46E5] selection:text-white font-sans overflow-hidden">
-      
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#4F46E5] opacity-10 blur-[120px] animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#06B6D4] opacity-10 blur-[150px] animate-pulse" style={{ animationDelay: '2s' }}></div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="relative z-10 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#4F46E5] to-[#06B6D4] rounded-xl flex items-center justify-center shadow-lg shadow-[#4F46E5]/20">
-            <Activity className="w-6 h-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold tracking-tight text-slate-900">OpsPilot</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <button 
-            onClick={() => navigate('/login')}
-            className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-          >
-            Sign in
-          </button>
-          <button 
-            onClick={() => navigate('/signup')}
-            className="px-5 py-2.5 text-sm font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-slate-900/10"
-          >
-            Get Started
-          </button>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <main className="relative z-10 max-w-7xl mx-auto px-8 pt-20 pb-32 flex flex-col items-center text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-slate-200 text-xs font-medium text-slate-600 mb-8 backdrop-blur-md shadow-sm">
-          <span className="flex h-2 w-2 rounded-full bg-[#10B981] animate-ping"></span>
-          v1.0 Now Live
-        </div>
-        
-        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight text-slate-900">
-          The Intelligent <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4F46E5] via-[#818CF8] to-[#06B6D4]">
-            Developer Platform
-          </span>
-        </h1>
-        
-        <p className="text-lg md:text-xl text-slate-600 max-w-2xl mb-12 leading-relaxed">
-          Unify your microservices, automate root-cause analysis, and deploy with extreme confidence. Built for modern DevOps teams.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row items-center gap-4">
-          <button 
-            onClick={() => navigate('/signup')}
-            className="px-8 py-4 text-base font-bold bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] text-white rounded-xl hover:shadow-xl hover:shadow-[#4F46E5]/30 transition-all hover:-translate-y-1 group flex items-center gap-2"
-          >
-            Start Monitoring Free
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-          <button 
-            onClick={() => navigate('/login')}
-            className="px-8 py-4 text-base font-bold bg-white border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm"
-          >
-            <Terminal className="w-5 h-5 text-slate-400" />
-            View Documentation
-          </button>
-        </div>
-      </main>
-
-      {/* Features Grid */}
-      <section className="relative z-10 max-w-7xl mx-auto px-8 pb-32">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          <FeatureCard 
-            icon={<MonitorPlay className="w-6 h-6 text-[#06B6D4]" />}
-            title="Blackbox Probing"
-            description="Continuous simulated traffic, geo-latency mapping, and headless browser rendering to guarantee user experience."
-          />
-          
-          <FeatureCard 
-            icon={<Server className="w-6 h-6 text-[#4F46E5]" />}
-            title="Whitebox Telemetry"
-            description="Deep JVM insights, live CPU/Memory scraping, and actuator integration for absolute internal observability."
-          />
-          
-          <FeatureCard 
-            icon={<Bot className="w-6 h-6 text-[#8B5CF6]" />}
-            title="AI Root Cause Analysis"
-            description="Instant correlation of deployment timestamps with crash logs to automatically diagnose and remediate failures."
-          />
-
-          <FeatureCard 
-            icon={<ShieldCheck className="w-6 h-6 text-[#10B981]" />}
-            title="Security Scanning"
-            description="Automated port scanning, SQL injection testing, and header inspection on every deployment."
-          />
-
-          <FeatureCard 
-            icon={<Globe className="w-6 h-6 text-[#F59E0B]" />}
-            title="Global DNS & TLS"
-            description="Advanced DNS chain verification, IPv6 support mapping, and SSL certificate validation."
-          />
-
-          <FeatureCard 
-            icon={<Activity className="w-6 h-6 text-[#F43F5E]" />}
-            title="Distributed Tracing"
-            description="Track requests across microservice boundaries with full Zipkin and Prometheus integration."
-          />
-
+    <div className="min-h-screen overflow-x-hidden bg-[#f5f7fb] font-sans text-slate-900 selection:bg-cyan-500 selection:text-white">
+      <section className="relative isolate overflow-hidden bg-[#09111f] text-white">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_10%_18%,rgba(34,211,238,.16),transparent_30%),radial-gradient(circle_at_82%_6%,rgba(129,140,248,.22),transparent_29%),linear-gradient(135deg,#09111f_0%,#0c1830_58%,#11132a_100%)]" />
+        <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(148,163,184,.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,.08)_1px,transparent_1px)] [background-size:48px_48px]" />
+        <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
+          <button type="button" onClick={() => go('/')} className="flex items-center gap-3 text-left" aria-label="OpsPilot home"><span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-cyan-300 shadow-lg shadow-cyan-950/30"><Terminal className="h-5 w-5" /></span><span><span className="block text-lg font-black tracking-tight">Ops<span className="text-cyan-300">Pilot</span></span><span className="block text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">AI-assisted IDP</span></span></button>
+          <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-300 md:flex"><a href="#platform" className="transition hover:text-white">Platform</a><a href="#workflow" className="transition hover:text-white">Workflow</a><a href="#control" className="transition hover:text-white">Control</a></nav>
+          <div className="hidden items-center gap-3 md:flex"><button type="button" onClick={() => go('/login')} className="rounded-lg px-4 py-2.5 text-sm font-bold text-slate-300 transition hover:bg-white/10 hover:text-white">Sign in</button><button type="button" onClick={() => go('/signup')} className="rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-extrabold text-slate-950 shadow-lg shadow-cyan-500/15 transition hover:-translate-y-0.5 hover:bg-cyan-200">Create workspace</button></div>
+          <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 text-slate-200 md:hidden" aria-label="Toggle navigation">{menuOpen ? <X /> : <Menu />}</button>
+        </header>
+        {menuOpen && <div className="mx-5 mb-4 rounded-xl border border-white/10 bg-slate-950/80 p-3 shadow-xl backdrop-blur md:hidden"><div className="grid gap-1 text-sm font-semibold text-slate-200"><a href="#platform" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 hover:bg-white/10">Platform</a><a href="#workflow" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 hover:bg-white/10">Workflow</a><a href="#control" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 hover:bg-white/10">Control</a><div className="mt-2 grid grid-cols-2 gap-2 border-t border-white/10 pt-3"><button type="button" onClick={() => go('/login')} className="rounded-lg border border-white/15 py-2.5 font-bold">Sign in</button><button type="button" onClick={() => go('/signup')} className="rounded-lg bg-cyan-300 py-2.5 font-extrabold text-slate-950">Get started</button></div></div></div>}
+        <div className="mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 lg:grid-cols-[.9fr_1.1fr] lg:items-center lg:px-10 lg:pb-28 lg:pt-24">
+          <div className="max-w-2xl"><div className="inline-flex items-center gap-2 border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[.12em] text-cyan-200"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-300" />Operational intelligence for modern teams</div><h1 className="mt-7 text-4xl font-black leading-[1.02] tracking-[-.055em] sm:text-6xl lg:text-7xl">Run every service<br /><span className="bg-gradient-to-r from-cyan-200 via-white to-violet-200 bg-clip-text text-transparent">with context.</span></h1><p className="mt-7 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">OpsPilot is the AI-assisted internal developer platform that connects your projects, deployments, infrastructure, and incidents in one calm command center.</p><div className="mt-9 flex flex-col gap-3 sm:flex-row"><button type="button" onClick={() => go('/signup')} className="group inline-flex items-center justify-center gap-2 bg-cyan-300 px-5 py-3.5 text-sm font-extrabold text-slate-950 shadow-xl shadow-cyan-500/10 transition hover:-translate-y-0.5 hover:bg-cyan-200">Start building <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" /></button><button type="button" onClick={() => go('/login')} className="inline-flex items-center justify-center gap-2 border border-white/15 bg-white/5 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/10"><Sparkles className="h-4 w-4 text-violet-300" /> Explore the platform</button></div><div className="mt-9 flex flex-wrap gap-x-5 gap-y-3 text-xs font-semibold text-slate-400">{['Project-level ownership', 'Live infrastructure signals', 'AI-assisted next actions'].map((item) => <span key={item} className="flex items-center gap-2"><Check className="h-4 w-4 text-cyan-300" />{item}</span>)}</div></div>
+          <OperationsPreview />
         </div>
       </section>
 
-      {/* Footer border */}
-      <div className="border-t border-slate-200 relative z-10 bg-white/50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-8 py-8 flex items-center justify-between text-slate-500 text-sm">
-          <p>© 2026 OpsPilot. All rights reserved.</p>
-          <div className="flex gap-6">
-            <span className="hover:text-slate-900 cursor-pointer transition-colors">Privacy</span>
-            <span className="hover:text-slate-900 cursor-pointer transition-colors">Terms</span>
-            <span className="hover:text-slate-900 cursor-pointer transition-colors">GitHub</span>
-          </div>
-        </div>
-      </div>
+      <div className="border-b border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-slate-100 sm:grid-cols-4">{[['01', 'Shared workspace'], ['24/7', 'Signal awareness'], ['100%', 'Owner context'], ['1', 'Operational truth']].map(([value, label]) => <div key={label} className="px-4 py-6 text-center"><p className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">{value}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[.15em] text-slate-400">{label}</p></div>)}</div></div>
+
+      <main>
+        <section id="platform" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28"><div className="max-w-2xl"><p className="text-xs font-extrabold uppercase tracking-[.2em] text-indigo-600">The OpsPilot operating model</p><h2 className="mt-3 text-3xl font-black tracking-[-.04em] text-slate-950 sm:text-4xl">A developer platform that thinks in systems.</h2><p className="mt-5 text-base leading-7 text-slate-600">Keep the delivery workflow and the runtime reality connected. Every signal has a project, every project has an owner, and every incident has a better starting point.</p></div><div className="mt-12 grid gap-5 md:grid-cols-3">{capabilities.map(({ icon: Icon, eyebrow, title, description, tone }) => <article key={title} className="group border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-950/5"><span className={`flex h-11 w-11 items-center justify-center ${tone === 'cyan' ? 'bg-cyan-50 text-cyan-600' : tone === 'violet' ? 'bg-violet-50 text-violet-600' : 'bg-amber-50 text-amber-600'}`}><Icon className="h-5 w-5" /></span><p className="mt-7 text-[10px] font-extrabold uppercase tracking-[.18em] text-slate-400">{eyebrow}</p><h3 className="mt-2 text-lg font-extrabold text-slate-900">{title}</h3><p className="mt-3 text-sm leading-6 text-slate-600">{description}</p><span className="mt-6 inline-flex items-center gap-1 text-sm font-bold text-indigo-600">See how it connects <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" /></span></article>)}</div></section>
+        <section id="workflow" className="bg-[#0b1425] py-20 text-white sm:py-24"><div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[.82fr_1.18fr] lg:items-center lg:px-10"><div><p className="text-xs font-extrabold uppercase tracking-[.2em] text-cyan-300">A shorter path to action</p><h2 className="mt-3 text-3xl font-black tracking-[-.04em] sm:text-4xl">From repository to reliable runtime.</h2><p className="mt-5 max-w-md text-base leading-7 text-slate-300">Make delivery visible to everyone who depends on it. OpsPilot turns handoffs into a workflow the whole team can inspect.</p><button type="button" onClick={() => go('/signup')} className="mt-8 inline-flex items-center gap-2 text-sm font-extrabold text-cyan-300 transition hover:text-white">Create your workspace <ArrowRight className="h-4 w-4" /></button></div><div className="grid gap-4">{workflow.map(([number, title, description]) => <div key={number} className="flex gap-5 border border-white/10 bg-white/[.045] p-5 transition hover:border-cyan-300/30"><span className="flex h-10 w-10 shrink-0 items-center justify-center bg-cyan-300/10 text-sm font-black text-cyan-200">{number}</span><div><h3 className="font-extrabold">{title}</h3><p className="mt-2 text-sm leading-6 text-slate-300">{description}</p></div></div>)}</div></div></section>
+        <section id="control" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28"><div className="grid gap-10 border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-7 sm:p-10 lg:grid-cols-[1.05fr_.95fr] lg:p-14"><div><span className="flex h-12 w-12 items-center justify-center bg-indigo-600 text-white shadow-lg"><ShieldCheck className="h-6 w-6" /></span><p className="mt-7 text-xs font-extrabold uppercase tracking-[.18em] text-indigo-600">Control without friction</p><h2 className="mt-3 text-3xl font-black tracking-[-.04em] text-slate-950 sm:text-4xl">Built for accountable operations.</h2><p className="mt-5 max-w-xl text-base leading-7 text-slate-600">Give engineers useful autonomy while keeping access, ownership, and deployment history visible. The platform scales the team’s judgment instead of hiding it.</p><div className="mt-8 grid grid-cols-2 gap-3 text-sm font-bold text-slate-800"><span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-500" /> Role-aware access</span><span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-500" /> Audit-ready changes</span><span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-500" /> Project ownership</span><span className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-500" /> Cloud-ready runtime</span></div></div><div className="grid content-center gap-3"><ControlCard icon={GitBranch} title="Delivery context" text="Commits, versions, environments, and operators stay attached to the release." /><ControlCard icon={Cloud} title="Infrastructure visibility" text="Monitor Docker, Kubernetes, cloud targets, and service health from one place." /><ControlCard icon={ShieldCheck} title="Protected by design" text="JWT sessions, role checks, and ownership rules support safer daily operations." /></div></div></section>
+        <section className="px-5 pb-20 sm:px-8 lg:px-10 lg:pb-28"><div className="mx-auto max-w-7xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-cyan-600 px-7 py-12 text-center text-white shadow-2xl shadow-indigo-500/20 sm:px-12 sm:py-16"><p className="text-xs font-extrabold uppercase tracking-[.2em] text-cyan-100">Make the next incident smaller</p><h2 className="mx-auto mt-3 max-w-2xl text-3xl font-black tracking-[-.04em] sm:text-4xl">Give your team a better operational starting point.</h2><p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-indigo-100 sm:text-base">Connect your first project and see what changes when delivery, infrastructure, and intelligence share the same workspace.</p><button type="button" onClick={() => go('/signup')} className="mt-8 inline-flex items-center gap-2 bg-white px-5 py-3.5 text-sm font-extrabold text-indigo-700 shadow-lg transition hover:-translate-y-0.5 hover:bg-indigo-50">Start with OpsPilot <ArrowRight className="h-4 w-4" /></button></div></section>
+      </main>
+
+      <footer className="border-t border-slate-200 bg-white"><div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10"><div className="flex items-center gap-2 text-slate-500"><span className="flex h-7 w-7 items-center justify-center bg-slate-900 text-cyan-300"><Terminal className="h-3.5 w-3.5" /></span><span>© 2026 OpsPilot. Built for dependable delivery.</span></div><div className="flex gap-5 text-xs font-bold text-slate-500"><button type="button" onClick={() => go('/login')} className="hover:text-indigo-600">Sign in</button><button type="button" onClick={() => go('/signup')} className="hover:text-indigo-600">Create account</button><a href="#platform" className="hover:text-indigo-600">Platform</a></div></div></footer>
     </div>
   );
 };
 
-const FeatureCard: React.FC<{icon: React.ReactNode, title: string, description: string}> = ({ icon, title, description }) => (
-  <div className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50 group cursor-default shadow-sm">
-    <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-      {icon}
-    </div>
-    <h3 className="text-xl font-bold mb-3 text-slate-800">{title}</h3>
-    <p className="text-sm text-slate-500 leading-relaxed">
-      {description}
-    </p>
-  </div>
+const ControlCard: React.FC<{ icon: React.ElementType; title: string; text: string }> = ({ icon: Icon, title, text }) => (
+  <div className="flex gap-3 border border-white bg-white/80 p-4 shadow-sm"><span className="flex h-9 w-9 shrink-0 items-center justify-center bg-indigo-50 text-indigo-600"><Icon className="h-4 w-4" /></span><div><p className="text-sm font-extrabold text-slate-800">{title}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p></div></div>
+);
+
+const OperationsPreview: React.FC = () => (
+  <div className="relative mx-auto w-full max-w-xl lg:max-w-none"><div className="absolute -inset-10 -z-10 rounded-full bg-cyan-400/10 blur-3xl" /><div className="border border-white/15 bg-slate-950/60 p-3 shadow-2xl backdrop-blur-xl sm:p-4"><div className="border border-white/10 bg-[#101d33] p-4 sm:p-5"><div className="flex items-center justify-between border-b border-white/10 pb-4"><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center bg-cyan-300/10 text-cyan-300"><Activity className="h-5 w-5" /></span><div><p className="text-sm font-bold">Operations command center</p><p className="mt-1 text-[11px] text-slate-400">Production / all services</p></div></div><span className="flex items-center gap-1.5 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />Healthy</span></div><div className="mt-5 grid grid-cols-3 gap-3">{[['99.98%', 'Uptime', 'text-cyan-200'], ['12', 'Services', 'text-white'], ['03', 'Signals', 'text-amber-200']].map(([value, label, color]) => <div key={label} className="border border-white/10 bg-white/[.045] p-3"><p className={`text-lg font-extrabold ${color}`}>{value}</p><p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</p></div>)}</div><div className="mt-5 border border-white/10 bg-white/[.035] p-4"><div className="flex items-center justify-between"><p className="text-xs font-bold text-slate-200">Live service signals</p><p className="text-[10px] font-semibold text-emerald-300">Updated now</p></div><div className="mt-4 grid gap-2">{signalRows.map((row) => <div key={row.label} className="flex items-center gap-3 border-b border-white/5 py-2 last:border-0"><span className={`h-2 w-2 rounded-full ${row.color}`} /><div className="min-w-0 flex-1"><p className="truncate text-xs font-bold text-slate-200">{row.label}</p><p className="truncate text-[10px] text-slate-500">{row.detail}</p></div><span className="text-[10px] font-bold text-slate-300">{row.value}</span></div>)}</div></div><div className="mt-4 flex items-start gap-3 border border-violet-300/15 bg-violet-300/[.06] p-3"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-300" /><div><p className="text-xs font-bold text-violet-100">AI insight ready</p><p className="mt-1 text-[10px] leading-4 text-violet-200/70">Payment service is healthy after the latest deployment. No action needed.</p></div></div></div></div></div>
 );

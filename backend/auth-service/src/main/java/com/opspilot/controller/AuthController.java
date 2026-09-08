@@ -37,7 +37,9 @@ public class AuthController {
         return ResponseCookie.from("opspilot_refresh_token", refreshTokenValue)
                 .httpOnly(true)
                 .secure(false) // Set to true in production over HTTPS
-                .path("/api/auth")
+                // The frontend uses /api/v1/auth while legacy clients may use /api/auth.
+                // Scope the cookie to /api so it is sent to both refresh endpoints.
+                .path("/api")
                 .maxAge(jwtRefreshExpirationMs / 1000)
                 .sameSite("Lax")
                 .build();
@@ -46,7 +48,7 @@ public class AuthController {
     private ResponseCookie createCleanRefreshTokenCookie() {
         return ResponseCookie.from("opspilot_refresh_token", "")
                 .httpOnly(true)
-                .path("/api/auth")
+                .path("/api")
                 .maxAge(0)
                 .sameSite("Lax")
                 .build();

@@ -38,15 +38,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String email = tokenProvider.getEmailFromToken(jwt);
                 Optional<User> userOptional = userRepository.findByEmail(email);
 
-                if (userOptional.isPresent()) {
+                if (userOptional.isPresent() && !Boolean.FALSE.equals(userOptional.get().getIsActive())) {
                     User user = userOptional.get();
                     List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
                             .map(role -> {
-                                String roleName = role.getRoleName();
-                                if (!roleName.startsWith("ROLE_")) {
-                                    roleName = "ROLE_" + roleName.toUpperCase().replace(" ", "_");
+                                String roleName = role.getRoleName().trim().toUpperCase().replace(" ", "_");
+                                if (roleName.equals("ADMINISTRATOR") || roleName.equals("ROLE_ADMINISTRATOR")) {
+                                    roleName = "ADMIN";
+                                } else if (roleName.startsWith("ROLE_")) {
+                                    roleName = roleName.substring(5);
                                 }
-                                return new SimpleGrantedAuthority(roleName);
+                                return new SimpleGrantedAuthority("ROLE_" + roleName);
                             })
                             .toList();
 

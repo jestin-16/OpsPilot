@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, FolderGit2, Rocket,
   Activity, FileText, Bell, BookOpen,
-  LogOut, User as UserIcon, Terminal, Server, Globe
+  LogOut, User as UserIcon, Terminal, Server, Globe, ShieldCheck
 } from 'lucide-react';
 
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -16,6 +16,11 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     logout();
     navigate('/login');
   };
+
+  const isAdmin = user?.roles?.some((role) => {
+    const normalizedRole = role.trim().toUpperCase().replace(/\s+/g, '_');
+    return normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN' || normalizedRole === 'ADMINISTRATOR' || normalizedRole === 'ROLE_ADMINISTRATOR';
+  }) ?? false;
 
   const navItems = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, enabled: true },
@@ -29,6 +34,11 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { name: 'Notification center', path: '/notifications', icon: Bell, enabled: true },
     { name: 'Platform guide', path: '/guide', icon: BookOpen, enabled: true },
   ];
+
+  if (isAdmin) {
+    navItems.push({ name: 'Platform governance', path: '/admin', icon: ShieldCheck, enabled: true });
+    navItems.push({ name: 'User Management', path: '/users', icon: UserIcon, enabled: true });
+  }
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] text-slate-800 font-sans bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed overflow-hidden">

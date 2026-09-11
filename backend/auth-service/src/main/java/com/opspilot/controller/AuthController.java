@@ -3,6 +3,9 @@ package com.opspilot.controller;
 import com.opspilot.dto.AuthRequest;
 import com.opspilot.dto.AuthResponse;
 import com.opspilot.dto.RegisterRequest;
+import com.opspilot.dto.RegistrationResponse;
+import com.opspilot.dto.ResendOtpRequest;
+import com.opspilot.dto.VerifyOtpRequest;
 import com.opspilot.entity.RefreshToken;
 import com.opspilot.exception.UnauthorizedException;
 import com.opspilot.service.AuthService;
@@ -56,12 +59,22 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Register a new user account with role-based access")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request, HttpServletResponse response) {
-        AuthResponse authResponse = authService.register(request);
-        RefreshToken refreshToken = authService.createRefreshToken(authResponse.getId());
-        ResponseCookie cookie = createRefreshTokenCookie(refreshToken.getToken());
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-        return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
+    public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody RegisterRequest request) {
+        return new ResponseEntity<>(authService.register(request), HttpStatus.CREATED);
+    }
+
+    @PostMapping("/verify-otp")
+    @Operation(summary = "Verify a user's email with a one-time code")
+    public ResponseEntity<RegistrationResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        String message = authService.verifyOtp(request);
+        return ResponseEntity.ok(new RegistrationResponse(request.getEmail(), message, false));
+    }
+
+    @PostMapping("/resend-otp")
+    @Operation(summary = "Send a replacement email verification code")
+    public ResponseEntity<RegistrationResponse> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
+        String message = authService.resendOtp(request);
+        return ResponseEntity.ok(new RegistrationResponse(request.getEmail(), message, true));
     }
 
     @PostMapping("/login")

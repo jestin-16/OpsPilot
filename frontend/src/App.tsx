@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
+import { VerifyEmailOTP } from './pages/VerifyEmailOTP';
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
 import { ProjectWizard } from './pages/ProjectWizard';
@@ -20,6 +21,9 @@ import { DeploymentsPage } from './pages/DeploymentsPage';
 import { UserManagement } from './pages/UserManagement';
 import { AlertProvider } from './components/AlertProvider';
 import { AdminGovernance } from './pages/AdminGovernance';
+import { canAccessRole, isAdmin, type PlatformRole } from './utils/roles';
+import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminProjectManagement } from './pages/AdminProjectManagement';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,14 +43,21 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   return <>{children}</>;
 };
 
+const RoleRoute: React.FC<{ allowedRoles: PlatformRole[]; children: React.ReactNode }> = ({ allowedRoles, children }) => {
+  const { user } = useAuth();
+  return canAccessRole(user?.roles, allowedRoles) ? <>{children}</> : <Navigate to="/dashboard" replace />;
+};
+
+const DashboardEntry: React.FC = () => {
+  const { user } = useAuth();
+  return isAdmin(user?.roles) ? <AdminDashboard /> : <Dashboard />;
+};
+
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const isAdmin = user?.roles?.some((role) => {
-    const normalizedRole = role.trim().toUpperCase().replace(/\s+/g, '_');
-    return normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN' || normalizedRole === 'ADMINISTRATOR' || normalizedRole === 'ROLE_ADMINISTRATOR';
-  }) ?? false;
+  const userIsAdmin = isAdmin(user?.roles);
 
-  return isAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
+  return userIsAdmin ? <>{children}</> : <Navigate to="/dashboard" replace />;
 };
 
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -90,10 +101,14 @@ export const App: React.FC = () => {
               }
             />
             <Route
+              path="/verify-email"
+              element={<PublicRoute><VerifyEmailOTP /></PublicRoute>}
+            />
+            <Route
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <DashboardEntry />
                 </ProtectedRoute>
               }
             />
@@ -101,7 +116,7 @@ export const App: React.FC = () => {
               path="/projects"
               element={
                 <ProtectedRoute>
-                  <Projects />
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><Projects /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -109,7 +124,7 @@ export const App: React.FC = () => {
               path="/projects/new"
               element={
                 <ProtectedRoute>
-                  <ProjectWizard />
+                  <RoleRoute allowedRoles={['DEVELOPER']}><ProjectWizard /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -117,7 +132,7 @@ export const App: React.FC = () => {
               path="/projects/new/:projectId"
               element={
                 <ProtectedRoute>
-                  <ProjectWizard />
+                  <RoleRoute allowedRoles={['DEVELOPER']}><ProjectWizard /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -125,7 +140,7 @@ export const App: React.FC = () => {
               path="/projects/:projectId/log-sources"
               element={
                 <ProtectedRoute>
-                  <LogSources />
+                  <RoleRoute allowedRoles={['DEVELOPER']}><LogSources /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -133,7 +148,7 @@ export const App: React.FC = () => {
               path="/monitoring"
               element={
                 <ProtectedRoute>
-                  <LiveProjectDashboard />
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><LiveProjectDashboard /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -141,7 +156,7 @@ export const App: React.FC = () => {
               path="/whitebox"
               element={
                 <ProtectedRoute>
-                  <WhiteboxMonitoring />
+                  <RoleRoute allowedRoles={['DEVOPS']}><WhiteboxMonitoring /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -149,7 +164,7 @@ export const App: React.FC = () => {
               path="/blackbox"
               element={
                 <ProtectedRoute>
-                  <BlackboxMonitoring />
+                  <RoleRoute allowedRoles={['DEVOPS']}><BlackboxMonitoring /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -157,7 +172,7 @@ export const App: React.FC = () => {
               path="/logs"
               element={
                 <ProtectedRoute>
-                  <LogManagement />
+                  <RoleRoute allowedRoles={['DEVOPS']}><LogManagement /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -181,7 +196,7 @@ export const App: React.FC = () => {
               path="/docker"
               element={
                 <ProtectedRoute>
-                  <DockerPage />
+                  <RoleRoute allowedRoles={['DEVOPS', 'ADMIN']}><DockerPage /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -189,9 +204,13 @@ export const App: React.FC = () => {
               path="/deployments"
               element={
                 <ProtectedRoute>
-                  <DeploymentsPage />
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><DeploymentsPage /></RoleRoute>
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/admin/projects"
+              element={<ProtectedRoute><AdminRoute><AdminProjectManagement /></AdminRoute></ProtectedRoute>}
             />
             <Route
               path="/admin"

@@ -71,7 +71,7 @@ export const LiveProjectDashboard: React.FC = () => {
           setCommits([]);
         }
         
-        const metricData = await api.getMetrics('local');
+        const metricData = await api.getMetrics('prometheus');
         setMetrics(metricData);
       } catch (err) {
         console.error("Failed to fetch live data", err);

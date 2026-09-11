@@ -4,9 +4,20 @@ import { useAuth } from '../context/AuthContext';
 import { api, type Project } from '../services/api';
 import { Link } from 'react-router-dom';
 import { FolderGit2, Rocket, Container, Activity, Plus, Shield, ArrowRight, BookOpen, Globe, Boxes } from 'lucide-react';
+import { hasRole, isAdmin } from '../utils/roles';
+
+const StatusRow: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: 'indigo' }> = ({ icon, label, value, accent }) => (
+  <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
+    <span className="text-slate-600 font-bold flex items-center gap-2">{icon} {label}</span>
+    <span className={`${accent === 'indigo' ? 'text-indigo-600' : 'text-emerald-600'} font-bold flex items-center gap-1.5 text-xs`}>
+      <span className={`w-2 h-2 rounded-full ${accent === 'indigo' ? 'bg-indigo-500' : 'bg-emerald-500'} ${accent ? 'animate-pulse' : ''}`}></span> {value}
+    </span>
+  </div>
+);
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const isDevOpsUser = hasRole(user?.roles, 'DEVOPS') || isAdmin(user?.roles);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +45,9 @@ export const Dashboard: React.FC = () => {
               Welcome back, <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-cyan-500">{user?.name || 'Developer'}</span>
             </h1>
             <p className="text-sm font-medium text-slate-500 mt-2">
-              Internal Developer Platform overview and system metrics
+              {isDevOpsUser
+                ? 'Infrastructure health, observability, and runtime operations overview'
+                : 'Projects, delivery workflows, and application health overview'}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -46,11 +59,11 @@ export const Dashboard: React.FC = () => {
               <span>Platform Guide</span>
             </Link>
             <Link
-              to="/projects"
+              to={isDevOpsUser ? '/docker' : '/projects'}
               className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md hover:shadow-indigo-500/30"
             >
-              <Plus className="w-4 h-4" />
-              <span>New Project</span>
+              {isDevOpsUser ? <Container className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              <span>{isDevOpsUser ? 'Docker Management' : 'New Project'}</span>
             </Link>
           </div>
         </div>
@@ -79,11 +92,11 @@ export const Dashboard: React.FC = () => {
 
           <div className="glass-panel rounded-2xl p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-transform duration-300">
             <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Docker Containers</div>
-              <div className="text-3xl font-black text-slate-800 mt-2">Healthy</div>
+              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">{isDevOpsUser ? 'Docker Containers' : 'Application Health'}</div>
+              <div className="text-3xl font-black text-slate-800 mt-2">{isDevOpsUser ? 'Healthy' : 'On track'}</div>
             </div>
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-              <Container className="w-6 h-6" />
+              {isDevOpsUser ? <Container className="w-6 h-6" /> : <Activity className="w-6 h-6" />}
             </div>
           </div>
 
@@ -145,36 +158,19 @@ export const Dashboard: React.FC = () => {
 
           {/* Side Panel: Platform Status */}
           <div className="glass-panel rounded-2xl p-6 shadow-sm hover:-translate-y-1 transition-transform duration-300 space-y-6">
-            <h2 className="text-lg font-bold text-slate-800">Platform Status</h2>
+            <h2 className="text-lg font-bold text-slate-800">{isDevOpsUser ? 'Infrastructure Status' : 'Delivery Status'}</h2>
             <div className="space-y-4 text-sm font-medium">
-              
-              <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
-                <span className="text-slate-600 font-bold flex items-center gap-2"><Globe className="w-4 h-4 text-slate-400" /> API Gateway</span>
-                <span className="text-emerald-600 font-bold flex items-center gap-1.5 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ONLINE
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
-                <span className="text-slate-600 font-bold flex items-center gap-2"><Container className="w-4 h-4 text-slate-400" /> Docker Engine</span>
-                <span className="text-emerald-600 font-bold flex items-center gap-1.5 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span> ACTIVE
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
-                <span className="text-slate-600 font-bold flex items-center gap-2"><Boxes className="w-4 h-4 text-slate-400" /> Kubernetes</span>
-                <span className="text-emerald-600 font-bold flex items-center gap-1.5 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span> MINIKUBE
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
-                <span className="text-slate-600 font-bold flex items-center gap-2"><Activity className="w-4 h-4 text-slate-400" /> Trace Collector</span>
-                <span className="text-indigo-600 font-bold flex items-center gap-1.5 text-xs">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span> LISTENING
-                </span>
-              </div>
+              {isDevOpsUser ? <>
+                <StatusRow icon={<Globe className="w-4 h-4 text-slate-400" />} label="API Gateway" value="ONLINE" />
+                <StatusRow icon={<Container className="w-4 h-4 text-slate-400" />} label="Docker Engine" value="ACTIVE" />
+                <StatusRow icon={<Boxes className="w-4 h-4 text-slate-400" />} label="Kubernetes" value="MINIKUBE" />
+                <StatusRow icon={<Activity className="w-4 h-4 text-slate-400" />} label="Trace Collector" value="LISTENING" accent="indigo" />
+              </> : <>
+                <StatusRow icon={<FolderGit2 className="w-4 h-4 text-slate-400" />} label="Project workspace" value="READY" />
+                <StatusRow icon={<Rocket className="w-4 h-4 text-slate-400" />} label="Delivery pipeline" value="ACTIVE" />
+                <StatusRow icon={<Activity className="w-4 h-4 text-slate-400" />} label="Application checks" value="PASSING" />
+                <StatusRow icon={<BookOpen className="w-4 h-4 text-slate-400" />} label="Platform guide" value="AVAILABLE" accent="indigo" />
+              </>}
 
             </div>
           </div>

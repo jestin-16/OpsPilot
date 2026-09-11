@@ -1,12 +1,14 @@
 package com.opspilot.service;
 
 import com.opspilot.dto.ProjectRequest;
+import com.opspilot.dto.ProjectCreateRequest;
 import com.opspilot.dto.ProjectResponse;
 import com.opspilot.entity.Project;
 import com.opspilot.entity.User;
 import com.opspilot.event.AuditEvent;
 import com.opspilot.exception.ForbiddenException;
 import com.opspilot.exception.ResourceNotFoundException;
+import com.opspilot.exception.UnauthorizedException;
 import com.opspilot.repository.ProjectRepository;
 import com.opspilot.repository.DeploymentRepository;
 import com.opspilot.repository.LogRepository;
@@ -92,29 +94,26 @@ public class ProjectService {
     }
 
     @Transactional
-    public ProjectResponse createProject(ProjectRequest request, User currentUser) {
-        if (projectRepository.existsByProjectNameAndOwner(request.getProjectName(), currentUser)) {
+    public ProjectResponse createProject(ProjectCreateRequest request, User currentUser) {
+        if (currentUser == null) {
+            throw new UnauthorizedException("Authentication is required to create a project");
+        }
+
+        String projectName = request.getProjectName().trim();
+        String description = normalizeOptional(request.getDescription());
+        String repositoryUrl = normalizeOptional(request.getRepositoryUrl());
+
+        if (projectRepository.existsByProjectNameIgnoreCaseAndOwner(projectName, currentUser)) {
             throw new IllegalArgumentException("Project name must be unique per user");
         }
 
-        if (request.getRepositoryUrl() != null && !request.getRepositoryUrl().isEmpty()) {
-            if (!request.getRepositoryUrl().matches(".*(github\\.com|gitlab\\.com).*")) {
-                throw new IllegalArgumentException("Repository URL must be a valid github.com or gitlab.com URL");
-            }
-        }
-
         Project project = new Project(
-                request.getProjectName(),
-                request.getDescription(),
-                request.getRepositoryUrl(),
+                projectName,
+                description,
+                repositoryUrl,
                 currentUser,
                 "SETUP_IN_PROGRESS"
         );
-        project.setAwsLogGroupName(request.getAwsLogGroupName());
-        project.setGithubRepoName(request.getGithubRepoName());
-        project.setLokiAppLabel(request.getLokiAppLabel());
-        project.setOciLogGroupOcid(request.getOciLogGroupOcid());
-        project.setCredentialsJson(request.getCredentialsJson());
 
         Project savedProject = projectRepository.save(project);
 
@@ -127,6 +126,12 @@ public class ProjectService {
         meterRegistry.counter("project.create.success").increment();
 
         return mapToResponse(savedProject);
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) return null;
+        String normalized = value.trim();
+        return normalized.isEmpty() ? null : normalized;
     }
 
     @Transactional

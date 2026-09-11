@@ -27,8 +27,23 @@ public interface LogRepository extends JpaRepository<LogEntity, Long> {
             @Param("logLevel") String logLevel,
             @Param("query") String query
     );
+
+            @Query("SELECT l FROM LogEntity l LEFT JOIN l.deployment d LEFT JOIN d.project deploymentProject LEFT JOIN l.project directProject WHERE " +
+                "(deploymentProject.owner.id = :ownerId OR directProject.owner.id = :ownerId) AND " +
+                "(:projectId IS NULL OR deploymentProject.id = :projectId OR directProject.id = :projectId) AND " +
+           "(:sourceService IS NULL OR l.sourceService = :sourceService) AND " +
+           "(:logLevel IS NULL OR l.logLevel = :logLevel) AND " +
+           "(:query IS NULL OR LOWER(l.message) LIKE :query) " +
+           "ORDER BY l.timestamp DESC")
+    List<LogEntity> searchLogsForOwner(
+            @Param("ownerId") Long ownerId,
+            @Param("projectId") Long projectId,
+            @Param("sourceService") String sourceService,
+            @Param("logLevel") String logLevel,
+            @Param("query") String query
+    );
     
     @org.springframework.data.jpa.repository.Modifying
-    @Query("DELETE FROM LogEntity l WHERE l.deployment.project.id = :projectId")
+    @Query("DELETE FROM LogEntity l WHERE l.deployment.project.id = :projectId OR l.project.id = :projectId")
     void deleteLogsByProjectId(@Param("projectId") Long projectId);
 }

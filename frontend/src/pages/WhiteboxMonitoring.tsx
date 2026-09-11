@@ -10,15 +10,18 @@ import {
 
 export const WhiteboxMonitoring: React.FC = () => {
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
-  const [providerName, setProviderName] = useState('local');
+  const [providerName, setProviderName] = useState('prometheus');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
         const data = await api.getMetrics(providerName);
         setMetrics(data);
+        setError(data.status === 'UNAVAILABLE' ? (data.error || 'Metrics unavailable') : null);
       } catch (err) {
         console.error("Failed to fetch metrics", err);
+        setError('Monitoring service unavailable');
       }
     };
     
@@ -46,14 +49,20 @@ export const WhiteboxMonitoring: React.FC = () => {
               onChange={(e) => setProviderName(e.target.value)}
               className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
             >
-              <option value="local">Simulated (Local)</option>
               <option value="prometheus">Prometheus</option>
-              <option value="aws">AWS CloudWatch</option>
             </select>
           </div>
         </div>
 
-        {metrics && (
+        {error && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+            <div className="font-bold">Metrics unavailable</div>
+            <div className="mt-1">{error}</div>
+            <div className="mt-2 text-xs text-amber-700">Source: {metrics?.source || 'Prometheus'}</div>
+          </div>
+        )}
+
+        {metrics && !error && (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-white/85 p-5 shadow-sm">
               <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">CPU Usage</div>
@@ -86,6 +95,7 @@ export const WhiteboxMonitoring: React.FC = () => {
                 <Area type="monotone" dataKey="cpu" stroke="#4F46E5" fill="#4F46E5" fillOpacity={0.2} />
              </AreaChart>
            </ResponsiveContainer>
+            {metrics?.status === 'UNAVAILABLE' && <div className="mt-3 text-xs font-semibold text-slate-500">Metrics unavailable</div>}
         </div>
       </div>
     </SidebarLayout>

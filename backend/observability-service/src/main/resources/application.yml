@@ -26,6 +26,22 @@ app:
     expiration-ms: 900000
     refresh-expiration-ms: 604800000
 
+monitoring:
+  kubernetes:
+    enabled: ${KUBERNETES_ENABLED:true}
+  prometheus:
+    enabled: ${PROMETHEUS_ENABLED:true}
+    url: ${PROMETHEUS_URL:http://localhost:9090}
+    username: ${PROMETHEUS_USERNAME:}
+    password: ${PROMETHEUS_PASSWORD:}
+    timeout: ${PROMETHEUS_TIMEOUT:3s}
+  loki:
+    enabled: ${LOKI_ENABLED:false}
+    url: ${LOKI_URL:http://localhost:3100}
+    username: ${LOKI_USERNAME:}
+    password: ${LOKI_PASSWORD:}
+    timeout: ${LOKI_TIMEOUT:3s}
+
 eureka:
   client:
     service-url:

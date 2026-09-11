@@ -29,61 +29,57 @@ const workflow = [
   ['03', 'Resolve the right thing', 'Use AI summaries and live telemetry to focus the team on the highest-value action.'],
 ];
 
-const signalRows = [
-  { label: 'API gateway', detail: 'Latency within SLO', value: '42ms', color: 'text-emerald-500' },
-  { label: 'Payment service', detail: 'Deployment completed', value: 'Healthy', color: 'text-cyan-500' },
-  { label: 'Worker queue', detail: 'Memory pressure rising', value: 'Review', color: 'text-amber-500' },
-];
-
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const go = (path: string) => { setMenuOpen(false); navigate(path); };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white font-sans text-slate-900 selection:bg-slate-900 selection:text-white">
+    <div className="min-h-screen overflow-x-hidden bg-white font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-950">
       <section className="relative isolate overflow-hidden bg-white text-slate-900">
-        <div className="absolute inset-0 -z-10 opacity-30 [background-image:linear-gradient(rgba(0,0,0,.04)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,.04)_1px,transparent_1px)] [background-size:48px_48px]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_72%_18%,rgba(34,211,238,.13),transparent_28%),radial-gradient(circle_at_12%_75%,rgba(129,140,248,.12),transparent_30%)]" />
+        <div className="absolute inset-0 -z-10 opacity-50 [background-image:linear-gradient(rgba(15,23,42,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,.045)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)]" />
         
-        <header className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
+        <header className="sticky top-4 z-30 mx-4 flex max-w-7xl items-center justify-between border border-white/80 bg-white/85 px-4 py-3 shadow-[0_12px_35px_rgba(79,70,229,0.08)] backdrop-blur-xl sm:mx-8 sm:px-5 lg:mx-auto lg:px-6">
           <button type="button" onClick={() => go('/')} className="flex items-center gap-3 text-left" aria-label="OpsPilot home">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-900"><Terminal className="h-5 w-5" /></span>
-            <span><span className="block text-lg font-black tracking-tight text-slate-900">OpsPilot</span><span className="block text-[10px] font-bold uppercase tracking-[.2em] text-slate-500">AI-assisted IDP</span></span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600"><Terminal className="h-5 w-5" /></span>
+            <span><span className="block text-lg font-black tracking-tight text-slate-950">OpsPilot</span><span className="block text-[10px] font-bold uppercase tracking-[.2em] text-slate-500">AI-assisted IDP</span></span>
           </button>
-          <nav className="hidden items-center gap-8 text-sm font-semibold text-slate-600 md:flex">
-            <a href="#platform" className="transition hover:text-cyan-500">Platform</a>
-            <a href="#workflow" className="transition hover:text-cyan-500">Workflow</a>
-            <a href="#control" className="transition hover:text-cyan-500">Control</a>
+          <nav className="hidden items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 p-1 text-sm font-semibold text-slate-600 md:flex">
+            <a href="#platform" className="rounded-lg px-4 py-2 transition hover:bg-white hover:text-indigo-600 hover:shadow-sm">Platform</a>
+            <a href="#workflow" className="rounded-lg px-4 py-2 transition hover:bg-white hover:text-indigo-600 hover:shadow-sm">Workflow</a>
+            <a href="#control" className="rounded-lg px-4 py-2 transition hover:bg-white hover:text-indigo-600 hover:shadow-sm">Control</a>
+            <span className="ml-1 flex items-center gap-1.5 border-l border-slate-200 px-3 py-2 text-[10px] font-extrabold uppercase tracking-[.14em] text-emerald-600"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> Live</span>
           </nav>
           <div className="hidden items-center gap-3 md:flex">
-            <button type="button" onClick={() => go('/login')} className="rounded-lg px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-900 border border-transparent">Sign in</button>
-            <button type="button" onClick={() => go('/signup')} className="rounded-lg border border-slate-900 bg-slate-900 px-4 py-2.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-slate-800">Create workspace</button>
+            <button type="button" onClick={() => go('/login')} className="rounded-lg border border-transparent px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:text-indigo-600">Sign in</button>
+            <button type="button" onClick={() => go('/signup')} className="rounded-lg border border-indigo-600 bg-indigo-600 px-4 py-2.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700">Create workspace</button>
           </div>
           <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 text-slate-900 md:hidden" aria-label="Toggle navigation">{menuOpen ? <X /> : <Menu />}</button>
         </header>
         {menuOpen && <div className="mx-5 mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-xl md:hidden">
           <div className="grid gap-1 text-sm font-semibold text-slate-700">
-            <a href="#platform" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 hover:text-cyan-500 border border-transparent hover:border-slate-200">Platform</a>
-            <a href="#workflow" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 hover:text-cyan-500 border border-transparent hover:border-slate-200">Workflow</a>
-            <a href="#control" onClick={() => setMenuOpen(false)} className="rounded-lg px-3 py-2.5 hover:text-cyan-500 border border-transparent hover:border-slate-200">Control</a>
+            <a href="#platform" onClick={() => setMenuOpen(false)} className="rounded-lg border border-transparent px-3 py-2.5 hover:border-indigo-100 hover:text-indigo-600">Platform</a>
+            <a href="#workflow" onClick={() => setMenuOpen(false)} className="rounded-lg border border-transparent px-3 py-2.5 hover:border-indigo-100 hover:text-indigo-600">Workflow</a>
+            <a href="#control" onClick={() => setMenuOpen(false)} className="rounded-lg border border-transparent px-3 py-2.5 hover:border-indigo-100 hover:text-indigo-600">Control</a>
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-200 pt-3">
               <button type="button" onClick={() => go('/login')} className="rounded-lg border border-slate-300 py-2.5 font-bold text-slate-900">Sign in</button>
-              <button type="button" onClick={() => go('/signup')} className="rounded-lg bg-slate-900 py-2.5 font-extrabold text-white hover:bg-slate-800 border border-slate-900">Get started</button>
+              <button type="button" onClick={() => go('/signup')} className="rounded-lg border border-indigo-600 bg-indigo-600 py-2.5 font-extrabold text-white hover:bg-indigo-700">Get started</button>
             </div>
           </div>
         </div>}
-        <div className="mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-14 sm:px-8 sm:pb-24 lg:grid-cols-[.9fr_1.1fr] lg:items-center lg:px-10 lg:pb-28 lg:pt-24">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold uppercase tracking-[.12em] text-slate-700">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-slate-900" />Operational intelligence for modern teams
+        <div className="mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-20 sm:px-8 sm:pb-24 lg:min-h-[690px] lg:grid-cols-[.9fr_1.1fr] lg:items-center lg:px-10 lg:pb-28 lg:pt-24">
+          <div className="landing-hero-copy max-w-2xl">
+            <div className="inline-flex items-center gap-2 border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[.12em] text-cyan-700">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-500" />Operational intelligence for modern teams
             </div>
-            <h1 className="mt-7 text-4xl font-black leading-[1.02] tracking-[-.055em] sm:text-6xl lg:text-7xl text-slate-900">Run every service<br /><span className="text-cyan-500">with context.</span></h1>
+            <h1 className="mt-7 max-w-2xl text-4xl font-black leading-[1.02] tracking-[-.055em] text-slate-950 sm:text-6xl lg:text-[5.25rem]">Run every service<br /><span className="text-indigo-600">with context.</span></h1>
             <p className="mt-7 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">OpsPilot is the AI-assisted internal developer platform that connects your projects, deployments, infrastructure, and incidents in one calm command center.</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <button type="button" onClick={() => go('/signup')} className="group inline-flex items-center justify-center gap-2 border border-slate-900 bg-slate-900 px-5 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-slate-800">
+              <button type="button" onClick={() => go('/signup')} className="group inline-flex items-center justify-center gap-2 border border-indigo-600 bg-indigo-600 px-5 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700">
                 Start building <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
               </button>
-              <button type="button" onClick={() => go('/login')} className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-900 transition hover:border-slate-300 shadow-sm">
+              <button type="button" onClick={() => go('/login')} className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-900 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50">
                 <Sparkles className="h-4 w-4 text-violet-500" /> Explore the platform
               </button>
             </div>
@@ -97,7 +93,7 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      <div className="border-b border-t border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-slate-200 sm:grid-cols-4">{[['01', 'Shared workspace'], ['24/7', 'Signal awareness'], ['100%', 'Owner context'], ['1', 'Operational truth']].map(([value, label]) => <div key={label} className="px-4 py-6 text-center"><p className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">{value}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[.15em] text-slate-500">{label}</p></div>)}</div></div>
+      <div className="border-b border-t border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-slate-200 sm:grid-cols-4">{[['01', 'Shared workspace'], ['24/7', 'Signal awareness'], ['100%', 'Owner context'], ['1', 'Operational truth']].map(([value, label]) => <div key={label} className="px-4 py-6 text-center"><p className="text-xl font-black tracking-tight text-indigo-600 sm:text-2xl">{value}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[.15em] text-slate-500">{label}</p></div>)}</div></div>
 
       <main className="bg-white text-slate-900">
         <section id="platform" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
@@ -207,53 +203,34 @@ const ControlCard: React.FC<{ icon: React.ElementType; title: string; text: stri
 
 const OperationsPreview: React.FC = () => (
   <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-    <div className="border border-slate-200 bg-white p-3 sm:p-4 shadow-xl">
-      <div className="border border-slate-200 bg-white p-4 sm:p-5">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+    <div className="relative border border-slate-200 bg-white p-2 shadow-[0_30px_80px_rgba(79,70,229,0.16)] sm:p-3">
+      <div className="overflow-hidden border border-slate-800 bg-slate-950 p-4 sm:p-5">
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center border border-slate-200 text-cyan-500"><Activity className="h-5 w-5" /></span>
-            <div>
-              <p className="text-sm font-bold text-slate-900">Operations command center</p>
-              <p className="mt-1 text-[11px] text-slate-500">Production / all services</p>
+            <span className="flex h-9 w-9 items-center justify-center border border-cyan-300/25 bg-cyan-300/10 text-cyan-300"><Activity className="h-5 w-5" /></span>
+            <div><p className="text-sm font-bold text-white">OpsPilot / Command view</p><p className="mt-1 text-[11px] text-slate-400">A live read on delivery and runtime</p></div>
+          </div>
+          <span className="hidden items-center gap-1.5 border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300 sm:flex"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />Healthy</span>
+        </div>
+
+        <div className="mt-5 grid gap-3 sm:grid-cols-[1.15fr_.85fr]">
+          <div className="border border-white/10 bg-white/[.06] p-4">
+            <div className="flex items-start justify-between"><div><p className="text-xs font-bold text-white">Release pulse</p><p className="mt-1 text-[10px] text-slate-400">Production · last 24 hours</p></div><span className="text-xs font-black text-cyan-300">+18.4%</span></div>
+            <div className="mt-5 flex h-28 items-end gap-2 border-b border-l border-white/10 px-2 pb-0">
+              {[34, 48, 42, 68, 55, 74, 64, 92, 78, 100, 86, 108].map((height, index) => <span key={index} className={`group relative flex-1 ${index > 8 ? 'bg-cyan-300' : 'bg-indigo-400/70'} transition hover:bg-cyan-200`} style={{ height: `${height}%` }}><span className="absolute -top-4 left-1/2 hidden -translate-x-1/2 text-[9px] font-bold text-cyan-200 group-hover:block">{index + 1}</span></span>)}
             </div>
+            <div className="mt-3 flex justify-between text-[9px] font-bold uppercase tracking-wider text-slate-500"><span>00:00</span><span>12:00</span><span>Now</span></div>
           </div>
-          <span className="flex items-center gap-1.5 border border-slate-200 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-500">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />Healthy
-          </span>
-        </div>
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          {[['99.98%', 'Uptime', 'text-cyan-500'], ['12', 'Services', 'text-slate-900'], ['03', 'Signals', 'text-amber-500']].map(([value, label, color]) => (
-            <div key={label} className="border border-slate-200 bg-white p-3 text-center">
-              <p className={`text-lg font-extrabold ${color}`}>{value}</p>
-              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+          <div className="border border-white/10 bg-white/[.06] p-4">
+            <p className="text-xs font-bold text-white">Runtime health</p>
+            <div className="mt-4 grid gap-3">
+              {[['Services', '12 / 12', 'bg-emerald-300', 'text-emerald-300'], ['Deployments', '08 today', 'bg-cyan-300', 'text-cyan-300'], ['Open signals', '03 review', 'bg-amber-300', 'text-amber-300']].map(([label, value, dot, color]) => <div key={label} className="flex items-center justify-between border-b border-white/10 pb-3 last:border-0 last:pb-0"><span className="flex items-center gap-2 text-[10px] font-semibold text-slate-400"><span className={`h-1.5 w-1.5 rounded-full ${dot}`} />{label}</span><span className={`text-[11px] font-black ${color}`}>{value}</span></div>)}
             </div>
-          ))}
-        </div>
-        <div className="mt-5 border border-slate-200 bg-white p-4">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-900">Live service signals</p>
-            <p className="text-[10px] font-semibold text-emerald-500">Updated now</p>
-          </div>
-          <div className="mt-4 grid gap-2">
-            {signalRows.map((row) => (
-              <div key={row.label} className="flex items-center gap-3 border-b border-slate-100 py-2 last:border-0">
-                <span className={`h-2 w-2 rounded-full border border-slate-200 bg-white`} />
-                <div className="min-w-0 flex-1">
-                  <p className={`truncate text-xs font-bold ${row.color}`}>{row.label}</p>
-                  <p className="truncate text-[10px] text-slate-500">{row.detail}</p>
-                </div>
-                <span className="text-[10px] font-bold text-slate-900">{row.value}</span>
-              </div>
-            ))}
+            <div className="mt-5 border border-violet-300/20 bg-violet-300/10 p-3"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-violet-200"><Sparkles className="h-3.5 w-3.5" /> AI brief</div><p className="mt-2 text-[10px] leading-4 text-slate-300">No critical drift detected across production.</p></div>
           </div>
         </div>
-        <div className="mt-4 flex items-start gap-3 border border-slate-200 bg-white p-3">
-          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" />
-          <div>
-            <p className="text-xs font-bold text-slate-900">AI insight ready</p>
-            <p className="mt-1 text-[10px] leading-4 text-violet-500">Payment service is healthy after the latest deployment. No action needed.</p>
-          </div>
-        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-white/[.06] px-4 py-3"><div className="flex items-center gap-2"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Latest deployment</span><span className="h-1 w-1 rounded-full bg-slate-500" /><span className="text-xs font-bold text-white">payment-service v2.8.4</span></div><span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-300"><Check className="h-3.5 w-3.5" /> Deployed 4m ago</span></div>
       </div>
     </div>
   </div>

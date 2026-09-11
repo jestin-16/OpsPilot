@@ -105,13 +105,59 @@ export const VerifyEmailOTP: React.FC = () => {
         {error && <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-sm font-medium text-rose-600" role="alert"><AlertCircle className="h-5 w-5 shrink-0" />{error}</div>}
         {notice && <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm font-medium text-emerald-700" role="status">{notice}</div>}
 
-        {!verified && <form onSubmit={handleVerify} className="space-y-6">
-          <label className="block space-y-2"><span className="pl-1 text-xs font-bold uppercase tracking-widest text-slate-500">Email address</span><div className="relative"><Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" /><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-white/60 py-3.5 pl-11 pr-4 text-sm font-medium text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10" /></div></label>
-          <div className="space-y-2"><span className="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500">Verification code</span><div className="flex justify-between gap-2" onPaste={handlePaste}>{digits.map((digit, index) => <input key={index} ref={(element) => { inputs.current[index] = element; }} value={digit} onChange={(event) => updateDigit(index, event.target.value)} onKeyDown={(event) => handleKeyDown(index, event)} inputMode="numeric" maxLength={1} autoComplete={index === 0 ? 'one-time-code' : 'off'} aria-label={`Verification digit ${index + 1}`} className="h-14 w-12 rounded-xl border border-slate-200 bg-white/70 text-center text-xl font-black text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10" /></div></div>
-          <button type="submit" disabled={verifying} className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"><span>{verifying ? 'Verifying...' : 'Verify email'}</span><ArrowRight className="h-4 w-4" /></button>
-        </form>}
+        {!verified && (
+          <form onSubmit={handleVerify} className="space-y-6">
+            <label className="block space-y-2">
+              <span className="pl-1 text-xs font-bold uppercase tracking-widest text-slate-500">Email address</span>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white/60 py-3.5 pl-11 pr-4 text-sm font-medium text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                />
+              </div>
+            </label>
+            <div className="space-y-2">
+              <span className="block pl-1 text-xs font-bold uppercase tracking-widest text-slate-500">Verification code</span>
+              <div className="flex justify-between gap-2" onPaste={handlePaste}>
+                {digits.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(element) => { inputs.current[index] = element; }}
+                    value={digit}
+                    onChange={(event) => updateDigit(index, event.target.value)}
+                    onKeyDown={(event) => handleKeyDown(index, event)}
+                    inputMode="numeric"
+                    maxLength={1}
+                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                    aria-label={`Verification digit ${index + 1}`}
+                    className="h-14 w-12 rounded-xl border border-slate-200 bg-white/70 text-center text-xl font-black text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+                  />
+                ))}
+              </div>
+            </div>
+            <button type="submit" disabled={verifying} className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3.5 text-sm font-bold text-white shadow-lg transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50">
+              <span>{verifying ? 'Verifying...' : 'Verify email'}</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </form>
+        )}
 
-        {!verified && <div className="space-y-3 text-center"><button type="button" onClick={() => void handleResend()} disabled={resending || secondsLeft > 0} className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:text-slate-400">{resending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} {resending ? 'Sending...' : 'Resend OTP'}</button><p className="flex items-center justify-center gap-1.5 text-xs font-medium text-slate-500"><Clock3 className="h-3.5 w-3.5" />{secondsLeft > 0 ? `Resend available in ${secondsLeft}s` : 'You can request a new code'}</p></div>}
+        {!verified && (
+          <div className="space-y-3 text-center">
+            <button type="button" onClick={() => void handleResend()} disabled={resending || secondsLeft > 0} className="inline-flex items-center gap-2 text-sm font-bold text-indigo-600 transition hover:text-indigo-800 disabled:cursor-not-allowed disabled:text-slate-400">
+              {resending ? <RefreshCw className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {resending ? 'Sending...' : 'Resend OTP'}
+            </button>
+            <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-slate-500">
+              <Clock3 className="h-3.5 w-3.5" />
+              {secondsLeft > 0 ? `Resend available in ${secondsLeft}s` : 'You can request a new code'}
+            </p>
+          </div>
+        )}
         <div className="text-center text-sm font-medium text-slate-500"><Link to="/login" className="font-bold text-indigo-600 hover:underline">Back to sign in</Link></div>
       </div>
     </div>

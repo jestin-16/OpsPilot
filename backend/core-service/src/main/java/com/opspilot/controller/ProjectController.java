@@ -1,6 +1,7 @@
 package com.opspilot.controller;
 
 import com.opspilot.dto.PagedResponse;
+import com.opspilot.dto.ProjectCreateRequest;
 import com.opspilot.dto.ProjectRequest;
 import com.opspilot.dto.ProjectResponse;
 import com.opspilot.entity.User;
@@ -56,7 +57,7 @@ public class ProjectController {
     @PostMapping
     @Operation(summary = "Register a new microservice project")
     public ResponseEntity<ProjectResponse> createProject(
-            @Valid @RequestBody ProjectRequest request,
+            @Valid @RequestBody ProjectCreateRequest request,
             @AuthenticationPrincipal User currentUser) {
         return new ResponseEntity<>(projectService.createProject(request, currentUser), HttpStatus.CREATED);
     }

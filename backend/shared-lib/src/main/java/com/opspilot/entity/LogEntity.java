@@ -19,6 +19,11 @@ public class LogEntity {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "project", "deployedBy"})
     private Deployment deployment;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "owner"})
+    private Project project;
+
     @Column(name = "source_service", nullable = false)
     private String sourceService;
 
@@ -60,6 +65,14 @@ public class LogEntity {
 
     public void setDeployment(Deployment deployment) {
         this.deployment = deployment;
+    }
+
+    public Project getProject() {
+        return project;
+    }
+
+    public void setProject(Project project) {
+        this.project = project;
     }
 
     public String getSourceService() {

@@ -109,9 +109,19 @@ export const LoginSchema = z.object({
 });
 
 export const ProjectSchema = z.object({
-  projectName: z.string().min(1, 'Project name is required'),
-  description: z.string().optional(),
-  repositoryUrl: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  projectName: z.string().trim().min(1, 'Project name is required').max(100, 'Project name must be 100 characters or fewer'),
+  description: z.string().trim().max(1000, 'Description must be 1000 characters or fewer').optional(),
+  repositoryUrl: z.string().trim().refine((value) => {
+    if (!value) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'http:' || url.protocol === 'https:'
+        ? /(^|\.)github\.com$|(^|\.)gitlab\.com$/i.test(url.hostname)
+        : false;
+    } catch {
+      return false;
+    }
+  }, 'Repository URL must be a GitHub or GitLab URL').optional(),
   awsLogGroupName: z.string().optional(),
   githubRepoName: z.string().optional(),
   lokiAppLabel: z.string().optional(),
@@ -134,6 +144,12 @@ export interface AuthResponse {
   name: string;
   email: string;
   roles: string[];
+}
+
+export interface RegistrationResponse {
+  email: string;
+  message: string;
+  verificationRequired: boolean;
 }
 
 export interface Project {
@@ -221,6 +237,9 @@ export interface MetricsData {
   activeRequests: number;
   totalDeployments: number;
   history: MetricPoint[];
+  source?: string;
+  status?: 'AVAILABLE' | 'UNAVAILABLE' | string;
+  error?: string;
 }
 
 export interface PipelineRun {
@@ -282,9 +301,19 @@ export interface LogSource {
 
 export const api = {
   // Auth
-  register: async (data: z.infer<typeof RegisterSchema>): Promise<AuthResponse> => {
+  register: async (data: z.infer<typeof RegisterSchema>): Promise<RegistrationResponse> => {
     RegisterSchema.parse(data);
-    const res = await axiosInstance.post<AuthResponse>('/auth/register', data);
+    const res = await axiosInstance.post<RegistrationResponse>('/auth/register', data);
+    return res.data;
+  },
+
+  verifyOtp: async (data: { email: string; otp: string }): Promise<RegistrationResponse> => {
+    const res = await axiosInstance.post<RegistrationResponse>('/auth/verify-otp', data);
+    return res.data;
+  },
+
+  resendOtp: async (email: string): Promise<RegistrationResponse> => {
+    const res = await axiosInstance.post<RegistrationResponse>('/auth/resend-otp', { email });
     return res.data;
   },
 
@@ -319,13 +348,13 @@ export const api = {
     return res.data;
   },
 
-  createProject: async (data: z.infer<typeof ProjectSchema> & { status?: string }): Promise<Project> => {
-    ProjectSchema.parse({
-      projectName: data.projectName,
-      description: data.description,
-      repositoryUrl: data.repositoryUrl,
+  createProject: async (data: Pick<z.infer<typeof ProjectSchema>, 'projectName' | 'description' | 'repositoryUrl'>): Promise<Project> => {
+    const validated = ProjectSchema.pick({ projectName: true, description: true, repositoryUrl: true }).parse(data);
+    const res = await axiosInstance.post<Project>('/projects', {
+      projectName: validated.projectName.trim(),
+      description: validated.description?.trim() || null,
+      repositoryUrl: validated.repositoryUrl?.trim() || null,
     });
-    const res = await axiosInstance.post<Project>('/projects', data);
     return res.data;
   },
 
@@ -411,7 +440,7 @@ export const api = {
 
   // Monitoring
   getMetrics: async (providerName = 'local'): Promise<MetricsData> => {
-    const res = await axiosInstance.get<MetricsData>(`/monitoring/metrics?providerName=${providerName}`);
+    const res = await axiosInstance.get<MetricsData>(`/monitoring/metrics?providerName=${encodeURIComponent(providerName)}`);
     return res.data;
   },
 

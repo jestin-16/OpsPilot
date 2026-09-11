@@ -6,6 +6,7 @@ import {
   Activity, FileText, Bell, BookOpen,
   LogOut, User as UserIcon, Terminal, Server, Globe, ShieldCheck
 } from 'lucide-react';
+import { canAccessRole, isAdmin } from '../utils/roles';
 
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
@@ -17,27 +18,23 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     navigate('/login');
   };
 
-  const isAdmin = user?.roles?.some((role) => {
-    const normalizedRole = role.trim().toUpperCase().replace(/\s+/g, '_');
-    return normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN' || normalizedRole === 'ADMINISTRATOR' || normalizedRole === 'ROLE_ADMINISTRATOR';
-  }) ?? false;
-
   const navItems = [
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, enabled: true },
-    { name: 'Projects', path: '/projects', icon: FolderGit2, enabled: true },
-    { name: 'Deployments', path: '/deployments', icon: Rocket, enabled: true },
-    { name: 'Docker Management', path: '/docker', icon: Terminal, enabled: true },
-    { name: 'Live project dashboard', path: '/monitoring', icon: Activity, enabled: true },
-    { name: 'Whitebox monitoring', path: '/whitebox', icon: Server, enabled: true },
-    { name: 'Blackbox monitoring', path: '/blackbox', icon: Globe, enabled: true },
-    { name: 'Log management', path: '/logs', icon: FileText, enabled: true },
-    { name: 'Notification center', path: '/notifications', icon: Bell, enabled: true },
-    { name: 'Platform guide', path: '/guide', icon: BookOpen, enabled: true },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+    { name: 'Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'Deployments', path: '/deployments', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'Docker Management', path: '/docker', icon: Terminal, roles: ['DEVOPS', 'ADMIN'] as const },
+    { name: 'Live project dashboard', path: '/monitoring', icon: Activity, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'Whitebox monitoring', path: '/whitebox', icon: Server, roles: ['DEVOPS'] as const },
+    { name: 'Blackbox monitoring', path: '/blackbox', icon: Globe, roles: ['DEVOPS'] as const },
+    { name: 'Log management', path: '/logs', icon: FileText, roles: ['DEVOPS'] as const },
+    { name: 'Notification center', path: '/notifications', icon: Bell, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'Platform guide', path: '/guide', icon: BookOpen, roles: ['DEVELOPER', 'DEVOPS'] as const },
   ];
 
-  if (isAdmin) {
-    navItems.push({ name: 'Platform governance', path: '/admin', icon: ShieldCheck, enabled: true });
-    navItems.push({ name: 'User Management', path: '/users', icon: UserIcon, enabled: true });
+  if (isAdmin(user?.roles)) {
+    navItems.push({ name: 'Project management', path: '/admin/projects', icon: FolderGit2, roles: ['ADMIN'] as const });
+    navItems.push({ name: 'Platform governance', path: '/admin', icon: ShieldCheck, roles: ['ADMIN'] as const });
+    navItems.push({ name: 'User Management', path: '/users', icon: UserIcon, roles: ['ADMIN'] as const });
   }
 
   return (
@@ -58,21 +55,9 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
           {/* Navigation */}
           <nav className="p-4 space-y-1">
-            {navItems.map((item) => {
+            {navItems.filter((item) => canAccessRole(user?.roles, [...item.roles])).map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path && item.enabled;
-
-              if (!item.enabled) {
-                return (
-                  <div key={item.name} className="flex items-center justify-between px-3 py-3 rounded-xl text-slate-400 opacity-50 cursor-not-allowed select-none">
-                    <div className="flex items-center gap-3">
-                      <Icon className="w-4 h-4" />
-                      <span className="text-xs font-semibold">{item.name}</span>
-                    </div>
-                    <span className="text-[9px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">Soon</span>
-                  </div>
-                );
-              }
+              const isActive = location.pathname === item.path;
 
               return (
                 <Link

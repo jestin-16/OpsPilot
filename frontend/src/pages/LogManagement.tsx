@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type LogEntry } from '../services/api';
-import { FileText, Search, RefreshCw, AlertTriangle, AlertCircle, Info, Terminal } from 'lucide-react';
+import { FileText, Search, RefreshCw, AlertTriangle, AlertCircle, Info, Pause, Play } from 'lucide-react';
 
 export const LogManagement: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -12,9 +12,11 @@ export const LogManagement: React.FC = () => {
   const [logLevel, setLogLevel] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [providerName, setProviderName] = useState('local');
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [watching, setWatching] = useState(true);
+  const [refreshSeconds, setRefreshSeconds] = useState(5);
 
   const fetchLogs = async () => {
+    setError('');
     setLoading(true);
     try {
       const data = await api.getLogs({
@@ -35,33 +37,15 @@ export const LogManagement: React.FC = () => {
     fetchLogs();
   }, [sourceService, logLevel, providerName]);
 
+  useEffect(() => {
+    if (!watching) return;
+    const timer = window.setInterval(fetchLogs, refreshSeconds * 1000);
+    return () => window.clearInterval(timer);
+  }, [watching, refreshSeconds, sourceService, logLevel, providerName, searchQuery]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchLogs();
-  };
-
-  const handleSimulateLogs = async () => {
-    setIsSimulating(true);
-    try {
-      const mockLogs = [
-        { sourceService: 'auth-service', logLevel: 'INFO', message: 'User jestin successfully authenticated via JWT' },
-        { sourceService: 'core-service', logLevel: 'WARN', message: 'Kubernetes API responded slowly (latency > 500ms)' },
-        { sourceService: 'observability-service', logLevel: 'ERROR', message: 'Failed to scrape prometheus metrics from backend-pod-89df' },
-        { sourceService: 'api-gateway', logLevel: 'INFO', message: 'Routed request to /api/v1/cicd/webhooks/github successfully' },
-        { sourceService: 'deployment-service', logLevel: 'INFO', message: 'Deployment rollout strategy initialized for project opspilot' }
-      ];
-      
-      for (const log of mockLogs) {
-        await api.createLog(log);
-        // tiny delay to ensure chronological sorting
-        await new Promise(r => setTimeout(r, 200));
-      }
-      await fetchLogs();
-    } catch (err: any) {
-      alert('Failed to simulate logs');
-    } finally {
-      setIsSimulating(false);
-    }
   };
 
   const getLevelBadge = (level: string) => {
@@ -109,13 +93,17 @@ export const LogManagement: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={handleSimulateLogs}
-              disabled={isSimulating}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50"
+              onClick={() => setWatching(value => !value)}
+              className="px-5 py-2.5 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30"
             >
-              <Terminal className="w-4 h-4 fill-current" />
-              <span>{isSimulating ? 'Generating...' : 'Simulate Live Logs'}</span>
+              {watching ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              <span>{watching ? 'Pause Watch' : 'Watch Logs'}</span>
             </button>
+            <select value={refreshSeconds} onChange={(e) => setRefreshSeconds(Number(e.target.value))} className="px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700">
+              <option value={5}>Every 5s</option>
+              <option value={10}>Every 10s</option>
+              <option value={30}>Every 30s</option>
+            </select>
             <button
               onClick={fetchLogs}
               className="px-4 py-2.5 bg-white border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-700 text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-sm"
@@ -213,7 +201,9 @@ export const LogManagement: React.FC = () => {
         <div className="glass-panel rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-slate-800">Log Stream <span className="text-slate-400 font-normal">({logs.length})</span></h2>
-            <span className="text-xs font-bold tracking-widest uppercase text-indigo-500 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">Live Loki Tailer</span>
+            <span className={`text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-lg border ${watching ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-slate-500 bg-slate-50 border-slate-200'}`}>
+              {watching ? `Watching · ${refreshSeconds}s` : 'Paused'}
+            </span>
           </div>
 
           {loading && logs.length === 0 ? (
@@ -221,7 +211,7 @@ export const LogManagement: React.FC = () => {
           ) : logs.length === 0 ? (
             <div className="py-16 text-center text-slate-500 text-sm border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
               <FileText className="w-8 h-8 mx-auto mb-3 text-slate-300" />
-              No matching log records found.<br/>Click <strong>"Simulate Live Logs"</strong> above to generate test data.
+              No matching real log records found.
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-inner">

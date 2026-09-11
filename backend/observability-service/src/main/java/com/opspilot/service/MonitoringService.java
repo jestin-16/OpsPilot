@@ -1,62 +1,52 @@
 package com.opspilot.service;
 
 import com.opspilot.dto.MetricsResponse;
-import com.opspilot.repository.DeploymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
 
 @Service
 public class MonitoringService {
 
     @Autowired
-    private DeploymentRepository deploymentRepository;
-
-    @Autowired(required = false)
-    private List<com.opspilot.provider.MetricsProvider> metricsProviders;
+    private PrometheusService prometheusService;
 
     public MetricsResponse getSystemMetrics(String providerName) {
-        if (providerName != null && !providerName.equalsIgnoreCase("local") && metricsProviders != null) {
-            for (com.opspilot.provider.MetricsProvider provider : metricsProviders) {
-                if (provider.getProviderName().equalsIgnoreCase(providerName)) {
-                    // For now, since fetchMetrics returns Object, we could cast it or map it.
-                    // Assuming the provider handles formatting for now or we just fallback.
-                }
-            }
+        if (!"prometheus".equalsIgnoreCase(providerName)) {
+            return unavailable("Metrics source is not configured; select Prometheus");
         }
 
-        Runtime runtime = Runtime.getRuntime();
-        long maxMemory = runtime.maxMemory() / (1024 * 1024);
-        long totalMemory = runtime.totalMemory() / (1024 * 1024);
-        long freeMemory = runtime.freeMemory() / (1024 * 1024);
-        long usedMemory = totalMemory - freeMemory;
+        OptionalDouble cpu = prometheusService.query("100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)");
+        OptionalDouble memoryUsed = prometheusService.query("sum(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / 1024 / 1024");
+        OptionalDouble memoryTotal = prometheusService.query("sum(node_memory_MemTotal_bytes) / 1024 / 1024");
+        OptionalDouble requests = prometheusService.query("sum(http_server_requests_active_seconds_count)");
+        OptionalDouble deployments = prometheusService.query("count(kube_deployment_metadata)");
 
-        double cpuLoad = 15.4 + (Math.random() * 12.0); // Simulated actuator CPU load
-        int totalDeployments = (int) deploymentRepository.count();
-
-        List<MetricsResponse.MetricPoint> history = new ArrayList<>();
-        LocalTime now = LocalTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
-
-        for (int i = 5; i >= 0; i--) {
-            String timeStr = now.minusSeconds(i * 10).format(formatter);
-            double sampleCpu = Math.round((cpuLoad + (Math.random() * 8.0 - 4.0)) * 10.0) / 10.0;
-            long sampleMemory = usedMemory + (long)(Math.random() * 20 - 10);
-            int sampleReq = 45 + (int)(Math.random() * 30);
-            history.add(new MetricsResponse.MetricPoint(timeStr, sampleCpu, sampleMemory, sampleReq));
+        if (cpu.isEmpty() && memoryUsed.isEmpty() && memoryTotal.isEmpty()) {
+            return unavailable(prometheusService.getLastError());
         }
 
-        return new MetricsResponse(
-                Math.round(cpuLoad * 10.0) / 10.0,
-                usedMemory,
-                maxMemory > 0 ? maxMemory : 1024,
-                48,
-                totalDeployments,
-                history
-        );
+        return withMetadata(new MetricsResponse(
+                cpu.orElse(0),
+                Math.round(memoryUsed.orElse(0)),
+                Math.round(memoryTotal.orElse(0)),
+                (int) Math.round(requests.orElse(0)),
+                (int) Math.round(deployments.orElse(0)),
+                List.of()
+        ), "Prometheus", "AVAILABLE", null);
+    }
+
+    private MetricsResponse unavailable(String error) {
+        return withMetadata(new MetricsResponse(0, 0, 0, 0, 0, List.of()), "Prometheus", "UNAVAILABLE",
+                error == null || error.isBlank() ? "Metrics source unavailable" : error);
+    }
+
+    private MetricsResponse withMetadata(MetricsResponse response, String source, String status, String error) {
+        response.setSource(source);
+        response.setStatus(status);
+        response.setError(error);
+        return response;
     }
 }

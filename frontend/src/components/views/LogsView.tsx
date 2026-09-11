@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FileText,
   Search,
@@ -11,36 +11,40 @@ import {
 } from 'lucide-react';
 import { Card } from '../Card';
 import { Button } from '../Button';
+import { api, type LogEntry } from '../../services/api';
 
 export const LogsView: React.FC = () => {
   const [logLevel, setLogLevel] = useState<'ALL' | 'INFO' | 'WARN' | 'ERROR' | 'DEBUG'>('ALL');
   const [searchLog, setSearchLog] = useState('');
   const [isStreaming, setIsStreaming] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
 
-  const rawLogs = [
-    { id: 1, time: '2026-07-29T18:40:01.012Z', level: 'INFO', service: 'payment-gateway', msg: 'POST /v1/charge - HTTP 200 OK (latency: 34ms, tx_id: tx_998124)' },
-    { id: 2, time: '2026-07-29T18:40:02.145Z', level: 'INFO', service: 'auth-service', msg: 'Token validation successful for user alex.mercer@opspilot.internal' },
-    { id: 3, time: '2026-07-29T18:40:03.582Z', level: 'DEBUG', service: 'analytics-worker', msg: 'Flushing event queue batch (size: 240 items to Elasticsearch cluster)' },
-    { id: 4, time: '2026-07-29T18:40:05.901Z', level: 'WARN', service: 'analytics-worker', msg: 'High heap usage detected in JVM worker: 88% allocated (892MB / 1024MB)' },
-    { id: 5, time: '2026-07-29T18:40:08.210Z', level: 'ERROR', service: 'auth-service', msg: 'OAuth token refresh failed: invalid grant parameters from client_id=mobile_app' },
-    { id: 6, time: '2026-07-29T18:40:10.044Z', level: 'INFO', service: 'billing-service', msg: 'Generated PDF invoice #INV-2026-0814 for organization AcmeCorp' },
-    { id: 7, time: '2026-07-29T18:40:12.789Z', level: 'INFO', service: 'opspilot-brain', msg: 'AI Root Cause Model: telemetry anomaly score calculated at 0.12 (Low Risk)' },
-    { id: 8, time: '2026-07-29T18:40:15.331Z', level: 'WARN', service: 'postgres-primary', msg: 'Slow query detected (> 250ms): SELECT * FROM transaction_history WHERE date > NOW()' },
-    { id: 9, time: '2026-07-29T18:40:18.910Z', level: 'INFO', service: 'k8s-ingress', msg: 'SSL Certificate auto-renewed successfully via Let\'s Encrypt for *.opspilot.internal' },
-    { id: 10, time: '2026-07-29T18:40:22.504Z', level: 'ERROR', service: 'jenkins-ci', msg: 'Pipeline #108 step "Integration Tests" exited with non-zero code 1' },
-  ];
+  const loadLogs = async () => {
+    try {
+      setLogs(await api.getLogs({ providerName: 'local' }));
+    } catch {
+      setLogs([]);
+    }
+  };
 
-  const filteredLogs = rawLogs.filter((l) => {
-    const matchesLevel = logLevel === 'ALL' || l.level === logLevel;
+  useEffect(() => {
+    loadLogs();
+    if (!isStreaming) return;
+    const timer = window.setInterval(loadLogs, 5000);
+    return () => window.clearInterval(timer);
+  }, [isStreaming]);
+
+  const filteredLogs = logs.filter((l) => {
+    const matchesLevel = logLevel === 'ALL' || l.logLevel === logLevel;
     const matchesQuery =
-      l.msg.toLowerCase().includes(searchLog.toLowerCase()) ||
-      l.service.toLowerCase().includes(searchLog.toLowerCase());
+      l.message.toLowerCase().includes(searchLog.toLowerCase()) ||
+      l.sourceService.toLowerCase().includes(searchLog.toLowerCase());
     return matchesLevel && matchesQuery;
   });
 
   const handleCopyLogs = () => {
-    const text = filteredLogs.map((l) => `[${l.time}] [${l.level}] [${l.service}] ${l.msg}`).join('\n');
+    const text = filteredLogs.map((l) => `[${l.timestamp}] [${l.logLevel}] [${l.sourceService}] ${l.message}`).join('\n');
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -139,22 +143,22 @@ export const LogsView: React.FC = () => {
         <div className="p-4 font-mono text-xs flex flex-col gap-2 max-h-[500px] overflow-y-auto leading-relaxed">
           {filteredLogs.map((log) => (
             <div key={log.id} className="flex items-start gap-2.5 hover:bg-white/5 p-1 rounded transition-colors group">
-              <span className="text-op-subtle text-[11px] select-none">{log.time.split('T')[1].replace('Z', '')}</span>
+              <span className="text-op-subtle text-[11px] select-none">{new Date(log.timestamp).toLocaleTimeString()}</span>
               <span
                 className={`px-1.5 py-0.2 rounded text-[10px] font-bold uppercase select-none ${
-                  log.level === 'ERROR'
+                  log.logLevel === 'ERROR'
                     ? 'bg-op-danger/20 text-op-danger border border-op-danger/40'
-                    : log.level === 'WARN'
+                    : log.logLevel === 'WARN'
                     ? 'bg-op-warn/20 text-op-warn border border-op-warn/40'
-                    : log.level === 'DEBUG'
+                    : log.logLevel === 'DEBUG'
                     ? 'bg-op-highlight/20 text-op-highlight border border-op-highlight/40'
                     : 'bg-op-accent/20 text-op-accent border border-op-accent/40'
                 }`}
               >
-                {log.level}
+                {log.logLevel}
               </span>
-              <span className="text-op-accent font-semibold text-[11px]">[{log.service}]</span>
-              <span className="text-op-fg flex-1 font-mono">{log.msg}</span>
+              <span className="text-op-accent font-semibold text-[11px]">[{log.sourceService}]</span>
+              <span className="text-op-fg flex-1 font-mono">{log.message}</span>
             </div>
           ))}
         </div>

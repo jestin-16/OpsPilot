@@ -73,6 +73,7 @@ public class GenericWebhookIngestController {
                         Optional<LogEntity> mapped = fieldMappingService.mapPayload(node.toString(), source.getFieldMapping(), source.getSourceName());
                         mapped.ifPresent(log -> {
                             log.setDeployment(null);
+                            log.setProject(source.getProject());
                             logRepository.save(log);
                         });
                     }
@@ -84,6 +85,7 @@ public class GenericWebhookIngestController {
                             Optional<LogEntity> mapped = fieldMappingService.mapPayload(line.trim(), source.getFieldMapping(), source.getSourceName());
                             mapped.ifPresent(log -> {
                                 log.setDeployment(null);
+                                log.setProject(source.getProject());
                                 logRepository.save(log);
                             });
                         }
@@ -92,6 +94,7 @@ public class GenericWebhookIngestController {
                     Optional<LogEntity> mapped = fieldMappingService.mapPayload(rawPayload, source.getFieldMapping(), source.getSourceName());
                     mapped.ifPresent(log -> {
                         log.setDeployment(null);
+                        log.setProject(source.getProject());
                         logRepository.save(log);
                     });
                 }

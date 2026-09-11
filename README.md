@@ -72,6 +72,25 @@ OpsPilot enforces strict Third Normal Form (3NF) relational integrity across all
 
 ## 📡 REST API Reference
 
+### Email verification configuration
+
+New registrations require email verification before login. Configure these environment variables for the auth service; never commit SMTP credentials:
+
+```text
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_USERNAME=your-smtp-user
+MAIL_PASSWORD=your-smtp-password
+MAIL_FROM=no-reply@example.com
+MAIL_AUTH=true
+MAIL_STARTTLS=true
+OTP_EXPIRATION_MINUTES=5
+OTP_MAX_ATTEMPTS=5
+OTP_RESEND_COOLDOWN_SECONDS=60
+```
+
+The signup flow is `POST /api/auth/register`, `POST /api/auth/verify-otp`, then normal `POST /api/auth/login`. Existing users are treated as verified by the migration default.
+
 ### Authentication & RBAC
 | Method | Endpoint | Access | Description |
 |---|---|---|---|

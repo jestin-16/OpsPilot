@@ -9,6 +9,9 @@ public class MetricsResponse {
     private int activeRequests;
     private int totalDeployments;
     private List<MetricPoint> history;
+    private String source;
+    private String status;
+    private String error;
 
     public MetricsResponse() {}
 
@@ -67,6 +70,30 @@ public class MetricsResponse {
 
     public void setHistory(List<MetricPoint> history) {
         this.history = history;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
     }
 
     public static class MetricPoint {

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { api, SignupSchema } from '../services/api';
 import { Lock, Mail, User as UserIcon, Shield, ArrowRight, AlertCircle } from 'lucide-react';
 
@@ -13,7 +12,6 @@ export const Signup: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,8 +28,7 @@ export const Signup: React.FC = () => {
 
     try {
       const res = await api.register({ name, email, password, role });
-      login(res);
-      navigate('/monitoring');
+      navigate(`/verify-email?email=${encodeURIComponent(res.email)}`);
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Registration failed';
       setError(msg);

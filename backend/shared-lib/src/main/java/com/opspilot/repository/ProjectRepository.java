@@ -15,4 +15,5 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
     Page<Project> findByOwner(User owner, Pageable pageable);
     java.util.Optional<Project> findByRepositoryUrl(String repositoryUrl);
     boolean existsByProjectNameAndOwner(String projectName, User owner);
+    boolean existsByProjectNameIgnoreCaseAndOwner(String projectName, User owner);
 }

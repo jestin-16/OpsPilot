@@ -95,14 +95,20 @@ public class GenericPollingScheduler {
                     for (Map<String, Object> item : arrayPayload) {
                         String itemJson = objectMapper.writeValueAsString(item);
                         Optional<LogEntity> mapped = fieldMappingService.mapPayload(itemJson, source.getFieldMapping(), source.getSourceName());
-                        mapped.ifPresent(log -> logRepository.save(log));
+                        mapped.ifPresent(log -> {
+                            log.setProject(source.getProject());
+                            logRepository.save(log);
+                        });
                     }
                 } catch (Exception e) {
                     logger.error("Failed to parse JSON array payload: {}", e.getMessage());
                 }
             } else {
                 Optional<LogEntity> mapped = fieldMappingService.mapPayload(rawPayload, source.getFieldMapping(), source.getSourceName());
-                mapped.ifPresent(log -> logRepository.save(log));
+                mapped.ifPresent(log -> {
+                    log.setProject(source.getProject());
+                    logRepository.save(log);
+                });
             }
         }
     }

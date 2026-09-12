@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api } from '../services/api';
 import type { LogEntry, MetricsData, Project, CommitLog } from '../services/api';
-import { Terminal, CheckCircle, FolderGit2, Activity, Server, Database, Globe, Edit3, Save, Lock, GitCommit } from 'lucide-react';
+import { Terminal, CheckCircle, FolderGit2, Activity, Server, Edit3, Save, Lock, GitCommit } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, LineChart, Line } from 'recharts';
 import { Responsive, WidthProvider } from 'react-grid-layout/legacy';
 import 'react-grid-layout/css/styles.css';
@@ -64,13 +64,6 @@ export const LiveProjectDashboard: React.FC = () => {
         const logData = await api.getLogs({ providerName: 'ALL', projectId });
         setLogs(logData);
         
-        if (projectId) {
-          const commitData = await api.getCommits(projectId);
-          setCommits(commitData);
-        } else {
-          setCommits([]);
-        }
-        
         const metricData = await api.getMetrics('prometheus');
         setMetrics(metricData);
       } catch (err) {
@@ -82,6 +75,34 @@ export const LiveProjectDashboard: React.FC = () => {
     const t = setInterval(fetchData, 3000);
     return () => clearInterval(t);
   }, [selectedProjectId, projects]);
+
+  useEffect(() => {
+    if (selectedProjectId === 'ALL') {
+      setCommits([]);
+      return;
+    }
+
+    let active = true;
+
+    const syncAndLoadCommits = async () => {
+      setIsSyncing(true);
+      try {
+        await api.syncCommits(selectedProjectId);
+        const commitData = await api.getCommits(selectedProjectId);
+        if (active) setCommits(commitData);
+      } catch (err) {
+        console.error('Failed to auto-fetch project commits', err);
+        if (active) setCommits([]);
+      } finally {
+        if (active) setIsSyncing(false);
+      }
+    };
+
+    void syncAndLoadCommits();
+    return () => {
+      active = false;
+    };
+  }, [selectedProjectId]);
 
   const handleSyncCommits = async () => {
     if (selectedProjectId === 'ALL') return;
@@ -450,7 +471,7 @@ export const LiveProjectDashboard: React.FC = () => {
                           {/* Vertical Line */}
                           <div className="absolute top-4 bottom-4 left-[9px] w-0.5 bg-[#2a2a2a] z-0"></div>
                           
-                          {commits.map((commit, index) => (
+                          {commits.map((commit) => (
                             <div key={commit.commitLogId} className="relative z-10 flex flex-col gap-1 mb-4 last:mb-0 group">
                               {/* Node */}
                               <div className="absolute left-[-21px] top-1.5 w-3 h-3 rounded-full border-[3px] border-[#141414] bg-indigo-500 group-hover:bg-indigo-400 group-hover:scale-125 transition-all shadow-[0_0_8px_rgba(99,102,241,0.5)] z-20"></div>

@@ -56,12 +56,6 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/api/auth/**", "/api/v1/auth/**",
                     "/api/webhooks/**", "/api/v1/webhooks/**",
-                    "/api/projects/*/output", "/api/v1/projects/*/output",
-                    "/api/projects/*/stream", "/api/v1/projects/*/stream",
-                    "/api/projects/*/run",    "/api/v1/projects/*/run",
-                    "/api/projects/*/stop",   "/api/v1/projects/*/stop",
-                    "/api/projects/*/status", "/api/v1/projects/*/status",
-                    "/api/projects/*/proxy",  "/api/v1/projects/*/proxy",
                     "/api/monitoring/probe", "/api/v1/monitoring/probe",
                     "/api/monitoring/live-events/**", "/api/v1/monitoring/live-events/**",
                     "/api/ingest/**", "/api/v1/ingest/**",

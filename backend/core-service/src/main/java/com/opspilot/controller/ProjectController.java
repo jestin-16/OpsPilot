@@ -102,14 +102,18 @@ public class ProjectController {
 
     @PostMapping("/{id}/stop")
     @Operation(summary = "Stop the running project process")
-    public ResponseEntity<Map<String, Object>> stopProject(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> stopProject(@PathVariable Long id,
+                                                            @AuthenticationPrincipal User currentUser) {
+        projectService.getProjectById(id, currentUser);
         boolean stopped = runnerService.stopProject(id);
         return ResponseEntity.ok(Map.of("stopped", stopped));
     }
 
     @GetMapping("/{id}/status")
     @Operation(summary = "Get runtime status of the project")
-    public ResponseEntity<Map<String, Object>> projectStatus(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> projectStatus(@PathVariable Long id,
+                                                              @AuthenticationPrincipal User currentUser) {
+        projectService.getProjectById(id, currentUser);
         boolean running = runnerService.isRunning(id);
         int port = runnerService.getPort(id);
         String type = runnerService.getProjectType(id);
@@ -118,7 +122,9 @@ public class ProjectController {
 
     @GetMapping(value = "/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @Operation(summary = "Server-Sent Events stream of live stdout/stderr for the project")
-    public SseEmitter streamLogs(@PathVariable Long id) {
+    public SseEmitter streamLogs(@PathVariable Long id,
+                                 @AuthenticationPrincipal User currentUser) {
+        projectService.getProjectById(id, currentUser);
         return runnerService.subscribe(id);
     }
 
@@ -133,7 +139,9 @@ public class ProjectController {
     @Operation(summary = "Proxy a request to the running project application")
     public ResponseEntity<byte[]> proxyRequest(
             @PathVariable Long id,
-            @RequestParam(defaultValue = "/") String path) {
+            @RequestParam(defaultValue = "/") String path,
+            @AuthenticationPrincipal User currentUser) {
+        projectService.getProjectById(id, currentUser);
         if (!runnerService.isRunning(id)) {
             return ResponseEntity.status(503)
                     .header("Content-Type", "text/html")
@@ -177,8 +185,9 @@ public class ProjectController {
 
     @GetMapping(value = "/{id}/output", produces = "text/html")
     @Operation(summary = "View live web output and execution workbench of deployed project")
-    public ResponseEntity<String> getProjectOutput(@PathVariable Long id) {
-        ProjectResponse project = projectService.getProjectById(id, null);
+    public ResponseEntity<String> getProjectOutput(@PathVariable Long id,
+                                                   @AuthenticationPrincipal User currentUser) {
+        ProjectResponse project = projectService.getProjectById(id, currentUser);
         String name    = project.getProjectName();
         String slug    = name.toLowerCase().replaceAll("[^a-z0-9]", "-");
         String repoUrl = project.getRepositoryUrl() != null ? project.getRepositoryUrl() : "";

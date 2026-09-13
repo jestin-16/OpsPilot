@@ -24,6 +24,7 @@ import { AdminGovernance } from './pages/AdminGovernance';
 import { canAccessRole, isAdmin, type PlatformRole } from './utils/roles';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminProjectManagement } from './pages/AdminProjectManagement';
+import { ProfilePage } from './pages/ProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -172,7 +173,7 @@ export const App: React.FC = () => {
               path="/logs"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVOPS']}><LogManagement /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><LogManagement /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -196,9 +197,13 @@ export const App: React.FC = () => {
               path="/docker"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVOPS', 'ADMIN']}><DockerPage /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><DockerPage /></RoleRoute>
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/profile"
+              element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
             />
             <Route
               path="/deployments"

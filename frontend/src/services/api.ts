@@ -332,6 +332,16 @@ export const api = {
     await axiosInstance.post('/auth/logout');
   },
 
+  getCurrentUser: async (): Promise<User> => {
+    const res = await axiosInstance.get<User>('/users/me');
+    return res.data;
+  },
+
+  updateCurrentUser: async (data: { name: string; email: string }): Promise<User> => {
+    const res = await axiosInstance.put<User>('/users/me', data);
+    return res.data;
+  },
+
   // Projects
   getProjects: async (): Promise<Project[]> => {
     const res = await axiosInstance.get<PagedResponse<Project>>('/projects');

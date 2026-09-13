@@ -66,6 +66,28 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser(User currentUser) {
+        User user = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        return mapToResponse(user);
+    }
+
+    @Transactional
+    public UserResponse updateCurrentUser(UpdateUserRequest request, User currentUser) {
+        User user = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (request.getName() == null || request.getName().isBlank()
+                || request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Name and email are required");
+        }
+
+        user.setName(request.getName().trim());
+        user.setEmail(request.getEmail().trim());
+        return mapToResponse(userRepository.save(user));
+    }
+
     @Transactional
     public UserResponse updateUserRoles(Long id, UpdateUserRoleRequest request, User actor) {
         User user = userRepository.findById(id)

@@ -3,10 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, FolderGit2, Rocket,
-  Activity, FileText, Bell, BookOpen,
+  Activity, FileText, Bell, BookOpen, Plus,
   LogOut, User as UserIcon, Terminal, Server, Globe, ShieldCheck
 } from 'lucide-react';
-import { canAccessRole, isAdmin } from '../utils/roles';
+import { canAccessRole, isAdmin, type PlatformRole } from '../utils/roles';
 
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
@@ -18,15 +18,17 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     navigate('/login');
   };
 
-  const navItems = [
+  const navItems: Array<{ name: string; path: string; icon: React.ComponentType<{ className?: string }>; roles: readonly PlatformRole[] }> = [
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'Add Project', path: '/projects/new', icon: Plus, roles: ['DEVELOPER'] as const },
     { name: 'Deployments', path: '/deployments', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },
-    { name: 'Docker Management', path: '/docker', icon: Terminal, roles: ['DEVOPS', 'ADMIN'] as const },
+    { name: 'Docker', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Live project dashboard', path: '/monitoring', icon: Activity, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Whitebox monitoring', path: '/whitebox', icon: Server, roles: ['DEVOPS'] as const },
     { name: 'Blackbox monitoring', path: '/blackbox', icon: Globe, roles: ['DEVOPS'] as const },
-    { name: 'Log management', path: '/logs', icon: FileText, roles: ['DEVOPS'] as const },
+    { name: 'Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'My Profile', path: '/profile', icon: UserIcon, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Notification center', path: '/notifications', icon: Bell, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Platform guide', path: '/guide', icon: BookOpen, roles: ['DEVELOPER', 'DEVOPS'] as const },
   ];

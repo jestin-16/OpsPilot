@@ -42,3 +42,15 @@
 - [x] Root `README.md` with complete setup and execution instructions.
 - [x] 9 Unit Tests passing (`AuthServiceTest`, `ProjectServiceTest`).
 - [x] Automated Playwright browser verification suite passed cleanly in Light Theme with screenshot artifacts captured.
+
+## Developer Role Verification Session - 2026-09-13
+
+- Completed the required pre-change audit in `DEVELOPER_ROLE_AUDIT.md`.
+- Actual local execution was blocked because no OpsPilot service was listening on port 8080 and Docker Desktop's Linux engine was unavailable.
+- Confirmed and fixed runtime authorization: project output, run, stop, status, stream, and proxy now require the authenticated owner or Administrator; the public security exemptions were removed.
+- Confirmed and fixed profile ownership surface: Developers can read/update only their own name and email through `/api/v1/users/me`; role mutation remains unavailable to them.
+- Confirmed and fixed Developer navigation: Dashboard, Projects, Add Project, Docker, Logs, and My Profile are directly reachable. Roadmap simulation entries were not removed or modified.
+- Confirmed and fixed Docker lifecycle integration: user-scoped records now synchronize with the Docker daemon and lifecycle actions call Docker Java start/stop/restart commands. Final daemon execution remains blocked until Docker Desktop is running.
+- Added `verify-developer-role.sh`, which exercises the eight real workflows plus cross-user project, runtime, log, and container checks and compares container state against `docker ps`.
+- Verification script actual output: `PASS=0 FAIL=0 BLOCKED=9`, because `http://localhost:8080/api/v1` was unavailable.
+- Scope boundary respected: Deployment Center status simulation, Kubernetes Management, CI/CD pipeline execution, and AI Assistant were not changed or exercised.

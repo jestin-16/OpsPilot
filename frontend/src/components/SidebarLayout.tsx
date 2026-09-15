@@ -19,15 +19,17 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const navItems: Array<{ name: string; path: string; icon: React.ComponentType<{ className?: string }>; roles: readonly PlatformRole[] }> = [
+    // Core working features emphasized for Developer Role
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-    { name: 'Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS'] as const },
-    { name: 'Add Project', path: '/projects/new', icon: Plus, roles: ['DEVELOPER'] as const },
-    { name: 'Deployments', path: '/deployments', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'My Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Docker', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+    { name: 'Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'Add Project', path: '/projects/new', icon: Plus, roles: ['DEVELOPER'] as const },
+    // Simulated/Upcoming features moved lower
+    { name: 'Deployments', path: '/deployments', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Live project dashboard', path: '/monitoring', icon: Activity, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Whitebox monitoring', path: '/whitebox', icon: Server, roles: ['DEVOPS'] as const },
     { name: 'Blackbox monitoring', path: '/blackbox', icon: Globe, roles: ['DEVOPS'] as const },
-    { name: 'Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'My Profile', path: '/profile', icon: UserIcon, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Notification center', path: '/notifications', icon: Bell, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Platform guide', path: '/guide', icon: BookOpen, roles: ['DEVELOPER', 'DEVOPS'] as const },

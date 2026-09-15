@@ -23,7 +23,7 @@ public class DockerService {
     public List<ContainerEntity> getContainersForUser(User currentUser) {
         List<ContainerEntity> containers = isAdministrator(currentUser)
                 ? containerRepository.findAll()
-                : containerRepository.findByDeployment_DeployedBy(currentUser);
+                : containerRepository.findByDeployment_Project_Owner(currentUser);
         List<Container> daemonContainers = dockerClient.listContainersCmd().withShowAll(true).exec();
         containers.forEach(container -> findDaemonContainer(container, daemonContainers)
                 .ifPresent(daemon -> container.setContainerStatus(daemon.getState().equalsIgnoreCase("running") ? "RUNNING" : "STOPPED")));
@@ -66,7 +66,7 @@ public class DockerService {
         ContainerEntity container = containerRepository.findById(containerId)
                 .orElseThrow(() -> new RuntimeException("Container not found with id: " + containerId));
 
-        boolean isCreator = container.getDeployment().getDeployedBy().getId().equals(currentUser.getId());
+        boolean isCreator = container.getDeployment().getProject().getOwner().getId().equals(currentUser.getId());
         if (!isCreator && !isAdministrator(currentUser)) {
             throw new ForbiddenException("You do not have access to this container");
         }

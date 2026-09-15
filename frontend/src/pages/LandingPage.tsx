@@ -4,11 +4,13 @@ import {
   Activity,
   ArrowRight,
   Bot,
+  Box,
   Check,
   ChevronRight,
   Cloud,
   GitBranch,
   Menu,
+  MessageSquare,
   Radar,
   Rocket,
   ShieldCheck,
@@ -35,61 +37,145 @@ export const LandingPage: React.FC = () => {
   const go = (path: string) => { setMenuOpen(false); navigate(path); };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-950">
-      <section className="relative isolate overflow-hidden bg-white text-slate-900">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_72%_18%,rgba(34,211,238,.13),transparent_28%),radial-gradient(circle_at_12%_75%,rgba(129,140,248,.12),transparent_30%)]" />
-        <div className="absolute inset-0 -z-10 opacity-50 [background-image:linear-gradient(rgba(15,23,42,.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,.045)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:linear-gradient(to_bottom,black,transparent_88%)]" />
-        
-        <header className="sticky top-4 z-30 mx-4 flex max-w-7xl items-center justify-between border border-white/80 bg-white/85 px-4 py-3 shadow-[0_12px_35px_rgba(79,70,229,0.08)] backdrop-blur-xl sm:mx-8 sm:px-5 lg:mx-auto lg:px-6">
-          <button type="button" onClick={() => go('/')} className="flex items-center gap-3 text-left" aria-label="OpsPilot home">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-600"><Terminal className="h-5 w-5" /></span>
-            <span><span className="block text-lg font-black tracking-tight text-slate-950">OpsPilot</span><span className="block text-[10px] font-bold uppercase tracking-[.2em] text-slate-500">AI-assisted IDP</span></span>
-          </button>
-          <nav className="hidden items-center gap-2 rounded-xl border border-slate-100 bg-slate-50/80 p-1 text-sm font-semibold text-slate-600 md:flex">
-            <a href="#platform" className="rounded-lg px-4 py-2 transition hover:bg-white hover:text-indigo-600 hover:shadow-sm">Platform</a>
-            <a href="#workflow" className="rounded-lg px-4 py-2 transition hover:bg-white hover:text-indigo-600 hover:shadow-sm">Workflow</a>
-            <a href="#control" className="rounded-lg px-4 py-2 transition hover:bg-white hover:text-indigo-600 hover:shadow-sm">Control</a>
-            <span className="ml-1 flex items-center gap-1.5 border-l border-slate-200 px-3 py-2 text-[10px] font-extrabold uppercase tracking-[.14em] text-emerald-600"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> Live</span>
-          </nav>
-          <div className="hidden items-center gap-3 md:flex">
-            <button type="button" onClick={() => go('/login')} className="rounded-lg border border-transparent px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:text-indigo-600">Sign in</button>
-            <button type="button" onClick={() => go('/signup')} className="rounded-lg border border-indigo-600 bg-indigo-600 px-4 py-2.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700">Create workspace</button>
+    <div className="min-h-screen overflow-x-hidden bg-[#FAFAFA] font-sans text-slate-900 selection:bg-gray-200 selection:text-black">
+      <header className="absolute inset-x-0 top-0 z-50 flex h-24 items-center justify-between px-6 lg:px-12">
+        <button type="button" onClick={() => go('/')} className="flex items-center gap-3">
+          <div className="relative flex h-8 w-8 items-center justify-center bg-black rounded-lg overflow-hidden">
+            <div className="absolute inset-0 bg-red-500 transform -skew-x-12 translate-x-4"></div>
+            <span className="relative text-white font-bold text-lg leading-none z-10">O</span>
           </div>
+          <span className="text-xl font-bold tracking-tight text-black">OpsPilot</span>
+        </button>
+        <nav className="hidden items-center gap-10 md:flex">
+          {['Features', 'Integrations', 'Pricing', 'Blog', 'Company'].map(item => (
+            <a key={item} href={`#${item.toLowerCase()}`} className="text-sm font-semibold text-gray-500 transition hover:text-black">{item}</a>
+          ))}
+        </nav>
+        <div className="flex items-center gap-4">
+          <button type="button" onClick={() => go('/login')} className="hidden rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 md:block">Log in</button>
           <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 text-slate-900 md:hidden" aria-label="Toggle navigation">{menuOpen ? <X /> : <Menu />}</button>
-        </header>
-        {menuOpen && <div className="mx-5 mb-4 rounded-xl border border-slate-200 bg-white p-3 shadow-xl md:hidden">
-          <div className="grid gap-1 text-sm font-semibold text-slate-700">
-            <a href="#platform" onClick={() => setMenuOpen(false)} className="rounded-lg border border-transparent px-3 py-2.5 hover:border-indigo-100 hover:text-indigo-600">Platform</a>
-            <a href="#workflow" onClick={() => setMenuOpen(false)} className="rounded-lg border border-transparent px-3 py-2.5 hover:border-indigo-100 hover:text-indigo-600">Workflow</a>
-            <a href="#control" onClick={() => setMenuOpen(false)} className="rounded-lg border border-transparent px-3 py-2.5 hover:border-indigo-100 hover:text-indigo-600">Control</a>
-            <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-200 pt-3">
-              <button type="button" onClick={() => go('/login')} className="rounded-lg border border-slate-300 py-2.5 font-bold text-slate-900">Sign in</button>
-              <button type="button" onClick={() => go('/signup')} className="rounded-lg border border-indigo-600 bg-indigo-600 py-2.5 font-extrabold text-white hover:bg-indigo-700">Get started</button>
+        </div>
+      </header>
+
+      {menuOpen && <div className="absolute inset-x-4 top-24 z-50 rounded-2xl border border-gray-100 bg-white p-4 shadow-2xl md:hidden">
+        <div className="grid gap-2 text-sm font-semibold text-gray-600">
+          {['Features', 'Integrations', 'Pricing', 'Blog', 'Company'].map(item => (
+            <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenuOpen(false)} className="rounded-xl px-4 py-3 hover:bg-gray-50 hover:text-black">{item}</a>
+          ))}
+          <div className="mt-2 border-t border-gray-100 pt-4">
+            <button type="button" onClick={() => go('/login')} className="w-full rounded-full bg-black py-3 text-center text-white font-semibold">Log in</button>
+          </div>
+        </div>
+      </div>}
+
+      <section className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#FAFAFA] px-6 pt-32 pb-24 sm:pt-40 sm:pb-32 lg:px-8">
+        {/* Abstract 3D Ribbon/Wave Graphic (CSS/SVG) background */}
+        <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
+           <svg className="absolute w-full h-[800px] opacity-[0.65] mix-blend-multiply" viewBox="0 0 1000 600" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+             <path d="M-100,450 C150,450 250,150 500,200 C750,250 850,450 1100,350" stroke="url(#ribbon-grad-1)" strokeWidth="80" strokeLinecap="round" filter="url(#drop-shadow)" />
+             <path d="M-50,550 C200,550 300,250 550,300 C800,350 900,550 1150,450" stroke="url(#ribbon-grad-2)" strokeWidth="60" strokeLinecap="round" filter="url(#drop-shadow)" opacity="0.8" />
+             <path d="M100,100 C300,50 400,350 650,400 C900,450 950,250 1200,300" stroke="url(#ribbon-grad-3)" strokeWidth="40" strokeLinecap="round" filter="url(#drop-shadow)" opacity="0.6" />
+             
+             <defs>
+               <linearGradient id="ribbon-grad-1" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
+                 <stop offset="0%" stopColor="#f8fafc" />
+                 <stop offset="30%" stopColor="#e2e8f0" />
+                 <stop offset="70%" stopColor="#cbd5e1" />
+                 <stop offset="100%" stopColor="#f1f5f9" />
+               </linearGradient>
+               <linearGradient id="ribbon-grad-2" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
+                 <stop offset="0%" stopColor="#ffffff" />
+                 <stop offset="50%" stopColor="#f1f5f9" />
+                 <stop offset="100%" stopColor="#e2e8f0" />
+               </linearGradient>
+               <linearGradient id="ribbon-grad-3" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
+                 <stop offset="0%" stopColor="#e2e8f0" />
+                 <stop offset="50%" stopColor="#f8fafc" />
+                 <stop offset="100%" stopColor="#cbd5e1" />
+               </linearGradient>
+               <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                 <feDropShadow dx="0" dy="20" stdDeviation="25" floodOpacity="0.08" />
+                 <feDropShadow dx="0" dy="8" stdDeviation="10" floodOpacity="0.04" />
+               </filter>
+             </defs>
+           </svg>
+        </div>
+        
+        {/* Floating pills with lines */}
+        <div className="absolute inset-0 -z-10 mx-auto max-w-7xl hidden lg:block pointer-events-none">
+          <div className="absolute top-[25%] left-[10%] flex flex-col items-center opacity-90 animate-[pulse_4s_ease-in-out_infinite]">
+             <div className="rounded-full bg-white px-5 py-2 text-xs font-bold tracking-wide text-gray-500 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100">Workflows</div>
+             <div className="h-24 w-px bg-gradient-to-b from-gray-300 to-transparent mt-2"></div>
+          </div>
+          <div className="absolute top-[20%] right-[15%] flex flex-col items-center opacity-90 animate-[pulse_5s_ease-in-out_infinite_1s]">
+             <div className="rounded-full bg-white px-5 py-2 text-xs font-bold tracking-wide text-gray-500 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100">Integrations</div>
+             <div className="h-32 w-px bg-gradient-to-b from-gray-300 to-transparent mt-2"></div>
+          </div>
+          <div className="absolute top-[65%] left-[15%] flex flex-col items-center opacity-90 animate-[pulse_4.5s_ease-in-out_infinite_0.5s]">
+             <div className="h-24 w-px bg-gradient-to-t from-gray-300 to-transparent mb-2"></div>
+             <div className="rounded-full bg-white px-5 py-2 text-xs font-bold tracking-wide text-gray-500 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100">Reports & Docs</div>
+          </div>
+          <div className="absolute top-[60%] right-[12%] flex flex-col items-center opacity-90 animate-[pulse_5.5s_ease-in-out_infinite_1.5s]">
+             <div className="h-28 w-px bg-gradient-to-t from-gray-300 to-transparent mb-2"></div>
+             <div className="rounded-full bg-white px-5 py-2 text-xs font-bold tracking-wide text-gray-500 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100">Ask anything</div>
+          </div>
+        </div>
+
+        <div className="z-10 flex max-w-5xl flex-col items-center text-center mt-12">
+          {/* Eyebrow */}
+          <div className="mb-8 inline-flex items-center rounded-full border border-gray-200 bg-white/60 px-4 py-1.5 text-sm font-semibold text-gray-600 backdrop-blur-md shadow-sm">
+            <span className="mr-2.5 h-2 w-2 rounded-full bg-red-500 animate-[pulse_2s_ease-in-out_infinite]"></span>
+            Introducing the next generation of operations
+          </div>
+          
+          {/* Headline */}
+          <h1 className="text-5xl font-black tracking-tight text-[#111] sm:text-6xl md:text-7xl lg:text-[5.5rem] leading-[1.05]">
+            Automate Anything <br className="hidden sm:block" />
+            You've Ever Managed. <br className="hidden sm:block" />
+            In <span className="relative inline-block text-black">Seconds<span className="absolute -bottom-2.5 right-0 h-3.5 w-3.5 rounded-full bg-red-500"></span></span>
+          </h1>
+          
+          {/* Subheading */}
+          <p className="mt-8 max-w-2xl text-lg leading-relaxed text-gray-500 sm:text-xl font-medium">
+            The intelligent operational workspace that brings all your deployments, infrastructure, and workflows into one unified, AI-driven command center.
+          </p>
+          
+          {/* CTA */}
+          <div className="mt-10 flex items-center justify-center gap-x-6">
+            <button type="button" onClick={() => go('/signup')} className="group flex h-14 items-center justify-center gap-3 rounded-full bg-black px-8 text-base font-bold text-white transition-all hover:bg-gray-800 hover:shadow-xl hover:shadow-gray-300/50 hover:-translate-y-0.5">
+              Get Started Free
+              <ArrowRight className="h-4 w-4 text-red-500 transition-transform group-hover:translate-x-1" />
+            </button>
+          </div>
+          
+          {/* Input bar */}
+          <div className="mt-14 w-full max-w-[28rem]">
+            <div className="relative flex items-center rounded-full border border-gray-200 bg-white/90 p-2 shadow-lg backdrop-blur-xl transition-all hover:shadow-xl focus-within:border-gray-300 focus-within:ring-4 focus-within:ring-gray-100">
+              <div className="pl-4 text-gray-400">
+                <Terminal className="h-5 w-5" />
+              </div>
+              <input 
+                type="text" 
+                placeholder="Ask OpsPilot anything..." 
+                className="w-full bg-transparent px-3 py-2.5 text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none"
+              />
+              <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FAFAFA] transition hover:bg-gray-100 border border-gray-100">
+                <div className="h-2.5 w-2.5 rotate-45 bg-red-500"></div>
+              </button>
             </div>
           </div>
-        </div>}
-        <div className="mx-auto grid max-w-7xl gap-14 px-5 pb-20 pt-20 sm:px-8 sm:pb-24 lg:min-h-[690px] lg:grid-cols-[.9fr_1.1fr] lg:items-center lg:px-10 lg:pb-28 lg:pt-24">
-          <div className="landing-hero-copy max-w-2xl">
-            <div className="inline-flex items-center gap-2 border border-cyan-200 bg-cyan-50 px-3 py-1.5 text-xs font-bold uppercase tracking-[.12em] text-cyan-700">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cyan-500" />Operational intelligence for modern teams
-            </div>
-            <h1 className="mt-7 max-w-2xl text-4xl font-black leading-[1.02] tracking-[-.055em] text-slate-950 sm:text-6xl lg:text-[5.25rem]">Run every service<br /><span className="text-indigo-600">with context.</span></h1>
-            <p className="mt-7 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">OpsPilot is the AI-assisted internal developer platform that connects your projects, deployments, infrastructure, and incidents in one calm command center.</p>
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <button type="button" onClick={() => go('/signup')} className="group inline-flex items-center justify-center gap-2 border border-indigo-600 bg-indigo-600 px-5 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-indigo-700">
-                Start building <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-              </button>
-              <button type="button" onClick={() => go('/login')} className="inline-flex items-center justify-center gap-2 border border-slate-200 bg-white px-5 py-3.5 text-sm font-bold text-slate-900 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50">
-                <Sparkles className="h-4 w-4 text-violet-500" /> Explore the platform
-              </button>
-            </div>
-            <div className="mt-9 flex flex-wrap gap-x-5 gap-y-3 text-xs font-semibold text-slate-500">
-              {['Project-level ownership', 'Live infrastructure signals', 'AI-assisted next actions'].map((item) => (
-                <span key={item} className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-500" />{item}</span>
-              ))}
-            </div>
+        </div>
+
+        {/* Trust bar */}
+        <div className="absolute bottom-10 left-0 right-0 z-10 w-full px-6 hidden sm:block">
+          <p className="mb-6 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Works seamlessly with your favorite tools</p>
+          <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-x-14 gap-y-8 opacity-40 grayscale transition-opacity hover:opacity-60">
+            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><GitBranch className="h-6 w-6"/> GitHub</div>
+            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><Cloud className="h-6 w-6"/> AWS</div>
+            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><Box className="h-6 w-6" /> Docker</div>
+            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><Activity className="h-6 w-6"/> Datadog</div>
+            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><MessageSquare className="h-6 w-6" /> Slack</div>
           </div>
-          <div className="landing-hero-preview"><OperationsPreview /></div>
         </div>
       </section>
 

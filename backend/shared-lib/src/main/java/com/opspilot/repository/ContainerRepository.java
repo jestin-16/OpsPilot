@@ -11,4 +11,5 @@ import java.util.List;
 public interface ContainerRepository extends JpaRepository<ContainerEntity, Long> {
     List<ContainerEntity> findByDeploymentId(Long deploymentId);
     List<ContainerEntity> findByDeployment_DeployedBy(User deployedBy);
+    List<ContainerEntity> findByDeployment_Project_Owner(User owner);
 }

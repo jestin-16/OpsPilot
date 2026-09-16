@@ -17,12 +17,20 @@ import com.opspilot.repository.EmailVerificationOtpRepository;
 import com.opspilot.repository.RoleRepository;
 import com.opspilot.repository.UserRepository;
 import com.opspilot.exception.EmailDeliveryException;
+import com.opspilot.dto.GoogleLoginRequest;
+import com.opspilot.exception.RoleRequiredException;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -73,7 +81,93 @@ public class AuthService {
     @org.springframework.beans.factory.annotation.Value("${app.otp.resend-cooldown-seconds:60}")
     private long otpResendCooldownSeconds;
 
+    @org.springframework.beans.factory.annotation.Value("${app.google.client-id:}")
+    private String googleClientId;
+
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    @Transactional
+    public AuthResponse googleLogin(GoogleLoginRequest request) {
+        if (googleClientId == null || googleClientId.isBlank()) {
+            throw new IllegalArgumentException("Google login is not configured on this server");
+        }
+        
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+                .setAudience(Collections.singletonList(googleClientId))
+                .build();
+                
+        GoogleIdToken idToken;
+        try {
+            idToken = verifier.verify(request.getIdToken());
+        } catch (Exception e) {
+            throw new UnauthorizedException("Invalid Google ID token");
+        }
+        
+        if (idToken == null) {
+            throw new UnauthorizedException("Invalid Google ID token");
+        }
+        
+        GoogleIdToken.Payload payload = idToken.getPayload();
+        String email = payload.getEmail();
+        String name = (String) payload.get("name");
+        
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
+        
+        User user;
+        if (userOpt.isPresent()) {
+            user = userOpt.get();
+        } else {
+            if (request.getRole() == null || request.getRole().isBlank()) {
+                throw new RoleRequiredException("Role is required for first-time Google login");
+            }
+            
+            String roleNameStr = request.getRole();
+            Role role = roleRepository.findByRoleName(roleNameStr)
+                    .orElseGet(() -> {
+                        return roleRepository.findAll().stream()
+                                .filter(r -> r.getRoleName().equalsIgnoreCase(roleNameStr))
+                                .findFirst()
+                                .orElseGet(() -> roleRepository.save(new Role(roleNameStr, roleNameStr + " role")));
+                    });
+
+            Set<Role> roles = new HashSet<>();
+            roles.add(role);
+
+            user = new User(
+                    name != null ? name : "Google User",
+                    email,
+                    passwordEncoder.encode(UUID.randomUUID().toString()),
+                    roles
+            );
+            user.setEmailVerified(true);
+            user.setIsActive(true);
+            user = userRepository.save(user);
+        }
+        
+        if (!user.getIsActive()) {
+            throw new IllegalArgumentException("Account is deactivated");
+        }
+        
+        List<String> roleAuthorities = user.getRoles().stream()
+                .map(r -> "ROLE_" + r.getRoleName().toUpperCase().replace(" ", "_"))
+                .collect(Collectors.toList());
+
+        String accessToken = tokenProvider.generateTokenFromEmail(user.getEmail(), roleAuthorities);
+
+        Set<String> roleNames = user.getRoles().stream()
+                .map(Role::getRoleName)
+                .collect(Collectors.toSet());
+
+        if (eventPublisher != null) {
+            eventPublisher.publishEvent(new com.opspilot.event.AuditEvent(
+                    this, user, "USER_LOGIN_GOOGLE", "USER", user.getId().toString(), "User authenticated via Google: " + user.getEmail()
+            ));
+        }
+
+        meterRegistry.counter("auth.login.google.success").increment();
+
+        return new AuthResponse(accessToken, user.getId(), user.getName(), user.getEmail(), roleNames);
+    }
 
     public RegistrationResponse register(RegisterRequest request) {
         String email = request.getEmail().trim();

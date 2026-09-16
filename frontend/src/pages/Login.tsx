@@ -3,12 +3,18 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, LoginSchema } from '../services/api';
 import { Lock, Mail, ArrowRight, AlertCircle, UserCheck } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Google Login State
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState('Developer');
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +37,44 @@ export const Login: React.FC = () => {
       navigate('/monitoring');
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Invalid credentials';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    if (!credentialResponse.credential) return;
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.googleLogin({ idToken: credentialResponse.credential });
+      login(res);
+      navigate('/monitoring');
+    } catch (err: any) {
+      if (err.response?.status === 428 || err.response?.data?.message?.includes('Role is required')) {
+        setPendingGoogleToken(credentialResponse.credential);
+        setShowRoleSelection(true);
+      } else {
+        const msg = err.response?.data?.message || err.message || 'Google login failed';
+        setError(msg);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingGoogleToken) return;
+    setError('');
+    setLoading(true);
+    try {
+      const res = await api.googleLogin({ idToken: pendingGoogleToken, role: selectedRole });
+      login(res);
+      navigate('/monitoring');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Registration failed';
       setError(msg);
     } finally {
       setLoading(false);
@@ -129,6 +173,25 @@ export const Login: React.FC = () => {
           </button>
         </form>
 
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-200"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white/80 backdrop-blur-sm text-slate-500 rounded">Or continue with</span>
+          </div>
+        </div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError('Google Login Failed')}
+            theme="outline"
+            size="large"
+            width="100%"
+          />
+        </div>
+
         <div className="pt-6 text-center text-sm font-medium text-slate-500">
           Don't have an account?{' '}
           <Link to="/signup" className="text-indigo-600 font-bold hover:text-indigo-700 hover:underline transition-colors">
@@ -136,6 +199,45 @@ export const Login: React.FC = () => {
           </Link>
         </div>
       </div>
+
+      {showRoleSelection && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl animate-fade-in-up">
+            <h3 className="text-2xl font-bold text-slate-800 mb-2">Select Your Role</h3>
+            <p className="text-sm text-slate-500 mb-6">Welcome! Please select your role to complete registration.</p>
+            <form onSubmit={handleRoleSubmit} className="space-y-4">
+              <select
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className="w-full p-3 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+              >
+                <option value="Developer">Developer</option>
+                <option value="DevOps">DevOps</option>
+                <option value="Admin">Admin</option>
+              </select>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRoleSelection(false);
+                    setPendingGoogleToken(null);
+                  }}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl transition-all cursor-pointer disabled:opacity-50 shadow-lg shadow-indigo-500/30"
+                >
+                  {loading ? 'Creating...' : 'Continue'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

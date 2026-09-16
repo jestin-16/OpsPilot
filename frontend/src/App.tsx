@@ -70,11 +70,14 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
 export const App: React.FC = () => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AlertProvider>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy_client_id'}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AlertProvider>
           <BrowserRouter>
             <Routes>
             <Route
@@ -237,6 +240,7 @@ export const App: React.FC = () => {
         </AlertProvider>
       </AuthProvider>
     </QueryClientProvider>
+    </GoogleOAuthProvider>
   );
 };
 

@@ -15,6 +15,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
 
     Optional<RefreshToken> findByToken(String token);
 
+    Optional<RefreshToken> findByUser(User user);
+
     /**
      * Delete using a JPQL query with clearAutomatically=true so the DELETE is
      * flushed and committed to the DB before any subsequent INSERT within the

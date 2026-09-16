@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FolderGit2,
   Rocket,
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Card } from '../Card';
 import { Button } from '../Button';
+import { api } from '../../services/api';
 
 interface UserSession {
   name: string;
@@ -32,62 +33,75 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onNavigateTa
   const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d'>('24h');
   const [filterStatus, setFilterStatus] = useState<'all' | 'success' | 'warning' | 'danger'>('all');
 
-  const environments = [
-    { name: 'Production (AWS us-east-1)', status: 'Healthy', pods: 24, latency: '42ms', uptime: '99.99%', health: 'success' },
-    { name: 'Staging (Kubernetes eu-west-1)', status: 'Warning', pods: 12, latency: '118ms', uptime: '99.85%', health: 'warning' },
-    { name: 'Development (Local Docker)', status: 'Healthy', pods: 6, latency: '12ms', uptime: '100%', health: 'success' },
-  ];
+  const [environments, setEnvironments] = useState<any[]>([
+    { name: 'Production (AWS us-east-1)', status: 'Healthy', pods: 24, latency: '42ms', uptime: '99.99%', health: 'success' }
+  ]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
-  const recentActivity = [
-    {
-      id: 'act-1',
-      title: 'Deployment #482 to production-us-east succeeded',
-      time: '10 mins ago',
-      status: 'success',
-      service: 'payment-gateway',
-      author: 'Alex Mercer',
-    },
-    {
-      id: 'act-2',
-      title: 'Pod memory threshold high on k8s-cluster-01',
-      time: '24 mins ago',
-      status: 'warning',
-      service: 'analytics-worker',
-      author: 'System Monitor',
-    },
-    {
-      id: 'act-3',
-      title: 'New project repository linked: billing-service',
-      time: '1 hour ago',
-      status: 'success',
-      service: 'billing-service',
-      author: 'Sarah Chen',
-    },
-    {
-      id: 'act-4',
-      title: 'Jenkins Pipeline #108 failed during integration test',
-      time: '2 hours ago',
-      status: 'danger',
-      service: 'auth-service',
-      author: 'Marcus Vance',
-    },
-    {
-      id: 'act-5',
-      title: 'Prometheus alert resolved: DB connection pool recovered',
-      time: '4 hours ago',
-      status: 'success',
-      service: 'postgres-primary',
-      author: 'Prometheus Auto-heal',
-    },
-    {
-      id: 'act-6',
-      title: 'AI Root Cause Analysis completed for Incident #904',
-      time: '5 hours ago',
-      status: 'success',
-      service: 'opspilot-brain',
-      author: 'OpsPilot AI',
-    },
-  ];
+  useEffect(() => {
+    let active = true;
+    const fetchDashboardData = async () => {
+      try {
+        const [clusterRes, integrationsRes, notifs] = await Promise.all([
+          api.getClusterSummary().catch(() => null),
+          api.getIntegrationHealth().catch(() => null),
+          api.getNotifications().catch(() => [])
+        ]);
+
+        if (!active) return;
+
+        const envs = [];
+        if (clusterRes) {
+          envs.push({
+            name: 'Staging (Kubernetes)',
+            status: clusterRes.status === 'UP' ? 'Healthy' : 'Warning',
+            pods: clusterRes.podCount,
+            latency: '15ms',
+            uptime: clusterRes.healthyNodeCount > 0 ? '99.9%' : '0%',
+            health: clusterRes.status === 'UP' ? 'success' : 'warning'
+          });
+        }
+        if (integrationsRes && integrationsRes.integrations) {
+          integrationsRes.integrations.forEach(integ => {
+            envs.push({
+              name: `${integ.name} Integration`,
+              status: integ.status === 'UP' || integ.available ? 'Healthy' : 'Warning',
+              pods: 0,
+              latency: 'N/A',
+              uptime: integ.available ? '100%' : '0%',
+              health: integ.available ? 'success' : 'warning'
+            });
+          });
+        }
+        if (envs.length === 0) {
+            envs.push({ name: 'Development (Local Docker)', status: 'Healthy', pods: 6, latency: '12ms', uptime: '100%', health: 'success' });
+        }
+        setEnvironments(envs);
+
+        const activities = notifs.slice(0, 10).map(n => {
+           let status = 'success';
+           const t = (n.type || '').toLowerCase();
+           if (t === 'alert' || t === 'error' || t === 'critical' || t === 'danger') status = 'danger';
+           else if (t === 'warning') status = 'warning';
+           
+           return {
+             id: `act-${n.notificationId}`,
+             title: n.message,
+             time: new Date(n.createdAt).toLocaleTimeString(),
+             status,
+             service: 'System',
+             author: 'System Monitor'
+           };
+        });
+        setRecentActivity(activities);
+
+      } catch (err) {
+        console.error("Dashboard data fetch failed", err);
+      }
+    };
+    fetchDashboardData();
+    return () => { active = false; };
+  }, []);
 
   const filteredActivity = recentActivity.filter(
     (item) => filterStatus === 'all' || item.status === filterStatus

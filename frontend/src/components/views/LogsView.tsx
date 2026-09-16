@@ -142,7 +142,7 @@ export const LogsView: React.FC = () => {
 
         <div className="p-4 font-mono text-xs flex flex-col gap-2 max-h-[500px] overflow-y-auto leading-relaxed">
           {filteredLogs.map((log) => (
-            <div key={log.id} className="flex items-start gap-2.5 hover:bg-white/5 p-1 rounded transition-colors group">
+            <div key={log.logId} className="flex items-start gap-2.5 hover:bg-white/5 p-1 rounded transition-colors group">
               <span className="text-op-subtle text-[11px] select-none">{new Date(log.timestamp).toLocaleTimeString()}</span>
               <span
                 className={`px-1.5 py-0.2 rounded text-[10px] font-bold uppercase select-none ${

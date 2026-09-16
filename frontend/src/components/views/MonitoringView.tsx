@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Activity,
   Cpu,
@@ -10,39 +10,59 @@ import {
 } from 'lucide-react';
 import { Card } from '../Card';
 import { Button } from '../Button';
+import { api, type MetricsData } from '../../services/api';
 
 export const MonitoringView: React.FC = () => {
   const [timeframe, setTimeframe] = useState<'5m' | '1h' | '24h' | '7d'>('1h');
 
-  const alerts = [
-    {
-      id: 'alert-1',
-      name: 'HighPodMemoryUsage',
-      severity: 'warning',
-      service: 'analytics-worker',
-      summary: 'Pod analytics-worker memory usage exceeded 85% threshold (892 MB)',
-      time: '24 mins ago',
-      source: 'Prometheus Alertmanager',
-    },
-    {
-      id: 'alert-2',
-      name: 'PostgreSQLDBConnectionPoolHigh',
-      severity: 'resolved',
-      service: 'postgres-primary',
-      summary: 'DB connection pool recovered below 60% threshold',
-      time: '4 hours ago',
-      source: 'Grafana Dashboard Rule',
-    },
-    {
-      id: 'alert-3',
-      name: 'HTTP5xxErrorSpikeDetected',
-      severity: 'critical',
-      service: 'auth-service',
-      summary: 'HTTP 500 error rate spiked to 3.4% on /api/v1/oauth/token',
-      time: '6 hours ago',
-      source: 'Datadog / Prometheus',
-    },
-  ];
+  const [metrics, setMetrics] = useState<MetricsData | null>(null);
+  const [alerts, setAlerts] = useState<any[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    const fetchMonitoringData = async () => {
+      try {
+        const [metricsData, notifications] = await Promise.all([
+          api.getMetrics('local').catch(() => null),
+          api.getNotifications().catch(() => [])
+        ]);
+
+        if (!active) return;
+        
+        if (metricsData) {
+          setMetrics(metricsData);
+        }
+
+        const filteredAlerts = notifications
+          .filter(n => {
+             const t = (n.type || '').toLowerCase();
+             return t === 'alert' || t === 'error' || t === 'critical' || t === 'warning';
+          })
+          .map(n => {
+             let severity = 'warning';
+             const t = (n.type || '').toLowerCase();
+             if (t === 'error' || t === 'critical' || t === 'alert') severity = 'critical';
+             
+             return {
+               id: `alert-${n.notificationId}`,
+               name: n.type,
+               severity,
+               service: 'System',
+               summary: n.message,
+               time: new Date(n.createdAt).toLocaleTimeString(),
+               source: 'Backend'
+             };
+          });
+        setAlerts(filteredAlerts);
+      } catch (err) {
+        console.error("Monitoring fetch failed", err);
+      }
+    };
+    
+    fetchMonitoringData();
+    const interval = setInterval(fetchMonitoringData, 10000); // 10s poll
+    return () => { active = false; clearInterval(interval); };
+  }, []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -91,9 +111,9 @@ export const MonitoringView: React.FC = () => {
             <span className="text-xs font-semibold text-op-muted uppercase">Avg CPU Usage</span>
             <Cpu className="w-4 h-4 text-op-accent" />
           </div>
-          <p className="text-2xl font-extrabold text-op-fg mt-2">28.4%</p>
+          <p className="text-2xl font-extrabold text-op-fg mt-2">{metrics?.cpuUsagePercent?.toFixed(1) || '0.0'}%</p>
           <div className="w-full bg-op-input h-1.5 rounded-full overflow-hidden mt-3">
-            <div className="bg-op-accent h-full w-[28.4%]" />
+            <div className="bg-op-accent h-full" style={{ width: `${metrics?.cpuUsagePercent || 0}%` }} />
           </div>
         </Card>
 
@@ -102,20 +122,20 @@ export const MonitoringView: React.FC = () => {
             <span className="text-xs font-semibold text-op-muted uppercase">Memory Allocated</span>
             <HardDrive className="w-4 h-4 text-op-highlight" />
           </div>
-          <p className="text-2xl font-extrabold text-op-fg mt-2">4.2 GB / 16 GB</p>
+          <p className="text-2xl font-extrabold text-op-fg mt-2">{metrics ? (metrics.memoryUsedMb / 1024).toFixed(1) : '0'} GB / {metrics ? (metrics.memoryTotalMb / 1024).toFixed(1) : '0'} GB</p>
           <div className="w-full bg-op-input h-1.5 rounded-full overflow-hidden mt-3">
-            <div className="bg-op-highlight h-full w-[26.2.4%]" />
+            <div className="bg-op-highlight h-full" style={{ width: `${metrics ? (metrics.memoryUsedMb / metrics.memoryTotalMb) * 100 : 0}%` }} />
           </div>
         </Card>
 
         <Card hoverEffect>
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-op-muted uppercase">Request Latency (p99)</span>
+            <span className="text-xs font-semibold text-op-muted uppercase">Active Requests</span>
             <Zap className="w-4 h-4 text-op-success" />
           </div>
-          <p className="text-2xl font-extrabold text-op-fg mt-2">38 ms</p>
+          <p className="text-2xl font-extrabold text-op-fg mt-2">{metrics?.activeRequests || 0}</p>
           <div className="w-full bg-op-input h-1.5 rounded-full overflow-hidden mt-3">
-            <div className="bg-op-success h-full w-[18%]" />
+            <div className="bg-op-success h-full w-full opacity-30" />
           </div>
         </Card>
 
@@ -124,9 +144,9 @@ export const MonitoringView: React.FC = () => {
             <span className="text-xs font-semibold text-op-muted uppercase">Error Rate (5xx)</span>
             <AlertTriangle className="w-4 h-4 text-op-warn" />
           </div>
-          <p className="text-2xl font-extrabold text-op-fg mt-2">0.02%</p>
+          <p className="text-2xl font-extrabold text-op-fg mt-2">0.00%</p>
           <div className="w-full bg-op-input h-1.5 rounded-full overflow-hidden mt-3">
-            <div className="bg-op-warn h-full w-[2%]" />
+            <div className="bg-op-warn h-full w-0" />
           </div>
         </Card>
       </div>
@@ -143,37 +163,48 @@ export const MonitoringView: React.FC = () => {
 
           <div className="h-44 w-full flex items-end justify-between gap-2 pt-4 pb-2 px-3 bg-op-bg/60 rounded-xl border border-op-border/50 relative overflow-hidden">
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#363d4d15_1px,transparent_1px),linear-gradient(to_bottom,#363d4d15_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
-            {[20, 25, 30, 28, 45, 50, 42, 38, 32, 29, 35, 40, 48, 55, 30, 28].map((h, i) => (
+            {metrics?.history?.length ? metrics.history.slice(-16).map((pt, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative z-10">
                 <div
-                  style={{ height: `${h}%` }}
-                  className="w-full bg-gradient-to-t from-op-accent/30 to-op-accent rounded-t transition-all group-hover:from-op-accent group-hover:to-op-accent-hover cursor-pointer"
-                />
+                  style={{ height: `${pt.cpu}%` }}
+                  className="w-full bg-gradient-to-t from-op-accent/30 to-op-accent rounded-t transition-all group-hover:from-op-accent group-hover:to-op-accent-hover cursor-pointer relative"
+                >
+                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-op-surface text-[10px] text-op-fg font-mono px-2 py-0.5 rounded border border-op-border shadow-lg pointer-events-none whitespace-nowrap z-20">
+                    {pt.cpu.toFixed(1)}%
+                  </div>
+                </div>
               </div>
-            ))}
+            )) : <div className="text-[11px] text-op-subtle z-10 p-2">Waiting for data...</div>}
           </div>
         </Card>
 
         <Card className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-op-fg uppercase tracking-wider flex items-center gap-2">
-              <Zap className="w-4 h-4 text-op-highlight" /> HTTP Latency p95/p99 (ms)
+              <Zap className="w-4 h-4 text-op-highlight" /> Active Requests Over Time
             </h3>
-            <span className="text-[11px] font-mono text-op-muted">Prometheus Metric: http_req_duration</span>
+            <span className="text-[11px] font-mono text-op-muted">Prometheus Metric: http_server_requests_active</span>
           </div>
 
           <div className="h-44 w-full flex items-end justify-between gap-2 pt-4 pb-2 px-3 bg-op-bg/60 rounded-xl border border-op-border/50 relative overflow-hidden">
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#363d4d15_1px,transparent_1px),linear-gradient(to_bottom,#363d4d15_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
-            {[35, 40, 38, 42, 90, 110, 85, 45, 40, 36, 38, 42, 50, 60, 42, 38].map((h, i) => (
+            {metrics?.history?.length ? metrics.history.slice(-16).map((pt, i) => {
+              const maxReqs = Math.max(...metrics.history.map(m => m.requests), 10);
+              const height = (pt.requests / maxReqs) * 100;
+              return (
               <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative z-10">
                 <div
-                  style={{ height: `${(h / 120) * 100}%` }}
-                  className={`w-full rounded-t transition-all cursor-pointer ${
-                    h > 80 ? 'bg-gradient-to-t from-op-highlight/40 to-op-highlight' : 'bg-gradient-to-t from-op-accent/30 to-op-accent'
+                  style={{ height: `${height}%` }}
+                  className={`w-full rounded-t transition-all cursor-pointer relative ${
+                    height > 80 ? 'bg-gradient-to-t from-op-highlight/40 to-op-highlight' : 'bg-gradient-to-t from-op-accent/30 to-op-accent'
                   }`}
-                />
+                >
+                  <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-op-surface text-[10px] text-op-fg font-mono px-2 py-0.5 rounded border border-op-border shadow-lg pointer-events-none whitespace-nowrap z-20">
+                    {pt.requests} reqs
+                  </div>
+                </div>
               </div>
-            ))}
+            )}) : <div className="text-[11px] text-op-subtle z-10 p-2">Waiting for data...</div>}
           </div>
         </Card>
       </div>

@@ -242,6 +242,40 @@ export interface MetricsData {
   error?: string;
 }
 
+export interface IntegrationStatus {
+  name: string;
+  enabled: boolean;
+  available: boolean;
+  status: string;
+  error?: string;
+  checkedAt: string;
+}
+
+export interface IntegrationHealthResponse {
+  integrations: IntegrationStatus[];
+}
+
+export interface PodSummary {
+  name: string;
+  namespace: string;
+  phase: string;
+  nodeName: string;
+  restartCount: number;
+  ready: boolean;
+}
+
+export interface KubernetesSummaryResponse {
+  status: string;
+  error?: string;
+  nodeCount: number;
+  healthyNodeCount: number;
+  podCount: number;
+  runningPodCount: number;
+  pendingPodCount: number;
+  failedPodCount: number;
+  pods: PodSummary[];
+}
+
 export interface PipelineRun {
   runId: number;
   eventType: string;
@@ -456,6 +490,16 @@ export const api = {
   // Monitoring
   getMetrics: async (providerName = 'local'): Promise<MetricsData> => {
     const res = await axiosInstance.get<MetricsData>(`/monitoring/metrics?providerName=${encodeURIComponent(providerName)}`);
+    return res.data;
+  },
+
+  getIntegrationHealth: async (): Promise<IntegrationHealthResponse> => {
+    const res = await axiosInstance.get<IntegrationHealthResponse>('/monitoring/integrations');
+    return res.data;
+  },
+
+  getClusterSummary: async (): Promise<KubernetesSummaryResponse> => {
+    const res = await axiosInstance.get<KubernetesSummaryResponse>('/monitoring/cluster');
     return res.data;
   },
 

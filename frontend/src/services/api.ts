@@ -323,6 +323,11 @@ export const api = {
     return res.data;
   },
 
+  googleLogin: async (data: { idToken: string; role?: string }): Promise<AuthResponse> => {
+    const res = await axiosInstance.post<AuthResponse>('/auth/google-login', data);
+    return res.data;
+  },
+
   refreshSession: async (): Promise<AuthResponse> => {
     const res = await axios.post<AuthResponse>(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
     return res.data;

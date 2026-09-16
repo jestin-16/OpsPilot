@@ -23,6 +23,16 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
+    @ExceptionHandler(RoleRequiredException.class)
+    public ResponseEntity<Map<String, Object>> handleRoleRequired(RoleRequiredException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.PRECONDITION_REQUIRED.value());
+        body.put("error", "Precondition Required");
+        body.put("message", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.PRECONDITION_REQUIRED);
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
         Map<String, Object> body = new HashMap<>();

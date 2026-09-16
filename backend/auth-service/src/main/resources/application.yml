@@ -39,6 +39,8 @@ app:
     expiration-minutes: ${OTP_EXPIRATION_MINUTES:5}
     max-attempts: ${OTP_MAX_ATTEMPTS:5}
     resend-cooldown-seconds: ${OTP_RESEND_COOLDOWN_SECONDS:60}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
 
 eureka:
   client:

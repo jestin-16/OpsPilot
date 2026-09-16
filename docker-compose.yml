@@ -26,6 +26,8 @@ services:
       context: ./backend
       dockerfile: auth-service/Dockerfile
     container_name: opspilot-auth-service
+    env_file:
+      - .env
     ports:
       - "8081:8081"
     restart: unless-stopped

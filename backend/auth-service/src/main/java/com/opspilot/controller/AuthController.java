@@ -2,6 +2,7 @@ package com.opspilot.controller;
 
 import com.opspilot.dto.AuthRequest;
 import com.opspilot.dto.AuthResponse;
+import com.opspilot.dto.GoogleLoginRequest;
 import com.opspilot.dto.RegisterRequest;
 import com.opspilot.dto.RegistrationResponse;
 import com.opspilot.dto.ResendOtpRequest;
@@ -81,6 +82,16 @@ public class AuthController {
     @Operation(summary = "Authenticate user credentials and issue access + refresh tokens")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request, HttpServletResponse response) {
         AuthResponse authResponse = authService.login(request);
+        RefreshToken refreshToken = authService.createRefreshToken(authResponse.getId());
+        ResponseCookie cookie = createRefreshTokenCookie(refreshToken.getToken());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        return ResponseEntity.ok(authResponse);
+    }
+
+    @PostMapping("/google-login")
+    @Operation(summary = "Authenticate via Google")
+    public ResponseEntity<AuthResponse> googleLogin(@Valid @RequestBody GoogleLoginRequest request, HttpServletResponse response) {
+        AuthResponse authResponse = authService.googleLogin(request);
         RefreshToken refreshToken = authService.createRefreshToken(authResponse.getId());
         ResponseCookie cookie = createRefreshTokenCookie(refreshToken.getToken());
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

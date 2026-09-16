@@ -1,3 +1,4 @@
+
 package com.opspilot.repository;
 
 import com.opspilot.entity.LogEntity;
@@ -44,6 +45,6 @@ public interface LogRepository extends JpaRepository<LogEntity, Long> {
     );
     
     @org.springframework.data.jpa.repository.Modifying
-    @Query("DELETE FROM LogEntity l WHERE l.deployment.project.id = :projectId OR l.project.id = :projectId")
+    @Query("DELETE FROM LogEntity l WHERE l.deployment.id IN (SELECT d.id FROM Deployment d WHERE d.project.id = :projectId) OR l.project.id = :projectId")
     void deleteLogsByProjectId(@Param("projectId") Long projectId);
 }

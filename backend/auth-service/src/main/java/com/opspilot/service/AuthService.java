@@ -254,12 +254,13 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
-        refreshTokenRepository.deleteByUser(user);
-
         String tokenStr = UUID.randomUUID().toString();
         Instant expiryDate = Instant.now().plusMillis(tokenProvider.getJwtRefreshExpirationMs());
 
-        RefreshToken refreshToken = new RefreshToken(tokenStr, user, expiryDate);
+        RefreshToken refreshToken = refreshTokenRepository.findByUser(user).orElse(new RefreshToken());
+        refreshToken.setToken(tokenStr);
+        refreshToken.setUser(user);
+        refreshToken.setExpiryDate(expiryDate);
         return refreshTokenRepository.save(refreshToken);
     }
 

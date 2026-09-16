@@ -30,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearSession = () => {
     localStorage.removeItem('opspilot_token');
     localStorage.removeItem('opspilot_user');
+    localStorage.removeItem('opspilot_has_session');
+
     setToken(null);
     setUser(null);
   };
@@ -43,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       roles: data.roles,
     };
     localStorage.setItem('opspilot_user', JSON.stringify(userInfo));
+    localStorage.setItem('opspilot_has_session', 'true');
     setToken(data.token);
     setUser(userInfo);
   };
@@ -51,6 +54,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let active = true;
 
     const restoreSession = async () => {
+      const hasSession = localStorage.getItem('opspilot_has_session') === 'true';
+      if (!hasSession) {
+        if (active) setIsSessionLoading(false);
+        return;
+      }
+
       try {
         const data = await api.refreshSession();
         if (active) login(data);

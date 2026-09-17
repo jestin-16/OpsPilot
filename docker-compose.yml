@@ -92,6 +92,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - PROMETHEUS_URL=http://prometheus:9090
 
   api-gateway:
     build:

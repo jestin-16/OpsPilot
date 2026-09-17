@@ -1,7 +1,9 @@
 
 package com.opspilot.repository;
 
+import com.opspilot.entity.Deployment;
 import com.opspilot.entity.LogEntity;
+import com.opspilot.entity.Project;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,8 +18,8 @@ public interface LogRepository extends JpaRepository<LogEntity, Long> {
     
     java.util.Optional<LogEntity> findFirstBySourceServiceOrderByTimestampDesc(String sourceService);
 
-    @Query("SELECT l FROM LogEntity l LEFT JOIN l.deployment d LEFT JOIN d.project p WHERE " +
-           "(:projectId IS NULL OR p.id = :projectId) AND " +
+    @Query("SELECT l FROM LogEntity l LEFT JOIN l.deployment d LEFT JOIN d.project deploymentProject LEFT JOIN l.project directProject WHERE " +
+           "(:projectId IS NULL OR deploymentProject.id = :projectId OR directProject.id = :projectId) AND " +
            "(:sourceService IS NULL OR l.sourceService = :sourceService) AND " +
            "(:logLevel IS NULL OR l.logLevel = :logLevel) AND " +
            "(:query IS NULL OR LOWER(l.message) LIKE :query) " +

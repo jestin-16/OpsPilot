@@ -55,5 +55,10 @@ public class DataInitializer implements CommandLineRunner {
             User devops = new User("DevOps Lead", "devops@opspilot.io", passwordEncoder.encode("Password123!"), Set.of(devOpsRole));
             userRepository.save(devops);
         }
+
+        if (userRepository.findByEmail("opspilot-audit-other@example.com").isEmpty()) {
+            User otherDev = new User("Audit Other", "opspilot-audit-other@example.com", passwordEncoder.encode("Password123!"), Set.of(devRole));
+            userRepository.save(otherDev);
+        }
     }
 }

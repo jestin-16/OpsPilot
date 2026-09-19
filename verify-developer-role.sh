@@ -22,9 +22,10 @@ report() {
 }
 
 request() {
-  local method="$1" url="$2" token="${3:-}" body="${4:-}" output="$TMP_DIR/response"
+  local method="$1" url="$2" token="${3:-}" body="${4:-}" extra_header="${5:-}" output="$TMP_DIR/response"
   local args=(-sS -o "$output" -w '%{http_code}' -X "$method" "$url" -H 'Content-Type: application/json')
   [[ -n "$token" ]] && args+=(-H "Authorization: Bearer $token")
+  [[ -n "$extra_header" ]] && args+=(-H "$extra_header")
   [[ -n "$body" ]] && args+=(--data "$body")
   HTTP_STATUS=$(curl "${args[@]}" 2>"$TMP_DIR/curl-error") || HTTP_STATUS=000
   RESPONSE=$(cat "$output" 2>/dev/null || true)
@@ -125,7 +126,7 @@ PUBLIC_ID=$(json_value publicId)
 WEBHOOK_SECRET=$(json_value secret)
 if [[ "$HTTP_STATUS" == "200" && -n "$SOURCE_ID" && -n "$PUBLIC_ID" && -n "$WEBHOOK_SECRET" ]]; then
   report PASS "5 Log source wizard generated webhook URL and secret"
-  request POST "${BASE_URL%/}/ingest/webhook/$PUBLIC_ID" '' '{"source":"developer-audit","level":"INFO","message":"first audit event"}'
+  request POST "${BASE_URL%/}/ingest/webhook/$PUBLIC_ID" '' '{"source":"developer-audit","level":"INFO","message":"first audit event"}' "x-webhook-secret: $WEBHOOK_SECRET"
   if [[ "$HTTP_STATUS" == "200" ]]; then
     report PASS "5 First webhook event accepted"
   else

@@ -6,7 +6,11 @@ import com.opspilot.exception.ForbiddenException;
 import com.opspilot.repository.ContainerRepository;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.core.DefaultDockerClientConfig;
+import com.github.dockerjava.core.DockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
+import com.github.dockerjava.transport.DockerHttpClient;
+import com.github.dockerjava.zerodep.ZerodepDockerHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +22,16 @@ public class DockerService {
     @Autowired
     private ContainerRepository containerRepository;
 
-    private final DockerClient dockerClient = DockerClientImpl.getInstance();
+    private final DockerClient dockerClient = createDockerClient();
+
+    private static DockerClient createDockerClient() {
+        DockerClientConfig config = DefaultDockerClientConfig.createDefaultConfigBuilder().build();
+        DockerHttpClient httpClient = new ZerodepDockerHttpClient.Builder()
+                .dockerHost(config.getDockerHost())
+                .sslConfig(config.getSSLConfig())
+                .build();
+        return DockerClientImpl.getInstance(config, httpClient);
+    }
 
     public List<ContainerEntity> getContainersForUser(User currentUser) {
         List<ContainerEntity> containers = isAdministrator(currentUser)

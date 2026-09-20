@@ -13,8 +13,14 @@ public class PodEntity {
     @Column(name = "pod_id")
     private Long podId;
 
+    @Column(name = "pod_name")
+    private String podName;
+
+    @Column(name = "namespace")
+    private String namespace;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "container_id", nullable = false)
+    @JoinColumn(name = "container_id", nullable = true)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "deployment"})
     private ContainerEntity container;
 
@@ -32,12 +38,34 @@ public class PodEntity {
 
     public PodEntity() {}
 
-    public PodEntity(ContainerEntity container, String nodeName, String podStatus, String cpuUsage, String memoryUsage) {
+    public PodEntity(String podName, String namespace, ContainerEntity container, String nodeName, String podStatus, String cpuUsage, String memoryUsage) {
+        this.podName = podName;
+        this.namespace = namespace;
         this.container = container;
         this.nodeName = nodeName;
         this.podStatus = podStatus;
         this.cpuUsage = cpuUsage;
         this.memoryUsage = memoryUsage;
+    }
+
+    public PodEntity(ContainerEntity container, String nodeName, String podStatus, String cpuUsage, String memoryUsage) {
+        this(null, "default", container, nodeName, podStatus, cpuUsage, memoryUsage);
+    }
+
+    public String getPodName() {
+        return podName;
+    }
+
+    public void setPodName(String podName) {
+        this.podName = podName;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 
     public Long getPodId() {

@@ -8,6 +8,7 @@ public class MetricsResponse {
     private long memoryTotalMb;
     private int activeRequests;
     private int totalDeployments;
+    private int activeProjects;
     private List<MetricPoint> history;
     private String source;
     private String status;
@@ -22,6 +23,14 @@ public class MetricsResponse {
         this.activeRequests = activeRequests;
         this.totalDeployments = totalDeployments;
         this.history = history;
+    }
+
+    public int getActiveProjects() {
+        return activeProjects;
+    }
+
+    public void setActiveProjects(int activeProjects) {
+        this.activeProjects = activeProjects;
     }
 
     public double getCpuUsagePercent() {

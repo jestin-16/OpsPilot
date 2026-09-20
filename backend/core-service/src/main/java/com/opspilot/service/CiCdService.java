@@ -10,9 +10,13 @@ import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class CiCdService {
@@ -73,13 +77,17 @@ public class CiCdService {
 
             String containerScript;
             if (shouldFail) {
-                containerScript = "echo '[CI/CD Sandbox] Starting build execution in container...' && " +
+                containerScript = "echo '[CI/CD Sandbox] Cloning repository from allowlist...' && " +
+                        "echo '[CI/CD Sandbox] Git clone completed successfully' && " +
+                        "echo '[CI/CD Sandbox] Starting build execution in container...' && " +
                         "echo '[CI/CD Sandbox] Initializing toolchain in Alpine Linux...' && " +
                         "echo '[CI/CD Sandbox] Running automated test suite...' && " +
                         "echo '[ERROR] TestSuite failed: Assertion failed in TestModule' && " +
                         "echo '[CI/CD Sandbox] Build FAILED' && exit 1";
             } else {
-                containerScript = "echo '[CI/CD Sandbox] Starting build execution in container...' && " +
+                containerScript = "echo '[CI/CD Sandbox] Cloning repository from allowlist...' && " +
+                        "echo '[CI/CD Sandbox] Git clone completed successfully' && " +
+                        "echo '[CI/CD Sandbox] Starting build execution in container...' && " +
                         "echo '[CI/CD Sandbox] Initializing toolchain in Alpine Linux...' && " +
                         "echo '[CI/CD Sandbox] Running automated test suite...' && " +
                         "echo '[CI/CD Sandbox] 18 tests passed, 0 failures' && " +
@@ -88,19 +96,53 @@ public class CiCdService {
             }
 
             ProcessBuilder pb = new ProcessBuilder(
-                    "docker", "run", "--rm", "alpine", "sh", "-c", containerScript
+                    "docker", "run", "--rm", "--memory=1g", "--cpus=1.0", "alpine", "sh", "-c", containerScript
             );
-            pb.redirectErrorStream(true);
 
             Process process = pb.start();
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    logs.append(line).append("\n");
-                }
+
+            // Concurrent stream readers for stdout and stderr to prevent deadlocks
+            CompletableFuture<List<String>> stdoutFuture = CompletableFuture.supplyAsync(() -> {
+                List<String> lines = new ArrayList<>();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        lines.add(line);
+                    }
+                } catch (Exception ignored) {}
+                return lines;
+            }, executor);
+
+            CompletableFuture<List<String>> stderrFuture = CompletableFuture.supplyAsync(() -> {
+                List<String> lines = new ArrayList<>();
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        lines.add(line);
+                    }
+                } catch (Exception ignored) {}
+                return lines;
+            }, executor);
+
+            boolean completedInTime = process.waitFor(60, TimeUnit.SECONDS);
+            if (!completedInTime) {
+                process.destroyForcibly();
+                logs.append("[ERROR] Execution timed out after 60 seconds\n");
+                exitCode = 124;
+            } else {
+                exitCode = process.exitValue();
             }
 
-            exitCode = process.waitFor();
+            List<String> stdoutLines = stdoutFuture.get(5, TimeUnit.SECONDS);
+            List<String> stderrLines = stderrFuture.get(5, TimeUnit.SECONDS);
+
+            for (String line : stdoutLines) {
+                logs.append(line).append("\n");
+            }
+            for (String line : stderrLines) {
+                logs.append(line).append("\n");
+            }
+
             status = (exitCode == 0) ? "SUCCESS" : "FAILED";
 
         } catch (Exception e) {

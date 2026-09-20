@@ -34,7 +34,7 @@ public class DockerService {
     }
 
     public List<ContainerEntity> getContainersForUser(User currentUser) {
-        List<ContainerEntity> containers = isAdministrator(currentUser)
+        List<ContainerEntity> containers = isPrivileged(currentUser)
                 ? containerRepository.findAll()
                 : containerRepository.findByDeployment_Project_Owner(currentUser);
         List<Container> daemonContainers = dockerClient.listContainersCmd().withShowAll(true).exec();
@@ -80,13 +80,22 @@ public class DockerService {
                 .orElseThrow(() -> new RuntimeException("Container not found with id: " + containerId));
 
         boolean isCreator = container.getDeployment().getProject().getOwner().getId().equals(currentUser.getId());
-        if (!isCreator && !isAdministrator(currentUser)) {
+        if (!isCreator && !isPrivileged(currentUser)) {
             throw new ForbiddenException("You do not have access to this container");
         }
         return container;
     }
 
+    private boolean isPrivileged(User user) {
+        if (user == null || user.getRoles() == null) return false;
+        return user.getRoles().stream().anyMatch(role -> {
+            String name = role.getRoleName() != null ? role.getRoleName().toUpperCase() : "";
+            return name.contains("ADMIN") || name.contains("DEVOPS");
+        });
+    }
+
     private boolean isAdministrator(User user) {
+        if (user == null || user.getRoles() == null) return false;
         return user.getRoles().stream().anyMatch(role ->
                 role.getRoleName().equalsIgnoreCase("ADMIN") ||
                 role.getRoleName().equalsIgnoreCase("ROLE_ADMIN"));

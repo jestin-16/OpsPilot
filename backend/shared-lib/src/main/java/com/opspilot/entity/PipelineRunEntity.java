@@ -37,6 +37,18 @@ public class PipelineRunEntity {
     @Column(nullable = false)
     private String status; // e.g. SUCCESS, IN_PROGRESS, FAILED
 
+    @Column(name = "exit_code")
+    private Integer exitCode;
+
+    @Column(name = "build_logs", columnDefinition = "TEXT")
+    private String buildLogs;
+
+    @Column(name = "duration_ms")
+    private Long durationMs;
+
+    @Column(name = "repo_url", length = 512)
+    private String repoUrl;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -117,6 +129,38 @@ public class PipelineRunEntity {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Integer getExitCode() {
+        return exitCode;
+    }
+
+    public void setExitCode(Integer exitCode) {
+        this.exitCode = exitCode;
+    }
+
+    public String getBuildLogs() {
+        return buildLogs;
+    }
+
+    public void setBuildLogs(String buildLogs) {
+        this.buildLogs = buildLogs;
+    }
+
+    public Long getDurationMs() {
+        return durationMs;
+    }
+
+    public void setDurationMs(Long durationMs) {
+        this.durationMs = durationMs;
+    }
+
+    public String getRepoUrl() {
+        return repoUrl;
+    }
+
+    public void setRepoUrl(String repoUrl) {
+        this.repoUrl = repoUrl;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -28,11 +28,11 @@ public class LogService {
         List<LogEntity> mergedLogs = new java.util.ArrayList<>();
 
         boolean fetchLocal = (providerName == null || providerName.equalsIgnoreCase("local") || providerName.equalsIgnoreCase("all"));
-        boolean fetchExternal = isAdministrator(currentUser) && logProviders != null
+        boolean fetchExternal = isPrivileged(currentUser) && logProviders != null
             && (providerName != null && !providerName.equalsIgnoreCase("local"));
 
         if (fetchLocal) {
-            List<LogEntity> localLogs = isAdministrator(currentUser)
+            List<LogEntity> localLogs = isPrivileged(currentUser)
                     ? logRepository.searchLogs(projectId, serviceParam, levelParam, queryParam)
                     : logRepository.searchLogsForOwner(currentUser.getId(), projectId, serviceParam, levelParam, queryParam);
             localLogs.forEach(log -> log.setProviderSource("local"));
@@ -60,9 +60,16 @@ public class LogService {
         return mergedLogs;
     }
 
+    private boolean isPrivileged(User user) {
+        if (user == null || user.getRoles() == null) return false;
+        return user.getRoles().stream().anyMatch(role -> {
+            String name = role.getRoleName() != null ? role.getRoleName().toUpperCase() : "";
+            return name.contains("ADMIN") || name.contains("DEVOPS");
+        });
+    }
+
     private boolean isAdministrator(User user) {
-        return user.getRoles().stream().anyMatch(role ->
-                "ADMIN".equalsIgnoreCase(role.getRoleName()) || "ROLE_ADMIN".equalsIgnoreCase(role.getRoleName()));
+        return isPrivileged(user);
     }
 
     public LogEntity createLog(Deployment deployment, String sourceService, String logLevel, String message) {

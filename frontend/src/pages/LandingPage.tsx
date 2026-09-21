@@ -180,45 +180,212 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      <div className="border-b border-t border-slate-200 bg-white"><div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-slate-200 sm:grid-cols-4">{[['01', 'Shared workspace'], ['24/7', 'Signal awareness'], ['100%', 'Owner context'], ['1', 'Operational truth']].map(([value, label]) => <div key={label} className="px-4 py-6 text-center"><p className="text-xl font-black tracking-tight text-indigo-600 sm:text-2xl">{value}</p><p className="mt-1 text-[10px] font-bold uppercase tracking-[.15em] text-slate-500">{label}</p></div>)}</div></div>
+      {/* Stat Bar */}
+      <div className="border-b border-t border-gray-100 bg-white">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-gray-100 sm:grid-cols-4">
+          {[
+            ['01', 'Shared workspace'],
+            ['24/7', 'Signal awareness'],
+            ['100%', 'Owner context'],
+            ['1', 'Operational truth'],
+          ].map(([value, label]) => (
+            <div key={label} className="px-6 py-8 text-center">
+              <p className="text-3xl font-black tracking-tight text-black sm:text-4xl">{value}</p>
+              <p className="mt-2 text-xs font-bold uppercase tracking-wider text-gray-400">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <main className="bg-white text-slate-900">
-        <section id="platform" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
-          <div className="max-w-2xl">
-            <p className="text-xs font-extrabold uppercase tracking-[.2em] text-indigo-500">The OpsPilot operating model</p>
-            <h2 className="mt-3 text-3xl font-black tracking-[-.04em] text-slate-900 sm:text-4xl">A developer platform that thinks in systems.</h2>
-            <p className="mt-5 text-base leading-7 text-slate-600">Keep the delivery workflow and the runtime reality connected. Every signal has a project, every project has an owner, and every incident has a better starting point.</p>
+      <main className="bg-[#FAFAFA] text-black antialiased">
+        {/* The OpsPilot Operating Model Section */}
+        <section id="platform" className="mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/90 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-700 shadow-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
+              The OpsPilot Operating Model
+            </div>
+            <h2 className="mt-5 text-4xl font-black tracking-tight text-black sm:text-5xl lg:text-6xl leading-[1.08]">
+              A developer platform that <br className="hidden sm:inline" />
+              <span className="text-gray-400">thinks in systems.</span>
+            </h2>
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-gray-500 sm:text-lg">
+              Keep the delivery workflow and the runtime reality seamlessly connected. Every signal has a project, every project has an owner, and every incident has an actionable starting point.
+            </p>
           </div>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            {capabilities.map(({ icon: Icon, eyebrow, title, description, tone }) => (
-              <article key={title} className="group border border-slate-200 bg-white p-6 transition hover:-translate-y-1 hover:border-slate-300 shadow-sm hover:shadow-md">
-                <span className={`flex h-11 w-11 items-center justify-center border border-slate-200 bg-white ${tone === 'cyan' ? 'text-cyan-500' : tone === 'violet' ? 'text-violet-500' : 'text-amber-500'}`}>
-                  <Icon className="h-5 w-5" />
+
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
+            {/* Card 1: Observe */}
+            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-transform duration-300 group-hover:scale-105">
+                    <Radar className="h-5 w-5" />
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-black transition-colors">
+                    Observe
+                  </span>
+                </div>
+                <h3 className="mt-6 text-xl font-bold tracking-tight text-black">One operational picture</h3>
+                <p className="mt-2.5 text-sm leading-relaxed text-gray-500">
+                  Bring deployments, logs, uptime checks, containers, and cluster health into one shared view.
+                </p>
+
+                {/* Micro-preview Widget */}
+                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-mono text-xs">
+                  <div className="mb-2.5 flex items-center justify-between text-[10px] font-bold tracking-wider text-gray-400">
+                    <span>LIVE SIGNALS</span>
+                    <span className="flex items-center gap-1.5 font-semibold text-emerald-600">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500"></span>
+                      ALL HEALTHY
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3 py-2 font-sans shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                      <div className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="text-xs font-bold text-black">payment-service</span>
+                      </div>
+                      <span className="text-[11px] font-medium text-gray-400">18ms · 0 err</span>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3 py-2 font-sans shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                      <div className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                        <span className="text-xs font-bold text-black">core-engine</span>
+                      </div>
+                      <span className="text-[11px] font-medium text-gray-400">100% up</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all group-hover:gap-2.5">
+                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform group-hover:translate-x-1" />
                 </span>
-                <p className={`mt-7 text-[10px] font-extrabold uppercase tracking-[.18em] ${tone === 'cyan' ? 'text-cyan-500' : tone === 'violet' ? 'text-violet-500' : 'text-amber-500'}`}>{eyebrow}</p>
-                <h3 className="mt-2 text-lg font-extrabold text-slate-900">{title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-600">{description}</p>
-                <span className="mt-6 inline-flex items-center gap-1 text-sm font-bold text-slate-900 transition group-hover:text-cyan-500">See how it connects <ChevronRight className="h-4 w-4 transition group-hover:translate-x-1" /></span>
-              </article>
-            ))}
+              </div>
+            </article>
+
+            {/* Card 2: Understand */}
+            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-transform duration-300 group-hover:scale-105">
+                    <Bot className="h-5 w-5" />
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-black transition-colors">
+                    Understand
+                  </span>
+                </div>
+                <h3 className="mt-6 text-xl font-bold tracking-tight text-black">AI-assisted diagnosis</h3>
+                <p className="mt-2.5 text-sm leading-relaxed text-gray-500">
+                  Let OpsPilot correlate changes, signals, and ownership so the next action is immediately clear.
+                </p>
+
+                {/* Micro-preview Widget */}
+                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-sans text-xs">
+                  <div className="mb-2.5 flex items-center justify-between text-[10px] font-bold tracking-wider text-gray-400">
+                    <span className="flex items-center gap-1.5 font-semibold text-black">
+                      <Sparkles className="h-3 w-3 text-red-500" />
+                      AI DIAGNOSTIC CORRELATION
+                    </span>
+                    <span className="rounded-full bg-black px-2 py-0.5 text-[9px] font-bold text-white">98% MATCH</span>
+                  </div>
+                  <div className="rounded-xl border border-gray-100 bg-white p-3 text-[11px] leading-relaxed text-gray-600 shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                    <span className="font-bold text-black">Root cause:</span> Memory pressure traced to commit <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-900">#b7e09c</code>. No user impact.
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all group-hover:gap-2.5">
+                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform group-hover:translate-x-1" />
+                </span>
+              </div>
+            </article>
+
+            {/* Card 3: Deliver */}
+            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-transform duration-300 group-hover:scale-105">
+                    <Rocket className="h-5 w-5" />
+                  </span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-black transition-colors">
+                    Deliver
+                  </span>
+                </div>
+                <h3 className="mt-6 text-xl font-bold tracking-tight text-black">Confident releases</h3>
+                <p className="mt-2.5 text-sm leading-relaxed text-gray-500">
+                  Move from repository to runtime with visible deployment history and accountable control.
+                </p>
+
+                {/* Micro-preview Widget */}
+                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-sans text-xs">
+                  <div className="mb-2.5 flex items-center justify-between text-[10px] font-bold tracking-wider text-gray-400">
+                    <span>RELEASE PIPELINE</span>
+                    <span className="text-[10px] font-bold text-black">PROD v2.8.4</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-xl border border-gray-100 bg-white p-2.5 text-center shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                      <span className="block text-[9px] font-bold uppercase text-gray-400">Build</span>
+                      <span className="text-xs font-bold text-black">0.5s ✓</span>
+                    </div>
+                    <div className="rounded-xl border border-gray-100 bg-white p-2.5 text-center shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                      <span className="block text-[9px] font-bold uppercase text-gray-400">Tests</span>
+                      <span className="text-xs font-bold text-black">18/18 ✓</span>
+                    </div>
+                    <div className="rounded-xl bg-black p-2.5 text-center text-white shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
+                      <span className="block text-[9px] font-bold uppercase text-gray-400">Deploy</span>
+                      <span className="text-xs font-bold text-white">Live ●</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all group-hover:gap-2.5">
+                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform group-hover:translate-x-1" />
+                </span>
+              </div>
+            </article>
           </div>
         </section>
 
-        <section id="workflow" className="border-t border-b border-slate-200 bg-white py-20 text-slate-900 sm:py-24">
-          <div className="mx-auto grid max-w-7xl gap-12 px-5 sm:px-8 lg:grid-cols-[.82fr_1.18fr] lg:items-center lg:px-10">
+        {/* Workflow Section */}
+        <section id="workflow" className="border-t border-gray-100 bg-white py-24 text-black sm:py-32">
+          <div className="mx-auto grid max-w-7xl gap-14 px-6 sm:px-8 lg:grid-cols-[.85fr_1.15fr] lg:items-center lg:px-12">
             <div>
-              <p className="text-xs font-extrabold uppercase tracking-[.2em] text-cyan-500">A shorter path to action</p>
-              <h2 className="mt-3 text-3xl font-black tracking-[-.04em] sm:text-4xl">From repository to reliable runtime.</h2>
-              <p className="mt-5 max-w-md text-base leading-7 text-slate-600">Make delivery visible to everyone who depends on it. OpsPilot turns handoffs into a workflow the whole team can inspect.</p>
-              <button type="button" onClick={() => go('/signup')} className="mt-8 inline-flex items-center gap-2 text-sm font-extrabold text-slate-900 transition hover:text-cyan-500">Create your workspace <ArrowRight className="h-4 w-4" /></button>
+              <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/80 bg-gray-50 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-700 shadow-2xs">
+                A Shorter Path To Action
+              </div>
+              <h2 className="mt-5 text-4xl font-black tracking-tight text-black sm:text-5xl leading-[1.1]">
+                From repository to <br className="hidden sm:inline" />
+                reliable runtime.
+              </h2>
+              <p className="mt-5 max-w-md text-base leading-relaxed text-gray-500">
+                Make delivery visible to everyone who depends on it. OpsPilot turns handoffs into a collaborative workflow the whole team can inspect in real-time.
+              </p>
+              <button
+                type="button"
+                onClick={() => go('/signup')}
+                className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition hover:bg-gray-800 hover:shadow-lg"
+              >
+                Create your workspace <ArrowRight className="h-4 w-4 text-red-500" />
+              </button>
             </div>
             <div className="grid gap-4">
               {workflow.map(([number, title, description]) => (
-                <div key={number} className="flex gap-5 border border-slate-200 bg-white p-5 transition hover:border-slate-300 shadow-sm hover:shadow-md">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center border border-slate-200 text-sm font-black text-slate-900">{number}</span>
+                <div
+                  key={number}
+                  className="group flex gap-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:border-gray-200 hover:shadow-md"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black text-sm font-black text-white shadow-2xs">
+                    {number}
+                  </span>
                   <div>
-                    <h3 className="font-extrabold text-slate-900">{title}</h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
+                    <h3 className="text-base font-bold text-black">{title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-gray-500">{description}</p>
                   </div>
                 </div>
               ))}
@@ -226,36 +393,59 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        <section id="control" className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:px-10 lg:py-28">
-          <div className="grid gap-10 border border-slate-200 bg-white p-7 sm:p-10 lg:grid-cols-[1.05fr_.95fr] lg:p-14 shadow-sm">
+        {/* Control Section */}
+        <section id="control" className="mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
+          <div className="grid gap-12 rounded-3xl border border-gray-200/80 bg-white p-8 sm:p-12 lg:grid-cols-[1.05fr_.95fr] lg:p-16 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)]">
             <div>
-              <span className="flex h-12 w-12 items-center justify-center border border-slate-200 bg-white text-slate-900">
-                <ShieldCheck className="h-6 w-6 text-emerald-500" />
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-2xs">
+                <ShieldCheck className="h-6 w-6 text-black" />
               </span>
-              <p className="mt-7 text-xs font-extrabold uppercase tracking-[.18em] text-indigo-500">Control without friction</p>
-              <h2 className="mt-3 text-3xl font-black tracking-[-.04em] text-slate-900 sm:text-4xl">Built for accountable operations.</h2>
-              <p className="mt-5 max-w-xl text-base leading-7 text-slate-600">Give engineers useful autonomy while keeping access, ownership, and deployment history visible. The platform scales the team’s judgment instead of hiding it.</p>
-              <div className="mt-8 grid grid-cols-2 gap-3 text-sm font-bold text-slate-900">
+              <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-gray-200/80 bg-gray-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-gray-700">
+                Control without friction
+              </div>
+              <h2 className="mt-4 text-3xl font-black tracking-tight text-black sm:text-4xl lg:text-5xl leading-[1.1]">
+                Built for accountable operations.
+              </h2>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-gray-500">
+                Give engineers useful autonomy while keeping access, ownership, and deployment history visible. The platform scales the team’s judgment instead of hiding it.
+              </p>
+              <div className="mt-8 grid grid-cols-2 gap-3 text-sm font-semibold text-black">
                 {['Role-aware access', 'Audit-ready changes', 'Project ownership', 'Cloud-ready runtime'].map(item => (
-                  <span key={item} className="flex items-center gap-2"><Check className="h-4 w-4 text-emerald-500" /> {item}</span>
+                  <span key={item} className="flex items-center gap-2.5">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-black text-white">
+                      <Check className="h-3 w-3" />
+                    </span>
+                    {item}
+                  </span>
                 ))}
               </div>
             </div>
-            <div className="grid content-center gap-3">
-              <ControlCard icon={GitBranch} title="Delivery context" text="Commits, versions, environments, and operators stay attached to the release." color="text-cyan-500" />
-              <ControlCard icon={Cloud} title="Infrastructure visibility" text="Monitor Docker, Kubernetes, cloud targets, and service health from one place." color="text-amber-500" />
-              <ControlCard icon={ShieldCheck} title="Protected by design" text="JWT sessions, role checks, and ownership rules support safer daily operations." color="text-emerald-500" />
+            <div className="grid content-center gap-3.5">
+              <ControlCard icon={GitBranch} title="Delivery context" text="Commits, versions, environments, and operators stay attached to the release." color="text-black" />
+              <ControlCard icon={Cloud} title="Infrastructure visibility" text="Monitor Docker, Kubernetes, cloud targets, and service health from one place." color="text-black" />
+              <ControlCard icon={ShieldCheck} title="Protected by design" text="JWT sessions, role checks, and ownership rules support safer daily operations." color="text-black" />
             </div>
           </div>
         </section>
 
-        <section className="px-5 pb-20 sm:px-8 lg:px-10 lg:pb-28">
-          <div className="mx-auto max-w-7xl border border-slate-200 bg-white px-7 py-12 text-center text-slate-900 sm:px-12 sm:py-16 shadow-sm">
-            <p className="text-xs font-extrabold uppercase tracking-[.2em] text-cyan-500">Make the next incident smaller</p>
-            <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-black tracking-[-.04em] sm:text-4xl">Give your team a better operational starting point.</h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Connect your first project and see what changes when delivery, infrastructure, and intelligence share the same workspace.</p>
-            <button type="button" onClick={() => go('/signup')} className="mt-8 inline-flex items-center gap-2 border border-slate-900 bg-slate-900 px-5 py-3.5 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-slate-800">
-              Start with OpsPilot <ArrowRight className="h-4 w-4" />
+        {/* CTA Banner */}
+        <section className="px-6 pb-24 sm:px-8 lg:px-12 lg:pb-32">
+          <div className="mx-auto max-w-7xl rounded-3xl border border-gray-200/80 bg-gradient-to-b from-white to-gray-50/80 px-8 py-16 text-center text-black sm:px-16 sm:py-20 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/80 bg-white px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-gray-700 shadow-2xs">
+              Make the next incident smaller
+            </div>
+            <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl leading-[1.15]">
+              Give your team a better operational starting point.
+            </h2>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-gray-500">
+              Connect your first project and see what changes when delivery, infrastructure, and intelligence share the same workspace.
+            </p>
+            <button
+              type="button"
+              onClick={() => go('/signup')}
+              className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-black px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5"
+            >
+              Start with OpsPilot <ArrowRight className="h-4 w-4 text-red-500" />
             </button>
           </div>
         </section>

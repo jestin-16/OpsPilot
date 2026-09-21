@@ -261,16 +261,91 @@ export const LandingPage: React.FC = () => {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white text-slate-900">
-        <div className="mx-auto flex max-w-7xl flex-col gap-5 px-5 py-8 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
-          <div className="flex items-center gap-2 text-slate-500">
-            <span className="flex h-7 w-7 items-center justify-center border border-slate-200 bg-white text-slate-900"><Terminal className="h-3.5 w-3.5" /></span>
-            <span>© 2026 OpsPilot. Built for dependable delivery.</span>
+      {/* Aesthetic Global-Trending Minimal White Footer */}
+      <footer className="border-t border-gray-100 bg-white text-black antialiased">
+        <div className="mx-auto max-w-7xl px-6 pt-16 pb-12 sm:pt-20 sm:pb-16 lg:px-12">
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-12 lg:gap-12">
+            {/* Brand Column */}
+            <div className="col-span-2 md:col-span-4 lg:col-span-5 flex flex-col justify-between">
+              <div>
+                <button type="button" onClick={() => go('/')} className="flex items-center gap-3 group text-left">
+                  <div className="relative flex h-8 w-8 items-center justify-center bg-black rounded-lg overflow-hidden shadow-sm transition-transform group-hover:scale-105">
+                    <div className="absolute inset-0 bg-red-500 transform -skew-x-12 translate-x-4"></div>
+                    <span className="relative text-white font-bold text-base leading-none z-10">O</span>
+                  </div>
+                  <span className="text-xl font-bold tracking-tight text-black">OpsPilot</span>
+                </button>
+                <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-500">
+                  The intelligent operational workspace. Unifying deployments, infrastructure, and observability into one command center.
+                </p>
+                <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-gray-100 bg-gray-50/80 px-3.5 py-1.5 text-xs font-medium text-gray-600">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                  </span>
+                  <span>Systems operational</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation Columns */}
+            <div className="col-span-1 md:col-span-2 lg:col-span-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-black">Product</h3>
+              <ul className="mt-4 space-y-3 text-sm">
+                <li><a href="#platform" className="text-gray-500 transition-colors duration-150 hover:text-black">Features</a></li>
+                <li><button type="button" onClick={() => go('/login')} className="text-gray-500 transition-colors duration-150 hover:text-black">Deployments</button></li>
+                <li><button type="button" onClick={() => go('/login')} className="text-gray-500 transition-colors duration-150 hover:text-black">Docker &amp; K8s</button></li>
+                <li><button type="button" onClick={() => go('/login')} className="text-gray-500 transition-colors duration-150 hover:text-black">Observability</button></li>
+                <li><button type="button" onClick={() => go('/login')} className="text-gray-500 transition-colors duration-150 hover:text-black">CI/CD Engine</button></li>
+              </ul>
+            </div>
+
+            <div className="col-span-1 md:col-span-3 lg:col-span-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-black">Platform</h3>
+              <ul className="mt-4 space-y-3 text-sm">
+                <li><a href="#workflow" className="text-gray-500 transition-colors duration-150 hover:text-black">Workflows</a></li>
+                <li><a href="#control" className="text-gray-500 transition-colors duration-150 hover:text-black">Security &amp; RBAC</a></li>
+                <li><button type="button" onClick={() => go('/login')} className="text-gray-500 transition-colors duration-150 hover:text-black">Audit Logging</button></li>
+                <li><button type="button" onClick={() => go('/login')} className="text-gray-500 transition-colors duration-150 hover:text-black">API Reference</button></li>
+                <li><a href="https://github.com/opspilot" target="_blank" rel="noreferrer" className="text-gray-500 transition-colors duration-150 hover:text-black">Documentation</a></li>
+              </ul>
+            </div>
+
+            <div className="col-span-2 md:col-span-3 lg:col-span-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-black">Connect</h3>
+              <p className="mt-4 text-sm text-gray-500">
+                Ready to transform your delivery workflows?
+              </p>
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => go('/signup')}
+                  className="rounded-full bg-black px-5 py-2 text-xs font-bold text-white transition hover:bg-gray-800 hover:shadow-md"
+                >
+                  Get Started
+                </button>
+                <button
+                  type="button"
+                  onClick={() => go('/login')}
+                  className="rounded-full border border-gray-200 bg-white px-5 py-2 text-xs font-bold text-black transition hover:border-black"
+                >
+                  Sign In
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-5 text-xs font-bold text-slate-500">
-            <button type="button" onClick={() => go('/login')} className="hover:text-cyan-500">Sign in</button>
-            <button type="button" onClick={() => go('/signup')} className="hover:text-cyan-500">Create account</button>
-            <a href="#platform" className="hover:text-cyan-500">Platform</a>
+
+          {/* Bottom Row */}
+          <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-gray-100 pt-8 sm:flex-row text-xs text-gray-400">
+            <div className="flex items-center gap-2">
+              <span>&copy; 2026 OpsPilot, Inc. Built for dependable delivery.</span>
+            </div>
+            <div className="flex items-center gap-6 font-medium text-gray-500">
+              <a href="#privacy" className="transition-colors hover:text-black">Privacy Policy</a>
+              <a href="#terms" className="transition-colors hover:text-black">Terms of Service</a>
+              <a href="#security" className="transition-colors hover:text-black">Security</a>
+              <a href="https://github.com/opspilot" target="_blank" rel="noreferrer" className="transition-colors hover:text-black">GitHub</a>
+            </div>
           </div>
         </div>
       </footer>

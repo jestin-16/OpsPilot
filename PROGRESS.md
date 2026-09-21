@@ -204,5 +204,16 @@
 - **Subsequent Run (Run 13)**: Triggered original passing build immediately after failure.
 - **Result**: Successfully completed in 578 ms with status `SUCCESS` and exit code `0`, confirming the failure does not hang, poison, or crash subsequent pipeline executions.
 
-
-
+## Landing Page Aesthetic & Animation Redesign - 2026-09-21
+- **Removed Hero Command Center Showcase Preview**:
+  - Completely removed dark terminal mock preview box (`opspilot.io / command-view / live`) that disrupted the minimal white visual rhythm.
+  - Cleaned up unused `activeTab` state and tab toggling logic in `LandingPage.tsx`.
+- **Enhanced Smooth Animations & Micro-Interactions**:
+  - Added CSS keyframes and utility classes in `index.css`: `float-slow`, `float-reverse`, `fade-in-up`, `pulse-slow`, and `subtle-glow`.
+  - Staggered entrance animations on hero eyebrow pill, typography headline, subheadline, CTA buttons, and interactive prompt capsule.
+  - Floating pill badges (`Workflows`, `Integrations`, `Telemetry & Logs`, `AI Copilot`) configured with organic asynchronous floating and hover micro-lifts.
+  - Interactive suggested quick prompts (`Try: Deploy staging with v2.8`, `Correlate error logs`, `Inspect cluster health`) allowing one-click prompt entry.
+  - Smooth hover animations and elevation transitions applied to integration trust logos, metrics counters, operating model cards, workflow steps, control cards, and CTA banner.
+- **Verification**:
+  - `npm run build` completed with 0 errors and clean bundle output.
+  - Frontend dev server running on `http://localhost:5173/` responding with HTTP 200 OK.

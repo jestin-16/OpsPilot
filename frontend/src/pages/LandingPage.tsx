@@ -7,9 +7,12 @@ import {
   Bot,
   Box,
   Check,
+  CheckCircle2,
   ChevronRight,
   Cloud,
+  Cpu,
   GitBranch,
+  Layers,
   Menu,
   MessageSquare,
   Radar,
@@ -21,187 +24,305 @@ import {
 } from 'lucide-react';
 
 const capabilities = [
-  { icon: Radar, eyebrow: 'Observe', title: 'One operational picture', description: 'Bring deployments, logs, uptime checks, containers, and cluster health into one shared view.', tone: 'cyan' },
-  { icon: Bot, eyebrow: 'Understand', title: 'AI-assisted diagnosis', description: 'Let OpsPilot correlate changes, signals, and ownership so the next action is clear.', tone: 'violet' },
-  { icon: Rocket, eyebrow: 'Deliver', title: 'Confident releases', description: 'Move from repository to runtime with visible deployment history and accountable control.', tone: 'amber' },
+  {
+    icon: Radar,
+    eyebrow: 'Observe',
+    title: 'One operational picture',
+    description: 'Bring deployments, logs, uptime checks, containers, and cluster health into one shared view.',
+    tone: 'cyan',
+  },
+  {
+    icon: Bot,
+    eyebrow: 'Understand',
+    title: 'AI-assisted diagnosis',
+    description: 'Let OpsPilot correlate changes, signals, and ownership so the next action is immediately clear.',
+    tone: 'violet',
+  },
+  {
+    icon: Rocket,
+    eyebrow: 'Deliver',
+    title: 'Confident releases',
+    description: 'Move from repository to runtime with visible deployment history and accountable control.',
+    tone: 'amber',
+  },
 ];
 
 const workflow = [
-  ['01', 'Connect the work', 'Register a repository, assign ownership, and bring your service signals into the workspace.'],
-  ['02', 'Ship with context', 'Trigger deployments with the project, environment, version, and operator attached.'],
-  ['03', 'Resolve the right thing', 'Use AI summaries and live telemetry to focus the team on the highest-value action.'],
+  ['01', 'Connect the work', 'Register a repository, assign ownership, and bring your service signals into the unified workspace.'],
+  ['02', 'Ship with context', 'Trigger deployments with the project, environment, version, and operator transparently attached.'],
+  ['03', 'Resolve the right thing', 'Use AI summaries and live telemetry to focus the team on high-leverage remediations.'],
 ];
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const go = (path: string) => { setMenuOpen(false); navigate(path); };
+  const [searchPrompt, setSearchPrompt] = useState('');
+
+  const go = (path: string) => {
+    setMenuOpen(false);
+    navigate(path);
+  };
+
+  const handlePromptSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchPrompt.trim()) {
+      go('/signup');
+    }
+  };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#FAFAFA] font-sans text-slate-900 selection:bg-gray-200 selection:text-black">
-      <header className="absolute inset-x-0 top-0 z-50 flex h-24 items-center justify-between px-6 lg:px-12">
-        <button type="button" onClick={() => go('/')} className="flex items-center gap-3">
-          <div className="relative flex h-8 w-8 items-center justify-center bg-black rounded-lg overflow-hidden">
-            <div className="absolute inset-0 bg-red-500 transform -skew-x-12 translate-x-4"></div>
-            <span className="relative text-white font-bold text-lg leading-none z-10">O</span>
+    <div className="min-h-screen overflow-x-hidden bg-[#FAFAFA] font-sans text-black selection:bg-black selection:text-white antialiased">
+      {/* Floating Modern Header */}
+      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-gray-100/80 bg-white/80 px-6 backdrop-blur-xl sm:px-10 lg:px-16">
+        <button type="button" onClick={() => go('/')} className="group flex items-center gap-3">
+          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-black shadow-sm transition-transform duration-200 group-hover:scale-105">
+            <div className="absolute inset-0 translate-x-4 -skew-x-12 bg-red-500"></div>
+            <span className="relative z-10 text-base font-bold leading-none text-white">O</span>
           </div>
           <span className="text-xl font-bold tracking-tight text-black">OpsPilot</span>
         </button>
-        <nav className="hidden items-center gap-10 md:flex">
-          {['Features', 'Integrations', 'Pricing', 'Blog', 'Company'].map(item => (
-            <a key={item} href={`#${item.toLowerCase()}`} className="text-sm font-semibold text-gray-500 transition hover:text-black">{item}</a>
+
+        <nav className="hidden items-center gap-8 md:flex">
+          {['Platform', 'Workflow', 'Security', 'Pricing', 'Docs'].map(item => (
+            <a
+              key={item}
+              href={`#${item.toLowerCase()}`}
+              className="text-sm font-medium text-gray-500 transition-colors duration-150 hover:text-black"
+            >
+              {item}
+            </a>
           ))}
         </nav>
-        <div className="flex items-center gap-4">
-          <button type="button" onClick={() => go('/login')} className="hidden rounded-full bg-black px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-gray-800 md:block">Log in</button>
-          <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="rounded-lg p-2 text-slate-900 md:hidden" aria-label="Toggle navigation">{menuOpen ? <X /> : <Menu />}</button>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => go('/login')}
+            className="hidden px-4 py-2 text-sm font-semibold text-gray-700 transition hover:text-black sm:block"
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            onClick={() => go('/signup')}
+            className="rounded-full bg-black px-5 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-gray-800 hover:shadow-md"
+          >
+            Get Started Free
+          </button>
+          <button
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="rounded-xl border border-gray-200 p-2 text-black md:hidden"
+            aria-label="Toggle navigation"
+          >
+            {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </header>
 
-      {menuOpen && <div className="absolute inset-x-4 top-24 z-50 rounded-2xl border border-gray-100 bg-white p-4 shadow-2xl md:hidden">
-        <div className="grid gap-2 text-sm font-semibold text-gray-600">
-          {['Features', 'Integrations', 'Pricing', 'Blog', 'Company'].map(item => (
-            <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenuOpen(false)} className="rounded-xl px-4 py-3 hover:bg-gray-50 hover:text-black">{item}</a>
-          ))}
-          <div className="mt-2 border-t border-gray-100 pt-4">
-            <button type="button" onClick={() => go('/login')} className="w-full rounded-full bg-black py-3 text-center text-white font-semibold">Log in</button>
-          </div>
-        </div>
-      </div>}
-
-      <section className="relative isolate flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#FAFAFA] px-6 pt-32 pb-24 sm:pt-40 sm:pb-32 lg:px-8">
-        {/* Abstract 3D Ribbon/Wave Graphic (CSS/SVG) background */}
-        <div className="absolute inset-0 -z-10 flex items-center justify-center pointer-events-none">
-           <svg className="absolute w-full h-[800px] opacity-[0.65] mix-blend-multiply" viewBox="0 0 1000 600" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-             <path d="M-100,450 C150,450 250,150 500,200 C750,250 850,450 1100,350" stroke="url(#ribbon-grad-1)" strokeWidth="80" strokeLinecap="round" filter="url(#drop-shadow)" />
-             <path d="M-50,550 C200,550 300,250 550,300 C800,350 900,550 1150,450" stroke="url(#ribbon-grad-2)" strokeWidth="60" strokeLinecap="round" filter="url(#drop-shadow)" opacity="0.8" />
-             <path d="M100,100 C300,50 400,350 650,400 C900,450 950,250 1200,300" stroke="url(#ribbon-grad-3)" strokeWidth="40" strokeLinecap="round" filter="url(#drop-shadow)" opacity="0.6" />
-             
-             <defs>
-               <linearGradient id="ribbon-grad-1" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
-                 <stop offset="0%" stopColor="#f8fafc" />
-                 <stop offset="30%" stopColor="#e2e8f0" />
-                 <stop offset="70%" stopColor="#cbd5e1" />
-                 <stop offset="100%" stopColor="#f1f5f9" />
-               </linearGradient>
-               <linearGradient id="ribbon-grad-2" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
-                 <stop offset="0%" stopColor="#ffffff" />
-                 <stop offset="50%" stopColor="#f1f5f9" />
-                 <stop offset="100%" stopColor="#e2e8f0" />
-               </linearGradient>
-               <linearGradient id="ribbon-grad-3" x1="0" y1="0" x2="1000" y2="0" gradientUnits="userSpaceOnUse">
-                 <stop offset="0%" stopColor="#e2e8f0" />
-                 <stop offset="50%" stopColor="#f8fafc" />
-                 <stop offset="100%" stopColor="#cbd5e1" />
-               </linearGradient>
-               <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
-                 <feDropShadow dx="0" dy="20" stdDeviation="25" floodOpacity="0.08" />
-                 <feDropShadow dx="0" dy="8" stdDeviation="10" floodOpacity="0.04" />
-               </filter>
-             </defs>
-           </svg>
-        </div>
-        
-        {/* Floating pills with lines */}
-        <div className="absolute inset-0 -z-10 mx-auto max-w-7xl hidden lg:block pointer-events-none">
-          <div className="absolute top-[25%] left-[10%] flex flex-col items-center opacity-90 animate-[pulse_4s_ease-in-out_infinite]">
-             <div className="rounded-full bg-white px-5 py-2 text-xs font-bold tracking-wide text-gray-500 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100">Workflows</div>
-             <div className="h-24 w-px bg-gradient-to-b from-gray-300 to-transparent mt-2"></div>
-          </div>
-          <div className="absolute top-[20%] right-[15%] flex flex-col items-center opacity-90 animate-[pulse_5s_ease-in-out_infinite_1s]">
-             <div className="rounded-full bg-white px-5 py-2 text-xs font-bold tracking-wide text-gray-500 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100">Integrations</div>
-             <div className="h-32 w-px bg-gradient-to-b from-gray-300 to-transparent mt-2"></div>
-          </div>
-          <div className="absolute top-[65%] left-[15%] flex flex-col items-center opacity-90 animate-[pulse_4.5s_ease-in-out_infinite_0.5s]">
-             <div className="h-24 w-px bg-gradient-to-t from-gray-300 to-transparent mb-2"></div>
-             <div className="rounded-full bg-white px-5 py-2 text-xs font-bold tracking-wide text-gray-500 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100">Reports & Docs</div>
-          </div>
-          <div className="absolute top-[60%] right-[12%] flex flex-col items-center opacity-90 animate-[pulse_5.5s_ease-in-out_infinite_1.5s]">
-             <div className="h-28 w-px bg-gradient-to-t from-gray-300 to-transparent mb-2"></div>
-             <div className="rounded-full bg-white px-5 py-2 text-xs font-bold tracking-wide text-gray-500 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100">Ask anything</div>
-          </div>
-        </div>
-
-        <div className="z-10 flex max-w-5xl flex-col items-center text-center mt-12">
-          {/* Eyebrow */}
-          <div className="mb-8 inline-flex items-center rounded-full border border-gray-200 bg-white/60 px-4 py-1.5 text-sm font-semibold text-gray-600 backdrop-blur-md shadow-sm">
-            <span className="mr-2.5 h-2 w-2 rounded-full bg-red-500 animate-[pulse_2s_ease-in-out_infinite]"></span>
-            Introducing the next generation of operations
-          </div>
-          
-          {/* Headline */}
-          <h1 className="text-5xl font-black tracking-tight text-[#111] sm:text-6xl md:text-7xl lg:text-[5.5rem] leading-[1.05]">
-            Automate Anything <br className="hidden sm:block" />
-            You've Ever Managed. <br className="hidden sm:block" />
-            In <span className="relative inline-block text-black">Seconds<span className="absolute -bottom-2.5 right-0 h-3.5 w-3.5 rounded-full bg-red-500"></span></span>
-          </h1>
-          
-          {/* Subheading */}
-          <p className="mt-8 max-w-2xl text-lg leading-relaxed text-gray-500 sm:text-xl font-medium">
-            The intelligent operational workspace that brings all your deployments, infrastructure, and workflows into one unified, AI-driven command center.
-          </p>
-          
-          {/* CTA */}
-          <div className="mt-10 flex items-center justify-center gap-x-6">
-            <button type="button" onClick={() => go('/signup')} className="group flex h-14 items-center justify-center gap-3 rounded-full bg-black px-8 text-base font-bold text-white transition-all hover:bg-gray-800 hover:shadow-xl hover:shadow-gray-300/50 hover:-translate-y-0.5">
-              Get Started Free
-              <ArrowRight className="h-4 w-4 text-red-500 transition-transform group-hover:translate-x-1" />
-            </button>
-          </div>
-          
-          {/* Input bar */}
-          <div className="mt-14 w-full max-w-[28rem]">
-            <div className="relative flex items-center rounded-full border border-gray-200 bg-white/90 p-2 shadow-lg backdrop-blur-xl transition-all hover:shadow-xl focus-within:border-gray-300 focus-within:ring-4 focus-within:ring-gray-100">
-              <div className="pl-4 text-gray-400">
-                <Terminal className="h-5 w-5" />
-              </div>
-              <input 
-                type="text" 
-                placeholder="Ask OpsPilot anything..." 
-                className="w-full bg-transparent px-3 py-2.5 text-sm font-medium text-gray-900 placeholder-gray-400 focus:outline-none"
-              />
-              <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FAFAFA] transition hover:bg-gray-100 border border-gray-100">
-                <div className="h-2.5 w-2.5 rotate-45 bg-red-500"></div>
+      {/* Mobile Drawer */}
+      {menuOpen && (
+        <div className="fixed inset-x-4 top-24 z-50 rounded-3xl border border-gray-200/90 bg-white/95 p-6 shadow-2xl backdrop-blur-2xl md:hidden">
+          <div className="flex flex-col gap-3 text-sm font-semibold text-gray-700">
+            {['Platform', 'Workflow', 'Security', 'Pricing', 'Docs'].map(item => (
+              <a
+                key={item}
+                href={`#${item.toLowerCase()}`}
+                onClick={() => setMenuOpen(false)}
+                className="rounded-xl px-4 py-3 transition hover:bg-gray-50 hover:text-black"
+              >
+                {item}
+              </a>
+            ))}
+            <div className="mt-3 border-t border-gray-100 pt-4">
+              <button
+                type="button"
+                onClick={() => go('/signup')}
+                className="w-full rounded-full bg-black py-3.5 text-center text-sm font-bold text-white shadow-md"
+              >
+                Get Started Free
+              </button>
+              <button
+                type="button"
+                onClick={() => go('/login')}
+                className="mt-2 w-full rounded-full border border-gray-200 py-3 text-center text-sm font-bold text-black"
+              >
+                Sign In
               </button>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Trust bar */}
-        <div className="absolute bottom-10 left-0 right-0 z-10 w-full px-6 hidden sm:block">
-          <p className="mb-6 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">Works seamlessly with your favorite tools</p>
-          <div className="mx-auto flex max-w-4xl flex-wrap justify-center gap-x-14 gap-y-8 opacity-40 grayscale transition-opacity hover:opacity-60">
-            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><GitBranch className="h-6 w-6"/> GitHub</div>
-            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><Cloud className="h-6 w-6"/> AWS</div>
-            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><Box className="h-6 w-6" /> Docker</div>
-            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><Activity className="h-6 w-6"/> Datadog</div>
-            <div className="flex items-center gap-2.5 font-bold text-gray-700 tracking-tight"><MessageSquare className="h-6 w-6" /> Slack</div>
+      {/* HERO SECTION */}
+      <section className="relative isolate flex flex-col items-center justify-center overflow-hidden px-6 pt-36 pb-20 sm:pt-44 sm:pb-28 lg:px-12">
+        {/* Subtle Ambient Radial Backlight */}
+        <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
+          <div className="h-[520px] w-[820px] rounded-full bg-gradient-to-tr from-gray-200/40 via-gray-100/30 to-transparent blur-3xl animate-pulse-slow" />
+        </div>
+
+        {/* Floating Pill Badges with Smooth Asynchronous Float */}
+        <div className="pointer-events-none absolute inset-0 -z-10 mx-auto hidden max-w-7xl lg:block">
+          <div className="absolute top-[28%] left-[8%] flex flex-col items-center animate-float-slow">
+            <div className="pointer-events-auto cursor-default rounded-full border border-gray-200/80 bg-white/90 px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-[0_4px_16px_rgba(0,0,0,0.05)] backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-black/30 hover:text-black hover:shadow-md">
+              Workflows
+            </div>
+            <div className="mt-2 h-16 w-px bg-gradient-to-b from-gray-300 to-transparent"></div>
+          </div>
+          <div className="absolute top-[22%] right-[10%] flex flex-col items-center animate-float-reverse [animation-delay:1.5s]">
+            <div className="pointer-events-auto cursor-default rounded-full border border-gray-200/80 bg-white/90 px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-[0_4px_16px_rgba(0,0,0,0.05)] backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-black/30 hover:text-black hover:shadow-md">
+              Integrations
+            </div>
+            <div className="mt-2 h-20 w-px bg-gradient-to-b from-gray-300 to-transparent"></div>
+          </div>
+          <div className="absolute top-[68%] left-[12%] flex flex-col items-center animate-float-slow [animation-delay:3s]">
+            <div className="mb-2 h-16 w-px bg-gradient-to-t from-gray-300 to-transparent"></div>
+            <div className="pointer-events-auto cursor-default rounded-full border border-gray-200/80 bg-white/90 px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-[0_4px_16px_rgba(0,0,0,0.05)] backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-black/30 hover:text-black hover:shadow-md">
+              Telemetry &amp; Logs
+            </div>
+          </div>
+          <div className="absolute top-[62%] right-[12%] flex flex-col items-center animate-float-reverse [animation-delay:4.5s]">
+            <div className="mb-2 h-20 w-px bg-gradient-to-t from-gray-300 to-transparent"></div>
+            <div className="pointer-events-auto cursor-default rounded-full border border-gray-200/80 bg-white/90 px-4 py-1.5 text-xs font-semibold text-gray-600 shadow-[0_4px_16px_rgba(0,0,0,0.05)] backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-black/30 hover:text-black hover:shadow-md">
+              AI Copilot
+            </div>
+          </div>
+        </div>
+
+        <div className="z-10 flex max-w-5xl flex-col items-center text-center">
+          {/* Eyebrow Pill */}
+          <div className="animate-fade-in-up inline-flex items-center gap-2 rounded-full border border-gray-200/90 bg-white/90 px-4 py-1.5 text-xs font-semibold text-gray-700 shadow-sm backdrop-blur-md transition-all duration-300 hover:border-black/20 hover:shadow-md">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+            </span>
+            Introducing OpsPilot 2.0 · The Autonomous Ops Platform
+          </div>
+
+          {/* Headline */}
+          <h1 className="animate-fade-in-up [animation-delay:100ms] mt-6 text-5xl font-black tracking-tight text-black sm:text-6xl md:text-7xl lg:text-[5.5rem] leading-[1.04]">
+            Automate Anything <br className="hidden sm:block" />
+            You've Ever Managed. <br className="hidden sm:block" />
+            In <span className="relative inline-block text-black">Seconds<span className="absolute -bottom-2 right-0 h-3.5 w-3.5 rounded-full bg-red-500 animate-pulse"></span></span>
+          </h1>
+
+          {/* Subheading */}
+          <p className="animate-fade-in-up [animation-delay:200ms] mt-7 max-w-2xl text-lg leading-relaxed text-gray-500 sm:text-xl font-normal">
+            The intelligent operational workspace that brings all your deployments, infrastructure, and workflows into one unified, AI-driven command center.
+          </p>
+
+          {/* CTA Buttons */}
+          <div className="animate-fade-in-up [animation-delay:300ms] mt-9 flex flex-wrap items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => go('/signup')}
+              className="group flex h-14 items-center justify-center gap-3 rounded-full bg-black px-8 text-base font-bold text-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:bg-gray-800 hover:shadow-[0_16px_32px_-8px_rgba(0,0,0,0.25)] active:translate-y-0 cursor-pointer"
+            >
+              Get Started Free
+              <ArrowRight className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-x-1.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/login')}
+              className="flex h-14 items-center justify-center rounded-full border border-gray-200 bg-white px-8 text-base font-bold text-black shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-black hover:bg-gray-50 hover:shadow-md active:translate-y-0 cursor-pointer"
+            >
+              View Live Demo
+            </button>
+          </div>
+
+          {/* Interactive Input Capsule */}
+          <div className="animate-fade-in-up [animation-delay:400ms] mt-12 w-full max-w-lg">
+            <form onSubmit={handlePromptSubmit} className="relative flex items-center rounded-full border border-gray-200/90 bg-white p-2 shadow-lg backdrop-blur-xl transition-all duration-300 hover:shadow-xl focus-within:border-black focus-within:ring-4 focus-within:ring-gray-100">
+              <div className="pl-3.5 text-gray-400">
+                <Terminal className="h-4 w-4" />
+              </div>
+              <input
+                type="text"
+                value={searchPrompt}
+                onChange={(e) => setSearchPrompt(e.target.value)}
+                placeholder="Ask OpsPilot anything (e.g. 'Deploy staging with v2.8')..."
+                className="w-full bg-transparent px-3 py-2 text-sm font-medium text-black placeholder-gray-400 focus:outline-none"
+              />
+              <button
+                type="submit"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-white transition-all duration-300 hover:bg-gray-800 hover:scale-105 active:scale-95 cursor-pointer"
+                aria-label="Submit prompt"
+              >
+                <div className="h-2 w-2 rotate-45 border-t-2 border-r-2 border-white"></div>
+              </button>
+            </form>
+
+            {/* Suggested Quick Prompts */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Try:</span>
+              {[
+                'Deploy staging with v2.8',
+                'Correlate error logs',
+                'Inspect cluster health',
+              ].map((prompt) => (
+                <button
+                  key={prompt}
+                  type="button"
+                  onClick={() => setSearchPrompt(prompt)}
+                  className="rounded-full border border-gray-200/80 bg-white px-3 py-1 text-[11px] font-medium text-gray-600 shadow-2xs transition-all duration-200 hover:-translate-y-0.5 hover:border-black/30 hover:bg-gray-50 hover:text-black hover:shadow-xs cursor-pointer"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Integration Trust Bar */}
+        <div className="animate-fade-in-up [animation-delay:500ms] mt-24 w-full max-w-4xl px-6">
+          <p className="mb-6 text-center text-xs font-bold uppercase tracking-[0.2em] text-gray-400">
+            Engineered to integrate seamlessly with your stack
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 text-gray-600">
+            <div className="group flex items-center gap-2.5 text-sm font-bold tracking-tight transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:text-black cursor-pointer">
+              <GitBranch className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:text-black" /> GitHub
+            </div>
+            <div className="group flex items-center gap-2.5 text-sm font-bold tracking-tight transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:text-black cursor-pointer">
+              <Cloud className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:text-black" /> AWS Cloud
+            </div>
+            <div className="group flex items-center gap-2.5 text-sm font-bold tracking-tight transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:text-black cursor-pointer">
+              <Box className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:text-black" /> Docker
+            </div>
+            <div className="group flex items-center gap-2.5 text-sm font-bold tracking-tight transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:text-black cursor-pointer">
+              <Cpu className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:text-black" /> Kubernetes
+            </div>
+            <div className="group flex items-center gap-2.5 text-sm font-bold tracking-tight transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:text-black cursor-pointer">
+              <Activity className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:text-black" /> Prometheus
+            </div>
+            <div className="group flex items-center gap-2.5 text-sm font-bold tracking-tight transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:text-black cursor-pointer">
+              <MessageSquare className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 group-hover:text-black" /> Webhooks
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Stat Bar */}
+      {/* METRICS COUNTER BAR */}
       <div className="border-b border-t border-gray-100 bg-white">
         <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-gray-100 sm:grid-cols-4">
           {[
-            ['01', 'Shared workspace'],
-            ['24/7', 'Signal awareness'],
-            ['100%', 'Owner context'],
-            ['1', 'Operational truth'],
+            ['01', 'Shared Workspace'],
+            ['24/7', 'Signal Awareness'],
+            ['100%', 'Owner Context'],
+            ['< 1s', 'Pipeline Execution'],
           ].map(([value, label]) => (
-            <div key={label} className="px-6 py-8 text-center">
-              <p className="text-3xl font-black tracking-tight text-black sm:text-4xl">{value}</p>
-              <p className="mt-2 text-xs font-bold uppercase tracking-wider text-gray-400">{label}</p>
+            <div key={label} className="group px-6 py-8 text-center transition-all duration-300 hover:bg-gray-50/70">
+              <p className="text-3xl font-black tracking-tight text-black sm:text-4xl transition-transform duration-300 group-hover:scale-105">{value}</p>
+              <p className="mt-2 text-xs font-bold uppercase tracking-wider text-gray-400 group-hover:text-gray-600 transition-colors">{label}</p>
             </div>
           ))}
         </div>
       </div>
 
       <main className="bg-[#FAFAFA] text-black antialiased">
-        {/* The OpsPilot Operating Model Section */}
+        {/* THE OPSPILOT OPERATING MODEL */}
         <section id="platform" className="mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/90 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/90 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-700 shadow-sm transition-all duration-300 hover:border-black/20">
               <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></span>
               The OpsPilot Operating Model
             </div>
@@ -216,10 +337,10 @@ export const LandingPage: React.FC = () => {
 
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {/* Card 1: Observe */}
-            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
+            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-400 ease-out hover:-translate-y-2 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-transform duration-300 group-hover:scale-105">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-all duration-300 group-hover:scale-110 group-hover:bg-black group-hover:text-white">
                     <Radar className="h-5 w-5" />
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-black transition-colors">
@@ -232,7 +353,7 @@ export const LandingPage: React.FC = () => {
                 </p>
 
                 {/* Micro-preview Widget */}
-                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-mono text-xs">
+                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-mono text-xs transition-colors group-hover:bg-gray-50">
                   <div className="mb-2.5 flex items-center justify-between text-[10px] font-bold tracking-wider text-gray-400">
                     <span>LIVE SIGNALS</span>
                     <span className="flex items-center gap-1.5 font-semibold text-emerald-600">
@@ -241,14 +362,14 @@ export const LandingPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3 py-2 font-sans shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3 py-2 font-sans shadow-[0_2px_6px_rgba(0,0,0,0.02)] transition-transform duration-200 group-hover:translate-x-0.5">
                       <div className="flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                         <span className="text-xs font-bold text-black">payment-service</span>
                       </div>
                       <span className="text-[11px] font-medium text-gray-400">18ms · 0 err</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3 py-2 font-sans shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                    <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3 py-2 font-sans shadow-[0_2px_6px_rgba(0,0,0,0.02)] transition-transform duration-200 group-hover:translate-x-0.5">
                       <div className="flex items-center gap-2">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                         <span className="text-xs font-bold text-black">core-engine</span>
@@ -260,17 +381,17 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="pt-2">
-                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all group-hover:gap-2.5">
-                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform group-hover:translate-x-1" />
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all duration-300 group-hover:gap-2.5">
+                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-x-1.5" />
                 </span>
               </div>
             </article>
 
             {/* Card 2: Understand */}
-            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
+            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-400 ease-out hover:-translate-y-2 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-transform duration-300 group-hover:scale-105">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-all duration-300 group-hover:scale-110 group-hover:bg-black group-hover:text-white">
                     <Bot className="h-5 w-5" />
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-black transition-colors">
@@ -283,13 +404,13 @@ export const LandingPage: React.FC = () => {
                 </p>
 
                 {/* Micro-preview Widget */}
-                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-sans text-xs">
+                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-sans text-xs transition-colors group-hover:bg-gray-50">
                   <div className="mb-2.5 flex items-center justify-between text-[10px] font-bold tracking-wider text-gray-400">
                     <span className="flex items-center gap-1.5 font-semibold text-black">
-                      <Sparkles className="h-3 w-3 text-red-500" />
+                      <Sparkles className="h-3 w-3 text-red-500 transition-transform duration-300 group-hover:rotate-12" />
                       AI DIAGNOSTIC CORRELATION
                     </span>
-                    <span className="rounded-full bg-black px-2 py-0.5 text-[9px] font-bold text-white">98% MATCH</span>
+                    <span className="rounded-full bg-black px-2 py-0.5 text-[9px] font-bold text-white transition-transform duration-200 group-hover:scale-105">98% MATCH</span>
                   </div>
                   <div className="rounded-xl border border-gray-100 bg-white p-3 text-[11px] leading-relaxed text-gray-600 shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
                     <span className="font-bold text-black">Root cause:</span> Memory pressure traced to commit <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-900">#b7e09c</code>. No user impact.
@@ -298,17 +419,17 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="pt-2">
-                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all group-hover:gap-2.5">
-                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform group-hover:translate-x-1" />
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all duration-300 group-hover:gap-2.5">
+                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-x-1.5" />
                 </span>
               </div>
             </article>
 
             {/* Card 3: Deliver */}
-            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-1.5 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
+            <article className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-gray-200/80 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.04)] transition-all duration-400 ease-out hover:-translate-y-2 hover:border-gray-300 hover:shadow-[0_24px_48px_-12px_rgba(0,0,0,0.09)]">
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-transform duration-300 group-hover:scale-105">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-xs transition-all duration-300 group-hover:scale-110 group-hover:bg-black group-hover:text-white">
                     <Rocket className="h-5 w-5" />
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 group-hover:text-black transition-colors">
@@ -321,38 +442,38 @@ export const LandingPage: React.FC = () => {
                 </p>
 
                 {/* Micro-preview Widget */}
-                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-sans text-xs">
+                <div className="my-6 rounded-2xl border border-gray-100 bg-gray-50/70 p-4 font-sans text-xs transition-colors group-hover:bg-gray-50">
                   <div className="mb-2.5 flex items-center justify-between text-[10px] font-bold tracking-wider text-gray-400">
                     <span>RELEASE PIPELINE</span>
                     <span className="text-[10px] font-bold text-black">PROD v2.8.4</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-xl border border-gray-100 bg-white p-2.5 text-center shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                    <div className="rounded-xl border border-gray-100 bg-white p-2.5 text-center shadow-[0_2px_6px_rgba(0,0,0,0.02)] transition-transform duration-200 group-hover:-translate-y-0.5">
                       <span className="block text-[9px] font-bold uppercase text-gray-400">Build</span>
                       <span className="text-xs font-bold text-black">0.5s ✓</span>
                     </div>
-                    <div className="rounded-xl border border-gray-100 bg-white p-2.5 text-center shadow-[0_2px_6px_rgba(0,0,0,0.02)]">
+                    <div className="rounded-xl border border-gray-100 bg-white p-2.5 text-center shadow-[0_2px_6px_rgba(0,0,0,0.02)] transition-transform duration-200 group-hover:-translate-y-0.5">
                       <span className="block text-[9px] font-bold uppercase text-gray-400">Tests</span>
                       <span className="text-xs font-bold text-black">18/18 ✓</span>
                     </div>
-                    <div className="rounded-xl bg-black p-2.5 text-center text-white shadow-[0_2px_6px_rgba(0,0,0,0.08)]">
+                    <div className="rounded-xl bg-black p-2.5 text-center text-white shadow-[0_2px_6px_rgba(0,0,0,0.08)] transition-transform duration-200 group-hover:-translate-y-0.5">
                       <span className="block text-[9px] font-bold uppercase text-gray-400">Deploy</span>
-                      <span className="text-xs font-bold text-white">Live ●</span>
+                      <span className="text-xs font-bold text-white flex items-center justify-center gap-1">Live <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span></span>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="pt-2">
-                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all group-hover:gap-2.5">
-                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform group-hover:translate-x-1" />
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-black transition-all duration-300 group-hover:gap-2.5">
+                  See how it connects <ArrowRight className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-x-1.5" />
                 </span>
               </div>
             </article>
           </div>
         </section>
 
-        {/* Workflow Section */}
+        {/* WORKFLOW SECTION */}
         <section id="workflow" className="border-t border-gray-100 bg-white py-24 text-black sm:py-32">
           <div className="mx-auto grid max-w-7xl gap-14 px-6 sm:px-8 lg:grid-cols-[.85fr_1.15fr] lg:items-center lg:px-12">
             <div>
@@ -369,22 +490,22 @@ export const LandingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => go('/signup')}
-                className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-black px-6 py-3 text-sm font-bold text-white transition hover:bg-gray-800 hover:shadow-lg"
+                className="group mt-8 inline-flex items-center gap-2.5 rounded-full bg-black px-6 py-3.5 text-sm font-bold text-white shadow-sm transition-all duration-300 hover:bg-gray-800 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer"
               >
-                Create your workspace <ArrowRight className="h-4 w-4 text-red-500" />
+                Create your workspace <ArrowRight className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-x-1.5" />
               </button>
             </div>
             <div className="grid gap-4">
               {workflow.map(([number, title, description]) => (
                 <div
                   key={number}
-                  className="group flex gap-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm transition hover:border-gray-200 hover:shadow-md"
+                  className="group flex gap-5 rounded-2xl border border-gray-100 bg-[#FAFAFA] p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 hover:bg-white hover:shadow-lg cursor-pointer"
                 >
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black text-sm font-black text-white shadow-2xs">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black text-sm font-black text-white shadow-2xs transition-all duration-300 group-hover:bg-red-500 group-hover:scale-105 group-hover:shadow-md">
                     {number}
                   </span>
                   <div>
-                    <h3 className="text-base font-bold text-black">{title}</h3>
+                    <h3 className="text-base font-bold text-black transition-colors duration-200 group-hover:text-black">{title}</h3>
                     <p className="mt-2 text-sm leading-relaxed text-gray-500">{description}</p>
                   </div>
                 </div>
@@ -393,9 +514,9 @@ export const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* Control Section */}
-        <section id="control" className="mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
-          <div className="grid gap-12 rounded-3xl border border-gray-200/80 bg-white p-8 sm:p-12 lg:grid-cols-[1.05fr_.95fr] lg:p-16 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)]">
+        {/* CONTROL & SECURITY SECTION */}
+        <section id="security" className="mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
+          <div className="grid gap-12 rounded-3xl border border-gray-200/80 bg-white p-8 sm:p-12 lg:grid-cols-[1.05fr_.95fr] lg:p-16 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] transition-shadow duration-300 hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.06)]">
             <div>
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-black shadow-2xs">
                 <ShieldCheck className="h-6 w-6 text-black" />
@@ -421,16 +542,16 @@ export const LandingPage: React.FC = () => {
               </div>
             </div>
             <div className="grid content-center gap-3.5">
-              <ControlCard icon={GitBranch} title="Delivery context" text="Commits, versions, environments, and operators stay attached to the release." color="text-black" />
-              <ControlCard icon={Cloud} title="Infrastructure visibility" text="Monitor Docker, Kubernetes, cloud targets, and service health from one place." color="text-black" />
-              <ControlCard icon={ShieldCheck} title="Protected by design" text="JWT sessions, role checks, and ownership rules support safer daily operations." color="text-black" />
+              <ControlCard icon={GitBranch} title="Delivery context" text="Commits, versions, environments, and operators stay attached to the release." />
+              <ControlCard icon={Cloud} title="Infrastructure visibility" text="Monitor Docker, Kubernetes, cloud targets, and service health from one place." />
+              <ControlCard icon={ShieldCheck} title="Protected by design" text="JWT sessions, role checks, and ownership rules support safer daily operations." />
             </div>
           </div>
         </section>
 
-        {/* CTA Banner */}
+        {/* CTA BANNER */}
         <section className="px-6 pb-24 sm:px-8 lg:px-12 lg:pb-32">
-          <div className="mx-auto max-w-7xl rounded-3xl border border-gray-200/80 bg-gradient-to-b from-white to-gray-50/80 px-8 py-16 text-center text-black sm:px-16 sm:py-20 shadow-sm">
+          <div className="mx-auto max-w-7xl rounded-3xl border border-gray-200/80 bg-gradient-to-b from-white to-gray-50/80 px-8 py-16 text-center text-black sm:px-16 sm:py-20 shadow-sm transition-all duration-500 hover:shadow-md">
             <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/80 bg-white px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-gray-700 shadow-2xs">
               Make the next incident smaller
             </div>
@@ -443,9 +564,9 @@ export const LandingPage: React.FC = () => {
             <button
               type="button"
               onClick={() => go('/signup')}
-              className="mt-8 inline-flex items-center gap-2.5 rounded-full bg-black px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-gray-800 hover:shadow-xl hover:-translate-y-0.5"
+              className="group mt-8 inline-flex items-center gap-2.5 rounded-full bg-black px-8 py-4 text-sm font-bold text-white shadow-md transition-all duration-300 hover:bg-gray-800 hover:shadow-[0_16px_32px_-8px_rgba(0,0,0,0.25)] hover:-translate-y-1 active:translate-y-0 cursor-pointer"
             >
-              Start with OpsPilot <ArrowRight className="h-4 w-4 text-red-500" />
+              Start with OpsPilot <ArrowRight className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-x-1.5" />
             </button>
           </div>
         </section>
@@ -494,7 +615,7 @@ export const LandingPage: React.FC = () => {
               <h3 className="text-xs font-bold uppercase tracking-wider text-black">Platform</h3>
               <ul className="mt-4 space-y-3 text-sm">
                 <li><a href="#workflow" className="text-gray-500 transition-colors duration-150 hover:text-black">Workflows</a></li>
-                <li><a href="#control" className="text-gray-500 transition-colors duration-150 hover:text-black">Security &amp; RBAC</a></li>
+                <li><a href="#security" className="text-gray-500 transition-colors duration-150 hover:text-black">Security &amp; RBAC</a></li>
                 <li><button type="button" onClick={() => go('/login')} className="text-gray-500 transition-colors duration-150 hover:text-black">Audit Logging</button></li>
                 <li><button type="button" onClick={() => go('/login')} className="text-gray-500 transition-colors duration-150 hover:text-black">API Reference</button></li>
                 <li><a href="https://github.com/opspilot" target="_blank" rel="noreferrer" className="text-gray-500 transition-colors duration-150 hover:text-black">Documentation</a></li>
@@ -543,47 +664,18 @@ export const LandingPage: React.FC = () => {
   );
 };
 
-const ControlCard: React.FC<{ icon: React.ElementType; title: string; text: string; color: string }> = ({ icon: Icon, title, text, color }) => (
-  <div className="flex gap-3 border border-slate-200 bg-white p-4 transition hover:border-slate-300 shadow-sm">
-    <span className={`flex h-9 w-9 shrink-0 items-center justify-center border border-slate-200 bg-white ${color}`}><Icon className="h-4 w-4" /></span>
+const ControlCard: React.FC<{ icon: React.ElementType; title: string; text: string }> = ({
+  icon: Icon,
+  title,
+  text,
+}) => (
+  <div className="group flex gap-4 rounded-2xl border border-gray-100 bg-[#FAFAFA] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-gray-200 hover:bg-white hover:shadow-md cursor-pointer">
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-white text-black shadow-2xs transition-all duration-300 group-hover:scale-110 group-hover:bg-black group-hover:text-white">
+      <Icon className="h-5 w-5" />
+    </span>
     <div>
-      <p className="text-sm font-extrabold text-slate-900">{title}</p>
-      <p className="mt-1 text-xs leading-5 text-slate-600">{text}</p>
-    </div>
-  </div>
-);
-
-const OperationsPreview: React.FC = () => (
-  <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
-    <div className="relative border border-slate-200 bg-white p-2 shadow-[0_30px_80px_rgba(79,70,229,0.16)] sm:p-3">
-      <div className="overflow-hidden border border-slate-800 bg-slate-950 p-4 sm:p-5">
-        <div className="flex items-center justify-between border-b border-white/10 pb-4">
-          <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center border border-cyan-300/25 bg-cyan-300/10 text-cyan-300"><Activity className="h-5 w-5" /></span>
-            <div><p className="text-sm font-bold text-white">OpsPilot / Command view</p><p className="mt-1 text-[11px] text-slate-400">A live read on delivery and runtime</p></div>
-          </div>
-          <span className="hidden items-center gap-1.5 border border-emerald-300/25 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-300 sm:flex"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />Healthy</span>
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-[1.15fr_.85fr]">
-          <div className="border border-white/10 bg-white/[.06] p-4">
-            <div className="flex items-start justify-between"><div><p className="text-xs font-bold text-white">Release pulse</p><p className="mt-1 text-[10px] text-slate-400">Production · last 24 hours</p></div><span className="text-xs font-black text-cyan-300">+18.4%</span></div>
-            <div className="mt-5 flex h-28 items-end gap-2 border-b border-l border-white/10 px-2 pb-0">
-              {[34, 48, 42, 68, 55, 74, 64, 92, 78, 100, 86, 108].map((height, index) => <span key={index} className={`group relative flex-1 ${index > 8 ? 'bg-cyan-300' : 'bg-indigo-400/70'} transition hover:bg-cyan-200`} style={{ height: `${height}%` }}><span className="absolute -top-4 left-1/2 hidden -translate-x-1/2 text-[9px] font-bold text-cyan-200 group-hover:block">{index + 1}</span></span>)}
-            </div>
-            <div className="mt-3 flex justify-between text-[9px] font-bold uppercase tracking-wider text-slate-500"><span>00:00</span><span>12:00</span><span>Now</span></div>
-          </div>
-          <div className="border border-white/10 bg-white/[.06] p-4">
-            <p className="text-xs font-bold text-white">Runtime health</p>
-            <div className="mt-4 grid gap-3">
-              {[['Services', '12 / 12', 'bg-emerald-300', 'text-emerald-300'], ['Deployments', '08 today', 'bg-cyan-300', 'text-cyan-300'], ['Open signals', '03 review', 'bg-amber-300', 'text-amber-300']].map(([label, value, dot, color]) => <div key={label} className="flex items-center justify-between border-b border-white/10 pb-3 last:border-0 last:pb-0"><span className="flex items-center gap-2 text-[10px] font-semibold text-slate-400"><span className={`h-1.5 w-1.5 rounded-full ${dot}`} />{label}</span><span className={`text-[11px] font-black ${color}`}>{value}</span></div>)}
-            </div>
-            <div className="mt-5 border border-violet-300/20 bg-violet-300/10 p-3"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-violet-200"><Sparkles className="h-3.5 w-3.5" /> AI brief</div><p className="mt-2 text-[10px] leading-4 text-slate-300">No critical drift detected across production.</p></div>
-          </div>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-white/[.06] px-4 py-3"><div className="flex items-center gap-2"><span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Latest deployment</span><span className="h-1 w-1 rounded-full bg-slate-500" /><span className="text-xs font-bold text-white">payment-service v2.8.4</span></div><span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-300"><Check className="h-3.5 w-3.5" /> Deployed 4m ago</span></div>
-      </div>
+      <p className="text-sm font-bold text-black transition-colors duration-200 group-hover:text-black">{title}</p>
+      <p className="mt-1 text-xs leading-relaxed text-gray-500">{text}</p>
     </div>
   </div>
 );

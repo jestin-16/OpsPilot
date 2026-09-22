@@ -10,6 +10,8 @@ import {
   AlertCircle,
   ShieldCheck,
   ArrowLeft,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 
 export const Signup: React.FC = () => {
@@ -17,6 +19,8 @@ export const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [role, setRole] = useState('Developer');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,13 +53,13 @@ export const Signup: React.FC = () => {
   return (
     <div className="relative isolate min-h-screen overflow-x-hidden bg-[#FAFAFA] font-sans text-black selection:bg-black selection:text-white antialiased flex flex-col justify-between">
       {/* Floating Modern Header Matching Landing Page */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-gray-100/80 bg-white/80 px-6 backdrop-blur-xl sm:px-10 lg:px-16">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-gray-100/80 bg-white/80 px-6 backdrop-blur-xl sm:px-10 lg:px-16 transition-all">
         <button
           type="button"
           onClick={() => navigate('/')}
           className="group flex items-center gap-3 cursor-pointer"
         >
-          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-black shadow-sm transition-transform duration-200 group-hover:scale-105">
+          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-black shadow-sm transition-transform duration-300 group-hover:scale-105">
             <div className="absolute inset-0 translate-x-4 -skew-x-12 bg-red-500"></div>
             <span className="relative z-10 text-base font-bold leading-none text-white">O</span>
           </div>
@@ -76,7 +80,7 @@ export const Signup: React.FC = () => {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-gray-800 hover:shadow-md cursor-pointer"
+              className="rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-sm transition-all duration-300 hover:bg-gray-800 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
             >
               Sign In
             </button>
@@ -84,9 +88,13 @@ export const Signup: React.FC = () => {
         </div>
       </header>
 
+      {/* Subtle Blueprint Dot Grid Pattern */}
+      <div className="pointer-events-none absolute inset-0 -z-20 bg-grid-pattern opacity-70" />
+
       {/* Subtle Ambient Radial Backlight */}
       <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden">
-        <div className="h-[520px] w-[820px] rounded-full bg-gradient-to-tr from-gray-200/50 via-gray-100/40 to-transparent blur-3xl animate-pulse-slow" />
+        <div className="h-[540px] w-[860px] rounded-full bg-gradient-to-tr from-gray-200/50 via-gray-100/40 to-transparent blur-3xl animate-pulse-slow" />
+        <div className="absolute h-[320px] w-[320px] rounded-full bg-red-500/5 blur-3xl animate-pulse-slow [animation-delay:2s]" />
       </div>
 
       {/* Floating Pill Badges */}
@@ -108,7 +116,12 @@ export const Signup: React.FC = () => {
       {/* Main Content Area */}
       <main className="z-10 flex flex-1 items-center justify-center px-4 pt-32 pb-12 sm:px-6">
         <div className="w-full max-w-[460px] animate-fade-in-up">
-          <div className="overflow-hidden rounded-3xl border border-gray-200/80 bg-white/95 p-7 sm:p-9 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04),0_20px_48px_-12px_rgba(0,0,0,0.07)] backdrop-blur-2xl">
+          <div className="group relative overflow-hidden rounded-3xl border border-gray-200/80 bg-white/95 p-7 sm:p-9 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04),0_20px_48px_-12px_rgba(0,0,0,0.07)] backdrop-blur-2xl transition-all duration-300 hover:shadow-[0_12px_36px_-6px_rgba(0,0,0,0.07),0_24px_56px_-12px_rgba(0,0,0,0.08)]">
+            {/* Subtle Animated Top Border Shimmer Beam */}
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px overflow-hidden">
+              <div className="h-full w-48 bg-gradient-to-r from-transparent via-red-500/80 to-transparent animate-shimmer-sweep" />
+            </div>
+
             {/* Header */}
             <div className="flex flex-col items-center text-center">
               <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/90 bg-white/90 px-3.5 py-1 text-[11px] font-semibold text-gray-700 shadow-2xs backdrop-blur-md">
@@ -120,7 +133,7 @@ export const Signup: React.FC = () => {
               </div>
 
               <div className="mt-4 flex flex-col items-center">
-                <div className="relative mb-3 flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-md transition-transform duration-300 hover:scale-105">
+                <div className="relative mb-3 flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-md transition-transform duration-300 group-hover:scale-105">
                   <div className="absolute inset-0 translate-x-5 -skew-x-12 bg-red-500"></div>
                   <span className="relative z-10 text-lg font-black leading-none text-white">O</span>
                 </div>
@@ -147,8 +160,8 @@ export const Signup: React.FC = () => {
                 <label className="block pl-0.5 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                   Full Name
                 </label>
-                <div className="relative group">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 transition-colors group-focus-within:text-black">
+                <div className="relative group/input">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 transition-colors group-focus-within/input:text-black">
                     <UserIcon className="h-4 w-4" />
                   </div>
                   <input
@@ -166,8 +179,8 @@ export const Signup: React.FC = () => {
                 <label className="block pl-0.5 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                   Work Email
                 </label>
-                <div className="relative group">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 transition-colors group-focus-within:text-black">
+                <div className="relative group/input">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 transition-colors group-focus-within/input:text-black">
                     <Mail className="h-4 w-4" />
                   </div>
                   <input
@@ -186,20 +199,28 @@ export const Signup: React.FC = () => {
                   <label className="block pl-0.5 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                     Password
                   </label>
-                  <div className="relative group">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 transition-colors group-focus-within:text-black">
+                  <div className="relative group/input">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 transition-colors group-focus-within/input:text-black">
                       <Lock className="h-4 w-4" />
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       required
                       minLength={8}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       autoComplete="new-password"
                       placeholder="••••••••"
-                      className="w-full rounded-2xl border border-gray-200/90 bg-gray-50/50 py-3 pl-10 pr-4 text-xs font-medium text-black placeholder-gray-400 shadow-2xs transition-all duration-200 hover:border-gray-300 focus:border-black focus:bg-white focus:outline-none focus:ring-4 focus:ring-gray-100 sm:text-sm"
+                      className="w-full rounded-2xl border border-gray-200/90 bg-gray-50/50 py-3 pl-10 pr-10 text-xs font-medium text-black placeholder-gray-400 shadow-2xs transition-all duration-200 hover:border-gray-300 focus:border-black focus:bg-white focus:outline-none focus:ring-4 focus:ring-gray-100 sm:text-sm"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 transition-colors hover:text-black cursor-pointer"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -207,20 +228,28 @@ export const Signup: React.FC = () => {
                   <label className="block pl-0.5 text-[11px] font-bold uppercase tracking-wider text-gray-500">
                     Confirm Password
                   </label>
-                  <div className="relative group">
-                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 transition-colors group-focus-within:text-black">
+                  <div className="relative group/input">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-400 transition-colors group-focus-within/input:text-black">
                       <Lock className="h-4 w-4" />
                     </div>
                     <input
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       required
                       minLength={8}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       autoComplete="new-password"
                       placeholder="••••••••"
-                      className="w-full rounded-2xl border border-gray-200/90 bg-gray-50/50 py-3 pl-10 pr-4 text-xs font-medium text-black placeholder-gray-400 shadow-2xs transition-all duration-200 hover:border-gray-300 focus:border-black focus:bg-white focus:outline-none focus:ring-4 focus:ring-gray-100 sm:text-sm"
+                      className="w-full rounded-2xl border border-gray-200/90 bg-gray-50/50 py-3 pl-10 pr-10 text-xs font-medium text-black placeholder-gray-400 shadow-2xs transition-all duration-200 hover:border-gray-300 focus:border-black focus:bg-white focus:outline-none focus:ring-4 focus:ring-gray-100 sm:text-sm"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 transition-colors hover:text-black cursor-pointer"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
               </div>

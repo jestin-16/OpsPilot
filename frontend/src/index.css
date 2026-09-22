@@ -69,6 +69,29 @@
   animation: subtle-glow 3.5s ease-in-out infinite;
 }
 
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  35%, 100% { transform: translateX(250%) skewX(-20deg); }
+}
+.animate-shimmer-sweep {
+  animation: shimmer-sweep 7s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes float-subtle {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(0.5deg); }
+}
+.animate-float-subtle {
+  animation: float-subtle 5s ease-in-out infinite;
+}
+
+.bg-grid-pattern {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1.25px, transparent 1.25px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 75% 65% at 50% 50%, black 25%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 50%, black 25%, transparent 85%);
+}
+
 /* Landing page: a low-noise, living operations surface. */
 @keyframes landing-orbit {
   0%, 100% { transform: translate3d(0, 0, 0) scale(1); }

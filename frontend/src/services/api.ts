@@ -294,6 +294,8 @@ export interface CommitLog {
   author: string;
   message: string;
   timestamp: string;
+  projectId?: number;
+  projectName?: string;
 }
 
 export interface AiDiagnosisResponse {
@@ -466,13 +468,21 @@ export const api = {
   },
 
   // Commits
-  getCommits: async (projectId: number): Promise<CommitLog[]> => {
+  getCommits: async (projectId?: number | 'ALL'): Promise<CommitLog[]> => {
+    if (!projectId || projectId === 'ALL') {
+      const res = await axiosInstance.get<CommitLog[]>('/commits');
+      return res.data;
+    }
     const res = await axiosInstance.get<CommitLog[]>(`/commits/project/${projectId}`);
     return res.data;
   },
 
-  syncCommits: async (projectId: number): Promise<{ synced_count: number }> => {
-    const res = await axiosInstance.post<{ synced_count: number }>(`/commits/project/${projectId}/sync`);
+  syncCommits: async (projectId?: number | 'ALL'): Promise<{ synced_count: number; warning?: string }> => {
+    if (!projectId || projectId === 'ALL') {
+      const res = await axiosInstance.post<{ synced_count: number; warning?: string }>('/commits/sync');
+      return res.data;
+    }
+    const res = await axiosInstance.post<{ synced_count: number; warning?: string }>(`/commits/project/${projectId}/sync`);
     return res.data;
   },
 

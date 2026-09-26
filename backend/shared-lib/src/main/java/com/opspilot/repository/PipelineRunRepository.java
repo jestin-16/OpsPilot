@@ -9,5 +9,6 @@ import java.util.List;
 @Repository
 public interface PipelineRunRepository extends JpaRepository<PipelineRunEntity, Long> {
     List<PipelineRunEntity> findAllByOrderByCreatedAtDesc();
+    List<PipelineRunEntity> findByProject_IdOrderByCreatedAtDesc(Long projectId);
     void deleteByProject_Id(Long projectId);
 }

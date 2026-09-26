@@ -1,6 +1,8 @@
 package com.opspilot.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -16,7 +18,7 @@ public class CommitLogEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "commits"})
+    @JsonIgnore
     private Project project;
 
     @Column(name = "commit_sha", nullable = false)
@@ -43,7 +45,7 @@ public class CommitLogEntity {
         this.commitSha = commitSha;
         this.branchName = branchName;
         this.author = author;
-        this.message = message;
+        this.message = truncateMessage(message);
         this.timestamp = LocalDateTime.now();
     }
 
@@ -52,8 +54,13 @@ public class CommitLogEntity {
         this.commitSha = commitSha;
         this.branchName = branchName;
         this.author = author;
-        this.message = message;
+        this.message = truncateMessage(message);
         this.timestamp = timestamp;
+    }
+
+    private static String truncateMessage(String msg) {
+        if (msg == null) return "";
+        return msg.length() > 2040 ? msg.substring(0, 2040) : msg;
     }
 
     public Long getCommitLogId() {
@@ -64,12 +71,23 @@ public class CommitLogEntity {
         this.commitLogId = commitLogId;
     }
 
+    @JsonIgnore
     public Project getProject() {
         return project;
     }
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    @JsonProperty("projectId")
+    public Long getProjectId() {
+        return project != null ? project.getId() : null;
+    }
+
+    @JsonProperty("projectName")
+    public String getProjectName() {
+        return project != null ? project.getProjectName() : null;
     }
 
     public String getCommitSha() {
@@ -101,7 +119,7 @@ public class CommitLogEntity {
     }
 
     public void setMessage(String message) {
-        this.message = message;
+        this.message = truncateMessage(message);
     }
 
     public LocalDateTime getTimestamp() {

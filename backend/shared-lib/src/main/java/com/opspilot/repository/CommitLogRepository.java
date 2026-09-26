@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface CommitLogRepository extends JpaRepository<CommitLogEntity, Long> {
     List<CommitLogEntity> findByProject_IdOrderByTimestampDesc(Long projectId);
+    List<CommitLogEntity> findTop50ByOrderByTimestampDesc();
+    boolean existsByCommitShaAndProject_Id(String commitSha, Long projectId);
     boolean existsByCommitSha(String commitSha);
 }

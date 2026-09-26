@@ -1,7 +1,7 @@
-# OpsPilot Milestone 1 Progress Report (30% Scope Complete - Light Theme)
+# OpsPilot Progress Report & Verification Log
 
-**Status**: Milestone 1 Complete (Updated with Light Theme)  
-**Date**: August 5, 2026  
+**Status**: Active Development & Continuous Verification (Milestone 1 Complete, Multi-Role Verified, CI/CD Engine, Modern Auth & Observability Commit Sync)  
+**Last Updated**: September 26, 2026  
 
 ---
 
@@ -217,3 +217,78 @@
 - **Verification**:
   - `npm run build` completed with 0 errors and clean bundle output.
   - Frontend dev server running on `http://localhost:5173/` responding with HTTP 200 OK.
+
+## Authentication & Onboarding UX Overhaul (Login, Signup & Email OTP Verification) - 2026-09-22
+
+### 1. Dual Authentication & Google OAuth Flow
+- **Google OAuth Integration**:
+  - Integrated `@react-oauth/google` with configurable visual styles (`outline` / `filled_black`).
+  - Added post-OAuth Role Selection modal dialog (`Developer`, `DevOps Engineer`, `Administrator`), allowing new SSO users to define their organizational persona seamlessly.
+  - Wired into `AuthService.java` with Google ID token verification via `GoogleIdTokenVerifier`.
+- **Developer Quick-Fill Demo Roles**:
+  - Added interactive demo role quick-select buttons (`Developer`, `DevOps`, `Admin`) in `Login.tsx` with active indicator badges for instant credential pre-population during local development and testing.
+
+### 2. Modern Interactive Design & Micro-Interactions
+- **3D Card Perspective Tilt & Dynamic Cursor Spotlight**:
+  - Implemented interactive physics-based 3D card tilt (`handleCardMouseMove` / `handleCardMouseLeave`) with calculated rotational offsets (`rotateX`, `rotateY`) and smooth cursor spotlight tracking.
+- **Form Interactivity & Polish**:
+  - Added password visibility toggles (`Eye` / `EyeOff`) with smooth transitions.
+  - Added glassmorphic styling, subtle drop shadows, responsive layout, and dark/light design tokens in `index.css`.
+
+### 3. Client-Side Validation & Signup Streamlining
+- **Zod Schema Validation**:
+  - Enforced strict client-side validation in `Signup.tsx` using `SignupSchema` (email format, minimum password length, password confirmation matching).
+  - Clean inline error reporting with `AlertCircle` feedback.
+- **Automated Verification Transition**:
+  - Configured successful registration responses to immediately redirect to `/verify-email?email=<encoded>` for frictionless verification.
+
+### 4. Dedicated Email OTP Verification Page (`VerifyEmailOTP.tsx`)
+- **6-Digit Input Traversal**:
+  - Built custom 6-digit input component supporting auto-advance on numeric entry, backspace rollback, and 6-digit clipboard paste splitting.
+- **Cooldown & Resend Mechanism**:
+  - Implemented real-time 60-second countdown timer for OTP resend eligibility.
+  - Direct integration with `api.verifyOtp()` and `api.resendOtp()`, backed by `EmailVerificationOtp` entity and repository in `auth-service`.
+
+## GitHub Historical Commit Sync & Live Observability System - 2026-09-26
+
+### 1. Backend Data Model & Repository Enhancements
+- **JSON Serialization & Entity Resilience (`CommitLogEntity.java`)**:
+  - Added explicit `@JsonProperty("projectId")` and `@JsonProperty("projectName")` computed getters for transparent cross-project serialization.
+  - Added `@JsonIgnore` on lazy `Project` relationship to avoid infinite recursion / circular reference issues during Jackson serialization.
+  - Added message length truncation safeguard (`truncateMessage(2040)`) preventing database column overflow from verbose commit descriptions.
+- **Repository Queries**:
+  - `CommitLogRepository.java`: Added `findTop50ByOrderByTimestampDesc()` for global recent commits across all projects, and `existsByCommitShaAndProject_Id(commitSha, projectId)` for idempotent per-project deduplication.
+  - `PipelineRunRepository.java`: Added `findByProject_IdOrderByCreatedAtDesc(projectId)` to enable fallback extraction from CI/CD pipeline history.
+
+### 2. Resilient GitHub Synchronization Engine (`GithubSyncService.java`)
+- **Multi-Format URL Parsing**:
+  - Enhanced `extractOwnerAndRepo` with regex pattern matching (`github.com[:/]([^/]+)/([^/\s]+)`) to parse both HTTPS and SSH git URLs as well as standard `owner/repo` formats.
+- **Dynamic Credential Resolution**:
+  - Implemented token lookup hierarchy checking `GITHUB_TOKEN` environment variable and project `credentialsJson` (`github_token`, `token`, `githubToken`).
+- **Resilient Pipeline Run Fallback (`importCommitsFromPipelineRuns`)**:
+  - In the event that the external GitHub API is unauthenticated, rate-limited, or unreachable, the sync engine gracefully extracts historical commit records directly from existing `PipelineRunEntity` records, ensuring the UI always has live commit data.
+- **Global Batch Synchronization (`syncAllProjects`)**:
+  - Added multi-project batch synchronization to populate historical commits across all registered projects in a single operation.
+
+### 3. API Gateway Routing & Observability Endpoints
+- **Global Commit Endpoints (`CommitLogController.java`)**:
+  - Added `GET /api/v1/commits` (and `/api/commits`) for retrieving the latest 50 commits globally.
+  - Added `POST /api/v1/commits/sync` (and `/api/commits/sync`) for triggering batch project synchronization with graceful warning responses rather than HTTP 500 crashes.
+- **Webhook Push Correlation (`WebhookController.java`)**:
+  - Broadened project matching logic on incoming GitHub push webhooks to correlate against `githubRepoName`, `repositoryUrl`, and normalized `projectName`.
+- **API Gateway Routing (`application.yml`)**:
+  - Expanded route predicates to include `/api/commits`, `/api/commits/**`, `/api/v1/commits`, and `/api/v1/commits/**` directed to `observability-service`.
+
+### 4. Frontend Live Dashboard & API Client Integration
+- **API Client Extensions (`api.ts`)**:
+  - Updated `CommitLog` TypeScript interface with optional `projectId` and `projectName` fields.
+  - Refactored `getCommits()` and `syncCommits()` to support both specific project IDs and the `'ALL'` projects view.
+- **Live Project Dashboard (`LiveProjectDashboard.tsx`)**:
+  - Added support for viewing commit history in global "ALL Projects" mode as well as per-project mode.
+  - Displayed project badge chips (`commit.projectName`) on commit cards when viewing aggregated commits.
+  - Enhanced "Sync History" button with animated spinning loader state and resilient error recovery (reloads commits even if sync returns warnings).
+
+### 5. Build & Validation Verification
+- **Backend Compilation**: Executed Maven multi-module reactor compilation (`shared-lib`, `service-registry`, `api-gateway`, `auth-service`, `core-service`, `observability-service`): `BUILD SUCCESS` in 9.1s with 0 errors.
+- **Frontend Bundle**: Executed `tsc -b && vite build`: compiled 2,587 modules cleanly in 11.91s with 0 errors.
+

@@ -54,7 +54,9 @@ public class WebhookController {
         // Find matching project by repository URL or name
         List<Project> projects = projectRepository.findAll();
         Project matchedProject = projects.stream()
-                .filter(p -> p.getRepositoryUrl().toLowerCase().contains(repoName.toLowerCase()) || p.getProjectName().toLowerCase().replaceAll("\\s+", "-").contains(repoName.toLowerCase()))
+                .filter(p -> (p.getRepositoryUrl() != null && p.getRepositoryUrl().toLowerCase().contains(repoName.toLowerCase()))
+                        || (p.getGithubRepoName() != null && p.getGithubRepoName().toLowerCase().contains(repoName.toLowerCase()))
+                        || (p.getProjectName() != null && p.getProjectName().toLowerCase().replaceAll("\\s+", "-").contains(repoName.toLowerCase())))
                 .findFirst()
                 .orElse(projects.isEmpty() ? null : projects.get(0));
 

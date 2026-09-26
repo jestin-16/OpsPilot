@@ -1,180 +1,264 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
-import { api, type Project } from '../services/api';
+import { 
+  api, type Project, type Container, type Pod, type Deployment, 
+  type PipelineRun, type CommitLog, type LogEntry, type IntegrationHealthResponse 
+} from '../services/api';
+import { StatsCard } from '../components/StatsCard';
+import { Table, type Column } from '../components/Table';
+import { Timeline, type TimelineEvent } from '../components/Timeline';
+import { Badge } from '../components/Badge';
+import { Button } from '../components/Button';
+import { StatusIndicator } from '../components/StatusIndicator';
+import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { 
+  FolderGit2, Rocket, Server, Activity, RefreshCw, AlertCircle, 
+  Terminal, GitCommit, PlayCircle, Plus
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { FolderGit2, Rocket, Container, Activity, Plus, Shield, ArrowRight, BookOpen, Globe, Boxes } from 'lucide-react';
-import { hasRole, isAdmin } from '../utils/roles';
-
-const StatusRow: React.FC<{ icon: React.ReactNode; label: string; value: string; accent?: 'indigo' }> = ({ icon, label, value, accent }) => (
-  <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
-    <span className="text-slate-600 font-bold flex items-center gap-2">{icon} {label}</span>
-    <span className={`${accent === 'indigo' ? 'text-indigo-600' : 'text-emerald-600'} font-bold flex items-center gap-1.5 text-xs`}>
-      <span className={`w-2 h-2 rounded-full ${accent === 'indigo' ? 'bg-indigo-500' : 'bg-emerald-500'} ${accent ? 'animate-pulse' : ''}`}></span> {value}
-    </span>
-  </div>
-);
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  const isDevOpsUser = hasRole(user?.roles, 'DEVOPS') || isAdmin(user?.roles);
-  const [projects, setProjects] = useState<Project[]>([]);
+  
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [containers, setContainers] = useState<Container[]>([]);
+  const [pods, setPods] = useState<Pod[]>([]);
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [pipelines, setPipelines] = useState<PipelineRun[]>([]);
+  const [commits, setCommits] = useState<CommitLog[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [health, setHealth] = useState<IntegrationHealthResponse | null>(null);
+
+  const fetchData = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setError(null);
+    try {
+      const [
+        projectsData,
+        containersData,
+        podsData,
+        deploymentsData,
+        pipelinesData,
+        commitsData,
+        logsData,
+        healthData
+      ] = await Promise.all([
+        api.getProjects().catch(() => [] as Project[]),
+        api.getDockerContainers().catch(() => [] as Container[]),
+        api.getKubernetesPods().catch(() => [] as Pod[]),
+        api.getAllDeployments().catch(() => [] as Deployment[]),
+        api.getPipelineRuns().catch(() => [] as PipelineRun[]),
+        api.getCommits('ALL').catch(() => [] as CommitLog[]),
+        api.getLogs({ logLevel: 'ERROR', limit: 10 }).catch(() => [] as LogEntry[]),
+        api.getIntegrationHealth().catch(() => null)
+      ]);
+
+      setProjects(projectsData);
+      setContainers(containersData);
+      setPods(podsData);
+      setDeployments(deploymentsData);
+      setPipelines(pipelinesData);
+      setCommits(commitsData);
+      setLogs(logsData);
+      setHealth(healthData);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const data = await api.getProjects();
-        setProjects(data);
-      } catch (err) {
-        console.error('Failed to fetch dashboard projects', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProjects();
-  }, []);
+    fetchData();
+  }, [fetchData]);
+
+  const successPipelines = pipelines.filter(p => ['success', 'SUCCESS', 'completed'].includes(p.status.toLowerCase())).length;
+  const pipelineSuccessRate = pipelines.length > 0 ? Math.round((successPipelines / pipelines.length) * 100) : 0;
+
+  const deploymentColumns: Column<Deployment>[] = [
+    { key: 'projectName', header: 'Project' },
+    { key: 'version', header: 'Version', render: (d) => <Badge>{d.version}</Badge> },
+    { key: 'environment', header: 'Environment', render: (d) => <span className="capitalize">{d.environment}</span> },
+    { key: 'status', header: 'Status', render: (d) => (
+      <Badge variant={d.status.toLowerCase() === 'running' || d.status.toLowerCase() === 'success' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'}>
+        {d.status}
+      </Badge>
+    )},
+    { key: 'deployedAt', header: 'Deployed At', render: (d) => new Date(d.deployedAt).toLocaleString() }
+  ];
+
+  const logColumns: Column<LogEntry>[] = [
+    { key: 'sourceService', header: 'Service', render: (l) => <span className="font-mono text-xs">{l.sourceService}</span> },
+    { key: 'message', header: 'Error Message', render: (l) => <span className="text-rose-600 font-medium truncate max-w-md block">{l.message}</span> },
+    { key: 'timestamp', header: 'Time', render: (l) => new Date(l.timestamp).toLocaleString() }
+  ];
+
+  const commitEvents: TimelineEvent[] = commits.slice(0, 5).map(c => ({
+    id: c.commitLogId,
+    title: c.message,
+    description: `By ${c.author} on ${c.branchName} (${c.projectName || 'Unknown'})`,
+    timestamp: new Date(c.timestamp).toLocaleString(),
+    icon: <GitCommit className="w-4 h-4" />,
+    status: 'neutral'
+  }));
+
+  const pipelineEvents: TimelineEvent[] = pipelines.slice(0, 5).map(p => ({
+    id: p.runId,
+    title: `${p.eventType} on ${p.branch}`,
+    description: p.commitMessage,
+    timestamp: new Date(p.createdAt).toLocaleString(),
+    icon: <PlayCircle className="w-4 h-4" />,
+    status: p.status.toLowerCase() === 'success' ? 'success' : p.status.toLowerCase() === 'failed' ? 'error' : 'warning'
+  }));
+
+  const getSystemStatus = () => {
+    if (!health || health.integrations.length === 0) return 'inactive';
+    const hasError = health.integrations.some(i => !i.available && i.enabled);
+    return hasError ? 'error' : 'active';
+  };
+
+  if (loading && !refreshing && projects.length === 0) {
+    return (
+      <SidebarLayout>
+        <div className="flex h-full items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-op-accent"></div>
+        </div>
+      </SidebarLayout>
+    );
+  }
 
   return (
     <SidebarLayout>
-      <div className="p-8 max-w-[1500px] mx-auto space-y-8 animate-fade-in-up">
-        {/* Welcome Header */}
+      <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in-up">
+        
+        {/* Top Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
-              Welcome back, <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-cyan-500">{user?.name || 'Developer'}</span>
+            <h1 className="text-3xl font-bold tracking-tight text-op-fg flex items-center gap-3">
+              OpsPilot Command Center
             </h1>
-            <p className="text-sm font-medium text-slate-500 mt-2">
-              {isDevOpsUser
-                ? 'Infrastructure health, observability, and runtime operations overview'
-                : 'Projects, delivery workflows, and application health overview'}
+            <p className="text-sm font-medium text-op-muted mt-2">
+              Welcome, {user?.name}. Here is your operational overview.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Link
-              to="/guide"
-              className="px-5 py-2.5 bg-white border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-700 text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-sm"
-            >
-              <BookOpen className="w-4 h-4 text-indigo-500" />
-              <span>Platform Guide</span>
-            </Link>
-            <Link
-              to={isDevOpsUser ? '/docker' : '/projects'}
-              className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md hover:shadow-indigo-500/30"
-            >
-              {isDevOpsUser ? <Container className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-              <span>{isDevOpsUser ? 'Docker Management' : 'New Project'}</span>
+          <div className="flex items-center gap-4">
+            <StatusIndicator status={getSystemStatus()} text={`System: ${getSystemStatus()}`} />
+            <Button variant="secondary" onClick={() => fetchData(true)} isLoading={refreshing}>
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 
+              <span className="ml-2">Refresh</span>
+            </Button>
+            <Link to="/projects/new">
+              <Button variant="primary">
+                <Plus className="w-4 h-4 mr-2" /> New Project
+              </Button>
             </Link>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="glass-panel rounded-2xl p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-transform duration-300">
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Projects</div>
-              <div className="text-3xl font-black text-slate-800 mt-2">{loading ? '...' : projects.length}</div>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-              <FolderGit2 className="w-6 h-6" />
-            </div>
+        {error && (
+          <div className="bg-rose-50 text-rose-600 p-4 rounded-xl border border-rose-200 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5" />
+            <p className="text-sm font-medium">{error}</p>
           </div>
+        )}
 
-          <div className="glass-panel rounded-2xl p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-transform duration-300">
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Deployments</div>
-              <div className="text-3xl font-black text-slate-800 mt-2">Active</div>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
-              <Rocket className="w-6 h-6" />
-            </div>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-transform duration-300">
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">{isDevOpsUser ? 'Docker Containers' : 'Application Health'}</div>
-              <div className="text-3xl font-black text-slate-800 mt-2">{isDevOpsUser ? 'Healthy' : 'On track'}</div>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-              {isDevOpsUser ? <Container className="w-6 h-6" /> : <Activity className="w-6 h-6" />}
-            </div>
-          </div>
-
-          <div className="glass-panel rounded-2xl p-6 shadow-sm flex items-center justify-between hover:-translate-y-1 transition-transform duration-300">
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Platform Role</div>
-              <div className="text-3xl font-black text-slate-800 mt-2 capitalize">{user?.roles?.[0] || 'Developer'}</div>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
-              <Shield className="w-6 h-6" />
-            </div>
-          </div>
+        {/* Statistics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+          <StatsCard 
+            title="Active Projects" 
+            value={projects.length} 
+            icon={<FolderGit2 className="w-6 h-6" />} 
+          />
+          <StatsCard 
+            title="Running Containers" 
+            value={containers.length} 
+            icon={<Terminal className="w-6 h-6" />} 
+          />
+          <StatsCard 
+            title="Kubernetes Pods" 
+            value={pods.length} 
+            icon={<Server className="w-6 h-6" />} 
+          />
+          <StatsCard 
+            title="Total Deployments" 
+            value={deployments.length} 
+            icon={<Rocket className="w-6 h-6" />} 
+          />
+          <StatsCard 
+            title="Pipeline Success Rate" 
+            value={`${pipelineSuccessRate}%`} 
+            icon={<Activity className="w-6 h-6" />} 
+            trend={pipelines.length > 0 ? { value: pipelineSuccessRate, isPositive: pipelineSuccessRate > 80 } : undefined}
+          />
         </div>
 
-        {/* Quick Actions & Recent Projects */}
+        {/* Middle Section: Tables and Health */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Recent Projects Section */}
-          <div className="lg:col-span-2 glass-panel rounded-2xl p-6 shadow-sm hover:-translate-y-1 transition-transform duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-slate-800">Recent Projects</h2>
-              <Link to="/projects" className="text-xs font-bold text-indigo-500 hover:text-indigo-700 flex items-center gap-1 transition-colors">
-                <span>View All</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
+          <div className="lg:col-span-2 space-y-8">
+            <Card>
+              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Deployments</h3>
+              {deployments.length > 0 ? (
+                <Table data={deployments.slice(0, 5)} columns={deploymentColumns} keyExtractor={(d) => d.id} />
+              ) : (
+                <EmptyState title="No Deployments" description="There are currently no deployments across any project." icon={<Rocket />} />
+              )}
+            </Card>
 
-            {loading ? (
-              <div className="text-center py-12 text-slate-400 text-sm font-medium animate-pulse">Loading projects...</div>
-            ) : projects.length === 0 ? (
-              <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                <FolderGit2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-sm text-slate-500 mb-4 font-medium">No microservice projects created yet.</p>
-                <Link
-                  to="/projects"
-                  className="inline-flex items-center px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl shadow-md transition-colors"
-                >
-                  <Plus className="w-4 h-4 mr-1.5" /> Create First Project
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {projects.slice(0, 3).map((project) => (
-                  <div
-                    key={project.id}
-                    className="p-5 bg-white border border-slate-200 rounded-xl flex items-center justify-between hover:border-indigo-300 hover:shadow-md transition-all group"
-                  >
-                    <div>
-                      <div className="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">{project.projectName}</div>
-                      <div className="text-xs font-medium text-slate-500 mt-1">{project.description}</div>
-                    </div>
-                    <span className="px-3 py-1 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-lg text-[10px] font-bold uppercase tracking-wider shadow-sm">
-                      {project.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <Card>
+              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Incidents (Errors)</h3>
+              {logs.length > 0 ? (
+                <Table data={logs} columns={logColumns} keyExtractor={(l) => l.logId} />
+              ) : (
+                <EmptyState title="No Errors Found" description="System is running smoothly without recent logged errors." icon={<Activity />} />
+              )}
+            </Card>
           </div>
 
-          {/* Side Panel: Platform Status */}
-          <div className="glass-panel rounded-2xl p-6 shadow-sm hover:-translate-y-1 transition-transform duration-300 space-y-6">
-            <h2 className="text-lg font-bold text-slate-800">{isDevOpsUser ? 'Infrastructure Status' : 'Delivery Status'}</h2>
-            <div className="space-y-4 text-sm font-medium">
-              {isDevOpsUser ? <>
-                <StatusRow icon={<Globe className="w-4 h-4 text-slate-400" />} label="API Gateway" value="ONLINE" />
-                <StatusRow icon={<Container className="w-4 h-4 text-slate-400" />} label="Docker Engine" value="ACTIVE" />
-                <StatusRow icon={<Boxes className="w-4 h-4 text-slate-400" />} label="Kubernetes" value="MINIKUBE" />
-                <StatusRow icon={<Activity className="w-4 h-4 text-slate-400" />} label="Trace Collector" value="LISTENING" accent="indigo" />
-              </> : <>
-                <StatusRow icon={<FolderGit2 className="w-4 h-4 text-slate-400" />} label="Project workspace" value="READY" />
-                <StatusRow icon={<Rocket className="w-4 h-4 text-slate-400" />} label="Delivery pipeline" value="ACTIVE" />
-                <StatusRow icon={<Activity className="w-4 h-4 text-slate-400" />} label="Application checks" value="PASSING" />
-                <StatusRow icon={<BookOpen className="w-4 h-4 text-slate-400" />} label="Platform guide" value="AVAILABLE" accent="indigo" />
-              </>}
+          <div className="space-y-8">
+            <Card>
+              <h3 className="text-lg font-bold text-op-fg mb-4">Infrastructure Health</h3>
+              <div className="space-y-4">
+                {health?.integrations && health.integrations.length > 0 ? (
+                  health.integrations.map(integration => (
+                    <div key={integration.name} className="flex items-center justify-between p-3 border border-op-border rounded-lg bg-op-raised">
+                      <span className="font-medium text-sm text-op-fg">{integration.name}</span>
+                      <StatusIndicator status={integration.available ? 'active' : 'error'} text={integration.status} />
+                    </div>
+                  ))
+                ) : (
+                  <EmptyState title="No Integrations" description="Health metrics are unavailable." />
+                )}
+              </div>
+            </Card>
 
-            </div>
+            <Card>
+              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Commits</h3>
+              {commits.length > 0 ? (
+                <Timeline events={commitEvents} />
+              ) : (
+                <EmptyState title="No Commits" description="No GitHub commits have been synced." />
+              )}
+            </Card>
+
+            <Card>
+              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Pipelines</h3>
+              {pipelines.length > 0 ? (
+                <Timeline events={pipelineEvents} />
+              ) : (
+                <EmptyState title="No Pipelines" description="No CI/CD pipeline runs recorded." />
+              )}
+            </Card>
           </div>
         </div>
+
       </div>
     </SidebarLayout>
   );

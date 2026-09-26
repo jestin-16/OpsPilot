@@ -11,5 +11,6 @@ import java.util.List;
 public interface DeploymentRepository extends JpaRepository<Deployment, Long> {
     List<Deployment> findByProjectIdOrderByDeployedAtDesc(Long projectId);
     List<Deployment> findByProjectOrderByDeployedAtDesc(Project project);
+    List<Deployment> findAllByOrderByDeployedAtDesc();
     void deleteByProjectId(Long projectId);
 }

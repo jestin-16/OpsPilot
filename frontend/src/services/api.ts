@@ -424,6 +424,11 @@ export const api = {
     return res.data;
   },
 
+  getAllDeployments: async (): Promise<Deployment[]> => {
+    const res = await axiosInstance.get<Deployment[]>('/deployments');
+    return res.data;
+  },
+
   triggerDeployment: async (projectId: number, data: { version: string; environment: string }): Promise<Deployment> => {
     const res = await axiosInstance.post<Deployment>(`/projects/${projectId}/deployments`, data);
     return res.data;

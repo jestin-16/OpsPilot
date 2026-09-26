@@ -90,6 +90,12 @@ public class DeploymentService {
                 .collect(Collectors.toList());
     }
 
+    public List<DeploymentResponse> getAllDeployments() {
+        return deploymentRepository.findAllByOrderByDeployedAtDesc().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
     private void scheduleStatusProgression(Long deploymentId) {
         // Step 1: Draft -> Building after 2s
         scheduler.schedule(() -> updateStatus(deploymentId, "Building"), 2, TimeUnit.SECONDS);

@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+@theme {
+  --color-op-bg: #f7f9fc;
+  --color-op-surface: #ffffff;
+  --color-op-raised: #f1f5f9;
+  --color-op-input: #ffffff;
+  --color-op-border: #edf2f7;
+  --color-op-border-strong: #e2e8f0;
+  --color-op-fg: #17233b;
+  --color-op-muted: #64748b;
+  --color-op-subtle: #94a3b8;
+  --color-op-accent: #6366f1;
+  --color-op-accent-hover: #4f46e5;
+  --color-op-accent-active: #4338ca;
+  --color-op-accent-fg: #ffffff;
+}
 @layer base {
   body {
     font-family: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

@@ -14,6 +14,8 @@ import com.opspilot.repository.DeploymentRepository;
 import com.opspilot.repository.LogRepository;
 import com.opspilot.repository.LogSourceRepository;
 import com.opspilot.repository.PipelineRunRepository;
+import com.opspilot.repository.IncidentRepository;
+import com.opspilot.repository.CommitLogRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,12 @@ public class ProjectService {
 
     @Autowired
     private PipelineRunRepository pipelineRunRepository;
+
+    @Autowired
+    private IncidentRepository incidentRepository;
+
+    @Autowired
+    private CommitLogRepository commitLogRepository;
 
     @Autowired
     private io.micrometer.core.instrument.MeterRegistry meterRegistry;
@@ -190,6 +198,8 @@ public class ProjectService {
         // Clean up dependencies to avoid foreign key constraint violations
         logRepository.deleteLogsByProjectId(id);
         deploymentRepository.deleteByProjectId(id);
+        incidentRepository.deleteByProject_Id(id);
+        commitLogRepository.deleteByProject_Id(id);
         pipelineRunRepository.deleteByProject_Id(id);
         logSourceRepository.deleteByProject_Id(id);
 

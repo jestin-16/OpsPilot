@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, FolderGit2, Rocket,
   Activity, FileText, Bell, BookOpen, Plus,
-  LogOut, User as UserIcon, Terminal, Server, Globe, ShieldCheck
+  LogOut, User as UserIcon, Terminal, Server, Globe, ShieldCheck, GitCommit
 } from 'lucide-react';
 import { canAccessRole, isAdmin, type PlatformRole } from '../utils/roles';
 
@@ -23,8 +23,10 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'My Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Pipelines', path: '/pipelines', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'GitHub Activity', path: '/github', icon: GitCommit, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Docker', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS'] as const },
+    { name: 'Kubernetes', path: '/kubernetes', icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Add Project', path: '/projects/new', icon: Plus, roles: ['DEVELOPER'] as const },
     // Simulated/Upcoming features moved lower
     { name: 'Deployments', path: '/deployments', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard, FolderGit2, Rocket,
   Activity, FileText, Bell, BookOpen, Plus,
-  LogOut, User as UserIcon, Terminal, Server, Globe, ShieldCheck, GitCommit
+  LogOut, User as UserIcon, Terminal, Server, Globe, ShieldCheck, GitCommit, AlertTriangle
 } from 'lucide-react';
 import { canAccessRole, isAdmin, type PlatformRole } from '../utils/roles';
 
@@ -24,6 +24,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     { name: 'My Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Pipelines', path: '/pipelines', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'GitHub Activity', path: '/github', icon: GitCommit, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+    { name: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Docker', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
     { name: 'Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS'] as const },
     { name: 'Kubernetes', path: '/kubernetes', icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },

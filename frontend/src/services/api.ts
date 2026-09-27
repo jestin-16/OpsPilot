@@ -520,19 +520,9 @@ export const api = {
     return res.data;
   },
 
+
+
   // Commits
-  getCommits: async (projectId?: number): Promise<any[]> => {
-    const url = projectId && projectId !== -1 ? `/commits/project/${projectId}` : '/commits';
-    const res = await axiosInstance.get<any[]>(url);
-    return res.data;
-  },
-
-  syncCommits: async (projectId?: number): Promise<{ synced_count: number; warning?: string }> => {
-    const url = projectId && projectId !== -1 ? `/commits/project/${projectId}/sync` : '/commits/sync';
-    const res = await axiosInstance.post(url);
-    return res.data;
-  },
-
   // Logs
   getLogs: async (params?: { providerName?: string; sourceService?: string; projectId?: number; logLevel?: string; query?: string; limit?: number }): Promise<LogEntry[]> => {
     const res = await axiosInstance.get<LogEntry[]>('/logs', { params });
@@ -544,7 +534,6 @@ export const api = {
     return res.data;
   },
 
-  // Commits
   getCommits: async (projectId?: number | 'ALL'): Promise<CommitLog[]> => {
     if (!projectId || projectId === 'ALL') {
       const res = await axiosInstance.get<CommitLog[]>('/commits');
@@ -641,6 +630,36 @@ export const api = {
   // AI Assistant
   queryAiAssistant: async (data: { prompt: string; deploymentId?: number }): Promise<AiDiagnosisResponse> => {
     const res = await axiosInstance.post<AiDiagnosisResponse>('/ai/query', data);
+    return res.data;
+  },
+
+  // Incidents
+  getIncidents: async (projectId?: number): Promise<any[]> => {
+    const url = projectId && projectId !== -1 ? `/incidents?projectId=${projectId}` : '/incidents';
+    const res = await axiosInstance.get<any[]>(url);
+    return res.data;
+  },
+
+  getIncidentById: async (id: number): Promise<any> => {
+    const res = await axiosInstance.get<any>(`/incidents/${id}`);
+    return res.data;
+  },
+
+  createIncident: async (data: { 
+    title: string; 
+    description?: string; 
+    severity: string; 
+    projectId: number;
+    affectedService?: string;
+    deploymentId?: number;
+    pipelineRunId?: number;
+  }): Promise<any> => {
+    const res = await axiosInstance.post<any>('/incidents', data);
+    return res.data;
+  },
+
+  updateIncidentStatus: async (id: number, status: string): Promise<any> => {
+    const res = await axiosInstance.put<any>(`/incidents/${id}/status`, { status });
     return res.data;
   },
 

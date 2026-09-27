@@ -27,6 +27,9 @@ public class CiCdService {
     @Autowired
     private PipelineRunRepository pipelineRunRepository;
 
+    @Autowired
+    private IncidentService incidentService;
+
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
     public static boolean isAllowlisted(String repoUrl) {
@@ -185,6 +188,23 @@ public class CiCdService {
             run.setDurationMs(duration);
             pipelineRunRepository.save(run);
             System.out.println("Pipeline " + runId + " completed with status: " + finalStatus + " (exit code " + finalExitCode + ")");
+            
+            if ("FAILED".equals(finalStatus)) {
+                try {
+                    incidentService.createIncident(
+                        run.getProject().getId(),
+                        "Pipeline Run Failed: #" + runId,
+                        "Automated incident created due to pipeline failure. Branch: " + run.getBranch() + "\nExit code: " + finalExitCode,
+                        "HIGH",
+                        "CI/CD Pipeline",
+                        null,
+                        runId,
+                        null
+                    );
+                } catch (Exception e) {
+                    System.err.println("Failed to auto-create incident: " + e.getMessage());
+                }
+            }
         });
     }
 }

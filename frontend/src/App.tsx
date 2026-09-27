@@ -12,6 +12,8 @@ import { BlackboxMonitoring } from './pages/BlackboxMonitoring';
 import { WhiteboxMonitoring } from './pages/WhiteboxMonitoring';
 import { LiveProjectDashboard } from './pages/LiveProjectDashboard';
 import { LogManagement } from './pages/LogManagement';
+import { KubernetesDashboard } from './pages/KubernetesDashboard';
+import { GithubActivity } from './pages/GithubActivity';
 import { NotificationCenter } from './pages/NotificationCenter';
 import { PlatformGuide } from './pages/PlatformGuide';
 import { LandingPage } from './pages/LandingPage';
@@ -203,6 +205,22 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><DockerPage /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/kubernetes"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><KubernetesDashboard /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/github"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><GithubActivity /></RoleRoute>
                 </ProtectedRoute>
               }
             />

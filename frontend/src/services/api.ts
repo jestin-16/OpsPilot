@@ -490,6 +490,49 @@ export const api = {
     return res.data;
   },
 
+  getKubernetesOverview: async (): Promise<any> => {
+    const res = await axiosInstance.get('/kubernetes/overview');
+    return res.data;
+  },
+
+  getKubernetesNodes: async (): Promise<any[]> => {
+    const res = await axiosInstance.get('/kubernetes/nodes');
+    return res.data;
+  },
+
+  getKubernetesServices: async (): Promise<any[]> => {
+    const res = await axiosInstance.get('/kubernetes/services');
+    return res.data;
+  },
+
+  getKubernetesNamespaces: async (): Promise<any[]> => {
+    const res = await axiosInstance.get('/kubernetes/namespaces');
+    return res.data;
+  },
+
+  getEnhancedPods: async (): Promise<any[]> => {
+    const res = await axiosInstance.get('/kubernetes/enhanced-pods');
+    return res.data;
+  },
+
+  getKubernetesPodDetails: async (namespace: string, name: string): Promise<any> => {
+    const res = await axiosInstance.get(`/kubernetes/pods/${namespace}/${name}`);
+    return res.data;
+  },
+
+  // Commits
+  getCommits: async (projectId?: number): Promise<any[]> => {
+    const url = projectId && projectId !== -1 ? `/commits/project/${projectId}` : '/commits';
+    const res = await axiosInstance.get<any[]>(url);
+    return res.data;
+  },
+
+  syncCommits: async (projectId?: number): Promise<{ synced_count: number; warning?: string }> => {
+    const url = projectId && projectId !== -1 ? `/commits/project/${projectId}/sync` : '/commits/sync';
+    const res = await axiosInstance.post(url);
+    return res.data;
+  },
+
   // Logs
   getLogs: async (params?: { providerName?: string; sourceService?: string; projectId?: number; logLevel?: string; query?: string; limit?: number }): Promise<LogEntry[]> => {
     const res = await axiosInstance.get<LogEntry[]>('/logs', { params });

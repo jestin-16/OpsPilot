@@ -35,6 +35,15 @@ export const NotificationCenter: React.FC = () => {
     }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await api.markAllNotificationsRead();
+      await fetchNotifications();
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
   const getIcon = (type: string) => {
     switch (type) {
       case 'DEPLOYMENT_SUCCESS':
@@ -60,13 +69,21 @@ export const NotificationCenter: React.FC = () => {
               Kafka event stream alerts, deployment milestones, and governance updates
             </p>
           </div>
-          <button
-            onClick={fetchNotifications}
-            className="px-3.5 py-2 bg-[#FFFFFF] border border-[#E2E8F0] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-2 shadow-sm"
-          >
-            <RefreshCw className="w-3.5 h-3.5 text-[#4F46E5]" />
-            <span>Refresh notifications</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleMarkAllRead}
+              className="px-3.5 py-2 bg-transparent text-[#64748B] hover:text-[#0F172A] text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+            >
+              Mark all as read
+            </button>
+            <button
+              onClick={fetchNotifications}
+              className="px-3.5 py-2 bg-[#FFFFFF] border border-[#E2E8F0] hover:bg-[#F1F5F9] text-[#0F172A] text-xs font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-2 shadow-sm"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-[#4F46E5]" />
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
 
         {error && (

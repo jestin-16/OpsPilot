@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import {
   LayoutDashboard, FolderGit2, Rocket,
   Activity, FileText, Bell, BookOpen, Plus,
@@ -12,6 +13,21 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchUnreadCount = async () => {
+    try {
+      const data = await api.getNotifications();
+      const unread = data.filter(n => !n.read).length;
+      setUnreadCount(unread);
+    } catch (err) {}
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -79,7 +95,12 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                 >
                   <Icon className={`w-[18px] h-[18px] transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
                   <span>{item.name}</span>
-                  {isActive && (
+                  {item.name === 'Notification center' && unreadCount > 0 && (
+                    <span className="ml-auto flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                  {isActive && item.name !== 'Notification center' && (
                     <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
                   )}
                 </Link>

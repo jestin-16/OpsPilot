@@ -10,6 +10,7 @@ import com.opspilot.repository.ProjectRepository;
 import com.opspilot.repository.UserRepository;
 import com.opspilot.repository.DeploymentRepository;
 import com.opspilot.repository.PipelineRunRepository;
+import com.opspilot.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,9 @@ public class IncidentService {
 
     @Autowired
     private PipelineRunRepository pipelineRunRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     public List<Incident> getAllIncidents() {
         return incidentRepository.findAllByOrderByCreatedAtDesc();
@@ -80,7 +84,20 @@ public class IncidentService {
         incident.setRelatedDeployment(deployment);
         incident.setRelatedPipelineRun(pipelineRun);
 
-        return incidentRepository.save(incident);
+        Incident saved = incidentRepository.save(incident);
+        
+        try {
+            com.opspilot.entity.NotificationEntity notif = new com.opspilot.entity.NotificationEntity();
+            notif.setUser(project.getOwner());
+            notif.setDeployment(deployment);
+            notif.setMessage("Incident Reported: " + title + " (" + severity + ")");
+            notif.setType("INCIDENT_OPENED");
+            notificationRepository.save(notif);
+        } catch(Exception e) {
+            System.err.println("Failed to emit notification: " + e.getMessage());
+        }
+
+        return saved;
     }
 
     @Transactional
@@ -91,6 +108,17 @@ public class IncidentService {
         incident.setStatus(status);
         if ("RESOLVED".equals(status) && incident.getResolvedAt() == null) {
             incident.setResolvedAt(LocalDateTime.now());
+            
+            try {
+                com.opspilot.entity.NotificationEntity notif = new com.opspilot.entity.NotificationEntity();
+                notif.setUser(incident.getProject().getOwner());
+                notif.setDeployment(incident.getRelatedDeployment());
+                notif.setMessage("Incident Resolved: " + incident.getTitle());
+                notif.setType("INCIDENT_RESOLVED");
+                notificationRepository.save(notif);
+            } catch(Exception e) {
+                System.err.println("Failed to emit notification: " + e.getMessage());
+            }
         }
         
         return incidentRepository.save(incident);

@@ -563,6 +563,10 @@ export const api = {
     return res.data;
   },
 
+  markAllNotificationsRead: async (): Promise<void> => {
+    await axiosInstance.put('/notifications/read-all');
+  },
+
   // Monitoring
   getMetrics: async (providerName = 'local'): Promise<MetricsData> => {
     const res = await axiosInstance.get<MetricsData>(`/monitoring/metrics?providerName=${encodeURIComponent(providerName)}`);

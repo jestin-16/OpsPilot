@@ -29,6 +29,16 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
 
+    public void markAllAsRead(User user) {
+        List<NotificationEntity> notifications = getUserNotifications(user);
+        for (NotificationEntity notif : notifications) {
+            if (!notif.isRead()) {
+                notif.setRead(true);
+                notificationRepository.save(notif);
+            }
+        }
+    }
+
     public NotificationEntity createNotification(User user, Deployment deployment, String message, String type) {
         NotificationEntity notification = new NotificationEntity(user, deployment, message, type);
         return notificationRepository.save(notification);

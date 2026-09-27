@@ -47,4 +47,22 @@ public class IntegrationController {
         integrationService.deleteIntegration(integrationId, currentUser);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping(value = "/projects/{projectId}/logs/stream", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter streamLogs(
+            @PathVariable Long projectId,
+            @RequestParam Long integrationId,
+            @RequestParam java.util.Map<String, Object> params,
+            @AuthenticationPrincipal User currentUser) {
+        return integrationService.streamLogs(projectId, integrationId, params, currentUser);
+    }
+
+    @GetMapping("/projects/{projectId}/metrics")
+    public ResponseEntity<List<com.opspilot.metric.MetricRecord>> getMetrics(
+            @PathVariable Long projectId,
+            @RequestParam Long integrationId,
+            @RequestParam(required = false) java.util.Map<String, Object> params,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(integrationService.getMetrics(projectId, integrationId, params, currentUser));
+    }
 }

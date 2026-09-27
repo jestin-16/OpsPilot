@@ -12,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
+import com.opspilot.metric.MetricRecord;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -79,5 +81,13 @@ public class KubernetesIntegrationAdapterTest {
         params.put("podName", "test-pod");
         params.put("namespace", "default");
         assertThrows(UnsupportedOperationException.class, () -> adapter.executeAction(integration, IntegrationCapability.STOP, params));
+    }
+
+    @Test
+    void testCollectMetricsReturnsEmptyListForBaseline() {
+        Map<String, Object> params = new HashMap<>();
+        List<MetricRecord> metrics = adapter.collectMetrics(integration, params);
+        assertNotNull(metrics);
+        assertTrue(metrics.isEmpty(), "Baseline collectMetrics should return an empty list");
     }
 }

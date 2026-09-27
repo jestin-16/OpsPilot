@@ -141,12 +141,7 @@ public class GitHubIntegrationAdapter implements IntegrationAdapter {
         return resources;
     }
 
-
-
-    @Override
-    public List<Map<String, Object>> getMetrics(Integration integration, Map<String, Object> queryParams) {
-        return Collections.emptyList();
-    }
+    // getMetrics has been extracted to MetricCollector interface
 
     @SuppressWarnings("unchecked")
     @Override

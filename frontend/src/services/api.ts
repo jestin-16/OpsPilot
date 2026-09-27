@@ -694,6 +694,11 @@ export const api = {
     return res.data;
   },
 
+  getIntegrationsByProject: async (projectId: number): Promise<any[]> => {
+    const res = await axiosInstance.get<any[]>(`/projects/${projectId}/integrations`);
+    return res.data;
+  },
+
   // Log Sources
   getLogSources: async (projectId: number): Promise<LogSource[]> => {
     const res = await axiosInstance.get<LogSource[]>(`/projects/${projectId}/log-sources`);

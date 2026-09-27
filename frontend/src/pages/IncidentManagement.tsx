@@ -246,7 +246,7 @@ export const IncidentManagement: React.FC = () => {
                     <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-2">Related Entities</h4>
                     <div className="space-y-2">
                       {selectedIncident.relatedPipelineRun && (
-                        <div className="flex items-center gap-3 p-3 rounded-lg border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 text-sm">
+                        <div className="flex items-center gap-3 p-3 rounded-lg border border-op-accent/30 bg-op-accent/10 text-op-accent text-sm">
                           <PlayCircle className="w-5 h-5" />
                           <div>
                             <div className="font-bold">Pipeline Run #{selectedIncident.relatedPipelineRun.runId}</div>

@@ -5,6 +5,8 @@ import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type LogSource } from '../services/api';
 import { FileText, Plus, Trash2, Edit3, CheckCircle, XCircle, ArrowLeft, Activity, Play, Database, Triangle, Box, Webhook, FastForward } from 'lucide-react';
 
+import { useConfirm } from '../components/ConfirmProvider';
+
 export const LogSources: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [sources, setSources] = useState<LogSource[]>([]);
@@ -13,6 +15,7 @@ export const LogSources: React.FC = () => {
   const [modalStep, setModalStep] = useState(1);
   const [selectedIntegration, setSelectedIntegration] = useState<'VERCEL' | 'SUPABASE' | 'DOCKER' | 'CUSTOM_WEBHOOK' | 'CUSTOM_POLL' | null>(null);
   const [testResult, setTestResult] = useState<any>(null);
+  const { confirm } = useConfirm();
 
   // Form State
   const [sourceName, setSourceName] = useState('');
@@ -114,7 +117,7 @@ export const LogSources: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Delete this log source?')) return;
+    if (!await confirm('Delete this log source?', { isDestructive: true, confirmText: 'Delete' })) return;
     try {
       await api.deleteLogSource(id);
       fetchSources();
@@ -151,7 +154,7 @@ export const LogSources: React.FC = () => {
           </div>
           <button
             onClick={() => { setModalStep(1); setIsModalOpen(true); }}
-            className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl flex items-center gap-2 shadow-md transition-all"
+            className="px-5 py-2.5 bg-op-accent hover:bg-op-accent-hover text-white text-sm font-bold rounded-xl flex items-center gap-2 shadow-md transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Connect Tool</span>
@@ -183,7 +186,7 @@ export const LogSources: React.FC = () => {
             {sources.map(source => (
               <div key={source.sourceId} className="glass-panel border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all relative group">
                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => handleTestExisting(source.sourceId)} className="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg">
+                  <button onClick={() => handleTestExisting(source.sourceId)} className="p-1.5 text-op-accent hover:text-op-accent hover:bg-op-accent/10 rounded-lg">
                      <Play className="w-4 h-4" />
                   </button>
                   <button onClick={() => handleDelete(source.sourceId)} className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg">
@@ -302,7 +305,7 @@ export const LogSources: React.FC = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Name</label>
-                      <input type="text" required value={sourceName} onChange={e => setSourceName(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none" />
+                      <input type="text" required value={sourceName} onChange={e => setSourceName(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-op-accent outline-none" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mode</label>
@@ -337,11 +340,11 @@ export const LogSources: React.FC = () => {
                     <div className="grid grid-cols-3 gap-4">
                       <div className="col-span-2">
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Endpoint URL</label>
-                        <input type="url" required value={pollEndpointUrl} onChange={e => setPollEndpointUrl(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none" placeholder="https://api.provider.com/logs" />
+                        <input type="url" required value={pollEndpointUrl} onChange={e => setPollEndpointUrl(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-op-accent outline-none" placeholder="https://api.provider.com/logs" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Interval (sec)</label>
-                        <input type="number" required min={5} value={pollIntervalSeconds} onChange={e => setPollIntervalSeconds(Number(e.target.value))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none" />
+                        <input type="number" required min={5} value={pollIntervalSeconds} onChange={e => setPollIntervalSeconds(Number(e.target.value))} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-op-accent outline-none" />
                       </div>
                     </div>
                   )}
@@ -351,7 +354,7 @@ export const LogSources: React.FC = () => {
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Auth Method</label>
-                          <select value={authMethod} onChange={e => setAuthMethod(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-indigo-500 outline-none">
+                          <select value={authMethod} onChange={e => setAuthMethod(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-op-accent outline-none">
                             <option value="NONE">None</option>
                             <option value="HEADER_SECRET">Header Secret</option>
                             <option value="BEARER_TOKEN">Bearer Token</option>
@@ -361,7 +364,7 @@ export const LogSources: React.FC = () => {
                         {authMethod !== 'NONE' && (
                           <div>
                             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Auth Config (JSON)</label>
-                            <textarea value={authConfig} onChange={e => setAuthConfig(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:border-indigo-500 outline-none" placeholder={'{"token": "..."}'} required />
+                            <textarea value={authConfig} onChange={e => setAuthConfig(e.target.value)} rows={2} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:border-op-accent outline-none" placeholder={'{"token": "..."}'} required />
                           </div>
                         )}
                       </div>
@@ -369,7 +372,7 @@ export const LogSources: React.FC = () => {
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Field Mapping (JSONPath)</label>
                         <p className="text-[10px] text-slate-400 mb-2">Map internal OpsPilot fields to JSONPath expressions targeting the incoming payload.</p>
-                        <textarea value={fieldMapping} onChange={e => setFieldMapping(e.target.value)} rows={6} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:border-indigo-500 outline-none" required />
+                        <textarea value={fieldMapping} onChange={e => setFieldMapping(e.target.value)} rows={6} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:border-op-accent outline-none" required />
                       </div>
                     </>
                   )}
@@ -388,7 +391,7 @@ export const LogSources: React.FC = () => {
                       <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors">
                         Cancel
                       </button>
-                      <button type="submit" className="px-5 py-2.5 bg-indigo-500 text-white font-bold text-sm rounded-xl hover:bg-indigo-600 transition-colors">
+                      <button type="submit" className="px-5 py-2.5 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover transition-colors">
                         Connect Integration
                       </button>
                     </div>

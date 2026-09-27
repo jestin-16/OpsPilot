@@ -4,10 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { isAdmin } from '../utils/roles';
 import { Shield, Key, Users, Check, ShieldAlert, Clock, Mail } from 'lucide-react';
+import { useConfirm } from '../components/ConfirmProvider';
 
 export const SecuritySettings: React.FC = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState<any[]>([]);
+  const { confirm } = useConfirm();
 
   const isUserAdmin = isAdmin(user?.roles);
 
@@ -49,7 +51,7 @@ export const SecuritySettings: React.FC = () => {
         
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
-            <Shield className="w-8 h-8 text-indigo-600" /> Security & Access Management
+            <Shield className="w-8 h-8 text-op-accent" /> Security & Access Management
           </h1>
           <p className="text-slate-500 mt-2">Manage authentication methods, RBAC policies, and user accounts.</p>
         </div>
@@ -75,7 +77,7 @@ export const SecuritySettings: React.FC = () => {
 
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+              <div className="w-12 h-12 bg-op-accent/20 text-op-accent rounded-lg flex items-center justify-center shrink-0">
                 <ShieldAlert className="w-6 h-6" />
               </div>
               <div>
@@ -141,7 +143,7 @@ export const SecuritySettings: React.FC = () => {
                     <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                          <div className="w-9 h-9 rounded-full bg-op-accent/20 flex items-center justify-center text-op-accent-hover font-bold">
                             {u.name.charAt(0)}
                           </div>
                           <div>
@@ -158,7 +160,7 @@ export const SecuritySettings: React.FC = () => {
                       <td className="p-4">
                         <div className="flex flex-wrap gap-1">
                           {u.roles.map((r: string) => (
-                            <span key={r} className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded text-xs font-medium">
+                            <span key={r} className="px-2 py-0.5 bg-op-accent/10 border border-op-accent/20 text-op-accent-hover rounded text-xs font-medium">
                               {r.replace('ROLE_', '')}
                             </span>
                           ))}
@@ -172,11 +174,11 @@ export const SecuritySettings: React.FC = () => {
                       </td>
                       <td className="p-4 text-right">
                         <select 
-                          className="text-sm bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-indigo-500"
+                          className="text-sm bg-white border border-slate-300 rounded px-2 py-1 outline-none focus:border-op-accent"
                           value={u.roles.includes('ROLE_ADMIN') ? 'ADMIN' : (u.roles.includes('ROLE_DEVOPS') ? 'DEVOPS' : 'DEVELOPER')}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const newRole = e.target.value;
-                            if (window.confirm(`Change role for ${u.name} to ${newRole}?`)) {
+                            if (await confirm(`Change role for ${u.name} to ${newRole}?`, { confirmText: 'Change Role' })) {
                               handleRoleChange(u.id, [newRole]);
                             }
                           }}
@@ -186,8 +188,8 @@ export const SecuritySettings: React.FC = () => {
                           <option value="ADMIN">Admin</option>
                         </select>
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Toggle access for ${u.name}?`)) {
+                          onClick={async () => {
+                            if (await confirm(`Toggle access for ${u.name}?`, { isDestructive: u.isActive, confirmText: u.isActive ? 'Revoke Access' : 'Restore Access' })) {
                               handleToggleStatus(u.id, !u.isActive);
                             }
                           }}

@@ -82,10 +82,10 @@ export const ProjectDetail: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <Link to="/projects" className="text-slate-400 hover:text-indigo-600 transition-colors">
+              <Link to="/projects" className="text-slate-400 hover:text-op-accent transition-colors">
                 <ChevronLeft className="w-6 h-6" />
               </Link>
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg">
+              <div className="w-10 h-10 rounded-xl bg-op-accent flex items-center justify-center text-white shadow-lg">
                 <FolderGit2 className="w-5 h-5" />
               </div>
               <h1 className="text-3xl font-bold text-slate-800">{project.projectName}</h1>
@@ -94,7 +94,7 @@ export const ProjectDetail: React.FC = () => {
             <p className="text-sm text-slate-500 ml-12">{project.description}</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-lg flex items-center gap-2 shadow-sm transition-colors">
+            <button className="px-4 py-2 bg-op-accent hover:bg-op-accent-hover text-op-accent-fg text-sm font-bold rounded-lg flex items-center gap-2 shadow-sm transition-colors">
               <PlayCircle className="w-4 h-4" /> Deploy
             </button>
             <button className="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-lg flex items-center gap-2 shadow-sm transition-colors">
@@ -111,7 +111,7 @@ export const ProjectDetail: React.FC = () => {
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab 
-                  ? 'border-indigo-500 text-indigo-600' 
+                  ? 'border-op-accent text-op-accent' 
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
             >
@@ -130,7 +130,7 @@ export const ProjectDetail: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-slate-500 block mb-1">Repository</span>
-                    <a href={project.repositoryUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-medium break-all">
+                    <a href={project.repositoryUrl} target="_blank" rel="noreferrer" className="text-op-accent hover:underline font-medium break-all">
                       {project.repositoryUrl}
                     </a>
                   </div>
@@ -151,22 +151,22 @@ export const ProjectDetail: React.FC = () => {
 
               {/* Quick Actions Links */}
               <div className="grid grid-cols-3 gap-4">
-                <Link to="/pipelines" className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-indigo-300 transition-colors flex items-center justify-between group">
+                <Link to="/pipelines" className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-op-accent/50 transition-colors flex items-center justify-between group">
                   <div className="flex items-center gap-3">
-                    <Rocket className="w-5 h-5 text-indigo-500" />
-                    <span className="font-bold text-slate-700 group-hover:text-indigo-600">View Pipeline</span>
+                    <Rocket className="w-5 h-5 text-op-accent" />
+                    <span className="font-bold text-slate-700 group-hover:text-op-accent">View Pipeline</span>
                   </div>
                 </Link>
-                <Link to="/logs" className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-indigo-300 transition-colors flex items-center justify-between group">
+                <Link to="/logs" className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-op-accent/50 transition-colors flex items-center justify-between group">
                   <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-indigo-500" />
-                    <span className="font-bold text-slate-700 group-hover:text-indigo-600">View Logs</span>
+                    <FileText className="w-5 h-5 text-op-accent" />
+                    <span className="font-bold text-slate-700 group-hover:text-op-accent">View Logs</span>
                   </div>
                 </Link>
-                <Link to="/kubernetes" className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-indigo-300 transition-colors flex items-center justify-between group">
+                <Link to="/kubernetes" className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-op-accent/50 transition-colors flex items-center justify-between group">
                   <div className="flex items-center gap-3">
-                    <Server className="w-5 h-5 text-indigo-500" />
-                    <span className="font-bold text-slate-700 group-hover:text-indigo-600">View Kubernetes</span>
+                    <Server className="w-5 h-5 text-op-accent" />
+                    <span className="font-bold text-slate-700 group-hover:text-op-accent">View Kubernetes</span>
                   </div>
                 </Link>
               </div>
@@ -216,7 +216,7 @@ export const ProjectDetail: React.FC = () => {
           <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm text-center">
             <h3 className="text-lg font-bold text-slate-700 mb-2">{activeTab}</h3>
             <p className="text-slate-500 mb-4">View {activeTab.toLowerCase()} related to {project.projectName}.</p>
-            <Link to={`/${activeTab.toLowerCase()}`} className="text-indigo-600 font-bold hover:underline">
+            <Link to={`/${activeTab.toLowerCase()}`} className="text-op-accent font-bold hover:underline">
               Go to full {activeTab} view &rarr;
             </Link>
           </div>

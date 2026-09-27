@@ -197,106 +197,114 @@ export const KubernetesDashboard: React.FC = () => {
 
                 {/* Nodes Tab */}
                 {activeTab === 'nodes' && (
-                  <table className="w-full text-left text-sm text-op-fg">
-                    <thead className="bg-op-raised text-op-muted uppercase text-xs font-bold tracking-wider border-b border-op-border">
-                      <tr>
-                        <th className="py-4 px-5">Name</th>
-                        <th className="py-4 px-5">Status</th>
-                        <th className="py-4 px-5">Role</th>
-                        <th className="py-4 px-5">Version</th>
-                        <th className="py-4 px-5">Age</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-op-border">
-                      {nodes.map((node, i) => (
-                        <tr key={i} className="hover:bg-op-raised/50">
-                          <td className="py-3 px-5 font-bold">{node.name}</td>
-                          <td className="py-3 px-5">
-                            <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(node.status)}`}>{node.status}</span>
-                          </td>
-                          <td className="py-3 px-5">{node.role}</td>
-                          <td className="py-3 px-5">{node.version}</td>
-                          <td className="py-3 px-5 text-op-muted">{new Date(node.createdAt).toLocaleDateString()}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-op-fg">
+                      <thead className="bg-op-raised text-op-muted uppercase text-xs font-bold tracking-wider border-b border-op-border">
+                        <tr>
+                          <th className="py-4 px-5">Name</th>
+                          <th className="py-4 px-5">Status</th>
+                          <th className="py-4 px-5">Role</th>
+                          <th className="py-4 px-5">Version</th>
+                          <th className="py-4 px-5">Age</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-op-border">
+                        {nodes.map((node, i) => (
+                          <tr key={i} className="hover:bg-op-raised/50">
+                            <td className="py-3 px-5 font-bold">{node.name}</td>
+                            <td className="py-3 px-5">
+                              <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(node.status)}`}>{node.status}</span>
+                            </td>
+                            <td className="py-3 px-5">{node.role}</td>
+                            <td className="py-3 px-5">{node.version}</td>
+                            <td className="py-3 px-5 text-op-muted">{new Date(node.createdAt).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
 
                 {/* Pods Tab */}
                 {activeTab === 'pods' && (
-                  <table className="w-full text-left text-sm text-op-fg">
-                    <thead className="bg-op-raised text-op-muted uppercase text-xs font-bold tracking-wider border-b border-op-border">
-                      <tr>
-                        <th className="py-4 px-5">Name</th>
-                        <th className="py-4 px-5">Namespace</th>
-                        <th className="py-4 px-5">Status</th>
-                        <th className="py-4 px-5">Restarts</th>
-                        <th className="py-4 px-5">Node</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-op-border">
-                      {pods.map((pod, i) => (
-                        <tr key={i} onClick={() => handlePodSelect(pod)} className={`cursor-pointer hover:bg-op-raised/50 ${selectedPod?.name === pod.name ? 'bg-op-raised' : ''}`}>
-                          <td className="py-3 px-5 font-bold">{pod.name}</td>
-                          <td className="py-3 px-5 text-op-muted">{pod.namespace}</td>
-                          <td className="py-3 px-5">
-                            <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(pod.status)}`}>{pod.status}</span>
-                          </td>
-                          <td className="py-3 px-5">{pod.restartCount}</td>
-                          <td className="py-3 px-5 text-op-muted">{pod.node}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-op-fg">
+                      <thead className="bg-op-raised text-op-muted uppercase text-xs font-bold tracking-wider border-b border-op-border">
+                        <tr>
+                          <th className="py-4 px-5">Name</th>
+                          <th className="py-4 px-5">Namespace</th>
+                          <th className="py-4 px-5">Status</th>
+                          <th className="py-4 px-5">Restarts</th>
+                          <th className="py-4 px-5">Node</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-op-border">
+                        {pods.map((pod, i) => (
+                          <tr key={i} onClick={() => handlePodSelect(pod)} className={`cursor-pointer hover:bg-op-raised/50 ${selectedPod?.name === pod.name ? 'bg-op-raised' : ''}`}>
+                            <td className="py-3 px-5 font-bold">{pod.name}</td>
+                            <td className="py-3 px-5 text-op-muted">{pod.namespace}</td>
+                            <td className="py-3 px-5">
+                              <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(pod.status)}`}>{pod.status}</span>
+                            </td>
+                            <td className="py-3 px-5">{pod.restartCount}</td>
+                            <td className="py-3 px-5 text-op-muted">{pod.node}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
 
                 {/* Services Tab */}
                 {activeTab === 'services' && (
-                  <table className="w-full text-left text-sm text-op-fg">
-                    <thead className="bg-op-raised text-op-muted uppercase text-xs font-bold tracking-wider border-b border-op-border">
-                      <tr>
-                        <th className="py-4 px-5">Name</th>
-                        <th className="py-4 px-5">Namespace</th>
-                        <th className="py-4 px-5">Type</th>
-                        <th className="py-4 px-5">Cluster IP</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-op-border">
-                      {services.map((svc, i) => (
-                        <tr key={i} className="hover:bg-op-raised/50">
-                          <td className="py-3 px-5 font-bold">{svc.name}</td>
-                          <td className="py-3 px-5 text-op-muted">{svc.namespace}</td>
-                          <td className="py-3 px-5">{svc.type}</td>
-                          <td className="py-3 px-5 font-mono">{svc.clusterIP}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-op-fg">
+                      <thead className="bg-op-raised text-op-muted uppercase text-xs font-bold tracking-wider border-b border-op-border">
+                        <tr>
+                          <th className="py-4 px-5">Name</th>
+                          <th className="py-4 px-5">Namespace</th>
+                          <th className="py-4 px-5">Type</th>
+                          <th className="py-4 px-5">Cluster IP</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-op-border">
+                        {services.map((svc, i) => (
+                          <tr key={i} className="hover:bg-op-raised/50">
+                            <td className="py-3 px-5 font-bold">{svc.name}</td>
+                            <td className="py-3 px-5 text-op-muted">{svc.namespace}</td>
+                            <td className="py-3 px-5">{svc.type}</td>
+                            <td className="py-3 px-5 font-mono">{svc.clusterIP}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
 
                 {/* Namespaces Tab */}
                 {activeTab === 'namespaces' && (
-                  <table className="w-full text-left text-sm text-op-fg">
-                    <thead className="bg-op-raised text-op-muted uppercase text-xs font-bold tracking-wider border-b border-op-border">
-                      <tr>
-                        <th className="py-4 px-5">Name</th>
-                        <th className="py-4 px-5">Status</th>
-                        <th className="py-4 px-5">Created At</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-op-border">
-                      {namespaces.map((ns, i) => (
-                        <tr key={i} className="hover:bg-op-raised/50">
-                          <td className="py-3 px-5 font-bold">{ns.name}</td>
-                          <td className="py-3 px-5">
-                            <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(ns.status)}`}>{ns.status}</span>
-                          </td>
-                          <td className="py-3 px-5 text-op-muted">{new Date(ns.createdAt).toLocaleDateString()}</td>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm text-op-fg">
+                      <thead className="bg-op-raised text-op-muted uppercase text-xs font-bold tracking-wider border-b border-op-border">
+                        <tr>
+                          <th className="py-4 px-5">Name</th>
+                          <th className="py-4 px-5">Status</th>
+                          <th className="py-4 px-5">Created At</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-op-border">
+                        {namespaces.map((ns, i) => (
+                          <tr key={i} className="hover:bg-op-raised/50">
+                            <td className="py-3 px-5 font-bold">{ns.name}</td>
+                            <td className="py-3 px-5">
+                              <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(ns.status)}`}>{ns.status}</span>
+                            </td>
+                            <td className="py-3 px-5 text-op-muted">{new Date(ns.createdAt).toLocaleDateString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </>
             )}

@@ -468,11 +468,11 @@ export const LiveProjectDashboard: React.FC = () => {
                     <button
                       onClick={handleSyncCommits}
                       disabled={isSyncing}
-                      className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                      className="px-2.5 py-1 bg-op-accent/10 hover:bg-op-accent/20 text-op-accent border border-op-accent/20 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 flex items-center gap-1.5"
                     >
                       {isSyncing ? (
                         <>
-                          <span className="w-2 h-2 rounded-full border border-indigo-400 border-t-transparent animate-spin"></span>
+                          <span className="w-2 h-2 rounded-full border border-op-accent border-t-transparent animate-spin"></span>
                           <span>Syncing...</span>
                         </>
                       ) : (
@@ -492,14 +492,14 @@ export const LiveProjectDashboard: React.FC = () => {
                           {commits.map((commit) => (
                             <div key={commit.commitLogId} className="relative z-10 flex flex-col gap-1 mb-4 last:mb-0 group">
                               {/* Node */}
-                              <div className="absolute left-[-21px] top-1.5 w-3 h-3 rounded-full border-[3px] border-[#141414] bg-indigo-500 group-hover:bg-indigo-400 group-hover:scale-125 transition-all shadow-[0_0_8px_rgba(99,102,241,0.5)] z-20"></div>
+                              <div className="absolute left-[-21px] top-1.5 w-3 h-3 rounded-full border-[3px] border-[#141414] bg-op-accent group-hover:bg-op-accent-hover group-hover:scale-125 transition-all shadow-sm z-20"></div>
                               
-                              <div className="bg-[#1c1c1c] rounded-xl p-3 border border-[#2a2a2a] group-hover:border-indigo-500/30 transition-colors ml-2 shadow-sm">
+                              <div className="bg-[#1c1c1c] rounded-xl p-3 border border-[#2a2a2a] group-hover:border-op-accent/30 transition-colors ml-2 shadow-sm">
                                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-slate-200 font-semibold text-xs leading-snug">{commit.message}</span>
                                     {commit.projectName && (
-                                      <span className="px-1.5 py-[1px] rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold text-[8px] uppercase tracking-wider">
+                                      <span className="px-1.5 py-[1px] rounded bg-op-accent/10 text-op-accent border border-op-accent/20 font-bold text-[8px] uppercase tracking-wider">
                                         {commit.projectName}
                                       </span>
                                     )}
@@ -513,7 +513,7 @@ export const LiveProjectDashboard: React.FC = () => {
                                 
                                 <div className="flex flex-wrap items-center gap-3 text-[10px] text-slate-400">
                                   <span className="flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-[9px] shadow-sm">
+                                    <span className="w-5 h-5 rounded-full bg-op-accent flex items-center justify-center text-white font-bold text-[9px] shadow-sm">
                                       {(commit.author || 'D').charAt(0).toUpperCase()}
                                     </span>
                                     <span className="font-medium text-slate-300">{commit.author || 'DevOps'}</span>

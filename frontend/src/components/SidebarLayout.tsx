@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import {
   LayoutDashboard, FolderGit2, Rocket,
-  Activity, FileText, Bell, BookOpen, Plus,
-  LogOut, User as UserIcon, Terminal, Server, Globe, ShieldCheck, GitCommit, AlertTriangle
+  Activity, FileText, Bell, Plus,
+  LogOut, User as UserIcon, Terminal, Server, ShieldCheck, GitCommit, AlertTriangle, Undo2, Settings
 } from 'lucide-react';
-import { canAccessRole, isAdmin, type PlatformRole } from '../utils/roles';
+import { canAccessRole } from '../utils/roles';
 
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
@@ -34,34 +34,59 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     navigate('/login');
   };
 
-  const navItems: Array<{ name: string; path: string; icon: React.ComponentType<{ className?: string }>; roles: readonly PlatformRole[] }> = [
-    // Core working features emphasized for Developer Role
-    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-    { name: 'My Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS'] as const },
-    { name: 'Pipelines', path: '/pipelines', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },
-    { name: 'GitHub Activity', path: '/github', icon: GitCommit, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-    { name: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-    { name: 'Docker', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-    { name: 'Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS'] as const },
-    { name: 'Kubernetes', path: '/kubernetes', icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-    { name: 'Add Project', path: '/projects/new', icon: Plus, roles: ['DEVELOPER'] as const },
-    // Simulated/Upcoming features moved lower
-    { name: 'Deployments', path: '/deployments', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS'] as const },
-    { name: 'Live project dashboard', path: '/monitoring', icon: Activity, roles: ['DEVELOPER', 'DEVOPS'] as const },
-    { name: 'Whitebox monitoring', path: '/whitebox', icon: Server, roles: ['DEVOPS'] as const },
-    { name: 'Blackbox monitoring', path: '/blackbox', icon: Globe, roles: ['DEVOPS'] as const },
-    { name: 'My Profile', path: '/profile', icon: UserIcon, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-    { name: 'Notification center', path: '/notifications', icon: Bell, roles: ['DEVELOPER', 'DEVOPS'] as const },
-    { name: 'Platform guide', path: '/guide', icon: BookOpen, roles: ['DEVELOPER', 'DEVOPS'] as const },
+  const navGroups = [
+    {
+      title: 'OPS PILOT',
+      items: [
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+      ]
+    },
+    {
+      title: 'PROJECTS',
+      items: [
+        { name: 'All Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Add Project', path: '/projects/new', icon: Plus, roles: ['DEVELOPER', 'ADMIN'] as const }
+      ]
+    },
+    {
+      title: 'DELIVERY',
+      items: [
+        { name: 'Deployments', path: '/deployments', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'CI/CD Pipelines', path: '/pipelines', icon: Rocket, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Rollbacks', path: '/deployments', icon: Undo2, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+      ]
+    },
+    {
+      title: 'INFRASTRUCTURE',
+      items: [
+        { name: 'Docker', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Kubernetes', path: '/kubernetes', icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+      ]
+    },
+    {
+      title: 'OBSERVABILITY',
+      items: [
+        { name: 'Monitoring', path: '/monitoring', icon: Activity, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+      ]
+    },
+    {
+      title: 'SOURCE CONTROL',
+      items: [
+        { name: 'GitHub Activity', path: '/github', icon: GitCommit, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+      ]
+    },
+    {
+      title: 'SYSTEM',
+      items: [
+        { name: 'Notifications', path: '/notifications', icon: Bell, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Users & Roles', path: '/users', icon: UserIcon, roles: ['ADMIN'] as const },
+        { name: 'Security', path: '/settings/security', icon: ShieldCheck, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Settings', path: '/profile', icon: Settings, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+      ]
+    }
   ];
-
-  if (isAdmin(user?.roles)) {
-    navItems.push({ name: 'Project management', path: '/admin/projects', icon: FolderGit2, roles: ['ADMIN'] as const });
-    navItems.push({ name: 'Platform governance', path: '/admin', icon: ShieldCheck, roles: ['ADMIN'] as const });
-    navItems.push({ name: 'User Management', path: '/users', icon: UserIcon, roles: ['ADMIN'] as const });
-  }
-
-  navItems.push({ name: 'Security & Access', path: '/settings/security', icon: ShieldCheck, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const });
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] text-slate-800 font-sans bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed overflow-hidden">
@@ -69,7 +94,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       <aside className="w-[260px] glass-panel border-r border-white/40 flex flex-col justify-between shrink-0 shadow-lg relative z-10 m-2 rounded-2xl">
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {/* Logo */}
-          <div className="h-20 flex items-center px-6 gap-3 pt-2">
+          <div className="h-20 flex items-center px-6 gap-3 pt-2 mb-2">
             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden transform transition-transform hover:scale-105">
               <img src="/opspilot-logo.png" alt="OpsPilot Logo" className="w-full h-full object-cover scale-[1.2]" />
             </div>
@@ -80,32 +105,47 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
           </div>
 
           {/* Navigation */}
-          <nav className="p-4 space-y-1">
-            {navItems.filter((item) => canAccessRole(user?.roles, [...item.roles])).map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+          <nav className="p-4 space-y-6">
+            {navGroups.map((group) => {
+              const groupItems = group.items.filter((item) => canAccessRole(user?.roles, [...item.roles]));
+              
+              if (groupItems.length === 0) return null;
 
               return (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl text-xs font-semibold transition-all duration-300 transform hover:translate-x-1 ${
-                    isActive
-                      ? 'bg-white text-indigo-600 shadow-sm border border-indigo-100'
-                      : 'text-slate-600 hover:bg-white/60 hover:text-indigo-600'
-                  }`}
-                >
-                  <Icon className={`w-[18px] h-[18px] transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
-                  <span>{item.name}</span>
-                  {item.name === 'Notification center' && unreadCount > 0 && (
-                    <span className="ml-auto flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
-                      {unreadCount}
-                    </span>
-                  )}
-                  {isActive && item.name !== 'Notification center' && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-                  )}
-                </Link>
+                <div key={group.title}>
+                  <div className="px-3 mb-2 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest">
+                    {group.title}
+                  </div>
+                  <div className="space-y-1">
+                    {groupItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = location.pathname === item.path;
+
+                      return (
+                        <Link
+                          key={item.name}
+                          to={item.path}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-300 transform hover:translate-x-1 ${
+                            isActive
+                              ? 'bg-white text-indigo-600 shadow-sm border border-indigo-100'
+                              : 'text-slate-600 hover:bg-white/60 hover:text-indigo-600'
+                          }`}
+                        >
+                          <Icon className={`w-[16px] h-[16px] transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
+                          <span>{item.name}</span>
+                          {item.name === 'Notifications' && unreadCount > 0 && (
+                            <span className="ml-auto flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-rose-500 rounded-full shadow-sm animate-pulse">
+                              {unreadCount}
+                            </span>
+                          )}
+                          {isActive && item.name !== 'Notifications' && (
+                            <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
               );
             })}
           </nav>

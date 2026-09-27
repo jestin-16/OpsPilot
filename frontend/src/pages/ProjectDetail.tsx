@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type Project, type Deployment, type PipelineRun, type LogEntry, type CommitLog, type Container, type Pod } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { FolderGit2, Rocket, FileText, Activity, Server, Terminal, GitCommit, AlertTriangle, PlayCircle, Clock, Undo2, ChevronLeft } from 'lucide-react';
+import { api, type Project, type Deployment, type PipelineRun, type CommitLog, type Container, type Pod } from '../services/api';
+import { FolderGit2, Rocket, FileText, Activity, Server, Terminal, GitCommit, AlertTriangle, PlayCircle, Undo2, ChevronLeft } from 'lucide-react';
 import { Badge } from '../components/Badge';
 
 export const ProjectDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const projectId = Number(id);
 
   const [project, setProject] = useState<Project | null>(null);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [pipelines, setPipelines] = useState<PipelineRun[]>([]);
-  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [commits, setCommits] = useState<CommitLog[]>([]);
   const [incidents, setIncidents] = useState<any[]>([]);
   const [containers, setContainers] = useState<Container[]>([]);
@@ -23,19 +19,13 @@ export const ProjectDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
 
-  const canEdit = (ownerId: number) => {
-    if (!user) return false;
-    return user.id === ownerId || user.roles.includes('ADMIN') || user.roles.includes('Admin');
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [proj, deps, runs, projLogs, projCommits, projIncidents, allContainers, allPods] = await Promise.all([
+        const [proj, deps, runs, projCommits, projIncidents, allContainers, allPods] = await Promise.all([
           api.getProjectById(projectId).catch(() => null),
           api.getDeployments(projectId).catch(() => []),
           api.getPipelineRuns().catch(() => []),
-          api.getLogs({ projectId }).catch(() => []),
           api.getCommits(projectId).catch(() => []),
           api.getIncidents(projectId).catch(() => []),
           api.getDockerContainers().catch(() => []),
@@ -45,7 +35,6 @@ export const ProjectDetail: React.FC = () => {
         if (proj) setProject(proj);
         setDeployments(deps);
         setPipelines(runs.filter(r => r.project?.id === projectId));
-        setLogs(projLogs);
         setCommits(projCommits);
         setIncidents(projIncidents);
         // Simplified container/pod matching

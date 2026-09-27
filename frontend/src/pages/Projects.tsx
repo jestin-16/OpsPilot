@@ -138,7 +138,9 @@ export const Projects: React.FC = () => {
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-indigo-600 transition-colors">{project.projectName}</h3>
+                    <Link to={`/projects/${project.id}`}>
+                      <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-indigo-600 hover:underline transition-colors">{project.projectName}</h3>
+                    </Link>
                     <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm">
                       {project.status}
                     </span>

@@ -397,6 +397,22 @@ export const api = {
     return res.data;
   },
 
+  // User Management
+  getAllUsers: async (): Promise<any[]> => {
+    const res = await axiosInstance.get<any[]>('/users');
+    return res.data;
+  },
+
+  updateUserRoles: async (id: number, roles: string[]): Promise<any> => {
+    const res = await axiosInstance.put<any>(`/users/${id}/roles`, { roles });
+    return res.data;
+  },
+
+  setUserStatus: async (id: number, active: boolean): Promise<any> => {
+    const res = await axiosInstance.patch<any>(`/users/${id}/status`, { active });
+    return res.data;
+  },
+
   // Projects
   getProjects: async (): Promise<Project[]> => {
     const res = await axiosInstance.get<PagedResponse<Project>>('/projects');

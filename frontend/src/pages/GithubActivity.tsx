@@ -113,7 +113,7 @@ export const GithubActivity: React.FC = () => {
                 <button
                   onClick={handleSync}
                   disabled={syncing}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-op-accent hover:bg-op-accent-hover text-op-accent-fg text-sm font-bold rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
                   <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} /> 
                   {syncing ? 'Syncing...' : 'Sync History'}
@@ -167,13 +167,13 @@ export const GithubActivity: React.FC = () => {
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="bg-indigo-500/10 text-indigo-400 p-2 rounded-lg">
+                          <div className="bg-op-accent/10 text-op-accent p-2 rounded-lg">
                             <GitCommit className="w-5 h-5" />
                           </div>
                           <div>
                             <div className="font-bold text-op-fg text-base">{commit.message}</div>
                             <div className="flex items-center gap-3 text-xs text-op-muted mt-1">
-                              <span className="font-mono text-indigo-300">{commit.commitSha.substring(0, 7)}</span>
+                              <span className="font-mono text-op-accent">{commit.commitSha.substring(0, 7)}</span>
                               <span>•</span>
                               <span className="flex items-center gap-1"><User className="w-3 h-3" /> {commit.author}</span>
                               <span>•</span>
@@ -191,7 +191,7 @@ export const GithubActivity: React.FC = () => {
                       {/* Visual Flow Indicator */}
                       {pipeline && (
                         <div className="mt-4 pt-4 border-t border-op-border flex items-center gap-4 text-xs font-bold text-op-muted">
-                          <div className="flex items-center gap-2 text-indigo-400">
+                          <div className="flex items-center gap-2 text-op-accent">
                             <GitCommit className="w-4 h-4" /> Commit
                           </div>
                           <ArrowRight className="w-4 h-4 opacity-50" />
@@ -218,7 +218,7 @@ export const GithubActivity: React.FC = () => {
               <>
                 <div className="flex items-center justify-between p-5 border-b border-white/10 sticky top-0 bg-[#121214] z-10">
                   <h3 className="text-lg font-bold flex items-center gap-2">
-                    <GitCommit className="w-5 h-5 text-indigo-400" /> Commit Details
+                    <GitCommit className="w-5 h-5 text-op-accent" /> Commit Details
                   </h3>
                   <button onClick={() => setSelectedCommit(null)} className="p-1.5 hover:bg-white/10 rounded-lg text-op-muted transition-colors">
                     <X className="w-5 h-5" />
@@ -230,7 +230,7 @@ export const GithubActivity: React.FC = () => {
                   <div>
                     <h4 className="font-bold text-lg mb-2">{selectedCommit.message}</h4>
                     <div className="flex flex-col gap-2 text-sm text-op-muted bg-black/30 p-4 rounded-xl border border-white/5">
-                      <div className="flex justify-between"><span>SHA</span><span className="font-mono text-indigo-300">{selectedCommit.commitSha}</span></div>
+                      <div className="flex justify-between"><span>SHA</span><span className="font-mono text-op-accent">{selectedCommit.commitSha}</span></div>
                       <div className="flex justify-between"><span>Project</span><span className="font-bold text-slate-300">{selectedCommit.projectName}</span></div>
                       <div className="flex justify-between"><span>Author</span><span>{selectedCommit.author}</span></div>
                       <div className="flex justify-between"><span>Branch</span><span>{selectedCommit.branchName}</span></div>
@@ -247,8 +247,8 @@ export const GithubActivity: React.FC = () => {
                       
                       {/* Step 1: Commit */}
                       <div className="relative">
-                        <div className="absolute -left-[29px] bg-indigo-500 w-5 h-5 rounded-full border-4 border-[#121214]"></div>
-                        <div className="font-bold text-sm text-indigo-400">Code Committed</div>
+                        <div className="absolute -left-[29px] bg-op-accent w-5 h-5 rounded-full border-4 border-[#121214]"></div>
+                        <div className="font-bold text-sm text-op-accent">Code Committed</div>
                         <div className="text-xs text-op-muted">{new Date(selectedCommit.timestamp).toLocaleString()}</div>
                       </div>
 

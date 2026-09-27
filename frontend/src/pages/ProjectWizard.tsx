@@ -177,7 +177,7 @@ export const ProjectWizard: React.FC = () => {
       <div className="p-8 max-w-[1000px] mx-auto space-y-8 animate-fade-in-up">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-op-accent to-op-accent-hover flex items-center justify-center text-white shadow-lg">
             <FolderGit2 className="w-5 h-5" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-800">Add New Project</h1>
@@ -190,13 +190,13 @@ export const ProjectWizard: React.FC = () => {
           {[1, 2, 3].map(s => (
             <div key={s} className="flex flex-col items-center gap-2 bg-white px-2">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${
-                step > s ? 'bg-indigo-500 border-indigo-500 text-white' : 
-                step === s ? 'bg-white border-indigo-500 text-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-400'
+                step > s ? 'bg-op-accent border-op-accent text-white' : 
+                step === s ? 'bg-white border-op-accent text-op-accent' : 'bg-slate-50 border-slate-200 text-slate-400'
               }`}>
                 {step > s ? <CheckCircle2 className="w-5 h-5" /> : s}
               </div>
               <span className={`text-xs font-bold uppercase tracking-wider ${
-                step >= s ? 'text-indigo-600' : 'text-slate-400'
+                step >= s ? 'text-op-accent' : 'text-slate-400'
               }`}>
                 {s === 1 ? 'Basics' : s === 2 ? 'Connect' : 'Confirm'}
               </span>
@@ -225,7 +225,7 @@ export const ProjectWizard: React.FC = () => {
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
                   placeholder="e.g. Authentication Service"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-inner"
                 />
               </div>
 
@@ -238,7 +238,7 @@ export const ProjectWizard: React.FC = () => {
                   value={repositoryUrl}
                   onChange={(e) => setRepositoryUrl(e.target.value)}
                   placeholder="https://github.com/opspilot/auth-service"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-inner"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-inner"
                 />
               </div>
 
@@ -251,7 +251,7 @@ export const ProjectWizard: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Short summary of application component..."
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-inner resize-none"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-inner resize-none"
                 />
               </div>
 
@@ -267,7 +267,7 @@ export const ProjectWizard: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting1 || cancelling}
-                  className="px-6 py-3 bg-indigo-500 text-white font-bold text-sm rounded-xl hover:bg-indigo-600 shadow-md transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-3 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover shadow-md transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {submitting1 ? 'Saving...' : 'Next Step'} <ChevronRight className="w-4 h-4" />
                 </button>
@@ -289,10 +289,10 @@ export const ProjectWizard: React.FC = () => {
                 {/* Install SDK Card */}
                 <div 
                   onClick={() => handleSetupLogSource('WEBHOOK', 'SDK')}
-                  className="glass-panel rounded-2xl p-6 cursor-pointer border-2 border-transparent hover:border-indigo-300 hover:shadow-md transition-all group relative overflow-hidden"
+                  className="glass-panel rounded-2xl p-6 cursor-pointer border-2 border-transparent hover:border-op-accent/50 hover:shadow-md transition-all group relative overflow-hidden"
                 >
-                  <div className="absolute top-0 right-0 bg-indigo-500 text-white text-[9px] font-bold px-2 py-1 uppercase rounded-bl-lg">Recommended</div>
-                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <div className="absolute top-0 right-0 bg-op-accent text-white text-[9px] font-bold px-2 py-1 uppercase rounded-bl-lg">Recommended</div>
+                  <div className="w-12 h-12 bg-op-accent/10 text-op-accent rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                     <Code className="w-6 h-6" />
                   </div>
                   <h3 className="font-bold text-slate-800 mb-2">Install SDK</h3>
@@ -329,14 +329,14 @@ export const ProjectWizard: React.FC = () => {
                   <h3 className="text-lg font-bold text-slate-800">
                     {selectedOption === 'SDK' ? 'SDK Installation' : 'Webhook Integration'}
                   </h3>
-                  <button onClick={() => { setWebhookInfo(null); setPolling(false); }} className="text-xs text-indigo-500 font-bold hover:underline">
+                  <button onClick={() => { setWebhookInfo(null); setPolling(false); }} className="text-xs text-op-accent font-bold hover:underline">
                     Back to options
                   </button>
                 </div>
 
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                   <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Webhook URL</p>
-                  <code className="text-sm font-mono text-indigo-600 break-all bg-indigo-50 px-2 py-1 rounded">
+                  <code className="text-sm font-mono text-op-accent break-all bg-op-accent/10 px-2 py-1 rounded">
                     {API_BASE_URL.replace(/\/api\/v1$/, '')}{webhookInfo.webhookUrl}
                   </code>
                 </div>
@@ -368,10 +368,10 @@ client.<span className="text-blue-400">log</span>(<span className="text-emerald-
                       </pre>
                     </div>
 
-                    <div className="mt-8 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between">
+                    <div className="mt-8 p-4 bg-op-accent/10 border border-op-accent/20 rounded-xl flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {polling ? (
-                          <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+                          <Loader2 className="w-5 h-5 text-op-accent animate-spin" />
                         ) : hasReceivedFirstEvent ? (
                           <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                         ) : (
@@ -388,7 +388,7 @@ client.<span className="text-blue-400">log</span>(<span className="text-emerald-
                       <button 
                         onClick={() => setStep(3)}
                         disabled={!hasReceivedFirstEvent && polling}
-                        className="px-5 py-2 bg-indigo-500 text-white text-xs font-bold rounded-lg hover:bg-indigo-600 disabled:opacity-50 cursor-pointer transition-colors"
+                        className="px-5 py-2 bg-op-accent text-white text-xs font-bold rounded-lg hover:bg-op-accent-hover disabled:opacity-50 cursor-pointer transition-colors"
                       >
                         Continue
                       </button>
@@ -414,7 +414,7 @@ x-webhook-secret: {webhookInfo.secret}<br/><br/>
                     <div className="flex justify-end pt-4 border-t border-slate-100 mt-6">
                       <button 
                         onClick={() => setStep(3)}
-                        className="px-6 py-3 bg-indigo-500 text-white font-bold text-sm rounded-xl hover:bg-indigo-600 shadow-md transition-colors flex items-center gap-2 cursor-pointer"
+                        className="px-6 py-3 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover shadow-md transition-colors flex items-center gap-2 cursor-pointer"
                       >
                         Next Step <ChevronRight className="w-4 h-4" />
                       </button>
@@ -429,7 +429,7 @@ x-webhook-secret: {webhookInfo.secret}<br/><br/>
                 type="button"
                 onClick={handleBack}
                 disabled={creatingWebhook || polling}
-                className="px-4 py-2.5 text-slate-500 hover:text-indigo-600 text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                className="px-4 py-2.5 text-slate-500 hover:text-op-accent text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" /> Back
               </button>
@@ -465,7 +465,7 @@ x-webhook-secret: {webhookInfo.secret}<br/><br/>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 text-sm">Integration</span>
-                  <span className="font-bold text-sm text-indigo-600">{selectedOption || 'Skipped'}</span>
+                  <span className="font-bold text-sm text-op-accent">{selectedOption || 'Skipped'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 text-sm">Status</span>
@@ -478,7 +478,7 @@ x-webhook-secret: {webhookInfo.secret}<br/><br/>
               <button
                 type="button"
                 onClick={handleBack}
-                className="px-5 py-3.5 text-slate-500 hover:text-indigo-600 font-bold text-sm transition-colors flex items-center gap-2 cursor-pointer"
+                className="px-5 py-3.5 text-slate-500 hover:text-op-accent font-bold text-sm transition-colors flex items-center gap-2 cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" /> Back
               </button>
@@ -493,7 +493,7 @@ x-webhook-secret: {webhookInfo.secret}<br/><br/>
               <button
                 type="button"
                 onClick={handleCompleteSetup}
-                className="px-8 py-3.5 bg-indigo-500 text-white font-bold text-sm rounded-xl hover:bg-indigo-600 shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 cursor-pointer"
+                className="px-8 py-3.5 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover shadow-lg shadow-op-accent/20 transition-all hover:-translate-y-0.5 cursor-pointer"
               >
                 Go to Dashboard
               </button>

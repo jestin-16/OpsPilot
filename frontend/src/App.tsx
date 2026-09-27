@@ -78,6 +78,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { ConfirmProvider } from './components/ConfirmProvider';
 
 export const App: React.FC = () => {
   return (
@@ -85,6 +86,7 @@ export const App: React.FC = () => {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <AlertProvider>
+          <ConfirmProvider>
           <BrowserRouter>
             <Routes>
             <Route
@@ -308,6 +310,7 @@ export const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/monitoring" replace />} />
             </Routes>
           </BrowserRouter>
+          </ConfirmProvider>
         </AlertProvider>
       </AuthProvider>
     </QueryClientProvider>

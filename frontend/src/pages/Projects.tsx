@@ -89,7 +89,7 @@ export const Projects: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-op-accent to-op-accent-hover flex items-center justify-center text-white shadow-lg shadow-op-accent/20">
                 <FolderGit2 className="w-5 h-5" />
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-slate-800">Projects & Deployments</h1>
@@ -100,7 +100,7 @@ export const Projects: React.FC = () => {
           </div>
           <Link
             to="/projects/new"
-            className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md hover:shadow-indigo-500/30"
+            className="px-5 py-2.5 bg-op-accent hover:bg-op-accent-hover text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md hover:shadow-op-accent/30"
           >
             <Plus className="w-4 h-4" />
             <span>New Project</span>
@@ -124,7 +124,7 @@ export const Projects: React.FC = () => {
             <p className="text-xs font-medium text-slate-500 mt-1">Add your first project repository to start deploying.</p>
             <Link
               to="/projects/new"
-              className="mt-4 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl shadow-md transition-colors inline-block"
+              className="mt-4 px-4 py-2 bg-op-accent hover:bg-op-accent-hover text-white text-sm font-bold rounded-xl shadow-md transition-colors inline-block"
             >
               Add Project
             </Link>
@@ -134,12 +134,12 @@ export const Projects: React.FC = () => {
             {projects.map((project) => (
               <div
                 key={project.id}
-                className="glass-panel border-t-[3px] border-t-indigo-500 rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+                className="glass-panel border-t-[3px] border-t-op-accent rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
               >
                 <div>
                   <div className="flex justify-between items-start mb-4">
                     <Link to={`/projects/${project.id}`}>
-                      <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-indigo-600 hover:underline transition-colors">{project.projectName}</h3>
+                      <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-op-accent hover:underline transition-colors">{project.projectName}</h3>
                     </Link>
                     <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm">
                       {project.status}
@@ -149,13 +149,13 @@ export const Projects: React.FC = () => {
                   
                   <div className="text-[11px] font-bold text-slate-500 space-y-2 mb-6 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
                     <div className="truncate flex items-center gap-2">
-                      <ExternalLink className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                      <a href={project.repositoryUrl} target="_blank" rel="noreferrer" className="hover:text-indigo-600 hover:underline transition-colors">
+                      <ExternalLink className="w-3.5 h-3.5 text-op-accent shrink-0" />
+                      <a href={project.repositoryUrl} target="_blank" rel="noreferrer" className="hover:text-op-accent hover:underline transition-colors">
                         {project.repositoryUrl}
                       </a>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-purple-400 to-indigo-400 flex items-center justify-center text-white text-[8px]">{project.ownerName.charAt(0)}</div>
+                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-op-accent/80 to-indigo-400 flex items-center justify-center text-white text-[8px]">{project.ownerName.charAt(0)}</div>
                       <span>Owner: {project.ownerName} ({project.ownerEmail})</span>
                     </div>
                   </div>
@@ -165,7 +165,7 @@ export const Projects: React.FC = () => {
                   <div className="flex items-center justify-between gap-3">
                     <button
                       onClick={() => openDeployModal(project)}
-                      className="flex-1 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-500 text-indigo-600 hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                      className="flex-1 px-4 py-2.5 bg-op-accent/10 hover:bg-op-accent text-op-accent hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
                     >
                       <Rocket className="w-4 h-4" />
                       <span>Deploy</span>
@@ -185,9 +185,9 @@ export const Projects: React.FC = () => {
                   <div className="flex items-center justify-between gap-3">
                     <Link
                       to={`/logs?query=${encodeURIComponent(project.projectName)}`}
-                      className="flex-1 px-4 py-2.5 bg-white border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                      className="flex-1 px-4 py-2.5 bg-white border border-slate-200 hover:border-op-accent/30 hover:bg-op-accent/10 text-slate-600 hover:text-op-accent text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
                     >
-                      <FileText className="w-4 h-4 text-indigo-400" />
+                      <FileText className="w-4 h-4 text-op-accent" />
                       <span>Logs</span>
                     </Link>
 
@@ -269,7 +269,7 @@ export const Projects: React.FC = () => {
               <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-800">
-                    Deploy <span className="text-indigo-600">{selectedProject.projectName}</span>
+                    Deploy <span className="text-op-accent">{selectedProject.projectName}</span>
                   </h3>
                   <span className="text-sm font-medium text-slate-500 mt-1 block">Trigger automated CI/CD pipeline execution</span>
                 </div>
@@ -287,7 +287,7 @@ export const Projects: React.FC = () => {
                   <select
                     value={environment}
                     onChange={(e) => setEnvironment(e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-sm"
                   >
                     <option value="Production">Production</option>
                     <option value="Staging">Staging</option>
@@ -305,14 +305,14 @@ export const Projects: React.FC = () => {
                     value={version}
                     onChange={(e) => setVersion(e.target.value)}
                     placeholder="v1.0.0"
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 shadow-sm"
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-sm"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={triggering}
-                  className="px-5 py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors h-[46px]"
+                  className="px-5 py-3 bg-op-accent hover:bg-op-accent-hover text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors h-[46px]"
                 >
                   <Play className="w-4 h-4 fill-current" />
                   <span>{triggering ? 'Triggering...' : 'Run Pipeline'}</span>
@@ -344,7 +344,7 @@ export const Projects: React.FC = () => {
                       <tbody className="divide-y divide-slate-100 bg-white">
                         {deployments.map((d) => (
                           <tr key={d.id} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-3 px-5 font-mono text-indigo-500 font-bold text-xs">{d.version}</td>
+                            <td className="py-3 px-5 font-mono text-op-accent font-bold text-xs">{d.version}</td>
                             <td className="py-3 px-5 font-semibold text-slate-700 text-xs">{d.environment}</td>
                             <td className="py-3 px-5">
                               <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${

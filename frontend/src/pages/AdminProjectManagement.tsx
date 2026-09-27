@@ -3,6 +3,8 @@ import { AlertTriangle, ExternalLink, FolderGit2, RefreshCw, ShieldAlert, Trash2
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Project } from '../services/api';
 
+import { useConfirm } from '../components/ConfirmProvider';
+
 const isQuarantined = (project: Project) => project.status.toUpperCase() === 'QUARANTINED';
 
 export const AdminProjectManagement: React.FC = () => {
@@ -10,6 +12,7 @@ export const AdminProjectManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const { confirm } = useConfirm();
 
   const loadProjects = async () => {
     setLoading(true);
@@ -39,12 +42,12 @@ export const AdminProjectManagement: React.FC = () => {
   };
 
   const quarantine = async (project: Project) => {
-    if (!window.confirm(`Quarantine ${project.projectName}? This marks it as blocked until it is reviewed.`)) return;
+    if (!await confirm(`Quarantine ${project.projectName}? This marks it as blocked until it is reviewed.`, { isDestructive: true, confirmText: 'Quarantine' })) return;
     await updateStatus(project, 'QUARANTINED');
   };
 
   const removeProject = async (project: Project) => {
-    if (!window.confirm(`Permanently delete ${project.projectName} and its linked deployment data?`)) return;
+    if (!await confirm(`Permanently delete ${project.projectName} and its linked deployment data?`, { isDestructive: true, confirmText: 'Delete' })) return;
     setWorkingId(project.id);
     setError('');
     try {
@@ -80,12 +83,12 @@ export const AdminProjectManagement: React.FC = () => {
               const busy = workingId === project.id;
               return <article key={project.id} className={`flex flex-col gap-4 p-5 transition md:flex-row md:items-center md:justify-between ${quarantined ? 'bg-rose-50/50' : 'hover:bg-slate-50/70'}`}>
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2"><FolderGit2 className="h-5 w-5 text-indigo-500" /><h3 className="truncate text-sm font-black text-slate-800">{project.projectName}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${quarantined ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>{quarantined ? 'Quarantined' : project.status}</span></div>
+                  <div className="flex flex-wrap items-center gap-2"><FolderGit2 className="h-5 w-5 text-op-accent" /><h3 className="truncate text-sm font-black text-slate-800">{project.projectName}</h3><span className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide ${quarantined ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>{quarantined ? 'Quarantined' : project.status}</span></div>
                   <p className="mt-2 text-xs text-slate-500">Owner: <span className="font-bold text-slate-700">{project.ownerName}</span> · {project.ownerEmail}</p>
-                  <a href={project.repositoryUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-xs font-medium text-indigo-600 hover:underline"><ExternalLink className="h-3.5 w-3.5 shrink-0" />{project.repositoryUrl}</a>
+                  <a href={project.repositoryUrl} target="_blank" rel="noreferrer" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-xs font-medium text-op-accent hover:underline"><ExternalLink className="h-3.5 w-3.5 shrink-0" />{project.repositoryUrl}</a>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                  <select value={project.status} disabled={busy} onChange={(event) => void updateStatus(project, event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-indigo-400"><option value="ACTIVE">Active</option><option value="SETUP_IN_PROGRESS">Setup in progress</option><option value="SUSPENDED">Suspended</option><option value="QUARANTINED">Quarantined</option></select>
+                  <select value={project.status} disabled={busy} onChange={(event) => void updateStatus(project, event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 outline-none focus:border-op-accent/80"><option value="ACTIVE">Active</option><option value="SETUP_IN_PROGRESS">Setup in progress</option><option value="SUSPENDED">Suspended</option><option value="QUARANTINED">Quarantined</option></select>
                   {!quarantined && <button onClick={() => void quarantine(project)} disabled={busy} className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"><ShieldAlert className="h-3.5 w-3.5" />Quarantine</button>}
                   <button onClick={() => void removeProject(project)} disabled={busy} title="Delete project" className="rounded-xl border border-rose-100 p-2 text-rose-500 transition hover:bg-rose-50 disabled:opacity-50"><Trash2 className="h-4 w-4" /></button>
                 </div>

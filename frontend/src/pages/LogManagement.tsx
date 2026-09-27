@@ -324,7 +324,7 @@ export const LogManagement: React.FC = () => {
                   {extractTraceId(selectedLog.message) && (
                     <div>
                       <label className="text-xs font-bold text-op-muted uppercase tracking-wider mb-1 block">Trace ID</label>
-                      <div className="text-sm text-indigo-400 font-mono bg-indigo-500/10 px-2 py-1 rounded w-fit">
+                      <div className="text-sm text-op-accent font-mono bg-op-accent/10 px-2 py-1 rounded w-fit">
                         {extractTraceId(selectedLog.message)}
                       </div>
                     </div>

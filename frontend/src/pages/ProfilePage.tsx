@@ -44,7 +44,7 @@ export const ProfilePage: React.FC = () => {
     <SidebarLayout>
       <div className="p-8 max-w-3xl mx-auto space-y-8 animate-fade-in-up">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white shadow-lg">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-op-accent to-cyan-500 flex items-center justify-center text-white shadow-lg">
             <UserRound className="w-5 h-5" />
           </div>
           <div>
@@ -60,15 +60,15 @@ export const ProfilePage: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Full Name</label>
-                <input value={name} onChange={(event) => setName(event.target.value)} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500" />
+                <input value={name} onChange={(event) => setName(event.target.value)} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-op-accent" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Email Address</label>
-                <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-indigo-500" />
+                <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-op-accent" />
               </div>
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 <div className="text-xs font-medium text-slate-500">Role: {profile?.roles.join(', ')}</div>
-                <button type="submit" disabled={saving} className="px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white text-sm font-bold rounded-xl flex items-center gap-2">
+                <button type="submit" disabled={saving} className="px-4 py-2.5 bg-op-accent hover:bg-op-accent-hover disabled:opacity-50 text-white text-sm font-bold rounded-xl flex items-center gap-2">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Save Profile
                 </button>

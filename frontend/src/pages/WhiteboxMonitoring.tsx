@@ -35,9 +35,9 @@ export const WhiteboxMonitoring: React.FC = () => {
       <div className="mx-auto flex max-w-[1200px] flex-col gap-6 p-6 md:p-8">
         <div className="flex flex-col justify-between gap-5 rounded-2xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur md:flex-row md:items-center md:p-6">
           <div>
-            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-500"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Internal telemetry</div>
+            <div className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-op-accent"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Internal telemetry</div>
             <h1 className="flex items-center gap-2 text-2xl font-black tracking-tight text-slate-800">
-              <Server className="h-6 w-6 text-indigo-500" />
+              <Server className="h-6 w-6 text-op-accent" />
               Whitebox Monitoring (Internal)
             </h1>
             <p className="mt-1 text-sm text-slate-500">Application health, runtime metrics, and JVM telemetry.</p>
@@ -47,7 +47,7 @@ export const WhiteboxMonitoring: React.FC = () => {
             <select
               value={providerName}
               onChange={(e) => setProviderName(e.target.value)}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-bold text-slate-700 outline-none transition-colors focus:border-op-accent/80 focus:ring-2 focus:ring-op-accent/20"
             >
               <option value="prometheus">Prometheus</option>
             </select>
@@ -66,8 +66,8 @@ export const WhiteboxMonitoring: React.FC = () => {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-slate-200 bg-white/85 p-5 shadow-sm">
               <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">CPU Usage</div>
-              <div className="text-3xl font-black text-indigo-600">{metrics.cpuUsagePercent}%</div>
-              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-indigo-500" style={{ width: `${Math.min(metrics.cpuUsagePercent, 100)}%` }} /></div>
+              <div className="text-3xl font-black text-op-accent">{metrics.cpuUsagePercent}%</div>
+              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-op-accent" style={{ width: `${Math.min(metrics.cpuUsagePercent, 100)}%` }} /></div>
             </div>
             <div className="rounded-2xl border border-slate-200 bg-white/85 p-5 shadow-sm">
               <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Memory Used</div>
@@ -84,7 +84,7 @@ export const WhiteboxMonitoring: React.FC = () => {
 
         <div className="h-96 rounded-2xl border border-slate-200 bg-white/85 p-5 shadow-sm backdrop-blur md:p-6">
            <h2 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-700">
-             <Activity className="h-4 w-4 text-indigo-500" /> CPU History
+             <Activity className="h-4 w-4 text-op-accent" /> CPU History
            </h2>
            <ResponsiveContainer width="100%" height="100%">
              <AreaChart data={metrics?.history || []}>

@@ -11,6 +11,9 @@ import {
   CheckCircle2, XCircle, Clock, PlayCircle, RotateCcw, Building2
 } from 'lucide-react';
 
+import { useConfirm } from '../components/ConfirmProvider';
+import { useAlert } from '../components/AlertProvider';
+
 export const DeploymentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -20,6 +23,8 @@ export const DeploymentDetail: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [rollingBack, setRollingBack] = useState(false);
   const [previousStable, setPreviousStable] = useState<Deployment | null>(null);
+  const { confirm } = useConfirm();
+  const { showAlert } = useAlert();
 
   const fetchDetail = async (isRefresh = false) => {
     if (!id) return;
@@ -73,7 +78,7 @@ export const DeploymentDetail: React.FC = () => {
   }
 
   const handleRollback = async () => {
-    if (!window.confirm('Trigger a rollback for this deployment to the previous stable version?')) return;
+    if (!await confirm('Trigger a rollback for this deployment to the previous stable version?', { isDestructive: true, confirmText: 'Rollback' })) return;
     setRollingBack(true);
     try {
       await api.rollbackDeployment(deployment.id);
@@ -81,9 +86,9 @@ export const DeploymentDetail: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       if (err.response?.status === 403) {
-        alert('Forbidden: You are not authorized to perform a rollback.');
+        showAlert('Forbidden: You are not authorized to perform a rollback.', 'error');
       } else {
-        alert('Failed to rollback: ' + (err.response?.data?.message || err.message));
+        showAlert('Rollback Failed: ' + (err.response?.data?.message || err.message), 'error');
       }
     } finally {
       setRollingBack(false);

@@ -110,7 +110,7 @@ const Panel: React.FC<{
   <div className={`glass-panel rounded-2xl overflow-hidden flex flex-col shadow-sm ${className}`}>
     <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-white/50 backdrop-blur-sm">
       <div className="flex items-center gap-3 min-w-0">
-        {icon && <span className="text-indigo-400 flex-shrink-0 bg-indigo-50 p-1.5 rounded-lg">{icon}</span>}
+        {icon && <span className="text-op-accent flex-shrink-0 bg-op-accent/10 p-1.5 rounded-lg">{icon}</span>}
         <span className="text-xs font-bold text-slate-800 uppercase tracking-widest truncate">{title}</span>
         {subtitle && <span className="text-[11px] font-medium text-slate-500 truncate hidden sm:inline">— {subtitle}</span>}
       </div>
@@ -306,7 +306,7 @@ export const BlackboxMonitoring: React.FC = () => {
         {/* ── Top bar ─────────────────────────────────────────────────── */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5 glass-panel rounded-2xl shadow-sm">
           <div className="flex-1 flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 min-w-[320px] focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-100 transition-all shadow-inner">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 min-w-[320px] focus-within:border-op-accent focus-within:ring-2 focus-within:ring-op-accent/20 transition-all shadow-inner">
               <Globe className="w-4 h-4 text-slate-400 flex-shrink-0" />
               <input type="text" value={url} onChange={e => setUrl(e.target.value)} disabled={probing}
                 placeholder="https://target.com"
@@ -314,7 +314,7 @@ export const BlackboxMonitoring: React.FC = () => {
             </div>
             {!probing ? (
               <button onClick={() => { resetSession(); setProbing(true); addLog(`▶ Session started → ${url}`, 'info'); }}
-                className="flex items-center gap-2 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm">
+                className="flex items-center gap-2 px-5 py-2 bg-op-accent hover:bg-op-accent-hover text-op-accent-fg text-sm font-semibold rounded-lg transition-colors shadow-sm">
                 <Activity className="w-4 h-4" /> Start Probing
               </button>
             ) : (
@@ -334,7 +334,7 @@ export const BlackboxMonitoring: React.FC = () => {
                 <div className="absolute top-full mt-1.5 left-0 bg-white border border-slate-200 rounded-lg shadow-xl z-50 w-28 overflow-hidden">
                   {REFRESH_OPTIONS.map(o => (
                     <button key={o.ms} onClick={() => { setRefreshMs(o.ms); setShowRefreshMenu(false); }}
-                      className={`w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 transition-colors ${refreshMs === o.ms ? 'text-indigo-600 bg-indigo-50/50' : 'text-slate-600'}`}>
+                      className={`w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-slate-50 transition-colors ${refreshMs === o.ms ? 'text-op-accent bg-op-accent/10' : 'text-slate-600'}`}>
                       {o.label}
                     </button>
                   ))}
@@ -361,7 +361,7 @@ export const BlackboxMonitoring: React.FC = () => {
           {/* Row 1 — Core Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6">
             {[
-              { label: 'Last Latency', val: last ? `${last.latency}ms` : '—', sub: latTrend ? (latTrend === 'up' ? 'Slowing down' : 'Getting faster') : 'Waiting...', color: 'text-indigo-600', badge: <RealBadge /> },
+              { label: 'Last Latency', val: last ? `${last.latency}ms` : '—', sub: latTrend ? (latTrend === 'up' ? 'Slowing down' : 'Getting faster') : 'Waiting...', color: 'text-op-accent', badge: <RealBadge /> },
               { label: 'SSL Expiry', val: sslDays !== null ? `${sslDays} days` : '—', sub: sslDays !== null && sslDays < 30 ? '⚠️ Renew soon' : '✅ Valid', color: sslDays !== null && sslDays < 14 ? 'text-rose-600' : sslDays !== null && sslDays < 30 ? 'text-amber-600' : 'text-emerald-600', badge: <RealBadge /> },
               { label: 'Protocol', val: current?.httpVersion ?? '—', sub: current?.ipProtocol ?? '', color: 'text-violet-600', badge: <RealBadge /> },
             ].map(c => (
@@ -386,8 +386,8 @@ export const BlackboxMonitoring: React.FC = () => {
                   <AreaChart data={history} margin={{ left: -15, right: 8, top: 4 }}>
                     <defs>
                       <linearGradient id="gLat" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%"  stopColor="#4F46E5" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
+                        <stop offset="5%"  stopColor="var(--color-op-accent)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--color-op-accent)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
@@ -395,7 +395,7 @@ export const BlackboxMonitoring: React.FC = () => {
                     <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} unit="ms" />
                     <RTooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: 8, fontSize: 12, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                       formatter={(v: number) => [`${v}ms`, 'Latency']} />
-                    <Area type="monotone" dataKey="latency" stroke="#4F46E5" strokeWidth={2.5} fill="url(#gLat)" dot={false} activeDot={{ r: 5, fill: '#4F46E5' }} />
+                    <Area type="monotone" dataKey="latency" stroke="var(--color-op-accent)" strokeWidth={2.5} fill="url(#gLat)" dot={false} activeDot={{ r: 5, fill: 'var(--color-op-accent)' }} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

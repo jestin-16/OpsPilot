@@ -7,6 +7,7 @@ import { Signup } from './pages/Signup';
 import { VerifyEmailOTP } from './pages/VerifyEmailOTP';
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
+import { ProjectDetail } from './pages/ProjectDetail';
 import { ProjectWizard } from './pages/ProjectWizard';
 import { BlackboxMonitoring } from './pages/BlackboxMonitoring';
 import { WhiteboxMonitoring } from './pages/WhiteboxMonitoring';
@@ -127,6 +128,14 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><Projects /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><ProjectDetail /></RoleRoute>
                 </ProtectedRoute>
               }
             />

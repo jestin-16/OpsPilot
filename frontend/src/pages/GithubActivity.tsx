@@ -28,8 +28,8 @@ export const GithubActivity: React.FC = () => {
       const [commitsData, projectsData, pipelinesData, deploymentsData] = await Promise.all([
         api.getCommits(projectId),
         api.getProjects().catch(() => []),
-        api.getPipelines().catch(() => []),
-        api.getDeployments().catch(() => [])
+        api.getPipelineRuns().catch(() => []),
+        api.getAllDeployments().catch(() => [])
       ]);
       setCommits(commitsData);
       

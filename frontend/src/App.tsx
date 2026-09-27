@@ -14,6 +14,7 @@ import { LiveProjectDashboard } from './pages/LiveProjectDashboard';
 import { LogManagement } from './pages/LogManagement';
 import { KubernetesDashboard } from './pages/KubernetesDashboard';
 import { GithubActivity } from './pages/GithubActivity';
+import { IncidentManagement } from './pages/IncidentManagement';
 import { NotificationCenter } from './pages/NotificationCenter';
 import { PlatformGuide } from './pages/PlatformGuide';
 import { LandingPage } from './pages/LandingPage';
@@ -221,6 +222,14 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><GithubActivity /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/incidents"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><IncidentManagement /></RoleRoute>
                 </ProtectedRoute>
               }
             />

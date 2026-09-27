@@ -61,6 +61,9 @@ services:
     depends_on:
       - postgres
       - service-registry
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.kube:/root/.kube:ro
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot

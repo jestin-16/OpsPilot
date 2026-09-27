@@ -46,10 +46,9 @@ public class CiCdService {
             throw new ForbiddenException("Repository URL '" + repoUrl + "' is not allowlisted for CI/CD execution");
         }
 
-        Optional<Project> optionalProject = projectRepository.findByRepositoryUrl(repoUrl);
-        Project project = optionalProject.orElseGet(() ->
-                projectRepository.findAll().stream().findFirst().orElse(null)
-        );
+        List<Project> projects = projectRepository.findByRepositoryUrl(repoUrl);
+        Project project = projects.isEmpty() ? 
+                projectRepository.findAll().stream().findFirst().orElse(null) : projects.get(0);
 
         // Create a new pipeline run in "BUILDING" state
         PipelineRunEntity run = new PipelineRunEntity(

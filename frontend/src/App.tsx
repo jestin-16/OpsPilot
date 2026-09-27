@@ -22,6 +22,7 @@ import { LogSources } from './pages/LogSources';
 import { DockerPage } from './pages/DockerPage';
 import { DeploymentsPage } from './pages/DeploymentsPage';
 import { UserManagement } from './pages/UserManagement';
+import { SecuritySettings } from './pages/SecuritySettings';
 import { AlertProvider } from './components/AlertProvider';
 import { AdminGovernance } from './pages/AdminGovernance';
 import { canAccessRole, isAdmin, type PlatformRole } from './utils/roles';
@@ -284,6 +285,14 @@ export const App: React.FC = () => {
                   <AdminRoute>
                     <UserManagement />
                   </AdminRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings/security"
+              element={
+                <ProtectedRoute>
+                  <SecuritySettings />
                 </ProtectedRoute>
               }
             />

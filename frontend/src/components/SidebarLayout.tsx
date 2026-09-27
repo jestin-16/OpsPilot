@@ -61,6 +61,8 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     navItems.push({ name: 'User Management', path: '/users', icon: UserIcon, roles: ['ADMIN'] as const });
   }
 
+  navItems.push({ name: 'Security & Access', path: '/settings/security', icon: ShieldCheck, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const });
+
   return (
     <div className="flex h-screen bg-[#F8FAFC] text-slate-800 font-sans bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed overflow-hidden">
       {/* Sidebar with Glassmorphism */}

@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class DeploymentService {
@@ -94,6 +95,66 @@ public class DeploymentService {
         return deploymentRepository.findAllByOrderByDeployedAtDesc().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    public DeploymentResponse getDeploymentById(Long id) {
+        Deployment d = deploymentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deployment not found"));
+        return mapToResponse(d);
+    }
+
+    @Transactional
+    public DeploymentResponse rollbackDeployment(Long id, User currentUser) {
+        Deployment currentDeployment = deploymentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deployment not found"));
+
+        Project project = currentDeployment.getProject();
+        verifyRollbackAuthorization(project, currentUser);
+
+        List<Deployment> deployments = deploymentRepository.findByProjectOrderByDeployedAtDesc(project);
+        Deployment previousStable = null;
+        for (Deployment d : deployments) {
+            if ("Running".equalsIgnoreCase(d.getStatus()) && !d.getId().equals(currentDeployment.getId()) && d.getDeployedAt().isBefore(currentDeployment.getDeployedAt())) {
+                previousStable = d;
+                break;
+            }
+        }
+
+        if (previousStable == null) {
+            throw new IllegalStateException("No previous stable deployment found to rollback to");
+        }
+
+        currentDeployment.setStatus("RolledBack");
+        deploymentRepository.save(currentDeployment);
+
+        DeploymentRequest rollbackRequest = new DeploymentRequest();
+        rollbackRequest.setVersion(previousStable.getVersion());
+        rollbackRequest.setEnvironment(currentDeployment.getEnvironment());
+        
+        return createDeployment(project.getId(), rollbackRequest, currentUser);
+    }
+
+    private void verifyRollbackAuthorization(Project project, User currentUser) {
+        if (currentUser == null) {
+            throw new com.opspilot.exception.UnauthorizedException("Authentication required");
+        }
+        boolean isOwner = project.getOwner().getId().equals(currentUser.getId());
+        boolean isAuthorizedRole = currentUser.getRoles().stream()
+                .anyMatch(r -> {
+                    String rn = r.getRoleName().toUpperCase();
+                    return rn.equals("ADMIN") || rn.equals("ROLE_ADMIN") || 
+                           rn.equals("DEVOPS") || rn.equals("ROLE_DEVOPS");
+                });
+
+        if (!isOwner && !isAuthorizedRole) {
+            throw new com.opspilot.exception.ForbiddenException("Only authorized project owner, DevOps Engineer, or Administrator can perform rollback");
+        }
+    }
+
+    public List<LogEntity> getDeploymentLogs(Long id) {
+        Deployment d = deploymentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Deployment not found"));
+        return logRepository.findByDeploymentOrderByTimestampAsc(d);
     }
 
     private void scheduleStatusProgression(Long deploymentId) {

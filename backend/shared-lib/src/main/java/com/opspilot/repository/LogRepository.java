@@ -16,6 +16,8 @@ public interface LogRepository extends JpaRepository<LogEntity, Long> {
 
     List<LogEntity> findAllByOrderByTimestampDesc();
     
+    List<LogEntity> findByDeploymentOrderByTimestampAsc(Deployment deployment);
+    
     java.util.Optional<LogEntity> findFirstBySourceServiceOrderByTimestampDesc(String sourceService);
 
     @Query("SELECT l FROM LogEntity l LEFT JOIN l.deployment d LEFT JOIN d.project deploymentProject LEFT JOIN l.project directProject WHERE " +

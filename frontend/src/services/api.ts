@@ -213,6 +213,15 @@ export interface LogEntry {
   message: string;
   timestamp: string;
   providerSource?: string;
+  project?: {
+    id: number;
+    projectName: string;
+  };
+  deployment?: {
+    id: number;
+    version: string;
+    environment: string;
+  };
 }
 
 export interface NotificationItem {
@@ -278,12 +287,17 @@ export interface KubernetesSummaryResponse {
 
 export interface PipelineRun {
   runId: number;
+  project?: { id: number; projectName: string };
   eventType: string;
   branch: string;
   commitSha: string;
   commitMessage: string;
   author: string;
   status: string;
+  exitCode?: number;
+  durationMs?: number;
+  repoUrl?: string;
+  buildLogs?: string;
   createdAt: string;
 }
 
@@ -429,6 +443,21 @@ export const api = {
     return res.data;
   },
 
+  getDeployment: async (id: number): Promise<Deployment> => {
+    const res = await axiosInstance.get<Deployment>(`/deployments/${id}`);
+    return res.data;
+  },
+
+  getDeploymentLogs: async (id: number): Promise<LogEntry[]> => {
+    const res = await axiosInstance.get<LogEntry[]>(`/deployments/${id}/logs`);
+    return res.data;
+  },
+
+  rollbackDeployment: async (id: number): Promise<Deployment> => {
+    const res = await axiosInstance.post<Deployment>(`/deployments/${id}/rollback`);
+    return res.data;
+  },
+
   triggerDeployment: async (projectId: number, data: { version: string; environment: string }): Promise<Deployment> => {
     const res = await axiosInstance.post<Deployment>(`/projects/${projectId}/deployments`, data);
     return res.data;
@@ -526,6 +555,16 @@ export const api = {
   // CI/CD
   getPipelineRuns: async (): Promise<PipelineRun[]> => {
     const res = await axiosInstance.get<PipelineRun[]>('/cicd/runs');
+    return res.data;
+  },
+
+  getPipelineRun: async (runId: number): Promise<PipelineRun> => {
+    const res = await axiosInstance.get<PipelineRun>(`/cicd/runs/${runId}`);
+    return res.data;
+  },
+
+  getPipelineRunLogs: async (runId: number): Promise<{ runId: number; status: string; exitCode: number; logs: string; durationMs: number }> => {
+    const res = await axiosInstance.get(`/cicd/runs/${runId}/logs`);
     return res.data;
   },
 

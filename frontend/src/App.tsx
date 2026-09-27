@@ -25,7 +25,9 @@ import { canAccessRole, isAdmin, type PlatformRole } from './utils/roles';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminProjectManagement } from './pages/AdminProjectManagement';
 import { ProfilePage } from './pages/ProfilePage';
-
+import { Pipelines } from './pages/Pipelines';
+import { PipelineDetail } from './pages/PipelineDetail';
+import { DeploymentDetail } from './pages/DeploymentDetail';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -209,10 +211,34 @@ export const App: React.FC = () => {
               element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
             />
             <Route
+              path="/pipelines"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><Pipelines /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pipelines/:id"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><PipelineDetail /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/deployments"
               element={
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><DeploymentsPage /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/deployments/:id"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><DeploymentDetail /></RoleRoute>
                 </ProtectedRoute>
               }
             />

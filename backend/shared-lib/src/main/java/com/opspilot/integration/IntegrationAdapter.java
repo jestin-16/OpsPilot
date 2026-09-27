@@ -44,10 +44,7 @@ public interface IntegrationAdapter {
 
     // getLogs has been extracted to LogCollector interface
 
-    /**
-     * Fetches metrics from the provider.
-     */
-    List<Map<String, Object>> getMetrics(Integration integration, Map<String, Object> queryParams);
+    // getMetrics has been extracted to MetricCollector interface
 
     /**
      * Fetches events from the provider.

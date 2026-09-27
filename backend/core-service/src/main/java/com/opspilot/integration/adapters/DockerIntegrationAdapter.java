@@ -20,10 +20,12 @@ import java.util.stream.Collectors;
 
 import com.opspilot.log.LogCollector;
 import com.opspilot.log.LogRecord;
+import com.opspilot.metric.MetricCollector;
+import com.opspilot.metric.MetricRecord;
 import java.time.LocalDateTime;
 
 @Component
-public class DockerIntegrationAdapter implements IntegrationAdapter, LogCollector {
+public class DockerIntegrationAdapter implements IntegrationAdapter, LogCollector, MetricCollector {
 
     private final DockerClient dockerClient = createDockerClient();
 
@@ -132,7 +134,45 @@ public class DockerIntegrationAdapter implements IntegrationAdapter, LogCollecto
     }
 
     @Override
-    public List<Map<String, Object>> getMetrics(Integration integration, Map<String, Object> queryParams) {
+    public void stream(Integration integration, Map<String, Object> params, java.util.function.Consumer<LogRecord> logConsumer) {
+        String containerId = (String) params.get("containerId");
+        if (containerId == null) {
+            throw new IllegalArgumentException("containerId is required for Docker log streaming");
+        }
+        
+        try {
+            dockerClient.logContainerCmd(containerId)
+                    .withStdOut(true)
+                    .withStdErr(true)
+                    .withFollowStream(true)
+                    .withTail(50)
+                    .exec(new LogContainerResultCallback() {
+                        @Override
+                        public void onNext(Frame item) {
+                            LogRecord record = new LogRecord();
+                            record.setId(UUID.randomUUID().toString());
+                            record.setTimestamp(LocalDateTime.now());
+                            record.setProjectId(integration.getProject() != null ? integration.getProject().getId() : null);
+                            record.setIntegrationId(integration.getId());
+                            record.setProvider(ProviderType.DOCKER);
+                            record.setResourceId(containerId);
+                            record.setResourceType("CONTAINER");
+                            record.setService("docker-" + containerId);
+                            record.setLevel(item.getStreamType().name().equals("STDERR") ? "ERROR" : "INFO");
+                            record.setMessage(new String(item.getPayload()).trim());
+                            logConsumer.accept(record);
+                        }
+                    }).awaitCompletion();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    @Override
+    public List<MetricRecord> collectMetrics(Integration integration, Map<String, Object> queryParams) {
+        // Implementation of metric collection from Docker
+        // Usually docker stats API returns CPU/Memory/Network.
+        // For baseline, return empty list or basic mocked data if docker stats is heavy.
         return Collections.emptyList();
     }
 

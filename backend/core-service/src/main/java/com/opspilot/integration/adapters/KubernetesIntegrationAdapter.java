@@ -15,10 +15,12 @@ import java.util.*;
 
 import com.opspilot.log.LogCollector;
 import com.opspilot.log.LogRecord;
+import com.opspilot.metric.MetricCollector;
+import com.opspilot.metric.MetricRecord;
 import java.time.LocalDateTime;
 
 @Component
-public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogCollector {
+public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogCollector, MetricCollector {
 
     @Autowired(required = false)
     private ApiClient apiClient;
@@ -183,6 +185,61 @@ public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogColl
     }
 
     @Override
+    public void stream(Integration integration, Map<String, Object> params, java.util.function.Consumer<LogRecord> logConsumer) {
+        String podName = (String) params.get("podName");
+        String namespace = (String) params.get("namespace");
+        if (podName == null || namespace == null) {
+            throw new IllegalArgumentException("podName and namespace are required for Kubernetes log streaming");
+        }
+
+        if (apiClient == null) return;
+        
+        try {
+            // Using a simple polling mechanism for controlled streaming if native is unavailable.
+            CoreV1Api coreApi = new CoreV1Api(apiClient);
+            final int[] sinceSeconds = {2}; 
+            
+            Thread pollingThread = new Thread(() -> {
+                try {
+                    while (!Thread.currentThread().isInterrupted()) {
+                        String logString = coreApi.readNamespacedPodLog(podName, namespace)
+                                .sinceSeconds(sinceSeconds[0])
+                                .execute();
+                        
+                        if (logString != null && !logString.isEmpty()) {
+                            String[] lines = logString.split("\n");
+                            for (String line : lines) {
+                                LogRecord record = new LogRecord();
+                                record.setId(UUID.randomUUID().toString());
+                                record.setTimestamp(LocalDateTime.now());
+                                record.setProjectId(integration.getProject() != null ? integration.getProject().getId() : null);
+                                record.setIntegrationId(integration.getId());
+                                record.setProvider(ProviderType.KUBERNETES);
+                                record.setResourceId(podName);
+                                record.setResourceType("POD");
+                                record.setService("k8s-" + namespace + "-" + podName);
+                                record.setLevel("INFO");
+                                record.setMessage(line);
+                                logConsumer.accept(record);
+                            }
+                        }
+                        sinceSeconds[0] = 2; // Next poll only looks at last 2 seconds
+                        Thread.sleep(2000);
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } catch (Exception e) {
+                    System.err.println("Kubernetes stream polling failed: " + e.getMessage());
+                }
+            });
+            pollingThread.start();
+            
+        } catch (Exception e) {
+            System.err.println("Failed to start Kubernetes log streaming: " + e.getMessage());
+        }
+    }
+
+    @Override
     public List<Map<String, Object>> getEvents(Integration integration, Map<String, Object> queryParams) {
         String podName = (String) queryParams.get("podName");
         String namespace = (String) queryParams.get("namespace");
@@ -212,7 +269,8 @@ public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogColl
     }
 
     @Override
-    public List<Map<String, Object>> getMetrics(Integration integration, Map<String, Object> queryParams) {
+    public List<MetricRecord> collectMetrics(Integration integration, Map<String, Object> queryParams) {
+        // Basic metrics collection from Kubernetes (e.g. metrics-server API)
         return Collections.emptyList();
     }
 

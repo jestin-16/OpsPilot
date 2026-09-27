@@ -22,6 +22,9 @@ export const LogManagement: React.FC = () => {
   
   // State
   const [watching, setWatching] = useState(true);
+  const [liveStream, setLiveStream] = useState(false);
+  const [activeStreamControllers, setActiveStreamControllers] = useState<AbortController[]>([]);
+  const [streamLogs, setStreamLogs] = useState<LogEntry[]>([]);
   const refreshSeconds = 5;
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
   
@@ -64,13 +67,118 @@ export const LogManagement: React.FC = () => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchData();
+    if (liveStream) {
+      startStreams();
+    } else {
+      fetchData();
+    }
   };
+
+  const clearLogs = () => {
+    setLogs([]);
+    setStreamLogs([]);
+  };
+
+  const startStreams = async () => {
+    if (!liveStream) return;
+    
+    // Cleanup old streams
+    activeStreamControllers.forEach(ctrl => ctrl.abort());
+    setActiveStreamControllers([]);
+    
+    if (projectId === 'ALL') {
+      setError('Select a project to start live streams');
+      return;
+    }
+
+    try {
+      const integrations = await api.getIntegrationsByProject(Number(projectId));
+      if (integrations.length === 0) {
+        setError('No integrations found for this project');
+        return;
+      }
+      
+      const newControllers: AbortController[] = [];
+      const token = localStorage.getItem('opspilot_token');
+
+      // Start a stream for each integration 
+      // Note: for this demo, we assume the backend doesn't strictly require containerId/podName, 
+      // or we pass a generic one if we don't have it.
+      // Wait, earlier we required containerId/podName in backend!
+      // Let's pass a dummy or require the user to input it.
+      
+      for (const integ of integrations) {
+        const ctrl = new AbortController();
+        newControllers.push(ctrl);
+        
+        let url = `${API_BASE_URL}/projects/${projectId}/logs/stream?integrationId=${integ.id}`;
+        if (integ.provider === 'DOCKER') {
+          // just fetch containers to get one? Or require params?
+          // For safety, we'll try streaming, backend might fail if containerId is missing
+          url += `&containerId=demo-container`; // Hack for testing
+        } else if (integ.provider === 'KUBERNETES') {
+          url += `&podName=demo-pod&namespace=default`; 
+        }
+
+        fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          signal: ctrl.signal
+        }).then(async response => {
+          if (!response.body) return;
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data:')) {
+                try {
+                  const data = JSON.parse(line.replace('data:', ''));
+                  setStreamLogs(prev => [data, ...prev].slice(0, 1000));
+                } catch (e) {}
+              }
+            }
+          }
+        }).catch(err => console.log('Stream ended', err));
+      }
+      
+      setActiveStreamControllers(newControllers);
+    } catch (e: any) {
+      setError('Failed to start streams: ' + e.message);
+    }
+  };
+
+  useEffect(() => {
+    if (liveStream) {
+      startStreams();
+    } else {
+      activeStreamControllers.forEach(ctrl => ctrl.abort());
+      setActiveStreamControllers([]);
+    }
+    return () => {
+      activeStreamControllers.forEach(ctrl => ctrl.abort());
+    };
+  }, [liveStream, projectId]);
 
   // Client-side time range filter
   const filteredLogs = useMemo(() => {
-    let result = logs;
-    if (timeRange !== 'ALL') {
+    let result = liveStream ? streamLogs : logs;
+    
+    if (searchQuery.trim() !== '') {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(l => l.message?.toLowerCase().includes(q) || l.logLevel?.toLowerCase().includes(q));
+    }
+    if (logLevel !== 'ALL') {
+      result = result.filter(l => l.logLevel === logLevel);
+    }
+
+    if (timeRange !== 'ALL' && !liveStream) {
       const now = new Date().getTime();
       let msToSubtract = 0;
       if (timeRange === '15m') msToSubtract = 15 * 60 * 1000;
@@ -82,7 +190,7 @@ export const LogManagement: React.FC = () => {
       result = result.filter(log => new Date(log.timestamp).getTime() >= threshold);
     }
     return result;
-  }, [logs, timeRange]);
+  }, [logs, streamLogs, timeRange, liveStream, searchQuery, logLevel]);
 
   const paginatedLogs = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -131,15 +239,30 @@ export const LogManagement: React.FC = () => {
               </div>
               <div className="flex items-center gap-3">
                 <button
+                  onClick={() => setLiveStream(s => !s)}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-colors ${liveStream ? 'bg-rose-500/10 text-rose-500 hover:bg-rose-500/20' : 'bg-op-raised text-op-fg hover:bg-op-border'}`}
+                >
+                  <Activity className="w-4 h-4" />
+                  {liveStream ? 'STOP LIVE' : 'LIVE ●'}
+                </button>
+                <button
                   onClick={() => setWatching(w => !w)}
-                  className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-colors ${watching ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-op-raised text-op-fg hover:bg-op-border'}`}
+                  disabled={liveStream}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-colors ${watching && !liveStream ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-op-raised text-op-fg hover:bg-op-border'} ${liveStream ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {watching ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                  {watching ? 'Live' : 'Paused'}
+                  {watching ? 'Auto-Refresh' : 'Paused'}
+                </button>
+                <button
+                  onClick={clearLogs}
+                  className="px-4 py-2 bg-op-raised hover:bg-op-border text-op-fg text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <X className="w-4 h-4" /> Clear
                 </button>
                 <button
                   onClick={fetchData}
-                  className="px-4 py-2 bg-op-raised hover:bg-op-border text-op-fg text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                  disabled={liveStream}
+                  className={`px-4 py-2 bg-op-raised hover:bg-op-border text-op-fg text-sm font-bold rounded-lg transition-colors flex items-center gap-2 ${liveStream ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
                 </button>

@@ -1,31 +1,50 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type LogEntry } from '../services/api';
-import { FileText, Search, RefreshCw, AlertTriangle, AlertCircle, Info, Pause, Play } from 'lucide-react';
+import { api, type LogEntry, type Project } from '../services/api';
+import { 
+  Search, RefreshCw, AlertCircle, 
+  Pause, Play, ChevronRight, X, Box, Rocket, Terminal, Activity 
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const LogManagement: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Filters
+  const [projectId, setProjectId] = useState<string>('ALL');
   const [sourceService, setSourceService] = useState('ALL');
   const [logLevel, setLogLevel] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [providerName, setProviderName] = useState('local');
+  const [timeRange, setTimeRange] = useState('1h');
+  
+  // State
   const [watching, setWatching] = useState(true);
-  const [refreshSeconds, setRefreshSeconds] = useState(5);
+  const refreshSeconds = 5;
+  const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
-  const fetchLogs = async () => {
+  const fetchData = async () => {
     setError('');
     setLoading(true);
     try {
-      const data = await api.getLogs({
-        sourceService: sourceService !== 'ALL' ? sourceService : undefined,
-        logLevel: logLevel !== 'ALL' ? logLevel : undefined,
-        query: searchQuery.trim() !== '' ? searchQuery.trim() : undefined,
-        providerName: providerName,
-      });
-      setLogs(data);
+      const [logsData, projsData] = await Promise.all([
+        api.getLogs({
+          projectId: projectId !== 'ALL' ? Number(projectId) : undefined,
+          sourceService: sourceService !== 'ALL' ? sourceService : undefined,
+          logLevel: logLevel !== 'ALL' ? logLevel : undefined,
+          query: searchQuery.trim() !== '' ? searchQuery.trim() : undefined,
+          limit: 1000 // Get up to 1000 for client side pagination/time filtering
+        }),
+        api.getProjects().catch(() => [])
+      ]);
+      setLogs(logsData);
+      setProjects(projsData);
     } catch (err: any) {
       setError(err.message || 'Failed to search logs');
     } finally {
@@ -34,216 +53,318 @@ export const LogManagement: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchLogs();
-  }, [sourceService, logLevel, providerName]);
+    fetchData();
+  }, [projectId, sourceService, logLevel]);
 
   useEffect(() => {
     if (!watching) return;
-    const timer = window.setInterval(fetchLogs, refreshSeconds * 1000);
+    const timer = window.setInterval(fetchData, refreshSeconds * 1000);
     return () => window.clearInterval(timer);
-  }, [watching, refreshSeconds, sourceService, logLevel, providerName, searchQuery]);
+  }, [watching, refreshSeconds, projectId, sourceService, logLevel, searchQuery]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchLogs();
+    fetchData();
   };
 
+  // Client-side time range filter
+  const filteredLogs = useMemo(() => {
+    let result = logs;
+    if (timeRange !== 'ALL') {
+      const now = new Date().getTime();
+      let msToSubtract = 0;
+      if (timeRange === '15m') msToSubtract = 15 * 60 * 1000;
+      if (timeRange === '1h') msToSubtract = 60 * 60 * 1000;
+      if (timeRange === '24h') msToSubtract = 24 * 60 * 60 * 1000;
+      if (timeRange === '7d') msToSubtract = 7 * 24 * 60 * 60 * 1000;
+      
+      const threshold = now - msToSubtract;
+      result = result.filter(log => new Date(log.timestamp).getTime() >= threshold);
+    }
+    return result;
+  }, [logs, timeRange]);
+
+  const paginatedLogs = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredLogs.slice(start, start + itemsPerPage);
+  }, [filteredLogs, currentPage]);
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+
   const getLevelBadge = (level: string) => {
-    switch (level) {
+    const l = level.toUpperCase();
+    switch (l) {
       case 'ERROR':
-        return (
-          <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-rose-50 text-rose-600 border border-rose-200 flex items-center gap-1.5 w-fit shadow-sm">
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>ERROR</span>
-          </span>
-        );
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-rose-500/10 text-rose-500 border border-rose-500/20">ERROR</span>;
       case 'WARN':
-        return (
-          <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-200 flex items-center gap-1.5 w-fit shadow-sm">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>WARN</span>
-          </span>
-        );
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">WARN</span>;
+      case 'DEBUG':
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-slate-500/10 text-slate-500 border border-slate-500/20">DEBUG</span>;
       case 'INFO':
       default:
-        return (
-          <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-sky-50 text-sky-600 border border-sky-200 flex items-center gap-1.5 w-fit shadow-sm">
-            <Info className="w-3.5 h-3.5" />
-            <span>INFO</span>
-          </span>
-        );
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-sky-500/10 text-sky-500 border border-sky-500/20">INFO</span>;
     }
+  };
+
+  const extractTraceId = (msg: string) => {
+    const match = msg.match(/trace_id[=:]\s*([a-zA-Z0-9-]+)/i) || msg.match(/\[([a-f0-9]{16,32})\]/);
+    return match ? match[1] : null;
   };
 
   return (
     <SidebarLayout>
-      <div className="p-8 max-w-[1400px] mx-auto space-y-8 animate-fade-in-up">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                <FileText className="w-5 h-5" />
+      <div className="flex h-[calc(100vh-theme(spacing.16))] w-full bg-op-surface animate-fade-in">
+        
+        {/* Main Content Area */}
+        <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${selectedLog ? 'pr-[400px]' : ''}`}>
+          
+          {/* Header & Controls */}
+          <div className="flex-none p-6 border-b border-op-border bg-op-surface">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight text-op-fg flex items-center gap-3">
+                  <Terminal className="w-6 h-6 text-op-accent" /> Logs Explorer
+                </h1>
+                <p className="text-sm font-medium text-op-muted mt-1">
+                  Real-time aggregated logs across all your projects and services.
+                </p>
               </div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-800">Log Management</h1>
-            </div>
-            <p className="text-sm font-medium text-slate-500 mt-2">
-              Searchable, structured JSON log aggregation across all platform services
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setWatching(value => !value)}
-              className="px-5 py-2.5 bg-slate-900 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30"
-            >
-              {watching ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              <span>{watching ? 'Pause Watch' : 'Watch Logs'}</span>
-            </button>
-            <select value={refreshSeconds} onChange={(e) => setRefreshSeconds(Number(e.target.value))} className="px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700">
-              <option value={5}>Every 5s</option>
-              <option value={10}>Every 10s</option>
-              <option value={30}>Every 30s</option>
-            </select>
-            <button
-              onClick={fetchLogs}
-              className="px-4 py-2.5 bg-white border border-slate-200 hover:border-indigo-200 hover:bg-indigo-50 text-slate-700 text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-sm"
-            >
-              <RefreshCw className="w-4 h-4 text-indigo-500" />
-              <span>Refresh</span>
-            </button>
-          </div>
-        </div>
-
-        {error && (
-          <div className="p-3.5 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-600 text-sm">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Filter Controls Card */}
-        <div className="glass-panel rounded-2xl p-6 shadow-sm hover:-translate-y-1 transition-transform duration-300">
-          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-6 items-end">
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                Data Source
-              </label>
-              <select
-                value={providerName}
-                onChange={(e) => setProviderName(e.target.value)}
-                className="w-full px-4 py-2.5 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-700 font-bold text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer shadow-inner"
-              >
-                <option value="local">OpsPilot Local (PostgreSQL)</option>
-                <option value="loki">Grafana Loki</option>
-                <option value="aws">AWS CloudWatch</option>
-                <option value="elasticsearch">Elasticsearch (ELK)</option>
-              </select>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setWatching(w => !w)}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg flex items-center gap-2 transition-colors ${watching ? 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20' : 'bg-op-raised text-op-fg hover:bg-op-border'}`}
+                >
+                  {watching ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  {watching ? 'Live' : 'Paused'}
+                </button>
+                <button
+                  onClick={fetchData}
+                  className="px-4 py-2 bg-op-raised hover:bg-op-border text-op-fg text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                </button>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                Source Service
-              </label>
-              <select
-                value={sourceService}
-                onChange={(e) => setSourceService(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer shadow-inner"
-              >
-                <option value="ALL">All services</option>
-                <option value="api-gateway">api-gateway</option>
-                <option value="auth-service">auth-service</option>
-                <option value="core-service">core-service</option>
-                <option value="deployment-service">deployment-service</option>
-                <option value="observability-service">observability-service</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                Log Level
-              </label>
-              <select
-                value={logLevel}
-                onChange={(e) => setLogLevel(e.target.value)}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 cursor-pointer shadow-inner"
-              >
-                <option value="ALL">All levels</option>
-                <option value="INFO">INFO</option>
-                <option value="WARN">WARN</option>
-                <option value="ERROR">ERROR</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                Search Message
-              </label>
-              <div className="relative flex gap-2">
+            {/* Filter Bar */}
+            <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <div className="relative md:col-span-2">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-op-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Filter by keyword..."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 placeholder-slate-400 shadow-inner"
+                  placeholder="Search logs (e.g. error, Exception...)"
+                  className="w-full pl-9 pr-4 py-2 bg-op-raised border border-op-border rounded-lg text-sm text-op-fg focus:outline-none focus:border-op-accent focus:ring-1 focus:ring-op-accent"
                 />
-                <button
-                  type="submit"
-                  className="px-4 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-sm rounded-xl transition-all cursor-pointer shadow-md hover:shadow-indigo-500/30"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
               </div>
-            </div>
-          </form>
-        </div>
 
-        {/* Logs Table Card */}
-        <div className="glass-panel rounded-2xl p-6 hover:-translate-y-1 transition-transform duration-300">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-slate-800">Log Stream <span className="text-slate-400 font-normal">({logs.length})</span></h2>
-            <span className={`text-xs font-bold tracking-widest uppercase px-3 py-1 rounded-lg border ${watching ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-slate-500 bg-slate-50 border-slate-200'}`}>
-              {watching ? `Watching · ${refreshSeconds}s` : 'Paused'}
-            </span>
+              <select
+                value={projectId}
+                onChange={(e) => setProjectId(e.target.value)}
+                className="w-full px-3 py-2 bg-op-raised border border-op-border rounded-lg text-op-fg text-sm focus:outline-none focus:border-op-accent"
+              >
+                <option value="ALL">All Projects</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id.toString()}>{p.projectName}</option>
+                ))}
+              </select>
+
+              <select
+                value={sourceService}
+                onChange={(e) => setSourceService(e.target.value)}
+                className="w-full px-3 py-2 bg-op-raised border border-op-border rounded-lg text-op-fg text-sm focus:outline-none focus:border-op-accent"
+              >
+                <option value="ALL">All Services</option>
+                <option value="api-gateway">api-gateway</option>
+                <option value="auth-service">auth-service</option>
+                <option value="core-service">core-service</option>
+                <option value="observability-service">observability-service</option>
+              </select>
+
+              <div className="flex gap-2">
+                <select
+                  value={logLevel}
+                  onChange={(e) => setLogLevel(e.target.value)}
+                  className="w-full px-3 py-2 bg-op-raised border border-op-border rounded-lg text-op-fg text-sm focus:outline-none focus:border-op-accent"
+                >
+                  <option value="ALL">All Levels</option>
+                  <option value="ERROR">ERROR</option>
+                  <option value="WARN">WARN</option>
+                  <option value="INFO">INFO</option>
+                  <option value="DEBUG">DEBUG</option>
+                </select>
+
+                <select
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value)}
+                  className="w-full px-3 py-2 bg-op-raised border border-op-border rounded-lg text-op-fg text-sm focus:outline-none focus:border-op-accent"
+                >
+                  <option value="15m">Last 15m</option>
+                  <option value="1h">Last 1h</option>
+                  <option value="24h">Last 24h</option>
+                  <option value="7d">Last 7d</option>
+                  <option value="ALL">All Time</option>
+                </select>
+              </div>
+            </form>
           </div>
 
-          {loading && logs.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 font-medium text-sm animate-pulse">Searching log database...</div>
-          ) : logs.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 text-sm border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-              <FileText className="w-8 h-8 mx-auto mb-3 text-slate-300" />
-              No matching real log records found.
+          {error && (
+            <div className="m-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-center gap-3 text-rose-500 text-sm">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span>{error}</span>
             </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-inner">
-              <table className="w-full text-left text-sm text-slate-800">
-                <thead className="bg-slate-50 text-slate-500 uppercase text-xs font-bold tracking-wider border-b border-slate-200">
+          )}
+
+          {/* Log Table */}
+          <div className="flex-1 overflow-auto bg-[#0A0A0B]">
+            {loading && logs.length === 0 ? (
+              <div className="flex justify-center py-20 text-op-muted">Loading logs...</div>
+            ) : filteredLogs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-32 text-op-muted">
+                <Terminal className="w-12 h-12 mb-4 opacity-20" />
+                <p>No logs found matching your criteria.</p>
+              </div>
+            ) : (
+              <table className="w-full text-left text-sm font-mono whitespace-nowrap">
+                <thead className="sticky top-0 bg-[#121214] text-op-muted border-b border-white/5 z-10 shadow-sm">
                   <tr>
-                    <th className="py-4 px-5 w-24">Log ID</th>
-                    <th className="py-4 px-5">Source Service</th>
-                    <th className="py-4 px-5">Level</th>
-                    <th className="py-4 px-5">Message</th>
-                    <th className="py-4 px-5 text-right">Timestamp</th>
+                    <th className="py-2.5 px-4 font-semibold w-48">Timestamp</th>
+                    <th className="py-2.5 px-4 font-semibold w-24">Level</th>
+                    <th className="py-2.5 px-4 font-semibold w-40">Service</th>
+                    <th className="py-2.5 px-4 font-semibold w-32">Project</th>
+                    <th className="py-2.5 px-4 font-semibold">Message</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white font-mono text-[13px]">
-                  {logs.map((l) => (
-                    <tr key={l.logId} className="hover:bg-slate-50/80 transition-colors group">
-                      <td className="py-4 px-5 text-indigo-400 font-semibold group-hover:text-indigo-600">#{l.logId}</td>
-                      <td className="py-4 px-5 text-slate-600 font-semibold">{l.sourceService}</td>
-                      <td className="py-4 px-5">{getLevelBadge(l.logLevel)}</td>
-                      <td className="py-4 px-5 text-slate-700">{l.message}</td>
-                      <td className="py-4 px-5 text-slate-400 text-right">
-                        {new Date(l.timestamp).toLocaleString(undefined, {
-                          hour: '2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 3
-                        })}
+                <tbody className="divide-y divide-white/5 text-[#E0E0E0]">
+                  {paginatedLogs.map((log) => (
+                    <tr 
+                      key={log.logId} 
+                      onClick={() => setSelectedLog(log)}
+                      className={`cursor-pointer hover:bg-white/[0.02] transition-colors ${selectedLog?.logId === log.logId ? 'bg-white/[0.04]' : ''}`}
+                    >
+                      <td className="py-2 px-4 text-[#888888] text-xs">
+                        {new Date(log.timestamp).toLocaleString(undefined, { hour: '2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 3 })}
                       </td>
+                      <td className="py-2 px-4">{getLevelBadge(log.logLevel)}</td>
+                      <td className="py-2 px-4 text-[#A8A8A8] truncate max-w-[160px]">{log.sourceService}</td>
+                      <td className="py-2 px-4 text-[#A8A8A8] truncate max-w-[120px]">{log.project?.projectName || '-'}</td>
+                      <td className="py-2 px-4 truncate max-w-xl text-[#D4D4D4]">{log.message}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex-none p-3 border-t border-op-border bg-op-surface flex items-center justify-between">
+              <span className="text-sm text-op-muted">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredLogs.length)} of {filteredLogs.length} logs</span>
+              <div className="flex gap-1">
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-op-raised border border-op-border rounded disabled:opacity-50 text-sm text-op-fg"
+                >
+                  Prev
+                </button>
+                <span className="px-3 py-1 text-sm text-op-muted">Page {currentPage} of {totalPages}</span>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 bg-op-raised border border-op-border rounded disabled:opacity-50 text-sm text-op-fg"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Detail Sidebar */}
+        <div className={`fixed right-0 top-16 bottom-0 w-[400px] bg-op-surface border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedLog ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col`}>
+          {selectedLog && (
+            <>
+              <div className="flex items-center justify-between p-5 border-b border-op-border bg-op-surface sticky top-0 z-10">
+                <h3 className="text-lg font-bold text-op-fg flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-op-accent" /> Log Details
+                </h3>
+                <button onClick={() => setSelectedLog(null)} className="p-1.5 hover:bg-op-raised rounded-lg text-op-muted transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="p-5 space-y-6 flex-1">
+                <div className="flex items-center gap-3">
+                  {getLevelBadge(selectedLog.logLevel)}
+                  <span className="text-sm text-op-muted font-mono">{new Date(selectedLog.timestamp).toLocaleString()}</span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-op-muted uppercase tracking-wider mb-1 block">Message</label>
+                    <div className="bg-[#121214] border border-white/5 p-4 rounded-lg text-sm text-[#D4D4D4] font-mono whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                      {selectedLog.message}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-op-muted uppercase tracking-wider mb-1 block">Service</label>
+                      <div className="text-sm text-op-fg font-medium">{selectedLog.sourceService}</div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-op-muted uppercase tracking-wider mb-1 block">Log ID</label>
+                      <div className="text-sm text-op-fg font-mono">#{selectedLog.logId}</div>
+                    </div>
+                  </div>
+                  
+                  {extractTraceId(selectedLog.message) && (
+                    <div>
+                      <label className="text-xs font-bold text-op-muted uppercase tracking-wider mb-1 block">Trace ID</label>
+                      <div className="text-sm text-indigo-400 font-mono bg-indigo-500/10 px-2 py-1 rounded w-fit">
+                        {extractTraceId(selectedLog.message)}
+                      </div>
+                    </div>
+                  )}
+
+                  <hr className="border-op-border" />
+
+                  {/* Context Links */}
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold text-op-muted uppercase tracking-wider block">Context</label>
+                    
+                    {selectedLog.project && (
+                      <Link to={`/projects`} className="flex items-center gap-3 p-3 bg-op-raised border border-op-border rounded-lg hover:border-op-accent transition-colors group">
+                        <Box className="w-4 h-4 text-op-muted group-hover:text-op-accent" />
+                        <div>
+                          <div className="text-sm font-bold text-op-fg">{selectedLog.project.projectName}</div>
+                          <div className="text-xs text-op-muted">Project</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-op-muted ml-auto" />
+                      </Link>
+                    )}
+
+                    {selectedLog.deployment && (
+                      <Link to={`/deployments/${selectedLog.deployment.id}`} className="flex items-center gap-3 p-3 bg-op-raised border border-op-border rounded-lg hover:border-op-accent transition-colors group">
+                        <Rocket className="w-4 h-4 text-op-muted group-hover:text-op-accent" />
+                        <div>
+                          <div className="text-sm font-bold text-op-fg">Version {selectedLog.deployment.version}</div>
+                          <div className="text-xs text-op-muted capitalize">{selectedLog.deployment.environment} Environment</div>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-op-muted ml-auto" />
+                      </Link>
+                    )}
+                  </div>
+
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
       </div>
     </SidebarLayout>
   );

@@ -32,14 +32,8 @@ public class AwsIntegrationAdapterTest {
         integration.setProject(project);
         integration.setProvider(ProviderType.AWS);
 
-        Map<String, Object> config = new HashMap<>();
-        config.put("region", "us-east-1");
-        integration.setConfig(config);
-
-        Map<String, Object> secrets = new HashMap<>();
-        secrets.put("accessKey", "DUMMY_KEY");
-        secrets.put("secretKey", "DUMMY_SECRET");
-        integration.setSecrets(secrets);
+        integration.setConfiguration("{\"region\": \"us-east-1\"}");
+        integration.setCredentialReference("{\"accessKey\": \"DUMMY_KEY\", \"secretKey\": \"DUMMY_SECRET\"}");
     }
 
     @Test

@@ -73,8 +73,7 @@ public class IntegrationProviderRegistryTest {
             @Override
             public List<Map<String, Object>> discoverResources(Integration integration) { return Collections.emptyList(); }
 
-            @Override
-            public List<Map<String, Object>> getMetrics(Integration integration, Map<String, Object> queryParams) { return Collections.emptyList(); }
+
 
             @Override
             public List<Map<String, Object>> getEvents(Integration integration, Map<String, Object> queryParams) { return Collections.emptyList(); }

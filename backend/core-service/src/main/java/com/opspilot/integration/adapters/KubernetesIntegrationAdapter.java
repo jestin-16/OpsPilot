@@ -276,14 +276,13 @@ public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogColl
 
     @Override
     public boolean executeAction(Integration integration, IntegrationCapability action, Map<String, Object> params) {
-        if (apiClient == null) return false;
-        
         if (action == IntegrationCapability.RESTART) {
             String podName = (String) params.get("podName");
             String namespace = (String) params.get("namespace");
             if (podName == null || namespace == null) {
                 throw new IllegalArgumentException("podName and namespace are required for Kubernetes RESTART action");
             }
+            if (apiClient == null) return false;
             try {
                 CoreV1Api coreApi = new CoreV1Api(apiClient);
                 coreApi.deleteNamespacedPod(podName, namespace).execute();

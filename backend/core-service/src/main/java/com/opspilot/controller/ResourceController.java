@@ -19,8 +19,13 @@ public class ResourceController {
     @GetMapping("/projects/{projectId}/resources")
     @PreAuthorize("hasRole('DEVELOPER') or hasRole('DEVOPS') or hasRole('ADMIN')")
     public ResponseEntity<List<Resource>> getResourcesByProject(@PathVariable Long projectId) {
-        // Need to authorize project access here if necessary, assuming service/security takes care of it
         return ResponseEntity.ok(resourceService.getResourcesByProject(projectId));
+    }
+
+    @GetMapping("/resources")
+    @PreAuthorize("hasRole('DEVELOPER') or hasRole('DEVOPS') or hasRole('ADMIN')")
+    public ResponseEntity<List<Resource>> getAllResources() {
+        return ResponseEntity.ok(resourceService.getAllResources());
     }
 
     @GetMapping("/integrations/{integrationId}/resources")

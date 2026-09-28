@@ -7,6 +7,7 @@ import { Signup } from './pages/Signup';
 import { VerifyEmailOTP } from './pages/VerifyEmailOTP';
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
+import { LiveOperations } from './pages/LiveOperations';
 import { ProjectDetail } from './pages/ProjectDetail';
 import { ProjectWizard } from './pages/ProjectWizard';
 import { BlackboxMonitoring } from './pages/BlackboxMonitoring';
@@ -131,6 +132,14 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><Projects /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/operations"
+              element={
+                <ProtectedRoute>
+                  <LiveOperations />
                 </ProtectedRoute>
               }
             />

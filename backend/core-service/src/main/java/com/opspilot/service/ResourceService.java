@@ -33,6 +33,10 @@ public class ResourceService {
         return resourceRepository.findByProjectId(projectId);
     }
 
+    public List<Resource> getAllResources() {
+        return resourceRepository.findAll();
+    }
+
     public List<Resource> getResourcesByIntegration(Long integrationId) {
         return resourceRepository.findByIntegrationId(integrationId);
     }

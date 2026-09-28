@@ -106,7 +106,7 @@ public class OracleCloudIntegrationAdapter implements IntegrationAdapter, LogCol
                     .build();
             GetUserResponse res = client.getUser(req);
             return res.getUser() != null;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Oracle Cloud testConnection failed: {}", e.getMessage());
             return false;
         }
@@ -145,7 +145,7 @@ public class OracleCloudIntegrationAdapter implements IntegrationAdapter, LogCol
                 map.put("region", instance.getRegion());
                 resources.add(map);
             });
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Failed to discover Oracle Cloud resources: {}", e.getMessage());
         }
         return resources;
@@ -205,7 +205,7 @@ public class OracleCloudIntegrationAdapter implements IntegrationAdapter, LogCol
                     logs.add(lr);
                 });
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Failed to collect Oracle Cloud logs: {}", e.getMessage());
         }
         return logs;
@@ -252,7 +252,7 @@ public class OracleCloudIntegrationAdapter implements IntegrationAdapter, LogCol
                     metrics.add(m);
                 });
             });
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Failed to collect Oracle Cloud metrics: {}", e.getMessage());
         }
         return metrics;

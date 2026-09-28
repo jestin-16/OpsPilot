@@ -11,9 +11,15 @@ import com.opspilot.repository.PipelineRunRepository;
 import com.opspilot.repository.ProjectRepository;
 import com.opspilot.entity.CommitLogEntity;
 import com.opspilot.repository.CommitLogRepository;
+import com.opspilot.event.InfrastructureEvent;
+import com.opspilot.event.EventType;
+import com.opspilot.enums.ProviderType;
+import com.opspilot.messaging.EventPublisher;
+import com.opspilot.messaging.EventEnvelope;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDateTime;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +43,9 @@ public class WebhookController {
 
     @Autowired
     private CommitLogRepository commitLogRepository;
+
+    @Autowired
+    private EventPublisher eventPublisher;
 
     @PostMapping("/github")
     public ResponseEntity<Map<String, Object>> handleGitHubWebhook(
@@ -96,6 +105,29 @@ public class WebhookController {
                 "CI/CD Pipeline Run #" + savedRun.getRunId() + " (" + eventType + ") passed on " + branch + " [" + commitSha + "]",
                 "SYSTEM_ALERT"
         ));
+
+        // Emit Normalized Infrastructure Event
+        String eventId = "github-" + repoName + "-" + commitSha + "-" + eventType;
+        
+        InfrastructureEvent infraEvent = new InfrastructureEvent();
+        infraEvent.setId(eventId);
+        infraEvent.setTimestamp(LocalDateTime.now());
+        infraEvent.setProjectId(matchedProject != null ? matchedProject.getId() : null);
+        infraEvent.setProvider(ProviderType.GITHUB);
+        infraEvent.setResourceId(repoName + "/" + branch);
+        infraEvent.setEventType(EventType.DEPLOYMENT_STARTED); // default map for webhook push
+        infraEvent.setSeverity("INFO");
+        infraEvent.setMessage("GitHub Webhook [" + eventType + "] received for repo: " + repoName);
+        infraEvent.setMetadata("commitSha: " + commitSha + ", branch: " + branch);
+
+        EventEnvelope envelope = new EventEnvelope();
+        envelope.setEventId(eventId);
+        envelope.setEventType(EventType.DEPLOYMENT_STARTED);
+        envelope.setProjectId(matchedProject != null ? matchedProject.getId() : null);
+        envelope.setSource("github-webhook");
+        envelope.setPayload(infraEvent);
+        
+        eventPublisher.publish(envelope);
 
         Map<String, Object> response = new HashMap<>();
         response.put("status", "processed");

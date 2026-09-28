@@ -22,10 +22,13 @@ import com.opspilot.log.LogCollector;
 import com.opspilot.log.LogRecord;
 import com.opspilot.metric.MetricCollector;
 import com.opspilot.metric.MetricRecord;
+import com.opspilot.event.EventCollector;
+import com.opspilot.event.InfrastructureEvent;
+import com.opspilot.event.EventType;
 import java.time.LocalDateTime;
 
 @Component
-public class DockerIntegrationAdapter implements IntegrationAdapter, LogCollector, MetricCollector {
+public class DockerIntegrationAdapter implements IntegrationAdapter, LogCollector, MetricCollector, EventCollector {
 
     private final DockerClient dockerClient = createDockerClient();
 
@@ -178,6 +181,11 @@ public class DockerIntegrationAdapter implements IntegrationAdapter, LogCollecto
 
     @Override
     public List<Map<String, Object>> getEvents(Integration integration, Map<String, Object> queryParams) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<InfrastructureEvent> collectEvents(Integration integration, Map<String, Object> params) {
         // Events in Docker are streamed. Returning an empty list here since synchronous fetching is limited.
         // In a real scenario, this would attach to the events stream.
         return Collections.emptyList();

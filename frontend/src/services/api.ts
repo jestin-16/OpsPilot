@@ -742,4 +742,10 @@ export const api = {
   deleteAdminIntegration: async (id: number): Promise<void> => { await axiosInstance.delete(`/admin/integrations/${id}`); },
   getPlatformSettings: async (): Promise<PlatformSetting[]> => (await axiosInstance.get('/admin/settings')).data,
   savePlatformSetting: async (key: string, value: string): Promise<PlatformSetting> => (await axiosInstance.put(`/admin/settings/${encodeURIComponent(key)}`, { value })).data,
+  
+  // Generic methods
+  get: async <T = any>(url: string, config?: any): Promise<{ data: T }> => axiosInstance.get(url, config),
+  post: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => axiosInstance.post(url, data, config),
+  put: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => axiosInstance.put(url, data, config),
+  delete: async <T = any>(url: string, config?: any): Promise<{ data: T }> => axiosInstance.delete(url, config),
 };

@@ -33,6 +33,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { Pipelines } from './pages/Pipelines';
 import { PipelineDetail } from './pages/PipelineDetail';
 import { DeploymentDetail } from './pages/DeploymentDetail';
+import { IntegrationManagement } from './pages/IntegrationManagement';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -154,6 +155,14 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <RoleRoute allowedRoles={['DEVELOPER']}><ProjectWizard /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:projectId/integrations"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><IntegrationManagement /></RoleRoute>
                 </ProtectedRoute>
               }
             />

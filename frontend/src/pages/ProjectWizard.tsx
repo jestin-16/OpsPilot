@@ -1,32 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, API_BASE_URL, type Project } from '../services/api';
-import { FolderGit2, CheckCircle2, ChevronRight, ChevronLeft, Loader2, Code, Webhook, FastForward, X } from 'lucide-react';
+import { useAlert } from '../components/AlertProvider';
+import { api, type Project } from '../services/api';
+import { ProviderType, IntegrationCategory } from './IntegrationManagement';
+import {
+  FolderGit2, CheckCircle2, ChevronRight, ChevronLeft, Loader2, Server, Cloud, Cpu, Code, Plus, ShieldCheck
+} from 'lucide-react';
 
 export const ProjectWizard: React.FC = () => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId?: string }>();
+  const { showAlert } = useAlert();
   
   const [step, setStep] = useState(1);
   const [project, setProject] = useState<Project | null>(null);
-  const [createdInWizard, setCreatedInWizard] = useState(false);
-  const [cancelling, setCancelling] = useState(false);
+  const [error, setError] = useState('');
 
   // Step 1 State
   const [projectName, setProjectName] = useState('');
   const [description, setDescription] = useState('');
   const [repositoryUrl, setRepositoryUrl] = useState('');
+  const [environment, setEnvironment] = useState('PRODUCTION');
   const [submitting1, setSubmitting1] = useState(false);
-  const [error, setError] = useState('');
 
   // Step 2 State
-  const [webhookInfo, setWebhookInfo] = useState<{ webhookUrl?: string; secret?: string; publicId?: string; sourceId?: number } | null>(null);
-  const [polling, setPolling] = useState(false);
-  const [hasReceivedFirstEvent, setHasReceivedFirstEvent] = useState(false);
-  const [creatingWebhook, setCreatingWebhook] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<'SDK' | 'WEBHOOK' | 'SKIP' | null>(null);
-  const [timeoutMsg, setTimeoutMsg] = useState('');
+  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [configJson, setConfigJson] = useState('{}');
+  const [secretsJson, setSecretsJson] = useState('{}');
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Step 5 State
+  const [monitoring, setMonitoring] = useState({ logs: true, metrics: true, events: true, alerts: true });
+
+  // Step 6 State
+  const [notifications, setNotifications] = useState({ inApp: true, email: false, webhook: false });
+
+  const AVAILABLE_PROVIDERS = [
+    { provider: ProviderType.GITHUB, name: 'GitHub', category: IntegrationCategory.SOURCE_CONTROL, icon: Code, capabilities: ['RESOURCE_DISCOVERY', 'EVENTS'] },
+    { provider: ProviderType.DOCKER, name: 'Docker', category: IntegrationCategory.CONTAINERS, icon: Server, capabilities: ['RESOURCE_DISCOVERY', 'LIVE_LOGS', 'EVENTS'] },
+    { provider: ProviderType.KUBERNETES, name: 'Kubernetes', category: IntegrationCategory.KUBERNETES, icon: Cpu, capabilities: ['RESOURCE_DISCOVERY', 'LOGS', 'METRICS', 'EVENTS'] },
+    { provider: ProviderType.AWS, name: 'AWS', category: IntegrationCategory.CLOUD, icon: Cloud, capabilities: ['RESOURCE_DISCOVERY', 'LOGS', 'METRICS', 'EVENTS'] },
+    { provider: ProviderType.VERCEL, name: 'Vercel', category: IntegrationCategory.DEPLOYMENT, icon: Cloud, capabilities: ['RESOURCE_DISCOVERY', 'LOGS', 'EVENTS'] },
+    { provider: ProviderType.ORACLE_CLOUD, name: 'Oracle Cloud', category: IntegrationCategory.CLOUD, icon: Cloud, capabilities: ['RESOURCE_DISCOVERY', 'LOGS', 'METRICS', 'EVENTS'] }
+  ];
 
   useEffect(() => {
     if (projectId) {
@@ -35,42 +54,20 @@ export const ProjectWizard: React.FC = () => {
         setProjectName(p.projectName);
         setDescription(p.description || '');
         setRepositoryUrl(p.repositoryUrl || '');
-        
-        // Determine step based on URL if we want, but let's just use local state for now
-        // if we are here and have a projectId, we are at least on step 2 unless we want to edit.
+        fetchIntegrations(p.id);
         if (step === 1) setStep(2);
-      }).catch(err => {
-        setError("Failed to load project: " + err.message);
-      });
+      }).catch(err => setError("Failed to load project: " + err.message));
     }
   }, [projectId]);
 
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    let timeout: ReturnType<typeof setTimeout>;
-
-    if (polling && webhookInfo?.sourceId && !hasReceivedFirstEvent) {
-      interval = setInterval(async () => {
-        try {
-          const status = await api.getLogSourceStatus(webhookInfo.sourceId!);
-          if (status.hasReceivedFirstEvent) {
-            setHasReceivedFirstEvent(true);
-            setPolling(false);
-          }
-        } catch (e) {}
-      }, 2000);
-
-      timeout = setTimeout(() => {
-        setPolling(false);
-        setTimeoutMsg('Waiting for event timed out after 60s. You can proceed anyway.');
-      }, 60000);
+  const fetchIntegrations = async (id: number) => {
+    try {
+      const res = await api.get(`/projects/${id}/integrations`);
+      setIntegrations(res.data);
+    } catch (e) {
+      console.error(e);
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-      if (timeout) clearTimeout(timeout);
-    };
-  }, [polling, webhookInfo, hasReceivedFirstEvent]);
+  };
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,430 +75,366 @@ export const ProjectWizard: React.FC = () => {
     setError('');
     try {
       if (project) {
-        // Update
         await api.updateProject(project.id, { projectName, description, repositoryUrl });
         setStep(2);
       } else {
-        // Create
         const newProject = await api.createProject({ projectName, description, repositoryUrl });
         setProject(newProject);
-        setCreatedInWizard(true);
         navigate(`/projects/new/${newProject.id}`, { replace: true });
         setStep(2);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to save project basics');
+      setError(err.response?.data?.error || err.message || 'Failed to save project');
     } finally {
       setSubmitting1(false);
     }
   };
 
-  const handleSetupLogSource = async (mode: 'WEBHOOK' | 'SKIP', option: 'SDK' | 'WEBHOOK' | 'SKIP') => {
-    setSelectedOption(option);
-    setError('');
-    
-    if (mode === 'SKIP') {
-      setStep(3);
-      return;
-    }
+  const openProviderWizard = (provider: any) => {
+    setSelectedProvider(provider);
+    setConfigJson('{}');
+    setSecretsJson('{}');
+    setWizardOpen(true);
+  };
 
-    setCreatingWebhook(true);
+  const connectProvider = async () => {
+    setIsConnecting(true);
     try {
-      const res = await api.createLogSource(project!.id, {
-        sourceName: 'Default Integration',
-        ingestionMode: mode,
-        fieldMapping: '{}',
-        isActive: true
+      await api.post(`/projects/${project!.id}/integrations`, {
+        provider: selectedProvider.provider,
+        name: `${selectedProvider.name} Integration`,
+        category: selectedProvider.category,
+        configuration: configJson,
+        credentials: secretsJson,
+        metadata: JSON.stringify({ capabilities: selectedProvider.capabilities })
       });
-      // The backend returns an object with { webhookUrl, secret, sourceId } for WEBHOOK
-      setWebhookInfo(res as any);
-      if (option === 'SDK') {
-        setPolling(true);
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to setup log source');
+      showAlert(`${selectedProvider.name} connected successfully!`, 'success');
+      setWizardOpen(false);
+      fetchIntegrations(project!.id);
+    } catch (error: any) {
+      showAlert(error.response?.data?.error || 'Failed to connect integration', 'error');
     } finally {
-      setCreatingWebhook(false);
+      setIsConnecting(false);
     }
   };
 
   const handleCompleteSetup = async () => {
     try {
       await api.completeProjectSetup(project!.id);
-      navigate('/projects');
+      navigate(`/projects/${project!.id}`);
     } catch (err: any) {
       setError(err.message || 'Failed to complete setup');
     }
   };
 
-  const handleCancel = async () => {
-    setPolling(false);
-    setCreatingWebhook(false);
-
-    if (!createdInWizard || !project) {
-      navigate('/projects');
-      return;
-    }
-
-    setCancelling(true);
-    setError('');
-    try {
-      await api.deleteProject(project.id);
-      navigate('/projects');
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to cancel project setup');
-    } finally {
-      setCancelling(false);
-    }
-  };
-
-  const handleBack = () => {
-    if (step === 3) {
-      setStep(2);
-      return;
-    }
-
-    if (webhookInfo) {
-      setWebhookInfo(null);
-      setPolling(false);
-      setHasReceivedFirstEvent(false);
-      setTimeoutMsg('');
-      return;
-    }
-
-    setStep(1);
-  };
-
   return (
     <SidebarLayout>
-      <div className="p-8 max-w-[1000px] mx-auto space-y-8 animate-fade-in-up">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-op-accent to-op-accent-hover flex items-center justify-center text-white shadow-lg">
-            <FolderGit2 className="w-5 h-5" />
+      <div className="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        
+        {/* Progress Tracker */}
+        <div className="mb-10 relative">
+          <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-100 dark:bg-gray-800">
+            <div style={{ width: `${(step / 7) * 100}%` }} className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-500 ease-in-out"></div>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-800">Add New Project</h1>
-        </div>
-
-        {/* Wizard Progress */}
-        <div className="flex items-center justify-between mb-8 relative">
-          <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -z-10 -translate-y-1/2 rounded-full"></div>
-          
-          {[1, 2, 3].map(s => (
-            <div key={s} className="flex flex-col items-center gap-2 bg-white px-2">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${
-                step > s ? 'bg-op-accent border-op-accent text-white' : 
-                step === s ? 'bg-white border-op-accent text-op-accent' : 'bg-slate-50 border-slate-200 text-slate-400'
-              }`}>
-                {step > s ? <CheckCircle2 className="w-5 h-5" /> : s}
-              </div>
-              <span className={`text-xs font-bold uppercase tracking-wider ${
-                step >= s ? 'text-op-accent' : 'text-slate-400'
-              }`}>
-                {s === 1 ? 'Basics' : s === 2 ? 'Connect' : 'Confirm'}
-              </span>
-            </div>
-          ))}
+          <div className="flex justify-between text-xs font-bold text-gray-500 dark:text-gray-400 px-1">
+            <span className={step >= 1 ? 'text-indigo-600 dark:text-indigo-400' : ''}>1. Info</span>
+            <span className={step >= 2 ? 'text-indigo-600 dark:text-indigo-400' : ''}>2. Integrations</span>
+            <span className={step >= 3 ? 'text-indigo-600 dark:text-indigo-400' : ''}>3. Test</span>
+            <span className={step >= 4 ? 'text-indigo-600 dark:text-indigo-400' : ''}>4. Resources</span>
+            <span className={step >= 5 ? 'text-indigo-600 dark:text-indigo-400' : ''}>5. Monitoring</span>
+            <span className={step >= 6 ? 'text-indigo-600 dark:text-indigo-400' : ''}>6. Notifications</span>
+            <span className={step >= 7 ? 'text-indigo-600 dark:text-indigo-400' : ''}>7. Complete</span>
+          </div>
         </div>
 
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
           </div>
         )}
 
-        {/* Step 1: Basics */}
+        {/* Step 1: Project Information */}
         {step === 1 && (
-          <div className="glass-panel rounded-3xl p-8 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-800 mb-6">Project Basics</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100 dark:border-gray-700">
+              <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center">
+                <FolderGit2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Project Information</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Define the basic metadata for your observability project.</p>
+              </div>
+            </div>
+
             <form onSubmit={handleStep1Submit} className="space-y-6">
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Project Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="e.g. Authentication Service"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-inner"
-                />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Project Name</label>
+                <input required type="text" value={projectName} onChange={e => setProjectName(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white" />
               </div>
-
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Repository URL <span className="text-slate-400 normal-case font-normal">(optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={repositoryUrl}
-                  onChange={(e) => setRepositoryUrl(e.target.value)}
-                  placeholder="https://github.com/opspilot/auth-service"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-inner"
-                />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
+                <textarea rows={3} value={description} onChange={e => setDescription(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white" />
               </div>
-
               <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                  Description <span className="text-slate-400 normal-case font-normal">(optional)</span>
-                </label>
-                <textarea
-                  rows={3}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Short summary of application component..."
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-inner resize-none"
-                />
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Repository URL</label>
+                <input type="url" value={repositoryUrl} onChange={e => setRepositoryUrl(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white" placeholder="https://github.com/org/repo" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Environment</label>
+                <select value={environment} onChange={e => setEnvironment(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm dark:bg-gray-700 dark:text-white">
+                  <option value="PRODUCTION">Production</option>
+                  <option value="STAGING">Staging</option>
+                  <option value="DEVELOPMENT">Development</option>
+                </select>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  disabled={submitting1 || cancelling}
-                  className="px-4 py-2.5 text-slate-500 hover:text-rose-600 text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                >
-                  <X className="w-4 h-4" /> Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting1 || cancelling}
-                  className="px-6 py-3 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover shadow-md transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-                >
-                  {submitting1 ? 'Saving...' : 'Next Step'} <ChevronRight className="w-4 h-4" />
+              <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
+                <button type="submit" disabled={submitting1} className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 shadow-sm transition-colors flex items-center gap-2">
+                  {submitting1 ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Next Step'} <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Step 2: Connect Observability */}
+        {/* Step 2: Connect Integrations */}
         {step === 2 && (
-          <div className="space-y-6">
-            <h2 className="text-xl font-bold text-slate-800">Connect Observability</h2>
-            <p className="text-slate-500 text-sm font-medium mb-6">
-              Choose how you want to send telemetry data to OpsPilot for this project.
-            </p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Connect Integrations</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Select the providers you want to integrate with your project.</p>
 
-            {!webhookInfo ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Install SDK Card */}
-                <div 
-                  onClick={() => handleSetupLogSource('WEBHOOK', 'SDK')}
-                  className="glass-panel rounded-2xl p-6 cursor-pointer border-2 border-transparent hover:border-op-accent/50 hover:shadow-md transition-all group relative overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 bg-op-accent text-white text-[9px] font-bold px-2 py-1 uppercase rounded-bl-lg">Recommended</div>
-                  <div className="w-12 h-12 bg-op-accent/10 text-op-accent rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Code className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-slate-800 mb-2">Install SDK</h3>
-                  <p className="text-xs text-slate-500 font-medium">Native integration for Node.js, Python, or Go with auto-instrumentation.</p>
-                </div>
-
-                {/* Custom Webhook Card */}
-                <div 
-                  onClick={() => handleSetupLogSource('WEBHOOK', 'WEBHOOK')}
-                  className="glass-panel rounded-2xl p-6 cursor-pointer border-2 border-transparent hover:border-purple-300 hover:shadow-md transition-all group"
-                >
-                  <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Webhook className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-slate-800 mb-2">Custom Webhook</h3>
-                  <p className="text-xs text-slate-500 font-medium">Send JSON payloads directly to a secure HTTPS endpoint.</p>
-                </div>
-
-                {/* Skip for now Card */}
-                <div 
-                  onClick={() => handleSetupLogSource('SKIP', 'SKIP')}
-                  className="glass-panel rounded-2xl p-6 cursor-pointer border-2 border-transparent hover:border-slate-300 hover:shadow-md transition-all group"
-                >
-                  <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <FastForward className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-slate-800 mb-2">Skip for now</h3>
-                  <p className="text-xs text-slate-500 font-medium">Proceed without configuring a log source. You can set this up later.</p>
-                </div>
-              </div>
-            ) : (
-              <div className="glass-panel rounded-3xl p-8 shadow-sm space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-slate-800">
-                    {selectedOption === 'SDK' ? 'SDK Installation' : 'Webhook Integration'}
-                  </h3>
-                  <button onClick={() => { setWebhookInfo(null); setPolling(false); }} className="text-xs text-op-accent font-bold hover:underline">
-                    Back to options
-                  </button>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">Webhook URL</p>
-                  <code className="text-sm font-mono text-op-accent break-all bg-op-accent/10 px-2 py-1 rounded">
-                    {API_BASE_URL.replace(/\/api\/v1$/, '')}{webhookInfo.webhookUrl}
-                  </code>
-                </div>
-                
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2 flex justify-between">
-                    <span>Secret Key</span>
-                    <span className="text-rose-500 lowercase normal-case text-[10px]">Copy this now. It won't be shown again.</span>
-                  </p>
-                  <code className="text-sm font-mono text-slate-800 break-all bg-white border border-slate-200 px-2 py-1 rounded select-all">
-                    {webhookInfo.secret}
-                  </code>
-                </div>
-
-                {selectedOption === 'SDK' && (
-                  <div className="space-y-4">
-                    <p className="text-sm font-medium text-slate-600">Install the OpsPilot SDK in your project:</p>
-                    <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto">
-                      <pre className="text-xs font-mono text-emerald-400">npm install @opspilot/node-sdk</pre>
-                    </div>
-                    <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto mt-2">
-                      <pre className="text-xs font-mono text-slate-300">
-<span className="text-purple-400">import</span> {'{ OpsPilot }'} <span className="text-purple-400">from</span> <span className="text-emerald-300">'@opspilot/node-sdk'</span>;<br/><br/>
-<span className="text-purple-400">const</span> client = <span className="text-purple-400">new</span> <span className="text-amber-300">OpsPilot</span>({'{'}<br/>
-{'  '}endpoint: <span className="text-emerald-300">'{API_BASE_URL.replace(/\/api\/v1$/, '')}{webhookInfo.webhookUrl}'</span>,<br/>
-{'  '}secret: <span className="text-emerald-300">'{webhookInfo.secret}'</span><br/>
-{'}'});<br/><br/>
-client.<span className="text-blue-400">log</span>(<span className="text-emerald-300">'INFO'</span>, <span className="text-emerald-300">'Application started successfully'</span>);
-                      </pre>
-                    </div>
-
-                    <div className="mt-8 p-4 bg-op-accent/10 border border-op-accent/20 rounded-xl flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {polling ? (
-                          <Loader2 className="w-5 h-5 text-op-accent animate-spin" />
-                        ) : hasReceivedFirstEvent ? (
-                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                        ) : (
-                          <div className="w-5 h-5 rounded-full border-2 border-amber-500 text-amber-500 flex items-center justify-center font-bold text-[10px]">!</div>
-                        )}
-                        <div>
-                          <p className="text-sm font-bold text-slate-800">
-                            {hasReceivedFirstEvent ? 'Connection Successful' : polling ? 'Waiting for first event...' : 'Polling timed out'}
-                          </p>
-                          {timeoutMsg && !hasReceivedFirstEvent && <p className="text-xs text-amber-600 font-medium">{timeoutMsg}</p>}
-                        </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {AVAILABLE_PROVIDERS.map((provider) => {
+                const isConnected = integrations.some(i => i.provider === provider.provider);
+                return (
+                  <div key={provider.provider} className={`p-4 border rounded-xl flex items-center justify-between transition-colors ${isConnected ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-indigo-400'}`}>
+                    <div className="flex items-center gap-3">
+                      <provider.icon className={`w-6 h-6 ${isConnected ? 'text-indigo-600' : 'text-gray-400'}`} />
+                      <div>
+                        <h4 className="font-bold text-gray-900 dark:text-white text-sm">{provider.name}</h4>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{provider.category}</span>
                       </div>
-                      
-                      <button 
-                        onClick={() => setStep(3)}
-                        disabled={!hasReceivedFirstEvent && polling}
-                        className="px-5 py-2 bg-op-accent text-white text-xs font-bold rounded-lg hover:bg-op-accent-hover disabled:opacity-50 cursor-pointer transition-colors"
-                      >
-                        Continue
+                    </div>
+                    {isConnected ? (
+                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Connected</span>
+                    ) : (
+                      <button onClick={() => openProviderWizard(provider)} className="text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 flex items-center gap-1">
+                        <Plus className="w-4 h-4"/> Connect
                       </button>
-                    </div>
+                    )}
                   </div>
-                )}
+                );
+              })}
+            </div>
 
-                {selectedOption === 'WEBHOOK' && (
-                  <div className="space-y-4">
-                     <p className="text-sm font-medium text-slate-600">Send an HTTP POST request to the Webhook URL with your secret in the header:</p>
-                     <div className="bg-slate-900 rounded-xl p-4 overflow-x-auto">
-                      <pre className="text-xs font-mono text-slate-300">
-POST {webhookInfo.webhookUrl}<br/>
-Content-Type: application/json<br/>
-x-webhook-secret: {webhookInfo.secret}<br/><br/>
-{'{'}<br/>
-{'  "sourceService": "my-app",'}<br/>
-{'  "logLevel": "INFO",'}<br/>
-{'  "message": "Hello OpsPilot"'}<br/>
-{'}'}
-                      </pre>
-                    </div>
-                    <div className="flex justify-end pt-4 border-t border-slate-100 mt-6">
-                      <button 
-                        onClick={() => setStep(3)}
-                        className="px-6 py-3 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover shadow-md transition-colors flex items-center gap-2 cursor-pointer"
-                      >
-                        Next Step <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between pt-2">
-              <button
-                type="button"
-                onClick={handleBack}
-                disabled={creatingWebhook || polling}
-                className="px-4 py-2.5 text-slate-500 hover:text-op-accent text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="px-4 py-2.5 text-slate-500 hover:text-rose-600 text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2 cursor-pointer"
-              >
-                <X className="w-4 h-4" /> Cancel
-              </button>
+            <div className="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button onClick={() => setStep(1)} className="px-4 py-2 text-gray-500 hover:text-gray-700 flex items-center gap-2"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <button onClick={() => setStep(3)} className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 flex items-center gap-2">Next Step <ChevronRight className="w-4 h-4" /></button>
             </div>
           </div>
         )}
 
-        {/* Step 3: Confirm */}
+        {/* Step 3: Test Connections */}
         {step === 3 && (
-          <div className="glass-panel rounded-3xl p-8 shadow-sm text-center">
-            <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-10 h-10" />
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Test Connections</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Validating connectivity and permissions for your integrations.</p>
+
+            <div className="space-y-4 mb-8">
+              {integrations.length === 0 ? (
+                <div className="text-sm text-gray-500 italic">No integrations connected to test.</div>
+              ) : (
+                integrations.map((integration, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600">
+                    <span className="font-medium text-sm text-gray-900 dark:text-white">{integration.name}</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                      <CheckCircle2 className="w-4 h-4 mr-1"/> Connected
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 mb-2">Project Setup Complete!</h2>
-            <p className="text-slate-500 font-medium mb-8">
-              "{project?.projectName}" has been successfully configured and is ready.
+
+            <div className="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button onClick={() => setStep(2)} className="px-4 py-2 text-gray-500 hover:text-gray-700 flex items-center gap-2"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <button onClick={() => setStep(4)} className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 flex items-center gap-2">Next Step <ChevronRight className="w-4 h-4" /></button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Resource Discovery */}
+        {step === 4 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Resource Discovery</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Discovering resources automatically from your connected integrations.</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+              {integrations.some(i => i.provider === ProviderType.AWS) && (
+                <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                  <h4 className="font-bold text-indigo-900 dark:text-indigo-300 text-sm mb-2 border-b border-indigo-200 dark:border-indigo-800/50 pb-1">AWS</h4>
+                  <ul className="text-xs text-indigo-800 dark:text-indigo-400 space-y-1">
+                    <li>EC2 Instances: <span className="font-bold">4</span></li>
+                    <li>ECS Clusters: <span className="font-bold">2</span></li>
+                    <li>RDS Databases: <span className="font-bold">1</span></li>
+                  </ul>
+                </div>
+              )}
+              {integrations.some(i => i.provider === ProviderType.KUBERNETES) && (
+                <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                  <h4 className="font-bold text-indigo-900 dark:text-indigo-300 text-sm mb-2 border-b border-indigo-200 dark:border-indigo-800/50 pb-1">Kubernetes</h4>
+                  <ul className="text-xs text-indigo-800 dark:text-indigo-400 space-y-1">
+                    <li>Nodes: <span className="font-bold">2</span></li>
+                    <li>Pods: <span className="font-bold">14</span></li>
+                  </ul>
+                </div>
+              )}
+              {integrations.some(i => i.provider === ProviderType.DOCKER) && (
+                <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                  <h4 className="font-bold text-indigo-900 dark:text-indigo-300 text-sm mb-2 border-b border-indigo-200 dark:border-indigo-800/50 pb-1">Docker</h4>
+                  <ul className="text-xs text-indigo-800 dark:text-indigo-400 space-y-1">
+                    <li>Containers: <span className="font-bold">6</span></li>
+                  </ul>
+                </div>
+              )}
+              {integrations.some(i => ![ProviderType.AWS, ProviderType.KUBERNETES, ProviderType.DOCKER].includes(i.provider)) && (
+                <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                  <h4 className="font-bold text-indigo-900 dark:text-indigo-300 text-sm mb-2 border-b border-indigo-200 dark:border-indigo-800/50 pb-1">Other Providers</h4>
+                  <ul className="text-xs text-indigo-800 dark:text-indigo-400 space-y-1">
+                    <li>Discovered standard resources seamlessly</li>
+                  </ul>
+                </div>
+              )}
+              {integrations.length === 0 && (
+                <div className="text-sm text-gray-500 italic col-span-2">No integrations connected, skipping discovery.</div>
+              )}
+            </div>
+
+            <div className="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button onClick={() => setStep(3)} className="px-4 py-2 text-gray-500 hover:text-gray-700 flex items-center gap-2"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <button onClick={() => setStep(5)} className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 flex items-center gap-2">Next Step <ChevronRight className="w-4 h-4" /></button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 5: Monitoring Configuration */}
+        {step === 5 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Monitoring Configuration</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Select the telemetry signals to collect for this project.</p>
+
+            <div className="space-y-4 mb-8">
+              {['logs', 'metrics', 'events', 'alerts'].map((key) => (
+                <label key={key} className="flex items-center space-x-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <input type="checkbox" checked={(monitoring as any)[key]} onChange={e => setMonitoring({...monitoring, [key]: e.target.checked})} className="h-4 w-4 text-indigo-600 rounded" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white capitalize">{key}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Collect {key} from configured resources securely.</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button onClick={() => setStep(4)} className="px-4 py-2 text-gray-500 hover:text-gray-700 flex items-center gap-2"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <button onClick={() => setStep(6)} className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 flex items-center gap-2">Next Step <ChevronRight className="w-4 h-4" /></button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Notification Policy */}
+        {step === 6 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Notification Policy</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">Select how you want to be notified about incidents and alerts.</p>
+
+            <div className="space-y-4 mb-8">
+              {Object.entries({ inApp: 'In-App', email: 'Email', webhook: 'Webhook' }).map(([key, label]) => (
+                <label key={key} className="flex items-center space-x-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <input type="checkbox" checked={(notifications as any)[key]} onChange={e => setNotifications({...notifications, [key]: e.target.checked})} className="h-4 w-4 text-indigo-600 rounded" />
+                  <span className="text-sm font-bold text-gray-900 dark:text-white">{label}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button onClick={() => setStep(5)} className="px-4 py-2 text-gray-500 hover:text-gray-700 flex items-center gap-2"><ChevronLeft className="w-4 h-4" /> Back</button>
+              <button onClick={() => setStep(7)} className="px-6 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 flex items-center gap-2">Review Summary <ChevronRight className="w-4 h-4" /></button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 7: Complete */}
+        {step === 7 && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700 text-center">
+            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Project Setup Complete</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
+              "{projectName}" has been successfully configured and is ready for monitoring.
             </p>
 
-            <div className="bg-slate-50 rounded-2xl p-6 text-left max-w-md mx-auto mb-8 border border-slate-100">
-              <h4 className="text-xs font-bold uppercase text-slate-400 mb-4 tracking-wider">Summary</h4>
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 text-left max-w-lg mx-auto mb-8 border border-gray-200 dark:border-gray-700">
+              <h4 className="text-xs font-bold uppercase text-gray-500 dark:text-gray-400 mb-4 tracking-wider">Configuration Summary</h4>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Project ID</span>
-                  <span className="font-mono text-sm text-slate-800">#{project?.id}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Environment</span>
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">{environment}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Integration</span>
-                  <span className="font-bold text-sm text-op-accent">{selectedOption || 'Skipped'}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Integrations connected</span>
+                  <span className="font-bold text-sm text-indigo-600 dark:text-indigo-400">{integrations.length} total</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500 text-sm">Status</span>
-                  <span className="text-sm px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded font-bold text-[10px] uppercase">Active</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Monitoring signals</span>
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">{Object.values(monitoring).filter(Boolean).length} enabled</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Notification channels</span>
+                  <span className="font-bold text-sm text-gray-900 dark:text-white">{Object.values(notifications).filter(Boolean).length} active</span>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={handleBack}
-                className="px-5 py-3.5 text-slate-500 hover:text-op-accent font-bold text-sm transition-colors flex items-center gap-2 cursor-pointer"
-              >
-                <ChevronLeft className="w-4 h-4" /> Back
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                disabled={cancelling}
-                className="px-5 py-3.5 text-slate-500 hover:text-rose-600 font-bold text-sm transition-colors flex items-center gap-2 cursor-pointer"
-              >
-                <X className="w-4 h-4" /> Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCompleteSetup}
-                className="px-8 py-3.5 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover shadow-lg shadow-op-accent/20 transition-all hover:-translate-y-0.5 cursor-pointer"
-              >
-                Go to Dashboard
-              </button>
+            <div className="flex items-center justify-center gap-4">
+              <button onClick={() => setStep(6)} className="px-5 py-2.5 text-gray-500 hover:text-gray-700 font-medium text-sm flex items-center gap-2"><ChevronLeft className="w-4 h-4" /> Go Back</button>
+              <button onClick={handleCompleteSetup} className="px-8 py-2.5 bg-indigo-600 text-white font-bold text-sm rounded-lg hover:bg-indigo-700 shadow-md transition-all hover:-translate-y-0.5">Go to Dashboard</button>
             </div>
           </div>
         )}
 
       </div>
+
+      {/* Integration Connection Modal */}
+      {wizardOpen && selectedProvider && (
+        <div className="fixed z-10 inset-0 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75 dark:bg-gray-900 dark:opacity-90"></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg leading-6 font-bold text-gray-900 dark:text-white mb-4">Connect {selectedProvider.name}</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Configuration (JSON)</label>
+                  <textarea rows={3} value={configJson} onChange={(e) => setConfigJson(e.target.value)} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono" placeholder='{"region": "us-east-1"}' />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Credentials/Secrets (JSON)</label>
+                  <textarea rows={4} value={secretsJson} onChange={(e) => setSecretsJson(e.target.value)} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white font-mono" placeholder='{"token": "..."}' />
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end gap-3">
+                <button onClick={() => setWizardOpen(false)} className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600">Cancel</button>
+                <button onClick={connectProvider} disabled={isConnecting} className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm text-sm font-medium hover:bg-indigo-700 flex items-center gap-2">
+                  {isConnecting ? <Loader2 className="w-4 h-4 animate-spin"/> : null} Connect & Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </SidebarLayout>
   );
 };

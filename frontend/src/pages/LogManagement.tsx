@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type LogEntry, type Project } from '../services/api';
+import { api, type LogEntry, type Project, API_BASE_URL } from '../services/api';
 import { 
   Search, RefreshCw, AlertCircle, 
   Pause, Play, ChevronRight, X, Box, Rocket, Terminal, Activity 

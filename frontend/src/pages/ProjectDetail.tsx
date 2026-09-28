@@ -169,6 +169,12 @@ export const ProjectDetail: React.FC = () => {
                     <span className="font-bold text-slate-700 group-hover:text-op-accent">View Kubernetes</span>
                   </div>
                 </Link>
+                <Link to={`/projects/${project.id}/integrations`} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:border-op-accent/50 transition-colors flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <Server className="w-5 h-5 text-op-accent" />
+                    <span className="font-bold text-slate-700 group-hover:text-op-accent">Manage Integrations</span>
+                  </div>
+                </Link>
               </div>
             </div>
 

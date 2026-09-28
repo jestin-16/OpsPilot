@@ -70,6 +70,12 @@ public class KubernetesIntegrationAdapterTest {
     }
 
     @Test
+    void testCollectEventsMissingParams() {
+        Map<String, Object> params = new HashMap<>();
+        assertThrows(IllegalArgumentException.class, () -> adapter.collectEvents(integration, params));
+    }
+
+    @Test
     void testExecuteActionMissingParams() {
         Map<String, Object> params = new HashMap<>();
         assertThrows(IllegalArgumentException.class, () -> adapter.executeAction(integration, IntegrationCapability.RESTART, params));

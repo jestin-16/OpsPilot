@@ -30,11 +30,23 @@ public class Incident {
     @Column(name = "affected_service")
     private String affectedService;
 
+    @Column(name = "affected_resources")
+    private String affectedResources;
+
+    @Column(name = "alert_count", nullable = false)
+    private Integer alertCount = 1;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "started_at")
+    private LocalDateTime startedAt;
+
     @Column(name = "resolved_at")
     private LocalDateTime resolvedAt;
+
+    @Column(columnDefinition = "TEXT")
+    private String timeline = "[]";
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by_id")
@@ -77,8 +89,20 @@ public class Incident {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
+    public LocalDateTime getStartedAt() { return startedAt; }
+    public void setStartedAt(LocalDateTime startedAt) { this.startedAt = startedAt; }
+
     public LocalDateTime getResolvedAt() { return resolvedAt; }
     public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
+
+    public Integer getAlertCount() { return alertCount; }
+    public void setAlertCount(Integer alertCount) { this.alertCount = alertCount; }
+
+    public String getAffectedResources() { return affectedResources; }
+    public void setAffectedResources(String affectedResources) { this.affectedResources = affectedResources; }
+
+    public String getTimeline() { return timeline; }
+    public void setTimeline(String timeline) { this.timeline = timeline; }
     
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }

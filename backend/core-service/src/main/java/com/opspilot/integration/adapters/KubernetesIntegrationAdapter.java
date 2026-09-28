@@ -17,10 +17,14 @@ import com.opspilot.log.LogCollector;
 import com.opspilot.log.LogRecord;
 import com.opspilot.metric.MetricCollector;
 import com.opspilot.metric.MetricRecord;
+import com.opspilot.event.EventCollector;
+import com.opspilot.event.InfrastructureEvent;
+import com.opspilot.event.EventType;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Component
-public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogCollector, MetricCollector {
+public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogCollector, MetricCollector, EventCollector {
 
     @Autowired(required = false)
     private ApiClient apiClient;
@@ -241,13 +245,28 @@ public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogColl
 
     @Override
     public List<Map<String, Object>> getEvents(Integration integration, Map<String, Object> queryParams) {
-        String podName = (String) queryParams.get("podName");
-        String namespace = (String) queryParams.get("namespace");
+        List<Map<String, Object>> result = new ArrayList<>();
+        List<InfrastructureEvent> events = collectEvents(integration, queryParams);
+        for (InfrastructureEvent e : events) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", e.getId());
+            map.put("message", e.getMessage());
+            map.put("type", e.getSeverity());
+            map.put("eventType", e.getEventType());
+            result.add(map);
+        }
+        return result;
+    }
+
+    @Override
+    public List<InfrastructureEvent> collectEvents(Integration integration, Map<String, Object> params) {
+        String podName = (String) params.get("podName");
+        String namespace = (String) params.get("namespace");
         if (podName == null || namespace == null) {
             throw new IllegalArgumentException("podName and namespace are required for Kubernetes events");
         }
 
-        List<Map<String, Object>> events = new ArrayList<>();
+        List<InfrastructureEvent> events = new ArrayList<>();
         if (apiClient == null) return events;
 
         try {
@@ -255,11 +274,42 @@ public class KubernetesIntegrationAdapter implements IntegrationAdapter, LogColl
             CoreV1EventList eventList = coreApi.listNamespacedEvent(namespace).fieldSelector("involvedObject.name=" + podName).execute();
             if (eventList != null && eventList.getItems() != null) {
                 for (CoreV1Event event : eventList.getItems()) {
-                    Map<String, Object> map = new HashMap<>();
-                    map.put("message", event.getMessage());
-                    map.put("reason", event.getReason());
-                    map.put("type", event.getType());
-                    events.add(map);
+                    InfrastructureEvent infraEvent = new InfrastructureEvent();
+                    
+                    String eventId = event.getMetadata() != null && event.getMetadata().getUid() != null 
+                            ? event.getMetadata().getUid() 
+                            : UUID.randomUUID().toString();
+                    infraEvent.setId(eventId);
+                    
+                    LocalDateTime timestamp = LocalDateTime.now();
+                    if (event.getLastTimestamp() != null) {
+                        timestamp = LocalDateTime.ofInstant(event.getLastTimestamp().toInstant(), ZoneId.systemDefault());
+                    } else if (event.getEventTime() != null) {
+                        timestamp = LocalDateTime.ofInstant(event.getEventTime().toInstant(), ZoneId.systemDefault());
+                    }
+                    infraEvent.setTimestamp(timestamp);
+                    
+                    infraEvent.setProjectId(integration.getProject() != null ? integration.getProject().getId() : null);
+                    infraEvent.setIntegrationId(integration.getId());
+                    infraEvent.setProvider(ProviderType.KUBERNETES);
+                    infraEvent.setResourceId(podName);
+                    
+                    EventType mappedType = EventType.RESOURCE_STARTED;
+                    String reason = event.getReason();
+                    if ("Created".equals(reason)) mappedType = EventType.RESOURCE_CREATED;
+                    else if ("Deleted".equals(reason)) mappedType = EventType.RESOURCE_DELETED;
+                    else if ("Started".equals(reason)) mappedType = EventType.RESOURCE_STARTED;
+                    else if ("Killing".equals(reason)) mappedType = EventType.RESOURCE_STOPPED;
+                    else if ("Failed".equals(reason) || "FailedCreate".equals(reason)) mappedType = EventType.RESOURCE_FAILED;
+                    else if ("BackOff".equals(reason)) mappedType = EventType.POD_CRASHED;
+                    else if ("Unhealthy".equals(reason)) mappedType = EventType.HEALTH_CHECK_FAILED;
+                    
+                    infraEvent.setEventType(mappedType);
+                    infraEvent.setSeverity("Warning".equalsIgnoreCase(event.getType()) ? "ERROR" : "INFO");
+                    infraEvent.setMessage(event.getMessage());
+                    infraEvent.setMetadata(reason != null ? "reason: " + reason : "");
+                    
+                    events.add(infraEvent);
                 }
             }
         } catch (Exception e) {

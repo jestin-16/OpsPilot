@@ -1,0 +1,5 @@
+ALTER TABLE incidents
+ADD COLUMN affected_resources VARCHAR(255),
+ADD COLUMN alert_count INT NOT NULL DEFAULT 1,
+ADD COLUMN started_at TIMESTAMP,
+ADD COLUMN timeline TEXT DEFAULT '[]';

@@ -6,6 +6,7 @@ import com.opspilot.event.EventType;
 import com.opspilot.messaging.EventEnvelope;
 import com.opspilot.repository.AlertRepository;
 import com.opspilot.repository.AlertRuleRepository;
+import com.opspilot.messaging.EventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,6 +31,9 @@ public class AlertEvaluatorTest {
 
     @Mock
     private AlertRepository alertRepository;
+
+    @Mock
+    private EventPublisher eventPublisher;
 
     @InjectMocks
     private AlertEvaluator alertEvaluator;

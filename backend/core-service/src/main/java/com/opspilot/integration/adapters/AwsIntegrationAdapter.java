@@ -57,19 +57,37 @@ public class AwsIntegrationAdapter implements IntegrationAdapter, LogCollector, 
             IntegrationCapability.RESOURCE_DISCOVERY,
             IntegrationCapability.LOGS,
             IntegrationCapability.METRICS,
-            IntegrationCapability.EVENTS,
-            IntegrationCapability.HEALTH
+            IntegrationCapability.EVENTS
         );
     }
 
     private Region getRegion(Integration integration) {
-        String regionStr = integration.getConfig().getOrDefault("region", "us-east-1").toString();
+        String regionStr = "us-east-1";
+        try {
+            if (integration.getConfiguration() != null && !integration.getConfiguration().isEmpty()) {
+                Map<String, Object> config = new com.fasterxml.jackson.databind.ObjectMapper().readValue(integration.getConfiguration(), Map.class);
+                if (config.get("region") != null) {
+                    regionStr = config.get("region").toString();
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse AWS config", e);
+        }
         return Region.of(regionStr);
     }
 
     private StaticCredentialsProvider getCredentials(Integration integration) {
-        String accessKey = (String) integration.getSecrets().get("accessKey");
-        String secretKey = (String) integration.getSecrets().get("secretKey");
+        String accessKey = null;
+        String secretKey = null;
+        try {
+            if (integration.getCredentialReference() != null && !integration.getCredentialReference().isEmpty()) {
+                Map<String, Object> secrets = new com.fasterxml.jackson.databind.ObjectMapper().readValue(integration.getCredentialReference(), Map.class);
+                accessKey = (String) secrets.get("accessKey");
+                secretKey = (String) secrets.get("secretKey");
+            }
+        } catch (Exception e) {
+            log.error("Failed to parse AWS secrets", e);
+        }
         if (accessKey == null || secretKey == null) {
             throw new IllegalArgumentException("AWS accessKey and secretKey are required");
         }
@@ -164,7 +182,7 @@ public class AwsIntegrationAdapter implements IntegrationAdapter, LogCollector, 
                 LogRecord lr = new LogRecord();
                 lr.setTimestamp(LocalDateTime.ofInstant(Instant.ofEpochMilli(event.timestamp()), ZoneId.systemDefault()));
                 lr.setMessage(event.message());
-                lr.setSource(logGroupName);
+                lr.setService(logGroupName);
                 lr.setProvider(ProviderType.AWS);
                 lr.setIntegrationId(integration.getId());
                 lr.setProjectId(integration.getProject() != null ? integration.getProject().getId() : null);

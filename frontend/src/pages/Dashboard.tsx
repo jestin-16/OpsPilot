@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
 import { 
-  api, type Project, type Container, type Pod, type Deployment, 
-  type PipelineRun, type CommitLog, type LogEntry, type IntegrationHealthResponse 
+  api, type Project, type Deployment, 
+  type PipelineRun, type LogEntry, type IntegrationHealthResponse 
 } from '../services/api';
 import { StatsCard } from '../components/StatsCard';
 import { Table, type Column } from '../components/Table';
@@ -14,8 +14,8 @@ import { StatusIndicator } from '../components/StatusIndicator';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { 
-  FolderGit2, Rocket, Server, Activity, RefreshCw, AlertCircle, 
-  Terminal, GitCommit, PlayCircle, Plus
+  Rocket, Server, Activity, RefreshCw, AlertCircle, 
+  Terminal, Plus, Filter
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -27,13 +27,21 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [projects, setProjects] = useState<Project[]>([]);
-  const [containers, setContainers] = useState<Container[]>([]);
-  const [pods, setPods] = useState<Pod[]>([]);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [pipelines, setPipelines] = useState<PipelineRun[]>([]);
-  const [commits, setCommits] = useState<CommitLog[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [health, setHealth] = useState<IntegrationHealthResponse | null>(null);
+  
+  const [resources, setResources] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [incidents, setIncidents] = useState<any[]>([]);
+  const [integrations, setIntegrations] = useState<any[]>([]);
+
+  // Filters
+  const [filterProject, setFilterProject] = useState('ALL');
+  const [filterProvider, setFilterProvider] = useState('ALL');
+  const [filterSeverity, setFilterSeverity] = useState('ALL');
 
   const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -41,33 +49,33 @@ export const Dashboard: React.FC = () => {
     setError(null);
     try {
       const [
-        projectsData,
-        containersData,
-        podsData,
-        deploymentsData,
-        pipelinesData,
-        commitsData,
-        logsData,
-        healthData
+        projectsData, deploymentsData, pipelinesData, 
+        logsData, healthData, resourcesData, eventsData, 
+        alertsData, incidentsData, integrationsData
       ] = await Promise.all([
         api.getProjects().catch(() => [] as Project[]),
-        api.getDockerContainers().catch(() => [] as Container[]),
-        api.getKubernetesPods().catch(() => [] as Pod[]),
         api.getAllDeployments().catch(() => [] as Deployment[]),
         api.getPipelineRuns().catch(() => [] as PipelineRun[]),
-        api.getCommits('ALL').catch(() => [] as CommitLog[]),
-        api.getLogs({ logLevel: 'ERROR', limit: 10 }).catch(() => [] as LogEntry[]),
-        api.getIntegrationHealth().catch(() => null)
+        api.getLogs({ logLevel: 'ERROR', limit: 50 }).catch(() => [] as LogEntry[]),
+        api.getIntegrationHealth().catch(() => null),
+        api.getResources().catch(() => []),
+        api.getEvents().catch(() => []),
+        api.getAlerts().catch(() => []),
+        api.getIncidents().catch(() => []),
+        api.getAdminIntegrations().catch(() => []) // To map integrationId to provider
       ]);
 
       setProjects(projectsData);
-      setContainers(containersData);
-      setPods(podsData);
       setDeployments(deploymentsData);
       setPipelines(pipelinesData);
-      setCommits(commitsData);
       setLogs(logsData);
       setHealth(healthData);
+      
+      setResources(resourcesData);
+      setEvents(eventsData);
+      setAlerts(alertsData);
+      setIncidents(incidentsData);
+      setIntegrations(integrationsData);
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard data');
     } finally {
@@ -80,8 +88,98 @@ export const Dashboard: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  // Derived metrics for resources
+  const getProviderName = useCallback((integrationId: number) => {
+    const integ = integrations.find(i => i.id === integrationId);
+    return integ ? integ.provider : 'Unknown';
+  }, [integrations]);
+
+  const enrichedResources = useMemo(() => {
+    return resources.map(r => ({ ...r, provider: getProviderName(r.integrationId) }));
+  }, [resources, getProviderName]);
+
+  const filteredResources = useMemo(() => {
+    return enrichedResources.filter(r => {
+      if (filterProject !== 'ALL' && r.projectId?.toString() !== filterProject) return false;
+      if (filterProvider !== 'ALL' && r.provider !== filterProvider) return false;
+      return true;
+    });
+  }, [enrichedResources, filterProject, filterProvider]);
+
+  const healthyResources = filteredResources.filter(r => r.status === 'HEALTHY' || r.status === 'RUNNING' || r.status === 'ACTIVE').length;
+  const criticalResources = filteredResources.filter(r => r.status === 'CRITICAL' || r.status === 'FAILED' || r.status === 'STOPPED').length;
+  const warningResources = filteredResources.filter(r => r.status === 'WARNING' || r.status === 'DEGRADED').length;
+
+  const providerCounts = filteredResources.reduce((acc: Record<string, number>, r) => {
+    acc[r.provider] = (acc[r.provider] || 0) + 1;
+    return acc;
+  }, {});
+
   const successPipelines = pipelines.filter(p => ['success', 'SUCCESS', 'completed'].includes(p.status.toLowerCase())).length;
   const pipelineSuccessRate = pipelines.length > 0 ? Math.round((successPipelines / pipelines.length) * 100) : 0;
+
+  // Build live activity feed timeline
+  const activityFeed = useMemo(() => {
+    const allActivities: TimelineEvent[] = [];
+    
+    // Add deployments
+    deployments.forEach(d => {
+      allActivities.push({
+        id: `dep-${d.id}`,
+        title: `Deployment ${d.status}: ${d.projectName}`,
+        description: `Version ${d.version} to ${d.environment}`,
+        timestamp: new Date(d.deployedAt).toLocaleString(),
+        icon: <Rocket className="w-4 h-4" />,
+        status: d.status.toLowerCase() === 'success' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'
+      });
+    });
+
+    // Add events
+    events.forEach(e => {
+      allActivities.push({
+        id: `evt-${e.id}`,
+        title: `Event: ${e.eventType}`,
+        description: e.message || `Provider: ${e.provider}`,
+        timestamp: new Date(e.timestamp).toLocaleString(),
+        icon: <Activity className="w-4 h-4" />,
+        status: e.severity === 'CRITICAL' ? 'error' : e.severity === 'WARNING' ? 'warning' : 'success'
+      });
+    });
+
+    // Add incidents
+    incidents.forEach(i => {
+      allActivities.push({
+        id: `inc-${i.id}`,
+        title: `Incident [${i.status}]: ${i.title}`,
+        description: `Severity: ${i.severity}`,
+        timestamp: new Date(i.startedAt || i.createdAt).toLocaleString(),
+        icon: <AlertCircle className="w-4 h-4" />,
+        status: i.status === 'OPEN' ? 'error' : 'success'
+      });
+    });
+    
+    // Add errors logs
+    logs.forEach(l => {
+      allActivities.push({
+        id: `log-${l.logId}`,
+        title: `Error Log: ${l.sourceService}`,
+        description: l.message,
+        timestamp: new Date(l.timestamp).toLocaleString(),
+        icon: <Terminal className="w-4 h-4" />,
+        status: 'error'
+      });
+    });
+
+    // Sort by timestamp desc and filter
+    const sorted = allActivities
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .filter(a => {
+        if (filterSeverity !== 'ALL' && a.status !== filterSeverity.toLowerCase() && !(filterSeverity === 'CRITICAL' && a.status === 'error')) return false;
+        return true;
+      });
+      
+    return sorted.slice(0, 50);
+  }, [deployments, events, incidents, logs, filterSeverity]);
 
   const deploymentColumns: Column<Deployment>[] = [
     { key: 'projectName', header: 'Project' },
@@ -95,41 +193,18 @@ export const Dashboard: React.FC = () => {
     { key: 'deployedAt', header: 'Deployed At', render: (d) => new Date(d.deployedAt).toLocaleString() }
   ];
 
-  const logColumns: Column<LogEntry>[] = [
-    { key: 'sourceService', header: 'Service', render: (l) => <span className="font-mono text-xs">{l.sourceService}</span> },
-    { key: 'message', header: 'Error Message', render: (l) => <span className="text-rose-600 font-medium truncate max-w-md block">{l.message}</span> },
-    { key: 'timestamp', header: 'Time', render: (l) => new Date(l.timestamp).toLocaleString() }
-  ];
-
-  const commitEvents: TimelineEvent[] = commits.slice(0, 5).map(c => ({
-    id: c.commitLogId,
-    title: c.message,
-    description: `By ${c.author} on ${c.branchName} (${c.projectName || 'Unknown'})`,
-    timestamp: new Date(c.timestamp).toLocaleString(),
-    icon: <GitCommit className="w-4 h-4" />,
-    status: 'neutral'
-  }));
-
-  const pipelineEvents: TimelineEvent[] = pipelines.slice(0, 5).map(p => ({
-    id: p.runId,
-    title: `${p.eventType} on ${p.branch}`,
-    description: p.commitMessage,
-    timestamp: new Date(p.createdAt).toLocaleString(),
-    icon: <PlayCircle className="w-4 h-4" />,
-    status: p.status.toLowerCase() === 'success' ? 'success' : p.status.toLowerCase() === 'failed' ? 'error' : 'warning'
-  }));
-
   const getSystemStatus = () => {
+    if (criticalResources > 0) return 'error';
     if (!health || health.integrations.length === 0) return 'inactive';
     const hasError = health.integrations.some(i => !i.available && i.enabled);
-    return hasError ? 'error' : 'active';
+    return hasError || warningResources > 0 ? 'error' : 'active';
   };
 
   if (loading && !refreshing && projects.length === 0) {
     return (
       <SidebarLayout>
         <div className="flex h-full items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-op-accent"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
       </SidebarLayout>
     );
@@ -142,11 +217,11 @@ export const Dashboard: React.FC = () => {
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-op-fg flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
               OpsPilot Command Center
             </h1>
-            <p className="text-sm font-medium text-op-muted mt-2">
-              Welcome, {user?.name}. Here is your operational overview.
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-2">
+              Welcome, {user?.name}. Here is your operational overview across all connected providers.
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -170,41 +245,86 @@ export const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Statistics Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        {/* Global Filters */}
+        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-medium mr-4">
+            <Filter className="w-4 h-4"/> Filters:
+          </div>
+          <select value={filterProject} onChange={e => setFilterProject(e.target.value)} className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+            <option value="ALL">All Projects</option>
+            {projects.map(p => <option key={p.id} value={p.id.toString()}>{p.projectName}</option>)}
+          </select>
+          <select value={filterProvider} onChange={e => setFilterProvider(e.target.value)} className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+            <option value="ALL">All Providers</option>
+            <option value="DOCKER">Docker</option>
+            <option value="KUBERNETES">Kubernetes</option>
+            <option value="AWS">AWS</option>
+            <option value="VERCEL">Vercel</option>
+            <option value="ORACLE_CLOUD">Oracle Cloud</option>
+            <option value="GITHUB">GitHub</option>
+          </select>
+          <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)} className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
+            <option value="ALL">All Severities</option>
+            <option value="CRITICAL">Critical / Error</option>
+            <option value="WARNING">Warning</option>
+            <option value="INFO">Info / Success</option>
+          </select>
+        </div>
+
+        {/* Statistics Grid - Normalized Resources */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatsCard 
-            title="Active Projects" 
-            value={projects.length} 
-            icon={<FolderGit2 className="w-6 h-6" />} 
-          />
-          <StatsCard 
-            title="Running Containers" 
-            value={containers.length} 
-            icon={<Terminal className="w-6 h-6" />} 
-          />
-          <StatsCard 
-            title="Kubernetes Pods" 
-            value={pods.length} 
+            title="Total Resources" 
+            value={filteredResources.length} 
             icon={<Server className="w-6 h-6" />} 
           />
           <StatsCard 
-            title="Total Deployments" 
-            value={deployments.length} 
-            icon={<Rocket className="w-6 h-6" />} 
+            title="Healthy Resources" 
+            value={healthyResources} 
+            icon={<Activity className="w-6 h-6 text-green-500" />} 
           />
           <StatsCard 
-            title="Pipeline Success Rate" 
-            value={`${pipelineSuccessRate}%`} 
-            icon={<Activity className="w-6 h-6" />} 
-            trend={pipelines.length > 0 ? { value: pipelineSuccessRate, isPositive: pipelineSuccessRate > 80 } : undefined}
+            title="Warning Resources" 
+            value={warningResources} 
+            icon={<AlertCircle className="w-6 h-6 text-yellow-500" />} 
+          />
+          <StatsCard 
+            title="Critical Resources" 
+            value={criticalResources} 
+            icon={<AlertCircle className="w-6 h-6 text-red-500" />} 
           />
         </div>
 
-        {/* Middle Section: Tables and Health */}
+        {/* Provider Breakdown & Pipeline */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="lg:col-span-3">
+             <Card>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Provider Breakdown</h3>
+              <div className="flex flex-wrap gap-4">
+                {['DOCKER', 'KUBERNETES', 'AWS', 'VERCEL', 'ORACLE_CLOUD'].map(provider => (
+                  <div key={provider} className="flex-1 min-w-[120px] p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">{provider}</p>
+                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{providerCounts[provider] || 0}</p>
+                  </div>
+                ))}
+              </div>
+             </Card>
+          </div>
+          <div className="lg:col-span-2">
+             <StatsCard 
+              title="Pipeline Success Rate" 
+              value={`${pipelineSuccessRate}%`} 
+              icon={<Activity className="w-6 h-6" />} 
+              trend={pipelines.length > 0 ? { value: pipelineSuccessRate, isPositive: pipelineSuccessRate > 80 } : undefined}
+            />
+          </div>
+        </div>
+
+        {/* Middle Section: Tables and Activity Feed */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
             <Card>
-              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Deployments</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Recent Deployments</h3>
               {deployments.length > 0 ? (
                 <Table data={deployments.slice(0, 5)} columns={deploymentColumns} keyExtractor={(d) => d.id} />
               ) : (
@@ -213,23 +333,56 @@ export const Dashboard: React.FC = () => {
             </Card>
 
             <Card>
-              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Incidents (Errors)</h3>
-              {logs.length > 0 ? (
-                <Table data={logs} columns={logColumns} keyExtractor={(l) => l.logId} />
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Normalized Alerts & Incidents</h3>
+              {incidents.length > 0 || alerts.length > 0 ? (
+                <div className="space-y-4">
+                  {incidents.slice(0, 5).map(i => (
+                    <div key={`inc-${i.id}`} className="flex justify-between items-center p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-lg">
+                      <div>
+                        <span className="font-bold text-red-700 dark:text-red-400">Incident: {i.title}</span>
+                        <p className="text-xs text-red-600 dark:text-red-500 mt-1">Severity: {i.severity} | Status: {i.status}</p>
+                      </div>
+                      <Badge variant="error">Active</Badge>
+                    </div>
+                  ))}
+                  {alerts.slice(0, 5).map(a => (
+                     <div key={`alert-${a.id}`} className="flex justify-between items-center p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30 rounded-lg">
+                     <div>
+                       <span className="font-bold text-yellow-700 dark:text-yellow-400">Alert: {a.ruleName || a.eventType}</span>
+                       <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">Severity: {a.severity} | Provider: {a.provider}</p>
+                     </div>
+                     <Badge variant="warning">{a.status}</Badge>
+                   </div>
+                  ))}
+                </div>
               ) : (
-                <EmptyState title="No Errors Found" description="System is running smoothly without recent logged errors." icon={<Activity />} />
+                <EmptyState title="System Healthy" description="No active incidents or alerts detected." icon={<Activity />} />
               )}
             </Card>
           </div>
 
           <div className="space-y-8">
             <Card>
-              <h3 className="text-lg font-bold text-op-fg mb-4">Infrastructure Health</h3>
+              <div className="flex justify-between items-center mb-4">
+                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Live Activity Feed</h3>
+                 <Badge variant="info">{activityFeed.length} events</Badge>
+              </div>
+              {activityFeed.length > 0 ? (
+                <div className="max-h-[600px] overflow-y-auto pr-2">
+                  <Timeline events={activityFeed} />
+                </div>
+              ) : (
+                <EmptyState title="No Activity" description="No recent events, alerts, or deployments found." />
+              )}
+            </Card>
+
+            <Card>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Infrastructure Health</h3>
               <div className="space-y-4">
                 {health?.integrations && health.integrations.length > 0 ? (
                   health.integrations.map(integration => (
-                    <div key={integration.name} className="flex items-center justify-between p-3 border border-op-border rounded-lg bg-op-raised">
-                      <span className="font-medium text-sm text-op-fg">{integration.name}</span>
+                    <div key={integration.name} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+                      <span className="font-medium text-sm text-gray-900 dark:text-white">{integration.name}</span>
                       <StatusIndicator status={integration.available ? 'active' : 'error'} text={integration.status} />
                     </div>
                   ))
@@ -237,24 +390,6 @@ export const Dashboard: React.FC = () => {
                   <EmptyState title="No Integrations" description="Health metrics are unavailable." />
                 )}
               </div>
-            </Card>
-
-            <Card>
-              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Commits</h3>
-              {commits.length > 0 ? (
-                <Timeline events={commitEvents} />
-              ) : (
-                <EmptyState title="No Commits" description="No GitHub commits have been synced." />
-              )}
-            </Card>
-
-            <Card>
-              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Pipelines</h3>
-              {pipelines.length > 0 ? (
-                <Timeline events={pipelineEvents} />
-              ) : (
-                <EmptyState title="No Pipelines" description="No CI/CD pipeline runs recorded." />
-              )}
             </Card>
           </div>
         </div>

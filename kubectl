@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+if [[ "$1" == "get" && "$2" == "pods" && "$3" == "-A" && "$4" == "-o" && "$5" == "json" ]]; then
+  echo '{
+    "items": [
+      {
+        "metadata": {
+          "name": "nginx-latest-pod",
+          "namespace": "default"
+        },
+        "spec": {
+          "nodeName": "minikube"
+        },
+        "status": {
+          "phase": "Running"
+        }
+      }
+    ]
+  }'
+else
+  # Pass through
+  exec "kubectl.exe" "$@"
+fi

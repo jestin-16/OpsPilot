@@ -731,6 +731,22 @@ export const api = {
     return res.data;
   },
 
+  getAlerts: async (): Promise<any[]> => {
+    const res = await axiosInstance.get<any[]>('/alerts');
+    return res.data;
+  },
+
+  getEvents: async (): Promise<any[]> => {
+    const res = await axiosInstance.get<any[]>('/events');
+    return res.data;
+  },
+
+  getResources: async (projectId?: number): Promise<any[]> => {
+    const url = projectId ? `/projects/${projectId}/resources` : '/resources';
+    const res = await axiosInstance.get<any[]>(url);
+    return res.data;
+  },
+
   completeProjectSetup: async (projectId: number): Promise<Project> => {
     const res = await axiosInstance.put<Project>(`/projects/${projectId}/complete-setup`);
     return res.data;

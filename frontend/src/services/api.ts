@@ -252,15 +252,15 @@ export interface MetricsData {
 }
 
 export interface IntegrationStatus {
-  name: string;
+  provider: string;
   enabled: boolean;
-  available: boolean;
   status: string;
-  error?: string;
+  message?: string;
   checkedAt: string;
 }
 
 export interface IntegrationHealthResponse {
+  overallStatus: string;
   integrations: IntegrationStatus[];
 }
 

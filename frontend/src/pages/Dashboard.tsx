@@ -195,9 +195,18 @@ export const Dashboard: React.FC = () => {
 
   const getSystemStatus = () => {
     if (criticalResources > 0) return 'error';
-    if (!health || health.integrations.length === 0) return 'inactive';
-    const hasError = health.integrations.some(i => !i.available && i.enabled);
-    return hasError || warningResources > 0 ? 'error' : 'active';
+    if (!health) return 'inactive';
+    if (health.overallStatus === 'CRITICAL') return 'error';
+    if (health.overallStatus === 'DEGRADED' || health.overallStatus === 'OPERATIONAL_WITH_WARNINGS' || warningResources > 0) return 'pending';
+    return 'active';
+  };
+
+  const getSystemStatusReason = () => {
+    if (!health) return 'Inactive';
+    if (health.overallStatus === 'CRITICAL' || criticalResources > 0) return 'System Critical';
+    if (health.overallStatus === 'DEGRADED') return 'System Degraded';
+    if (health.overallStatus === 'OPERATIONAL_WITH_WARNINGS' || warningResources > 0) return 'System Operational with Warnings';
+    return 'System Operational';
   };
 
   if (loading && !refreshing && projects.length === 0) {
@@ -225,7 +234,7 @@ export const Dashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            <StatusIndicator status={getSystemStatus()} text={`System: ${getSystemStatus()}`} />
+            <StatusIndicator status={getSystemStatus()} text={`System: ${getSystemStatusReason()}`} />
             <Button variant="secondary" onClick={() => fetchData(true)} isLoading={refreshing}>
               <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 
               <span className="ml-2">Refresh</span>
@@ -303,7 +312,7 @@ export const Dashboard: React.FC = () => {
               <div className="flex flex-wrap gap-4">
                 {['DOCKER', 'KUBERNETES', 'AWS', 'VERCEL', 'ORACLE_CLOUD'].map(provider => (
                   <div key={provider} className="flex-1 min-w-[120px] p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700 text-center">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">{provider}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">{provider.replace('_', ' ')}</p>
                     <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{providerCounts[provider] || 0}</p>
                   </div>
                 ))}
@@ -315,7 +324,6 @@ export const Dashboard: React.FC = () => {
               title="Pipeline Success Rate" 
               value={`${pipelineSuccessRate}%`} 
               icon={<Activity className="w-6 h-6" />} 
-              trend={pipelines.length > 0 ? { value: pipelineSuccessRate, isPositive: pipelineSuccessRate > 80 } : undefined}
             />
           </div>
         </div>
@@ -381,9 +389,17 @@ export const Dashboard: React.FC = () => {
               <div className="space-y-4">
                 {health?.integrations && health.integrations.length > 0 ? (
                   health.integrations.map(integration => (
-                    <div key={integration.name} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-900/50">
-                      <span className="font-medium text-sm text-gray-900 dark:text-white">{integration.name}</span>
-                      <StatusIndicator status={integration.available ? 'active' : 'error'} text={integration.status} />
+                    <div key={integration.provider} className="flex flex-col p-3 border border-gray-200 rounded-lg bg-gray-50">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium text-sm text-gray-900">{integration.provider}</span>
+                        <StatusIndicator 
+                          status={integration.status === 'CONNECTED' ? 'active' : integration.status === 'DISABLED' ? 'inactive' : 'error'} 
+                          text={integration.status} 
+                        />
+                      </div>
+                      {integration.message && (
+                        <span className="text-xs text-gray-500">{integration.message}</span>
+                      )}
                     </div>
                   ))
                 ) : (

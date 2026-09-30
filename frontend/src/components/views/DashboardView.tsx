@@ -62,14 +62,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onNavigateTa
           });
         }
         if (integrationsRes && integrationsRes.integrations) {
-          integrationsRes.integrations.forEach(integ => {
+          integrationsRes.integrations.forEach((integ: any) => {
+            const isAvailable = integ.status === 'CONNECTED';
             envs.push({
-              name: `${integ.name} Integration`,
-              status: integ.status === 'UP' || integ.available ? 'Healthy' : 'Warning',
+              name: `${integ.provider} Integration`,
+              status: isAvailable ? 'Healthy' : 'Warning',
               pods: 0,
               latency: 'N/A',
-              uptime: integ.available ? '100%' : '0%',
-              health: integ.available ? 'success' : 'warning'
+              uptime: isAvailable ? '100%' : '0%',
+              health: isAvailable ? 'success' : 'warning'
             });
           });
         }

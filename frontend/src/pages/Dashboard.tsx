@@ -13,9 +13,10 @@ import { Button } from '../components/Button';
 import { StatusIndicator } from '../components/StatusIndicator';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
+import { Dropdown } from '../components/Dropdown';
 import { 
   Rocket, Server, Activity, RefreshCw, AlertCircle, 
-  Terminal, Plus, Filter
+  Terminal, Plus, Filter, ChevronDown
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -255,29 +256,76 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* Global Filters */}
-        <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-medium mr-4">
-            <Filter className="w-4 h-4"/> Filters:
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-bold mr-2 uppercase tracking-wider">
+            <Filter className="w-4 h-4 text-indigo-500 dark:text-indigo-400"/> Filters
           </div>
-          <select value={filterProject} onChange={e => setFilterProject(e.target.value)} className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
-            <option value="ALL">All Projects</option>
-            {projects.map(p => <option key={p.id} value={p.id.toString()}>{p.projectName}</option>)}
-          </select>
-          <select value={filterProvider} onChange={e => setFilterProvider(e.target.value)} className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
-            <option value="ALL">All Providers</option>
-            <option value="DOCKER">Docker</option>
-            <option value="KUBERNETES">Kubernetes</option>
-            <option value="AWS">AWS</option>
-            <option value="VERCEL">Vercel</option>
-            <option value="ORACLE_CLOUD">Oracle Cloud</option>
-            <option value="GITHUB">GitHub</option>
-          </select>
-          <select value={filterSeverity} onChange={e => setFilterSeverity(e.target.value)} className="text-sm border-gray-300 dark:border-gray-600 rounded-md shadow-sm dark:bg-gray-700 dark:text-white">
-            <option value="ALL">All Severities</option>
-            <option value="CRITICAL">Critical / Error</option>
-            <option value="WARNING">Warning</option>
-            <option value="INFO">Info / Success</option>
-          </select>
+          
+          <Dropdown
+            align="left"
+            trigger={
+              <div className="flex items-center justify-between min-w-[200px] px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-white dark:hover:bg-gray-800 transition-all cursor-pointer shadow-sm">
+                <span className="truncate">{filterProject === 'ALL' ? 'All Projects' : projects.find(p => p.id.toString() === filterProject)?.projectName || 'Select Project'}</span>
+                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-3" />
+              </div>
+            }
+            items={[
+              { key: 'ALL', label: 'All Projects', onClick: () => setFilterProject('ALL') },
+              ...projects.map(p => ({
+                key: p.id.toString(),
+                label: p.projectName,
+                onClick: () => setFilterProject(p.id.toString())
+              }))
+            ]}
+          />
+
+          <Dropdown
+            align="left"
+            trigger={
+              <div className="flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-white dark:hover:bg-gray-800 transition-all cursor-pointer shadow-sm">
+                <span className="truncate">{
+                  filterProvider === 'ALL' ? 'All Providers' : 
+                  filterProvider === 'DOCKER' ? 'Docker' :
+                  filterProvider === 'KUBERNETES' ? 'Kubernetes' :
+                  filterProvider === 'AWS' ? 'AWS' :
+                  filterProvider === 'VERCEL' ? 'Vercel' :
+                  filterProvider === 'ORACLE_CLOUD' ? 'Oracle Cloud' :
+                  filterProvider === 'GITHUB' ? 'GitHub' : filterProvider
+                }</span>
+                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-3" />
+              </div>
+            }
+            items={[
+              { key: 'ALL', label: 'All Providers', onClick: () => setFilterProvider('ALL') },
+              { key: 'DOCKER', label: 'Docker', onClick: () => setFilterProvider('DOCKER') },
+              { key: 'KUBERNETES', label: 'Kubernetes', onClick: () => setFilterProvider('KUBERNETES') },
+              { key: 'AWS', label: 'AWS', onClick: () => setFilterProvider('AWS') },
+              { key: 'VERCEL', label: 'Vercel', onClick: () => setFilterProvider('VERCEL') },
+              { key: 'ORACLE_CLOUD', label: 'Oracle Cloud', onClick: () => setFilterProvider('ORACLE_CLOUD') },
+              { key: 'GITHUB', label: 'GitHub', onClick: () => setFilterProvider('GITHUB') }
+            ]}
+          />
+
+          <Dropdown
+            align="left"
+            trigger={
+              <div className="flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-white dark:hover:bg-gray-800 transition-all cursor-pointer shadow-sm">
+                <span className="truncate">{
+                  filterSeverity === 'ALL' ? 'All Severities' : 
+                  filterSeverity === 'CRITICAL' ? 'Critical / Error' :
+                  filterSeverity === 'WARNING' ? 'Warning' :
+                  filterSeverity === 'INFO' ? 'Info / Success' : filterSeverity
+                }</span>
+                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-3" />
+              </div>
+            }
+            items={[
+              { key: 'ALL', label: 'All Severities', onClick: () => setFilterSeverity('ALL') },
+              { key: 'CRITICAL', label: 'Critical / Error', onClick: () => setFilterSeverity('CRITICAL') },
+              { key: 'WARNING', label: 'Warning', onClick: () => setFilterSeverity('WARNING') },
+              { key: 'INFO', label: 'Info / Success', onClick: () => setFilterSeverity('INFO') }
+            ]}
+          />
         </div>
 
         {/* Statistics Grid - Normalized Resources */}

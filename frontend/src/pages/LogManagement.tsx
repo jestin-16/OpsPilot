@@ -172,7 +172,12 @@ export const LogManagement: React.FC = () => {
     
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
-      result = result.filter(l => l.message?.toLowerCase().includes(q) || l.logLevel?.toLowerCase().includes(q));
+      result = result.filter(l => 
+        l.message?.toLowerCase().includes(q) || 
+        l.logLevel?.toLowerCase().includes(q) ||
+        l.sourceService?.toLowerCase().includes(q) ||
+        l.project?.projectName?.toLowerCase().includes(q)
+      );
     }
     if (logLevel !== 'ALL') {
       result = result.filter(l => l.logLevel === logLevel);
@@ -187,7 +192,11 @@ export const LogManagement: React.FC = () => {
       if (timeRange === '7d') msToSubtract = 7 * 24 * 60 * 60 * 1000;
       
       const threshold = now - msToSubtract;
-      result = result.filter(log => new Date(log.timestamp).getTime() >= threshold);
+      result = result.filter(log => {
+        let ts = log.timestamp;
+        if (ts && !ts.endsWith('Z')) ts += 'Z';
+        return new Date(ts).getTime() >= threshold;
+      });
     }
     return result;
   }, [logs, streamLogs, timeRange, liveStream, searchQuery, logLevel]);
@@ -303,6 +312,7 @@ export const LogManagement: React.FC = () => {
                 <option value="auth-service">auth-service</option>
                 <option value="core-service">core-service</option>
                 <option value="observability-service">observability-service</option>
+                <option value="Vercel Integration">Vercel Integration</option>
               </select>
 
               <div className="flex gap-2">
@@ -368,7 +378,7 @@ export const LogManagement: React.FC = () => {
                       className={`cursor-pointer hover:bg-white/[0.02] transition-colors ${selectedLog?.logId === log.logId ? 'bg-white/[0.04]' : ''}`}
                     >
                       <td className="py-2 px-4 text-[#888888] text-xs">
-                        {new Date(log.timestamp).toLocaleString(undefined, { hour: '2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 3 })}
+                        {new Date(log.timestamp + (!log.timestamp.endsWith('Z') ? 'Z' : '')).toLocaleString(undefined, { hour: '2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 3 })}
                       </td>
                       <td className="py-2 px-4">{getLevelBadge(log.logLevel)}</td>
                       <td className="py-2 px-4 text-[#A8A8A8] truncate max-w-[160px]">{log.sourceService}</td>
@@ -422,7 +432,7 @@ export const LogManagement: React.FC = () => {
               <div className="p-5 space-y-6 flex-1">
                 <div className="flex items-center gap-3">
                   {getLevelBadge(selectedLog.logLevel)}
-                  <span className="text-sm text-op-muted font-mono">{new Date(selectedLog.timestamp).toLocaleString()}</span>
+                  <span className="text-sm text-op-muted font-mono">{new Date(selectedLog.timestamp + (!selectedLog.timestamp.endsWith('Z') ? 'Z' : '')).toLocaleString()}</span>
                 </div>
 
                 <div className="space-y-4">

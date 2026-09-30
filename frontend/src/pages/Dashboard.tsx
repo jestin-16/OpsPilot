@@ -256,7 +256,7 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* Global Filters */}
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
+        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-gray-200/50 dark:border-gray-700/50 flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-bold mr-2 uppercase tracking-wider">
             <Filter className="w-4 h-4 text-indigo-500 dark:text-indigo-400"/> Filters
           </div>
@@ -264,9 +264,9 @@ export const Dashboard: React.FC = () => {
           <Dropdown
             align="left"
             trigger={
-              <div className="flex items-center justify-between min-w-[200px] px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-white dark:hover:bg-gray-800 transition-all cursor-pointer shadow-sm">
+              <div className="group flex items-center justify-between min-w-[190px] px-4 py-2.5 bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-full text-sm font-bold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/50 dark:hover:bg-indigo-500/20 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
                 <span className="truncate">{filterProject === 'ALL' ? 'All Projects' : projects.find(p => p.id.toString() === filterProject)?.projectName || 'Select Project'}</span>
-                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-3" />
+                <ChevronDown className="w-4 h-4 text-indigo-400 dark:text-indigo-300 transition-transform duration-300 group-hover:translate-y-0.5 ml-3 flex-shrink-0" />
               </div>
             }
             items={[
@@ -282,7 +282,7 @@ export const Dashboard: React.FC = () => {
           <Dropdown
             align="left"
             trigger={
-              <div className="flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-white dark:hover:bg-gray-800 transition-all cursor-pointer shadow-sm">
+              <div className="group flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-full text-sm font-bold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/50 dark:hover:bg-indigo-500/20 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
                 <span className="truncate">{
                   filterProvider === 'ALL' ? 'All Providers' : 
                   filterProvider === 'DOCKER' ? 'Docker' :
@@ -292,7 +292,7 @@ export const Dashboard: React.FC = () => {
                   filterProvider === 'ORACLE_CLOUD' ? 'Oracle Cloud' :
                   filterProvider === 'GITHUB' ? 'GitHub' : filterProvider
                 }</span>
-                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-3" />
+                <ChevronDown className="w-4 h-4 text-indigo-400 dark:text-indigo-300 transition-transform duration-300 group-hover:translate-y-0.5 ml-3 flex-shrink-0" />
               </div>
             }
             items={[
@@ -309,14 +309,14 @@ export const Dashboard: React.FC = () => {
           <Dropdown
             align="left"
             trigger={
-              <div className="flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-medium text-gray-900 dark:text-white hover:border-indigo-500/50 dark:hover:border-indigo-400/50 hover:bg-white dark:hover:bg-gray-800 transition-all cursor-pointer shadow-sm">
+              <div className="group flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-full text-sm font-bold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/50 dark:hover:bg-indigo-500/20 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
                 <span className="truncate">{
                   filterSeverity === 'ALL' ? 'All Severities' : 
                   filterSeverity === 'CRITICAL' ? 'Critical / Error' :
                   filterSeverity === 'WARNING' ? 'Warning' :
                   filterSeverity === 'INFO' ? 'Info / Success' : filterSeverity
                 }</span>
-                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0 ml-3" />
+                <ChevronDown className="w-4 h-4 text-indigo-400 dark:text-indigo-300 transition-transform duration-300 group-hover:translate-y-0.5 ml-3 flex-shrink-0" />
               </div>
             }
             items={[

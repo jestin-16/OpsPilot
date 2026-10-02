@@ -213,8 +213,8 @@ export const Dashboard: React.FC = () => {
   if (loading && !refreshing && projects.length === 0) {
     return (
       <SidebarLayout>
-        <div className="flex h-full items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="flex h-full min-h-[60vh] items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
         </div>
       </SidebarLayout>
     );
@@ -249,7 +249,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {error && (
-          <div className="bg-rose-50 text-rose-600 p-4 rounded-xl border border-rose-200 flex items-center gap-3">
+          <div className="bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 p-4 rounded-xl border border-rose-200 dark:border-rose-900/30 flex items-center gap-3">
             <AlertCircle className="w-5 h-5" />
             <p className="text-sm font-medium">{error}</p>
           </div>
@@ -371,7 +371,8 @@ export const Dashboard: React.FC = () => {
              <StatsCard 
               title="Pipeline Success Rate" 
               value={`${pipelineSuccessRate}%`} 
-              icon={<Activity className="w-6 h-6" />} 
+              icon={<Activity className="w-6 h-6" />}
+              className="h-full"
             />
           </div>
         </div>
@@ -437,16 +438,16 @@ export const Dashboard: React.FC = () => {
               <div className="space-y-4">
                 {health?.integrations && health.integrations.length > 0 ? (
                   health.integrations.map(integration => (
-                    <div key={integration.provider} className="flex flex-col p-3 border border-gray-200 rounded-lg bg-gray-50">
+                    <div key={integration.provider} className="flex flex-col p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm text-gray-900">{integration.provider}</span>
+                        <span className="font-medium text-sm text-gray-900 dark:text-white">{integration.provider}</span>
                         <StatusIndicator 
                           status={integration.status === 'CONNECTED' ? 'active' : integration.status === 'DISABLED' ? 'inactive' : 'error'} 
                           text={integration.status} 
                         />
                       </div>
                       {integration.message && (
-                        <span className="text-xs text-gray-500">{integration.message}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">{integration.message}</span>
                       )}
                     </div>
                   ))

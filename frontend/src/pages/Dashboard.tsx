@@ -63,7 +63,7 @@ export const Dashboard: React.FC = () => {
         api.getEvents().catch(() => []),
         api.getAlerts().catch(() => []),
         api.getIncidents().catch(() => []),
-        api.getAdminIntegrations().catch(() => []) // To map integrationId to provider
+        api.getIntegrations().catch(() => []) // To map integrationId to provider
       ]);
 
       setProjects(projectsData);
@@ -92,7 +92,7 @@ export const Dashboard: React.FC = () => {
   // Derived metrics for resources
   const getProviderName = useCallback((integrationId: number) => {
     const integ = integrations.find(i => i.id === integrationId);
-    return integ ? integ.provider : 'Unknown';
+    return integ ? integ.providerType : 'Unknown';
   }, [integrations]);
 
   const enrichedResources = useMemo(() => {
@@ -121,7 +121,7 @@ export const Dashboard: React.FC = () => {
 
   // Build live activity feed timeline
   const activityFeed = useMemo(() => {
-    const allActivities: TimelineEvent[] = [];
+    const allActivities: (TimelineEvent & { rawDate: string })[] = [];
     
     // Add deployments
     deployments.forEach(d => {
@@ -130,6 +130,7 @@ export const Dashboard: React.FC = () => {
         title: `Deployment ${d.status}: ${d.projectName}`,
         description: `Version ${d.version} to ${d.environment}`,
         timestamp: new Date(d.deployedAt).toLocaleString(),
+        rawDate: d.deployedAt,
         icon: <Rocket className="w-4 h-4" />,
         status: d.status.toLowerCase() === 'success' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'
       });
@@ -142,6 +143,7 @@ export const Dashboard: React.FC = () => {
         title: `Event: ${e.eventType}`,
         description: e.message || `Provider: ${e.provider}`,
         timestamp: new Date(e.timestamp).toLocaleString(),
+        rawDate: e.timestamp,
         icon: <Activity className="w-4 h-4" />,
         status: e.severity === 'CRITICAL' ? 'error' : e.severity === 'WARNING' ? 'warning' : 'success'
       });
@@ -154,6 +156,7 @@ export const Dashboard: React.FC = () => {
         title: `Incident [${i.status}]: ${i.title}`,
         description: `Severity: ${i.severity}`,
         timestamp: new Date(i.startedAt || i.createdAt).toLocaleString(),
+        rawDate: i.startedAt || i.createdAt,
         icon: <AlertCircle className="w-4 h-4" />,
         status: i.status === 'OPEN' ? 'error' : 'success'
       });
@@ -166,6 +169,7 @@ export const Dashboard: React.FC = () => {
         title: `Error Log: ${l.sourceService}`,
         description: l.message,
         timestamp: new Date(l.timestamp).toLocaleString(),
+        rawDate: l.timestamp,
         icon: <Terminal className="w-4 h-4" />,
         status: 'error'
       });
@@ -173,7 +177,7 @@ export const Dashboard: React.FC = () => {
 
     // Sort by timestamp desc and filter
     const sorted = allActivities
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime())
       .filter(a => {
         if (filterSeverity !== 'ALL' && a.status !== filterSeverity.toLowerCase() && !(filterSeverity === 'CRITICAL' && a.status === 'error')) return false;
         return true;

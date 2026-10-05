@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type LogEntry, type Project, API_BASE_URL } from '../services/api';
-import { 
-  Search, RefreshCw, AlertCircle, 
-  Pause, Play, ChevronRight, X, Box, Rocket, Terminal, Activity 
+import {
+  Search, RefreshCw, AlertCircle,
+  Pause, Play, ChevronRight, X, Box, Rocket, Terminal, Activity
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -19,7 +19,7 @@ export const LogManagement: React.FC = () => {
   const [logLevel, setLogLevel] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [timeRange, setTimeRange] = useState('1h');
-  
+
   // State
   const [watching, setWatching] = useState(true);
   const [liveStream, setLiveStream] = useState(false);
@@ -27,7 +27,7 @@ export const LogManagement: React.FC = () => {
   const [streamLogs, setStreamLogs] = useState<LogEntry[]>([]);
   const refreshSeconds = 5;
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
@@ -81,11 +81,11 @@ export const LogManagement: React.FC = () => {
 
   const startStreams = async () => {
     if (!liveStream) return;
-    
+
     // Cleanup old streams
     activeStreamControllers.forEach(ctrl => ctrl.abort());
     setActiveStreamControllers([]);
-    
+
     if (projectId === 'ALL') {
       setError('Select a project to start live streams');
       return;
@@ -97,7 +97,7 @@ export const LogManagement: React.FC = () => {
         setError('No integrations found for this project');
         return;
       }
-      
+
       const newControllers: AbortController[] = [];
       const token = localStorage.getItem('opspilot_token');
 
@@ -106,18 +106,18 @@ export const LogManagement: React.FC = () => {
       // or we pass a generic one if we don't have it.
       // Wait, earlier we required containerId/podName in backend!
       // Let's pass a dummy or require the user to input it.
-      
+
       for (const integ of integrations) {
         const ctrl = new AbortController();
         newControllers.push(ctrl);
-        
+
         let url = `${API_BASE_URL}/projects/${projectId}/logs/stream?integrationId=${integ.id}`;
         if (integ.provider === 'DOCKER') {
           // just fetch containers to get one? Or require params?
           // For safety, we'll try streaming, backend might fail if containerId is missing
           url += `&containerId=demo-container`; // Hack for testing
         } else if (integ.provider === 'KUBERNETES') {
-          url += `&podName=demo-pod&namespace=default`; 
+          url += `&podName=demo-pod&namespace=default`;
         }
 
         fetch(url, {
@@ -129,11 +129,11 @@ export const LogManagement: React.FC = () => {
           if (!response.body) return;
           const reader = response.body.getReader();
           const decoder = new TextDecoder('utf-8');
-          
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            
+
             const chunk = decoder.decode(value, { stream: true });
             const lines = chunk.split('\n');
             for (const line of lines) {
@@ -141,13 +141,13 @@ export const LogManagement: React.FC = () => {
                 try {
                   const data = JSON.parse(line.replace('data:', ''));
                   setStreamLogs(prev => [data, ...prev].slice(0, 1000));
-                } catch (e) {}
+                } catch (e) { }
               }
             }
           }
         }).catch(err => console.log('Stream ended', err));
       }
-      
+
       setActiveStreamControllers(newControllers);
     } catch (e: any) {
       setError('Failed to start streams: ' + e.message);
@@ -169,11 +169,11 @@ export const LogManagement: React.FC = () => {
   // Client-side time range filter
   const filteredLogs = useMemo(() => {
     let result = liveStream ? streamLogs : logs;
-    
+
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
-      result = result.filter(l => 
-        l.message?.toLowerCase().includes(q) || 
+      result = result.filter(l =>
+        l.message?.toLowerCase().includes(q) ||
         l.logLevel?.toLowerCase().includes(q) ||
         l.sourceService?.toLowerCase().includes(q) ||
         l.project?.projectName?.toLowerCase().includes(q)
@@ -190,7 +190,7 @@ export const LogManagement: React.FC = () => {
       if (timeRange === '1h') msToSubtract = 60 * 60 * 1000;
       if (timeRange === '24h') msToSubtract = 24 * 60 * 60 * 1000;
       if (timeRange === '7d') msToSubtract = 7 * 24 * 60 * 60 * 1000;
-      
+
       const threshold = now - msToSubtract;
       result = result.filter(log => {
         let ts = log.timestamp;
@@ -231,10 +231,10 @@ export const LogManagement: React.FC = () => {
   return (
     <SidebarLayout>
       <div className="flex h-[calc(100vh-theme(spacing.16))] w-full bg-op-surface animate-fade-in">
-        
+
         {/* Main Content Area */}
         <div className={`flex flex-col flex-1 overflow-hidden transition-all duration-300 ${selectedLog ? 'pr-[400px]' : ''}`}>
-          
+
           {/* Header & Controls */}
           <div className="flex-none p-6 border-b border-op-border bg-op-surface">
             <div className="flex justify-between items-center mb-6">
@@ -372,13 +372,13 @@ export const LogManagement: React.FC = () => {
                 </thead>
                 <tbody className="divide-y divide-white/5 text-[#E0E0E0]">
                   {paginatedLogs.map((log) => (
-                    <tr 
-                      key={log.logId} 
+                    <tr
+                      key={log.logId}
                       onClick={() => setSelectedLog(log)}
                       className={`cursor-pointer hover:bg-white/[0.02] transition-colors ${selectedLog?.logId === log.logId ? 'bg-white/[0.04]' : ''}`}
                     >
                       <td className="py-2 px-4 text-[#888888] text-xs">
-                        {new Date(log.timestamp + (!log.timestamp.endsWith('Z') ? 'Z' : '')).toLocaleString(undefined, { hour: '2-digit', minute:'2-digit', second:'2-digit', fractionalSecondDigits: 3 })}
+                        {new Date(log.timestamp + (!log.timestamp.endsWith('Z') ? 'Z' : '')).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 })}
                       </td>
                       <td className="py-2 px-4">{getLevelBadge(log.logLevel)}</td>
                       <td className="py-2 px-4 text-[#A8A8A8] truncate max-w-[160px]">{log.sourceService}</td>
@@ -396,7 +396,7 @@ export const LogManagement: React.FC = () => {
             <div className="flex-none p-3 border-t border-op-border bg-op-surface flex items-center justify-between">
               <span className="text-sm text-op-muted">Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredLogs.length)} of {filteredLogs.length} logs</span>
               <div className="flex gap-1">
-                <button 
+                <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                   className="px-3 py-1 bg-op-raised border border-op-border rounded disabled:opacity-50 text-sm text-op-fg"
@@ -404,7 +404,7 @@ export const LogManagement: React.FC = () => {
                   Prev
                 </button>
                 <span className="px-3 py-1 text-sm text-op-muted">Page {currentPage} of {totalPages}</span>
-                <button 
+                <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                   className="px-3 py-1 bg-op-raised border border-op-border rounded disabled:opacity-50 text-sm text-op-fg"
@@ -428,7 +428,7 @@ export const LogManagement: React.FC = () => {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              
+
               <div className="p-5 space-y-6 flex-1">
                 <div className="flex items-center gap-3">
                   {getLevelBadge(selectedLog.logLevel)}
@@ -453,7 +453,7 @@ export const LogManagement: React.FC = () => {
                       <div className="text-sm text-op-fg font-mono">#{selectedLog.logId}</div>
                     </div>
                   </div>
-                  
+
                   {extractTraceId(selectedLog.message) && (
                     <div>
                       <label className="text-xs font-bold text-op-muted uppercase tracking-wider mb-1 block">Trace ID</label>
@@ -468,7 +468,7 @@ export const LogManagement: React.FC = () => {
                   {/* Context Links */}
                   <div className="space-y-3">
                     <label className="text-xs font-bold text-op-muted uppercase tracking-wider block">Context</label>
-                    
+
                     {selectedLog.project && (
                       <Link to={`/projects`} className="flex items-center gap-3 p-3 bg-op-raised border border-op-border rounded-lg hover:border-op-accent transition-colors group">
                         <Box className="w-4 h-4 text-op-muted group-hover:text-op-accent" />

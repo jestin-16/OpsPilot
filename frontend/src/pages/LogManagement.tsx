@@ -206,6 +206,19 @@ export const LogManagement: React.FC = () => {
     return filteredLogs.slice(start, start + itemsPerPage);
   }, [filteredLogs, currentPage]);
 
+  const uniqueServices = useMemo(() => {
+    const allServices = new Set<string>();
+    // Collect from historical logs
+    logs.forEach(log => {
+      if (log.sourceService) allServices.add(log.sourceService);
+    });
+    // Collect from live stream logs
+    streamLogs.forEach(log => {
+      if (log.sourceService) allServices.add(log.sourceService);
+    });
+    return Array.from(allServices).sort();
+  }, [logs, streamLogs]);
+
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
 
   const getLevelBadge = (level: string) => {
@@ -308,11 +321,9 @@ export const LogManagement: React.FC = () => {
                 className="w-full px-3 py-2 bg-op-raised border border-op-border rounded-lg text-op-fg text-sm focus:outline-none focus:border-op-accent"
               >
                 <option value="ALL">All Services</option>
-                <option value="api-gateway">api-gateway</option>
-                <option value="auth-service">auth-service</option>
-                <option value="core-service">core-service</option>
-                <option value="observability-service">observability-service</option>
-                <option value="Vercel Integration">Vercel Integration</option>
+                {uniqueServices.map(service => (
+                  <option key={service} value={service}>{service}</option>
+                ))}
               </select>
 
               <div className="flex gap-2">

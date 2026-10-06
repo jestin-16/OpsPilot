@@ -2,21 +2,12 @@ package com.opspilot.service;
 
 import com.opspilot.entity.PipelineRunEntity;
 import com.opspilot.entity.Project;
-import com.opspilot.exception.ForbiddenException;
 import com.opspilot.repository.PipelineRunRepository;
 import com.opspilot.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class CiCdService {
@@ -30,180 +21,48 @@ public class CiCdService {
     @Autowired
     private IncidentService incidentService;
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
+    // Remove isAllowlisted since we aren't executing code locally anymore
 
-    public static boolean isAllowlisted(String repoUrl) {
-        if (repoUrl == null || repoUrl.isBlank()) return false;
-        String url = repoUrl.trim().toLowerCase();
-        return url.startsWith("https://github.com/opspilot/") ||
-               url.startsWith("git@github.com:opspilot/") ||
-               url.contains("opspilot") ||
-               url.equals("https://github.com/jestin-16/personalnotesapp.git");
-    }
-
-    public PipelineRunEntity processGitHubWebhook(String repoUrl, String branch, String commitSha, String commitMessage, String author) {
-        if (!isAllowlisted(repoUrl)) {
-            throw new ForbiddenException("Repository URL '" + repoUrl + "' is not allowlisted for CI/CD execution");
-        }
-
+    public PipelineRunEntity trackExternalPipelineRun(String repoUrl, String eventType, String branch, String commitSha, String commitMessage, String author, String status, String logs, Long durationMs) {
         List<Project> projects = projectRepository.findByRepositoryUrl(repoUrl);
         Project project = projects.isEmpty() ? 
                 projectRepository.findAll().stream().findFirst().orElse(null) : projects.get(0);
 
-        // Create a new pipeline run in "BUILDING" state
         PipelineRunEntity run = new PipelineRunEntity(
-                project, "push", branch != null ? branch : "main",
+                project, eventType, branch != null ? branch : "main",
                 commitSha != null ? commitSha : "sha-" + System.currentTimeMillis(),
-                commitMessage != null ? commitMessage : "Pipeline trigger",
-                author != null ? author : "DevOps", "BUILDING"
+                commitMessage != null ? commitMessage : "Pipeline update",
+                author != null ? author : "System", status != null ? status : "UNKNOWN"
         );
         run.setRepoUrl(repoUrl);
+        
+        if (logs != null) {
+            run.setBuildLogs(logs);
+        }
+        if (durationMs != null) {
+            run.setDurationMs(durationMs);
+        }
+        
         run = pipelineRunRepository.save(run);
 
-        final Long runId = run.getRunId();
-        final String msg = commitMessage != null ? commitMessage : "";
-        final String br = branch != null ? branch : "main";
-        executor.submit(() -> executePipeline(runId, msg, br));
-
-        return run;
-    }
-
-    public void executePipeline(Long runId, String commitMessage) {
-        executePipeline(runId, commitMessage, "main");
-    }
-
-    public void executePipeline(Long runId, String commitMessage, String branch) {
-        long startTime = System.currentTimeMillis();
-        StringBuilder logs = new StringBuilder();
-        int exitCode = -1;
-        String status = "FAILED";
-
-        try {
-            String combined = ((commitMessage != null ? commitMessage : "") + " " + (branch != null ? branch : "")).toLowerCase();
-            boolean shouldFail = combined.contains("[trigger-failure]") ||
-                                combined.contains("[fail]") ||
-                                combined.contains("fail") ||
-                                combined.contains("broken") ||
-                                combined.contains("assertfalse");
-
-            String containerScript;
-            if (shouldFail) {
-                containerScript = "echo '[CI/CD Sandbox] Cloning repository from allowlist...' && " +
-                        "echo '[CI/CD Sandbox] Git clone completed successfully' && " +
-                        "echo '[CI/CD Sandbox] Starting build execution in container...' && " +
-                        "echo '[CI/CD Sandbox] Initializing toolchain in Alpine Linux...' && " +
-                        "echo '[CI/CD Sandbox] Running automated test suite...' && " +
-                        "echo '[INFO] -------------------------------------------------------' && " +
-                        "echo '[INFO]  T E S T S' && " +
-                        "echo '[INFO] -------------------------------------------------------' && " +
-                        "echo '[INFO] Running com.opspilot.NotesAppTest' && " +
-                        "echo '[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.049 s <<< FAILURE! -- in com.opspilot.NotesAppTest' && " +
-                        "echo '[ERROR] com.opspilot.NotesAppTest.testValidationDeliberatelyFailing -- Time elapsed: 0.027 s <<< FAILURE!' && " +
-                        "echo 'org.opentest4j.AssertionFailedError: Deliberately broken test: expected false but was true ==> expected: <false> but was: <true>' && " +
-                        "echo '\tat org.junit.jupiter.api.Assertions.assertFalse(Assertions.java:239)' && " +
-                        "echo '\tat com.opspilot.NotesAppTest.testValidationDeliberatelyFailing(NotesAppTest.java:14)' && " +
-                        "echo '[INFO] Results:' && " +
-                        "echo '[ERROR] Failures:' && " +
-                        "echo '[ERROR]   NotesAppTest.testValidationDeliberatelyFailing:14 Deliberately broken test: expected false but was true ==> expected: <false> but was: <true>' && " +
-                        "echo '[ERROR] Tests run: 1, Failures: 1, Errors: 0, Skipped: 0' && " +
-                        "echo '[ERROR] BUILD FAILURE: There are test failures.' && " +
-                        "echo '[CI/CD Sandbox] Build FAILED' && exit 1";
-            } else {
-                containerScript = "echo '[CI/CD Sandbox] Cloning repository from allowlist...' && " +
-                        "echo '[CI/CD Sandbox] Git clone completed successfully' && " +
-                        "echo '[CI/CD Sandbox] Starting build execution in container...' && " +
-                        "echo '[CI/CD Sandbox] Initializing toolchain in Alpine Linux...' && " +
-                        "echo '[CI/CD Sandbox] Running automated test suite...' && " +
-                        "echo '[CI/CD Sandbox] 18 tests passed, 0 failures' && " +
-                        "echo '[CI/CD Sandbox] Packaging artifacts...' && " +
-                        "echo '[CI/CD Sandbox] Build SUCCESS' && exit 0";
+        // Auto-create an incident if the tracked external pipeline failed
+        if ("FAILED".equalsIgnoreCase(status) || "failure".equalsIgnoreCase(status)) {
+            try {
+                incidentService.createIncident(
+                    project != null ? project.getId() : null,
+                    "External Pipeline Failed: #" + run.getRunId(),
+                    "Automated incident created due to external CI/CD failure.\nRepository: " + repoUrl + "\nBranch: " + branch,
+                    "HIGH",
+                    "CI/CD Pipeline",
+                    null,
+                    run.getRunId(),
+                    null
+                );
+            } catch (Exception e) {
+                System.err.println("Failed to auto-create incident: " + e.getMessage());
             }
-
-            ProcessBuilder pb = new ProcessBuilder(
-                    "docker", "run", "--rm", "--memory=1g", "--cpus=1.0", "alpine", "sh", "-c", containerScript
-            );
-
-            Process process = pb.start();
-
-            // Concurrent stream readers for stdout and stderr to prevent deadlocks
-            CompletableFuture<List<String>> stdoutFuture = CompletableFuture.supplyAsync(() -> {
-                List<String> lines = new ArrayList<>();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        lines.add(line);
-                    }
-                } catch (Exception ignored) {}
-                return lines;
-            }, executor);
-
-            CompletableFuture<List<String>> stderrFuture = CompletableFuture.supplyAsync(() -> {
-                List<String> lines = new ArrayList<>();
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        lines.add(line);
-                    }
-                } catch (Exception ignored) {}
-                return lines;
-            }, executor);
-
-            boolean completedInTime = process.waitFor(60, TimeUnit.SECONDS);
-            if (!completedInTime) {
-                process.destroyForcibly();
-                logs.append("[ERROR] Execution timed out after 60 seconds\n");
-                exitCode = 124;
-            } else {
-                exitCode = process.exitValue();
-            }
-
-            List<String> stdoutLines = stdoutFuture.get(5, TimeUnit.SECONDS);
-            List<String> stderrLines = stderrFuture.get(5, TimeUnit.SECONDS);
-
-            for (String line : stdoutLines) {
-                logs.append(line).append("\n");
-            }
-            for (String line : stderrLines) {
-                logs.append(line).append("\n");
-            }
-
-            status = (exitCode == 0) ? "SUCCESS" : "FAILED";
-
-        } catch (Exception e) {
-            logs.append("[ERROR] Execution error: ").append(e.getMessage()).append("\n");
-            status = "FAILED";
-            exitCode = 1;
         }
 
-        long duration = System.currentTimeMillis() - startTime;
-        final int finalExitCode = exitCode;
-        final String finalStatus = status;
-        final String finalLogs = logs.toString();
-
-        pipelineRunRepository.findById(runId).ifPresent(run -> {
-            run.setStatus(finalStatus);
-            run.setExitCode(finalExitCode);
-            run.setBuildLogs(finalLogs);
-            run.setDurationMs(duration);
-            pipelineRunRepository.save(run);
-            System.out.println("Pipeline " + runId + " completed with status: " + finalStatus + " (exit code " + finalExitCode + ")");
-            
-            if ("FAILED".equals(finalStatus)) {
-                try {
-                    incidentService.createIncident(
-                        run.getProject().getId(),
-                        "Pipeline Run Failed: #" + runId,
-                        "Automated incident created due to pipeline failure. Branch: " + run.getBranch() + "\nExit code: " + finalExitCode,
-                        "HIGH",
-                        "CI/CD Pipeline",
-                        null,
-                        runId,
-                        null
-                    );
-                } catch (Exception e) {
-                    System.err.println("Failed to auto-create incident: " + e.getMessage());
-                }
-            }
-        });
+        return run;
     }
 }

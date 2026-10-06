@@ -49,6 +49,9 @@ public class PipelineRunEntity {
     @Column(name = "repo_url", length = 512)
     private String repoUrl;
 
+    @Column(name = "external_run_id", length = 255)
+    private String externalRunId;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -169,5 +172,13 @@ public class PipelineRunEntity {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getExternalRunId() {
+        return externalRunId;
+    }
+
+    public void setExternalRunId(String externalRunId) {
+        this.externalRunId = externalRunId;
     }
 }

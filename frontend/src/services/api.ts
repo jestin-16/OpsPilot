@@ -403,6 +403,8 @@ export interface DockerSource {
   ingestPath: string;
   /** Present only in the create / rotate-token response. */
   token?: string;
+  agentConfig?: string;
+  dockerComposeSnippet?: string;
 }
 
 export type LogLevelName = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
@@ -635,6 +637,20 @@ export const api = {
 
   getDockerSources: async (): Promise<DockerSource[]> => {
     const res = await axiosInstance.get<DockerSource[]>('/monitoring/sources');
+    return res.data;
+  },
+
+  createDockerSource: async (data: { projectId: number; name: string; environment: string }): Promise<DockerSource> => {
+    const res = await axiosInstance.post<DockerSource>('/monitoring/sources', data);
+    return res.data;
+  },
+
+  deleteDockerSource: async (id: string): Promise<void> => {
+    await axiosInstance.delete(`/monitoring/sources/${id}`);
+  },
+
+  getDockerSourceAgentConfig: async (id: string): Promise<DockerSource> => {
+    const res = await axiosInstance.get<DockerSource>(`/monitoring/sources/${id}/agent-config`);
     return res.data;
   },
 

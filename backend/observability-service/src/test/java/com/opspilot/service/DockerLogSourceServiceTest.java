@@ -36,7 +36,8 @@ class DockerLogSourceServiceTest {
         repo = mock(DockerLogSourceRepository.class);
         projects = mock(ProjectRepository.class);
         service = new DockerLogSourceService(repo, projects, tokens,
-                new DockerSourceStatusService(repo, Duration.ofMinutes(5)));
+                new DockerSourceStatusService(repo, Duration.ofMinutes(5)),
+                new DockerAgentConfigService("http://localhost"));
         owner = user(1L, "DEVELOPER");
         stranger = user(2L, "DEVELOPER");
         Project p = new Project();

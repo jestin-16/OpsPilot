@@ -48,7 +48,7 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 | Authentication & JWT | ✅ Complete | ✅ | 🟠 | Refresh token loop implemented in frontend. |
 | Project Management | ✅ Complete | ✅ | 🟠 | Full CRUD operations working. |
 | Deployments View | ✅ Complete | ✅ | 🟠 | Displays environments and versions. |
-| CI/CD Webhooks | 🟡 Partial | ✅ | 🟠 | Backend parses real `workflow_run` and Jenkins events. Frontend "Simulate" button sends wrong event type (`push`). |
+| CI/CD Webhooks | ✅ Complete | ✅ | 🟠 | Backend parses real `workflow_run` and Jenkins events. Frontend integration with Pipeline Sources is complete. |
 | Incident Management | ✅ Complete | ✅ | 🟠 | Auto-creation on pipeline failure implemented. |
 | Alert Engine | 🟡 Partial | ✅ | 🟠 | DB migrations added, but full UI rules workflow needs verification. |
 | Notifications | 🟡 Partial | ✅ | 🟠 | Notifications schema and controller exist; UI integration present. |
@@ -76,7 +76,7 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 ### core-service
 - **Purpose:** Domain business logic (Projects, CI/CD, Incidents).
 - **Main Files:** `CiCdController`, `CiCdService`, `ProjectController`, `IncidentController`.
-- **Database Tables:** `projects`, `pipeline_runs`, `deployments`, `incidents`.
+- **Database Tables:** `projects`, `pipeline_sources`, `pipeline_runs`, `deployments`, `incidents`.
 - **Status:** Complete. Fully mapped to real CI/CD payloads.
 
 ### observability-service
@@ -86,14 +86,14 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 
 ### shared-lib
 - **Purpose:** Shared dependencies.
-- **Main Files:** Flyway migrations (`V1` to `V12`), `SecurityConfig.java`, Entities.
+- **Main Files:** Flyway migrations (`V1` to `V13`), `SecurityConfig.java`, Entities.
 - **Status:** Complete.
 
 ==================================================
 ## 5. FRONTEND PROGRESS
 ==================================================
 
-- **Pages:** Dashboard, Projects, Pipelines, Deployments, Pods, Logs, Metrics, Settings, AdminDashboard.
+- **Pages:** Dashboard, Projects, Pipelines, PipelineSources, Deployments, Pods, Logs, Metrics, Settings, AdminDashboard.
 - **Components:** SidebarLayout, Table, Badge, Button, Card, Modal.
 - **API Integration:** Centralized in `src/services/api.ts` with Axios interceptors for auth.
 - **Authentication:** Login/Signup forms, JWT storage, refresh token queueing.
@@ -103,6 +103,7 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
   - [x] Routing setup
   - [x] Auth flow
   - [x] CI/CD views
+  - [x] Pipeline Sources UI
   - [x] Project views
   - [x] Logs view
   - [x] Admin Dashboard
@@ -127,8 +128,8 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 ==================================================
 
 - **Database Technology:** PostgreSQL.
-- **Migrations:** Flyway (V1 to V12).
-- **Important Tables:** `users`, `roles`, `projects`, `deployments`, `containers`, `pods`, `logs`, `pipeline_runs`, `incidents`, `notifications`, `alert_rules`.
+- **Migrations:** Flyway (V1 to V13).
+- **Important Tables:** `users`, `roles`, `projects`, `pipeline_sources`, `deployments`, `containers`, `pods`, `logs`, `pipeline_runs`, `incidents`, `notifications`, `alert_rules`.
 - **Current Status:** Schema is fully defined in the repository.
 - *(Database runtime verification not available; status is based on repository configuration/code).*
 
@@ -204,13 +205,7 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 
 ### Current Blockers
 
-1. **Simulate Webhook Payload Mismatch**
-   - **Where:** `frontend/src/services/api.ts` (`simulateGitHubWebhook`) and `core-service/CiCdController`.
-   - **Why:** Frontend sends a `push` event, but backend `core-service` strictly expects `workflow_run`.
-   - **Solution:** Update the frontend payload to mimic a GitHub `workflow_run` event.
-   - **Priority:** 🟠 High
-
-2. **Kubernetes Cluster Dependency**
+1. **Kubernetes Cluster Dependency**
    - **Where:** `observability-service` and frontend Pods view.
    - **Why:** Cannot fetch pods/nodes without a real cluster.
    - **Solution:** Add mock Kubernetes data mode for local development.
@@ -222,15 +217,14 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 
 - Mock endpoints (`WebhookController` in observability-service) conflict conceptually with actual webhook handlers (`CiCdController` in core-service).
 - `LOKI_ENABLED` is set to false in docker-compose, meaning advanced log querying won't work out-of-the-box locally.
-- Frontend hardcodes a mock commit ID and author in the `simulateGitHubWebhook` method.
 
 ==================================================
 ## 17. TODO ROADMAP
 ==================================================
 
 ### Phase 1 — Critical
-- [ ] Fix database constraint error (`project_id` in `incidents`) when a standalone CI/CD run fails.
-- [ ] Fix `simulateGitHubWebhook` payload in frontend to use `workflow_run`.
+- [x] Fix database constraint error (`project_id` in `incidents`) when a standalone CI/CD run fails.
+- [x] Fix `simulateGitHubWebhook` payload in frontend to use `workflow_run`.
 - [x] Verify Docker Compose startup locally.
 
 ### Phase 2 — Core Features
@@ -269,16 +263,14 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 ## 19. NEXT 10 ACTIONS
 ==================================================
 
-1. Modify `simulateGitHubWebhook` in `frontend/src/services/api.ts` to send a `workflow_run` event payload.
-2. Run `docker-compose up -d` to verify full stack startup.
-3. Add a fallback mock response in `KubernetesController` if `~/.kube/config` is unavailable.
-4. Verify Prometheus target configuration in `prometheus.yml`.
-5. Check Grafana provisioning folder to ensure default dashboards load on startup.
-6. Write a Cypress E2E test for the Login and Refresh Token flow.
-7. Implement WebSocket or SSE in `observability-service` for real-time Notifications.
-8. Connect the frontend Notifications bell icon to the SSE stream.
-9. Create a Helm chart directory (`k8s/charts/opspilot`) and draft deployment templates.
-10. Test the AI Diagnosis endpoint against a mock error log to verify prompt handling.
+1. Add a fallback mock response in `KubernetesController` if `~/.kube/config` is unavailable.
+2. Verify Prometheus target configuration in `prometheus.yml`.
+3. Check Grafana provisioning folder to ensure default dashboards load on startup.
+4. Write a Cypress E2E test for the Login and Refresh Token flow.
+5. Implement WebSocket or SSE in `observability-service` for real-time Notifications.
+6. Connect the frontend Notifications bell icon to the SSE stream.
+7. Create a Helm chart directory (`k8s/charts/opspilot`) and draft deployment templates.
+8. Test the AI Diagnosis endpoint against a mock error log to verify prompt handling.
 
 ==================================================
 ## 20. CHANGE HISTORY
@@ -290,3 +282,6 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 - Initial repository inspection performed.
 - `progress.md` created.
 - Current implementation status documented based on comprehensive codebase analysis.
+- Integrated CI/CD Pipeline Sources with GitHub Actions and Jenkins webhook support, services, and frontend UI. Database updated to V13.
+- Implemented Docker Push Monitoring Phase 0-2 (Database V14, Auth, Loki push controller).
+- Implemented Docker Push Monitoring Phase 3 (Agent config rendering, Metrics Prometheus proxy & label rewriting, Host Monitoring UI page).

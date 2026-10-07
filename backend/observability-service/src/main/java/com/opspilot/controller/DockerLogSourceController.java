@@ -34,6 +34,11 @@ public class DockerLogSourceController {
         return service.get(id, user);
     }
 
+    @GetMapping("/{id}/agent-config")
+    public DockerLogSourceResponse getAgentConfig(@PathVariable UUID id, @AuthenticationPrincipal User user) {
+        return service.getAgentConfig(id, user);
+    }
+
     @PostMapping
     public ResponseEntity<DockerLogSourceResponse> create(@RequestBody DockerLogSourceRequest request,
                                                           @AuthenticationPrincipal User user) {

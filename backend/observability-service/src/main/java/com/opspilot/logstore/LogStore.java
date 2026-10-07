@@ -15,6 +15,9 @@ public interface LogStore {
 
     boolean isEnabled();
 
+    /** Runs a store-native query over [start, end] and returns streams, newest first within each stream. */
+    List<LogStream> query(String query, java.time.Instant start, java.time.Instant end, int limit);
+
     /** Persists the streams. Throws {@link LogStoreException} if the store rejects or cannot be reached. */
     void push(List<LogStream> streams);
 

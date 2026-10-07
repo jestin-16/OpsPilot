@@ -37,14 +37,15 @@ public class DockerLogSourceService {
     }
 
     public List<DockerLogSourceResponse> list(User user) {
-        List<DockerLogSource> sources;
-        if (isAdmin(user)) {
-            sources = repository.findAllByOrderByCreatedAtDesc();
-        } else {
-            List<Long> ids = projectRepository.findByOwner(user).stream().map(Project::getId).toList();
-            sources = ids.isEmpty() ? List.of() : repository.findByProjectIdInOrderByCreatedAtDesc(ids);
-        }
-        return sources.stream().map(this::toResponse).toList();
+        return accessibleSources(user).stream().map(this::toResponse).toList();
+    }
+
+    /** Every source in a project the caller may access: all for administrators, otherwise projects they own. */
+    public List<DockerLogSource> accessibleSources(User user) {
+        if (user == null) throw new ForbiddenException("Authentication is required");
+        if (isAdmin(user)) return repository.findAllByOrderByCreatedAtDesc();
+        List<Long> ids = projectRepository.findByOwner(user).stream().map(Project::getId).toList();
+        return ids.isEmpty() ? List.of() : repository.findByProjectIdInOrderByCreatedAtDesc(ids);
     }
 
     public DockerLogSourceResponse get(UUID id, User user) {

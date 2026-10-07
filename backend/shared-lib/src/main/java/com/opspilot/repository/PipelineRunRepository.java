@@ -12,4 +12,6 @@ public interface PipelineRunRepository extends JpaRepository<PipelineRunEntity, 
     List<PipelineRunEntity> findByProject_IdOrderByCreatedAtDesc(Long projectId);
     void deleteByProject_Id(Long projectId);
     java.util.Optional<PipelineRunEntity> findByExternalRunId(String externalRunId);
+    java.util.Optional<PipelineRunEntity> findFirstBySource_IdAndExternalRunId(Long sourceId, String externalRunId);
+    java.util.Optional<PipelineRunEntity> findFirstBySource_IdOrderByCreatedAtDesc(Long sourceId);
 }

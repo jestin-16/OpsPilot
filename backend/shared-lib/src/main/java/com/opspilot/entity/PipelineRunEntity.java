@@ -19,6 +19,11 @@ public class PipelineRunEntity {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "owner"})
     private Project project;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private PipelineSource source;
+
     @Column(name = "event_type", nullable = false)
     private String eventType; // e.g. push, pull_request, workflow_run
 
@@ -84,6 +89,14 @@ public class PipelineRunEntity {
 
     public void setProject(Project project) {
         this.project = project;
+    }
+
+    public PipelineSource getSource() {
+        return source;
+    }
+
+    public void setSource(PipelineSource source) {
+        this.source = source;
     }
 
     public String getEventType() {

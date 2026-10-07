@@ -5,6 +5,7 @@ import com.opspilot.entity.Project;
 import com.opspilot.entity.User;
 import com.opspilot.entity.Deployment;
 import com.opspilot.entity.PipelineRunEntity;
+import com.opspilot.entity.PipelineSource;
 import com.opspilot.repository.IncidentRepository;
 import com.opspilot.repository.ProjectRepository;
 import com.opspilot.repository.UserRepository;
@@ -100,6 +101,34 @@ public class IncidentService {
         return saved;
     }
 
+    /** Creates an incident for a failed pipeline run of a standalone source; the project is optional. */
+    @Transactional
+    public Incident createSourceIncident(PipelineSource source, Project project, String title, String description, String severity, String affectedService, Long pipelineRunId) {
+        Incident incident = new Incident();
+        incident.setProject(project);
+        incident.setSource(source);
+        incident.setTitle(title);
+        incident.setDescription(description);
+        incident.setSeverity(severity);
+        incident.setStatus("OPEN");
+        incident.setAffectedService(affectedService);
+        if (pipelineRunId != null) {
+            incident.setRelatedPipelineRun(pipelineRunRepository.findById(pipelineRunId).orElse(null));
+        }
+        Incident saved = incidentRepository.save(incident);
+
+        try {
+            com.opspilot.entity.NotificationEntity notif = new com.opspilot.entity.NotificationEntity();
+            notif.setUser(project != null ? project.getOwner() : null);
+            notif.setMessage("Incident Reported: " + title + " (" + severity + ")");
+            notif.setType("INCIDENT_OPENED");
+            notificationRepository.save(notif);
+        } catch (Exception e) {
+            System.err.println("Failed to emit notification: " + e.getMessage());
+        }
+        return saved;
+    }
+
     @Transactional
     public Incident updateIncidentStatus(Long id, String status) {
         Incident incident = incidentRepository.findById(id)
@@ -111,7 +140,7 @@ public class IncidentService {
             
             try {
                 com.opspilot.entity.NotificationEntity notif = new com.opspilot.entity.NotificationEntity();
-                notif.setUser(incident.getProject().getOwner());
+                notif.setUser(incident.getProject() != null ? incident.getProject().getOwner() : null);
                 notif.setDeployment(incident.getRelatedDeployment());
                 notif.setMessage("Incident Resolved: " + incident.getTitle());
                 notif.setType("INCIDENT_RESOLVED");

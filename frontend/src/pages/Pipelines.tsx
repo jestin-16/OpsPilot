@@ -5,7 +5,8 @@ import { Table, type Column } from '../components/Table';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { RefreshCw, PlayCircle, GitCommit, GitBranch, GitPullRequest, Clock, Search, Filter } from 'lucide-react';
+import { PipelineSources } from '../components/PipelineSources';
+import { RefreshCw, PlayCircle, Plus, GitCommit, GitBranch, GitPullRequest, Clock, Search, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const Pipelines: React.FC = () => {
@@ -14,6 +15,7 @@ export const Pipelines: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [addSourceOpen, setAddSourceOpen] = useState(false);
   
   const navigate = useNavigate();
 
@@ -41,7 +43,8 @@ export const Pipelines: React.FC = () => {
         run.commitMessage.toLowerCase().includes(search.toLowerCase()) || 
         run.commitSha.toLowerCase().includes(search.toLowerCase()) ||
         run.author.toLowerCase().includes(search.toLowerCase()) ||
-        (run.project?.projectName || '').toLowerCase().includes(search.toLowerCase());
+        (run.project?.projectName || '').toLowerCase().includes(search.toLowerCase()) ||
+        (run.source?.name || '').toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'ALL' || run.status.toUpperCase() === statusFilter.toUpperCase();
       return matchesSearch && matchesStatus;
     });
@@ -52,8 +55,18 @@ export const Pipelines: React.FC = () => {
     { key: 'project', header: 'Repository', render: (r) => (
       <div className="flex items-center gap-2">
         <GitPullRequest className="w-4 h-4 text-op-muted" />
-        <span className="font-medium text-op-fg">{r.project?.projectName || r.repoUrl?.split('/').pop() || 'Unknown'}</span>
+        <span className="font-medium text-op-fg">{r.project?.projectName || r.repoUrl?.split('/').pop() || r.source?.name || '—'}</span>
       </div>
+    )},
+    { key: 'source', header: 'Source', render: (r) => (
+      r.source ? (
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-op-fg">{r.source.name}</span>
+          <Badge variant={r.source.provider === 'GITHUB_ACTIONS' ? 'info' : 'neutral'}>
+            {r.source.provider === 'GITHUB_ACTIONS' ? 'GitHub' : 'Jenkins'}
+          </Badge>
+        </div>
+      ) : <span className="text-op-subtle">—</span>
     )},
     { key: 'branch', header: 'Branch', render: (r) => (
       <div className="flex items-center gap-1.5 text-op-muted bg-op-raised px-2 py-1 rounded-md text-xs font-mono max-w-fit">
@@ -103,18 +116,27 @@ export const Pipelines: React.FC = () => {
             <Button variant="secondary" onClick={() => fetchRuns(true)} isLoading={refreshing}>
               <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
             </Button>
-            <Button variant="primary" onClick={() => api.simulateGitHubWebhook('push').then(() => fetchRuns(true))}>
+            <Button variant="primary" onClick={() => setAddSourceOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" /> Add source
+            </Button>
+            <Button variant="secondary" onClick={() => api.simulateGitHubWebhook('push').then(() => fetchRuns(true))}>
               Simulate Webhook
             </Button>
           </div>
         </div>
+
+        <PipelineSources
+          isAddOpen={addSourceOpen}
+          onAddClose={() => setAddSourceOpen(false)}
+          onChanged={() => fetchRuns(true)}
+        />
 
         <Card className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-op-raised/50 border-none shadow-none p-4">
           <div className="relative flex-1 max-w-md w-full">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-op-muted" />
             <input 
               type="text"
-              placeholder="Search by commit, author, or project..."
+              placeholder="Search by commit, author, project, or source..."
               className="w-full pl-9 pr-4 py-2 bg-op-surface border border-op-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-op-accent"
               value={search}
               onChange={(e) => setSearch(e.target.value)}

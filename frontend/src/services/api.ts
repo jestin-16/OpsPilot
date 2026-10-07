@@ -285,9 +285,48 @@ export interface KubernetesSummaryResponse {
   pods: PodSummary[];
 }
 
+export type PipelineSourceProvider = 'GITHUB_ACTIONS' | 'JENKINS';
+
+export interface PipelineSource {
+  id: number;
+  name: string;
+  provider: PipelineSourceProvider;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  repoFullName?: string;
+  baseUrl?: string;
+  jobName?: string;
+  username?: string;
+  projectId?: number;
+  hasAccessToken: boolean;
+  hasApiToken: boolean;
+  /** Always the literal mask when a token exists; real values are never returned. */
+  accessToken?: string;
+  apiToken?: string;
+  webhookPath: string;
+  lastRunAt?: string;
+  /** Only present on create / reveal / regenerate responses. */
+  webhookSecret?: string;
+}
+
+export interface PipelineSourceInput {
+  name: string;
+  provider: PipelineSourceProvider;
+  enabled?: boolean;
+  repoFullName?: string;
+  accessToken?: string;
+  baseUrl?: string;
+  jobName?: string;
+  username?: string;
+  apiToken?: string;
+  projectId?: number | null;
+}
+
 export interface PipelineRun {
   runId: number;
-  project?: { id: number; projectName: string };
+  project?: { id: number; projectName: string } | null;
+  source?: { id: number; name: string; provider: PipelineSourceProvider } | null;
   eventType: string;
   branch: string;
   commitSha: string;
@@ -617,6 +656,40 @@ export const api = {
 
   getPipelineRunLogs: async (runId: number): Promise<{ runId: number; status: string; exitCode: number; logs: string; durationMs: number }> => {
     const res = await axiosInstance.get(`/cicd/runs/${runId}/logs`);
+    return res.data;
+  },
+
+  getPipelineSources: async (): Promise<PipelineSource[]> => {
+    const res = await axiosInstance.get<PipelineSource[]>('/cicd/sources');
+    return res.data;
+  },
+
+  createPipelineSource: async (input: PipelineSourceInput): Promise<PipelineSource> => {
+    const res = await axiosInstance.post<PipelineSource>('/cicd/sources', input);
+    return res.data;
+  },
+
+  updatePipelineSource: async (id: number, input: PipelineSourceInput): Promise<PipelineSource> => {
+    const res = await axiosInstance.put<PipelineSource>(`/cicd/sources/${id}`, input);
+    return res.data;
+  },
+
+  deletePipelineSource: async (id: number): Promise<void> => {
+    await axiosInstance.delete(`/cicd/sources/${id}`);
+  },
+
+  testPipelineSource: async (id: number): Promise<{ success: boolean; message: string }> => {
+    const res = await axiosInstance.post(`/cicd/sources/${id}/test`);
+    return res.data;
+  },
+
+  revealPipelineSourceSecret: async (id: number): Promise<PipelineSource> => {
+    const res = await axiosInstance.post<PipelineSource>(`/cicd/sources/${id}/reveal-secret`);
+    return res.data;
+  },
+
+  regeneratePipelineSourceSecret: async (id: number): Promise<PipelineSource> => {
+    const res = await axiosInstance.post<PipelineSource>(`/cicd/sources/${id}/regenerate-secret`);
     return res.data;
   },
 

@@ -29,6 +29,9 @@ public class SecurityConfig {
     @Autowired
     private RateLimitingFilter rateLimitingFilter;
 
+    @Autowired
+    private IngestTokenFilter ingestTokenFilter;
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
@@ -53,6 +56,7 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/v1/ingest/loki/**", "/api/ingest/loki/**").hasAuthority(IngestTokenFilter.AUTHORITY)
                 .requestMatchers(
                     "/api/auth/**", "/api/v1/auth/**",
                     "/api/webhooks/**", "/api/v1/webhooks/**",
@@ -71,6 +75,7 @@ public class SecurityConfig {
         http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(ingestTokenFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

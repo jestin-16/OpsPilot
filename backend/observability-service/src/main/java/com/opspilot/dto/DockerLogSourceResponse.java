@@ -26,6 +26,8 @@ public class DockerLogSourceResponse {
     private LocalDateTime createdAt;
     private String ingestPath = INGEST_PATH;
     private String token;
+    private String agentConfig;
+    private String dockerComposeSnippet;
 
     public static DockerLogSourceResponse from(DockerLogSource s, Duration staleAfter, LocalDateTime now) {
         DockerLogSourceResponse r = new DockerLogSourceResponse();
@@ -51,6 +53,12 @@ public class DockerLogSourceResponse {
         return this;
     }
 
+    public DockerLogSourceResponse withAgentConfig(String agentConfig, String dockerComposeSnippet) {
+        this.agentConfig = agentConfig;
+        this.dockerComposeSnippet = dockerComposeSnippet;
+        return this;
+    }
+
     public UUID getId() { return id; }
     public Long getProjectId() { return projectId; }
     public String getName() { return name; }
@@ -62,4 +70,6 @@ public class DockerLogSourceResponse {
     public LocalDateTime getCreatedAt() { return createdAt; }
     public String getIngestPath() { return ingestPath; }
     public String getToken() { return token; }
+    public String getAgentConfig() { return agentConfig; }
+    public String getDockerComposeSnippet() { return dockerComposeSnippet; }
 }

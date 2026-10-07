@@ -27,13 +27,16 @@ public class DockerLogSourceService {
     private final ProjectRepository projectRepository;
     private final IngestTokenService tokenService;
     private final DockerSourceStatusService statusService;
+    private final DockerAgentConfigService configService;
 
     public DockerLogSourceService(DockerLogSourceRepository repository, ProjectRepository projectRepository,
-                                  IngestTokenService tokenService, DockerSourceStatusService statusService) {
+                                  IngestTokenService tokenService, DockerSourceStatusService statusService,
+                                  DockerAgentConfigService configService) {
         this.repository = repository;
         this.projectRepository = projectRepository;
         this.tokenService = tokenService;
         this.statusService = statusService;
+        this.configService = configService;
     }
 
     public List<DockerLogSourceResponse> list(User user) {
@@ -52,6 +55,11 @@ public class DockerLogSourceService {
         return toResponse(findAccessible(id, user));
     }
 
+    public DockerLogSourceResponse getAgentConfig(UUID id, User user) {
+        DockerLogSource s = findAccessible(id, user);
+        return toResponse(s).withAgentConfig(configService.renderAlloyConfig("<YOUR_TOKEN>"), configService.renderDockerComposeSnippet());
+    }
+
     public DockerLogSourceResponse create(DockerLogSourceRequest req, User user) {
         if (req.getProjectId() == null) throw new IllegalArgumentException("Project is required");
         assertProjectAccess(req.getProjectId(), user);
@@ -62,7 +70,8 @@ public class DockerLogSourceService {
         String token = tokenService.generate();
         s.setTokenHash(tokenService.hash(token));
         s.setTokenPrefix(tokenService.displayPrefix(token));
-        return toResponse(repository.save(s)).withToken(token);
+        return toResponse(repository.save(s)).withToken(token)
+                .withAgentConfig(configService.renderAlloyConfig(token), configService.renderDockerComposeSnippet());
     }
 
     public DockerLogSourceResponse update(UUID id, DockerLogSourceRequest req, User user) {
@@ -84,7 +93,8 @@ public class DockerLogSourceService {
         s.setTokenPrefix(tokenService.displayPrefix(token));
         s.setLastSeenAt(null);
         s.setStatus(DockerLogSource.WAITING);
-        return toResponse(repository.save(s)).withToken(token);
+        return toResponse(repository.save(s)).withToken(token)
+                .withAgentConfig(configService.renderAlloyConfig(token), configService.renderDockerComposeSnippet());
     }
 
     private DockerLogSource findAccessible(UUID id, User user) {

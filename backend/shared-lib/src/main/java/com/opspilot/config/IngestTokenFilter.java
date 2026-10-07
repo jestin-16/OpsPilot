@@ -27,7 +27,7 @@ import java.util.Optional;
 public class IngestTokenFilter extends OncePerRequestFilter {
 
     public static final String AUTHORITY = "SCOPE_INGEST";
-    static final List<String> INGEST_PREFIXES = List.of("/api/v1/ingest/loki/", "/api/ingest/loki/");
+    static final List<String> INGEST_PREFIXES = List.of("/api/v1/ingest/loki/", "/api/ingest/loki/", "/api/v1/ingest/metrics/", "/api/ingest/metrics/");
 
     private final DockerLogSourceRepository sourceRepository;
     private final IngestTokenService tokenService;

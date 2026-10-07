@@ -388,6 +388,55 @@ export interface LogSource {
   createdAt?: string;
 }
 
+// Push-model Docker sources (agent pushes logs/metrics with a per-source token)
+export type DockerSourceStatus = 'WAITING' | 'ACTIVE' | 'STALE';
+export interface DockerSource {
+  id: string;
+  projectId: number;
+  name: string;
+  environment: string;
+  type: 'DOCKER';
+  tokenPrefix: string;
+  status: DockerSourceStatus;
+  lastSeenAt?: string;
+  createdAt: string;
+  ingestPath: string;
+  /** Present only in the create / rotate-token response. */
+  token?: string;
+}
+
+export type LogLevelName = 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+export interface LogQueryParams {
+  project?: number;
+  environment?: string;
+  source?: string;
+  container?: string;
+  level?: LogLevelName;
+  text?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+}
+export interface LogQueryEntry {
+  timestamp: string;
+  tsNanos: string;
+  level: LogLevelName;
+  message: string;
+  projectId: number;
+  environment: string;
+  sourceId: string;
+  sourceName: string;
+  container: string;
+}
+export interface LogQueryResult {
+  entries: LogQueryEntry[];
+  count: number;
+  limit: number;
+  truncated: boolean;
+  from: string;
+  to: string;
+}
+
 export const api = {
   // Auth
   register: async (data: z.infer<typeof RegisterSchema>): Promise<RegistrationResponse> => {
@@ -581,6 +630,16 @@ export const api = {
   // Logs
   getLogs: async (params?: { providerName?: string; sourceService?: string; projectId?: number; logLevel?: string; query?: string; limit?: number }): Promise<LogEntry[]> => {
     const res = await axiosInstance.get<LogEntry[]>('/logs', { params });
+    return res.data;
+  },
+
+  getDockerSources: async (): Promise<DockerSource[]> => {
+    const res = await axiosInstance.get<DockerSource[]>('/monitoring/sources');
+    return res.data;
+  },
+
+  queryLogs: async (params: LogQueryParams, signal?: AbortSignal): Promise<LogQueryResult> => {
+    const res = await axiosInstance.get<LogQueryResult>('/logs/query', { params, signal });
     return res.data;
   },
 

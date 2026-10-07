@@ -1,6 +1,7 @@
 package com.opspilot.logstore;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -12,6 +13,9 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -69,6 +73,48 @@ public class LokiLogStore implements LogStore {
         } catch (Exception e) {
             throw new LogStoreException("Loki unreachable: " + e.getClass().getSimpleName(), false, e);
         }
+    }
+
+    @Override
+    public List<LogStream> query(String logql, Instant start, Instant end, int limit) {
+        if (!enabled) return List.of();
+        try {
+            JsonNode root = client.get()
+                    .uri(url, b -> b.path("/loki/api/v1/query_range")
+                            .queryParam("query", "{q}")
+                            .queryParam("start", "{s}")
+                            .queryParam("end", "{e}")
+                            .queryParam("limit", "{l}")
+                            .queryParam("direction", "backward")
+                            .build(Map.of("q", logql, "s", toNanos(start), "e", toNanos(end), "l", limit)))
+                    .headers(h -> {
+                        if (username != null && !username.isBlank()) h.setBasicAuth(username, password);
+                    })
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .block(timeout);
+            List<LogStream> out = new ArrayList<>();
+            if (root == null) return out;
+            for (JsonNode r : root.path("data").path("result")) {
+                Map<String, String> labels = new LinkedHashMap<>();
+                r.path("stream").fields().forEachRemaining(e -> labels.put(e.getKey(), e.getValue().asText()));
+                List<LogLine> lines = new ArrayList<>();
+                for (JsonNode v : r.path("values")) {
+                    lines.add(new LogLine(Long.parseLong(v.get(0).asText()), v.get(1).asText()));
+                }
+                out.add(new LogStream(labels, lines));
+            }
+            return out;
+        } catch (WebClientResponseException e) {
+            throw new LogStoreException("Loki query failed: HTTP " + e.getStatusCode().value(),
+                    e.getStatusCode().is4xxClientError(), e);
+        } catch (Exception e) {
+            throw new LogStoreException("Loki unreachable: " + e.getClass().getSimpleName(), false, e);
+        }
+    }
+
+    private static long toNanos(Instant i) {
+        return i.getEpochSecond() * 1_000_000_000L + i.getNano();
     }
 
     String toPushJson(List<LogStream> streams) {

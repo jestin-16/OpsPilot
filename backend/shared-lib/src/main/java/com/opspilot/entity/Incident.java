@@ -24,8 +24,12 @@ public class Incident {
     private String status; // OPEN, INVESTIGATING, MITIGATED, RESOLVED
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "project_id", nullable = false)
+    @JoinColumn(name = "project_id")
     private Project project;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "source_id")
+    private PipelineSource source;
 
     @Column(name = "affected_service")
     private String affectedService;
@@ -83,6 +87,9 @@ public class Incident {
     public Project getProject() { return project; }
     public void setProject(Project project) { this.project = project; }
     
+    public PipelineSource getSource() { return source; }
+    public void setSource(PipelineSource source) { this.source = source; }
+
     public String getAffectedService() { return affectedService; }
     public void setAffectedService(String affectedService) { this.affectedService = affectedService; }
     

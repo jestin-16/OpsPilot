@@ -78,3 +78,16 @@ All pipeline runs are stored in the `PipelineRunEntity` table. When integrating 
   - Fetch the data on component mount or interval.
   - Render the raw string inside a styled `<pre>` or dark-themed terminal UI box.
   - Ensure horizontal scrolling or line-wrapping is applied for long output lines.
+
+## Standalone pipeline sources (no Project required)
+
+Add a GitHub Actions or Jenkins source from the Pipelines page. Each source gets a server-generated
+webhook secret (shown on create, or via "Show webhook URL & secret").
+
+- GitHub: Settings -> Webhooks -> payload URL `https://<host>/api/v1/cicd/webhooks/github/<sourceId>`,
+  content type `application/json`, secret = the source secret, event "Workflow runs".
+- Jenkins (Notification Plugin): endpoint `https://<host>/api/v1/cicd/webhooks/jenkins/<sourceId>`,
+  send the secret in the `X-Jenkins-Token` header.
+- Tokens and secrets are encrypted at rest (AES-GCM, key from `OPSPILOT_ENCRYPTION_KEY`) and masked in API responses.
+- Endpoints: `GET/POST /api/v1/cicd/sources`, `PUT/DELETE /api/v1/cicd/sources/{id}`, `POST .../{id}/test`,
+  `POST .../{id}/reveal-secret`, `POST .../{id}/regenerate-secret`. Migration: `V13__add_pipeline_sources.sql`.

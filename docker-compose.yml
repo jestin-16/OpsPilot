@@ -74,7 +74,7 @@ services:
       - PROMETHEUS_URL=${PROMETHEUS_URL:-http://prometheus:9090}
       - PROMETHEUS_USERNAME=${PROMETHEUS_USERNAME:-}
       - PROMETHEUS_PASSWORD=${PROMETHEUS_PASSWORD:-}
-      - LOKI_ENABLED=${LOKI_ENABLED:-false}
+      - LOKI_ENABLED=${LOKI_ENABLED:-true}
       - LOKI_URL=${LOKI_URL:-http://loki:3100}
       - LOKI_USERNAME=${LOKI_USERNAME:-}
       - LOKI_PASSWORD=${LOKI_PASSWORD:-}
@@ -90,12 +90,17 @@ services:
     depends_on:
       - postgres
       - service-registry
+      - loki
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - PROMETHEUS_URL=http://prometheus:9090
+      - LOKI_ENABLED=${LOKI_ENABLED:-true}
+      - LOKI_URL=${LOKI_URL:-http://loki:3100}
+      - LOKI_USERNAME=${LOKI_USERNAME:-}
+      - LOKI_PASSWORD=${LOKI_PASSWORD:-}
 
   api-gateway:
     build:
@@ -120,6 +125,17 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+  # Log store for the push-model Docker monitoring. Internal only: agents push through the OpsPilot
+  # ingest endpoint (token-authenticated), never directly to Loki, so 3100 is intentionally not published.
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: opspilot-loki
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./loki-config.yml:/etc/loki/loki-config.yml:ro
+      - loki_data:/loki
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
@@ -152,3 +168,4 @@ services:
 volumes:
   postgres_data:
   grafana_data:
+  loki_data:

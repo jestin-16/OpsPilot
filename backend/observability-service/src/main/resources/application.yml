@@ -42,6 +42,11 @@ monitoring:
     password: ${LOKI_PASSWORD:}
     timeout: ${LOKI_TIMEOUT:3s}
 
+ingest:
+  max-body-bytes: ${INGEST_MAX_BODY_BYTES:5242880}
+  max-lines: ${INGEST_MAX_LINES:50000}
+  stale-after: ${INGEST_STALE_AFTER:5m}
+
 eureka:
   client:
     service-url:

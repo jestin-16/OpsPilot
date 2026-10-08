@@ -293,3 +293,4 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
   - Implemented per-source rate limiting using `bucket4j` for Loki and Prometheus push controllers.
   - Implemented `LogMetricAlertEvaluator` (Phase 5) to dynamically query Prometheus and Loki to evaluate LOG/METRIC alert rules.
   - Removed legacy `docker-java` usages and `docker.sock` mount in favor of pure push-model architecture.
+  - Removed legacy `/docker` UI view and replaced it with a global, cross-project "Host Log Sources" dashboard to match the push-model architecture.

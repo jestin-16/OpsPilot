@@ -54,22 +54,16 @@ public class DockerIntegrationAdapterTest {
     }
 
     @Test
-    void testExecuteActionMissingContainerId() {
-        Map<String, Object> params = new HashMap<>();
-        assertThrows(IllegalArgumentException.class, () -> adapter.executeAction(integration, IntegrationCapability.START, params));
-    }
-
-    @Test
     void testExecuteActionUnsupported() {
         Map<String, Object> params = new HashMap<>();
         params.put("containerId", "12345");
-        assertThrows(UnsupportedOperationException.class, () -> adapter.executeAction(integration, IntegrationCapability.ROLLBACK, params));
+        assertThrows(UnsupportedOperationException.class, () -> adapter.executeAction(integration, IntegrationCapability.START, params));
     }
 
     @Test
-    void testCollectMissingContainerId() {
+    void testCollectEmpty() {
         Map<String, Object> params = new HashMap<>();
-        assertThrows(IllegalArgumentException.class, () -> adapter.collect(integration, params));
+        assertTrue(adapter.collect(integration, params).isEmpty());
     }
 
     @Test

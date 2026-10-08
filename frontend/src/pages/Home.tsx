@@ -23,7 +23,6 @@ import { Logo } from '../components/Logo';
 import { DashboardView } from '../components/views/DashboardView';
 import { ProjectsView } from '../components/views/ProjectsView';
 import { DeploymentsView } from '../components/views/DeploymentsView';
-import { DockerView } from '../components/views/DockerView';
 import { KubernetesView } from '../components/views/KubernetesView';
 import { MonitoringView } from '../components/views/MonitoringView';
 import { LogsView } from '../components/views/LogsView';
@@ -248,7 +247,6 @@ export const Home: React.FC = () => {
           {activeTab === 'Dashboard' && <DashboardView user={user} onNavigateTab={setActiveTab} />}
           {activeTab === 'Projects' && <ProjectsView />}
           {activeTab === 'Deployments' && <DeploymentsView />}
-          {activeTab === 'Docker' && <DockerView />}
           {activeTab === 'Kubernetes' && <KubernetesView />}
           {activeTab === 'Monitoring' && <MonitoringView />}
           {activeTab === 'Logs' && <LogsView />}

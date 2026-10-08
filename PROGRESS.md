@@ -285,3 +285,11 @@ OpsPilot utilizes a Eureka Service Registry and an API Gateway to route traffic 
 - Integrated CI/CD Pipeline Sources with GitHub Actions and Jenkins webhook support, services, and frontend UI. Database updated to V13.
 - Implemented Docker Push Monitoring Phase 0-2 (Database V14, Auth, Loki push controller).
 - Implemented Docker Push Monitoring Phase 3 (Agent config rendering, Metrics Prometheus proxy & label rewriting, Host Monitoring UI page).
+
+### 2026-10-08
+- Addressed Independent QA defects on `feature/docker-monitoring` branch:
+  - Fixed public metrics endpoint by enforcing `IngestTokenFilter.AUTHORITY` for Prometheus ingest.
+  - Fixed Prometheus label rewriting to strictly sort labels lexicographically to avoid `out of order label names` errors.
+  - Implemented per-source rate limiting using `bucket4j` for Loki and Prometheus push controllers.
+  - Implemented `LogMetricAlertEvaluator` (Phase 5) to dynamically query Prometheus and Loki to evaluate LOG/METRIC alert rules.
+  - Removed legacy `docker-java` usages and `docker.sock` mount in favor of pure push-model architecture.

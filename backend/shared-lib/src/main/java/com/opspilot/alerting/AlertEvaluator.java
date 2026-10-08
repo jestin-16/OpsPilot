@@ -90,24 +90,26 @@ public class AlertEvaluator implements EventSubscriber {
     }
 
     private void triggerAlert(AlertRule rule, EventEnvelope event) {
-        String resource = event.getSource();
-        
+        triggerAlert(rule, event.getProjectId(), event.getSource());
+    }
+
+    public void triggerAlert(AlertRule rule, Long projectId, String resource) {
         // Deduplication & Cooldown: Same project + same resource + same alert type
         List<Alert> activeAlerts = alertRepository.findMatchingAlerts(
-                event.getProjectId(), 
+                projectId, 
                 resource, 
                 rule.getEventType(), 
                 "ACTIVE"
         );
         
         if (!activeAlerts.isEmpty()) {
-            log.debug("Alert already ACTIVE for {} / {} / {}", event.getProjectId(), resource, rule.getEventType());
+            log.debug("Alert already ACTIVE for {} / {} / {}", projectId, resource, rule.getEventType());
             return;
         }
         
         // Check cooldown (e.g., 5 minutes since last resolved)
         List<Alert> resolvedAlerts = alertRepository.findMatchingAlerts(
-                event.getProjectId(), 
+                projectId, 
                 resource, 
                 rule.getEventType(), 
                 "RESOLVED"
@@ -117,14 +119,14 @@ public class AlertEvaluator implements EventSubscriber {
             Alert lastResolved = resolvedAlerts.get(0); // ordered by createdAt desc
             if (lastResolved.getResolvedAt() != null && 
                 lastResolved.getResolvedAt().plusMinutes(5).isAfter(LocalDateTime.now())) {
-                log.debug("Alert in COOLDOWN for {} / {} / {}", event.getProjectId(), resource, rule.getEventType());
+                log.debug("Alert in COOLDOWN for {} / {} / {}", projectId, resource, rule.getEventType());
                 return;
             }
         }
         
         Alert alert = new Alert();
         alert.setAlertRuleId(rule.getId());
-        alert.setProjectId(event.getProjectId());
+        alert.setProjectId(projectId);
         alert.setResource(resource);
         alert.setEventType(rule.getEventType());
         alert.setSeverity(rule.getSeverity());
@@ -137,7 +139,7 @@ public class AlertEvaluator implements EventSubscriber {
         
         // Publish ALERT_TRIGGERED event for Incident Correlation
         EventEnvelope alertEvent = new EventEnvelope();
-        alertEvent.setEventType(com.opspilot.event.EventType.valueOf("ALERT_TRIGGERED")); // We need to add ALERT_TRIGGERED to EventType
+        alertEvent.setEventType(com.opspilot.event.EventType.valueOf("ALERT_TRIGGERED"));
         alertEvent.setProjectId(alert.getProjectId());
         alertEvent.setSource(resource);
         alertEvent.setPayload(alert);

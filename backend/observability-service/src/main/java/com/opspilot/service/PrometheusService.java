@@ -11,6 +11,11 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.OptionalDouble;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+
 @Service
 public class PrometheusService {
     private final WebClient client;
@@ -57,6 +62,27 @@ public class PrometheusService {
         }
     }
 
+    public record PrometheusResult(Map<String, String> metric, double value) {}
+
+    public List<PrometheusResult> queryVector(String promQl) {
+        if (!enabled) {
+            lastError = "Prometheus integration is disabled";
+            return List.of();
+        }
+        try {
+            JsonNode root = client.get()
+                    .uri(url + "/api/v1/query?query=" + java.net.URLEncoder.encode(promQl, StandardCharsets.UTF_8))
+                    .retrieve()
+                    .bodyToMono(JsonNode.class)
+                    .timeout(timeout)
+                    .block();
+            return extractVector(root);
+        } catch (Exception error) {
+            lastError = error.getMessage() == null ? error.getClass().getSimpleName() : error.getMessage();
+            return List.of();
+        }
+    }
+
     public String getLastError() {
         return lastError;
     }
@@ -82,5 +108,24 @@ public class PrometheusService {
         } catch (NumberFormatException ignored) {
             return OptionalDouble.empty();
         }
+    }
+
+    private List<PrometheusResult> extractVector(JsonNode root) {
+        if (root == null || !"success".equals(root.path("status").asText())) return List.of();
+        JsonNode result = root.path("data").path("result");
+        if (!result.isArray()) return List.of();
+        
+        List<PrometheusResult> out = new ArrayList<>();
+        for (JsonNode r : result) {
+            Map<String, String> labels = new LinkedHashMap<>();
+            r.path("metric").fields().forEachRemaining(e -> labels.put(e.getKey(), e.getValue().asText()));
+            JsonNode value = r.path("value");
+            if (value.isArray() && value.size() >= 2) {
+                try {
+                    out.add(new PrometheusResult(labels, Double.parseDouble(value.get(1).asText())));
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+        return out;
     }
 }

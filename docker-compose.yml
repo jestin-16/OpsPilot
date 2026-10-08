@@ -101,6 +101,8 @@ services:
       - LOKI_URL=${LOKI_URL:-http://loki:3100}
       - LOKI_USERNAME=${LOKI_USERNAME:-}
       - LOKI_PASSWORD=${LOKI_PASSWORD:-}
+      - OPSPILOT_INGEST_RATE_LIMIT_CAPACITY=2
+      - OPSPILOT_INGEST_RATE_LIMIT_REFILL_TOKENS=2
 
   api-gateway:
     build:
@@ -122,7 +124,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--web.enable-remote-write'
+      - '--web.enable-remote-write-receiver'
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"

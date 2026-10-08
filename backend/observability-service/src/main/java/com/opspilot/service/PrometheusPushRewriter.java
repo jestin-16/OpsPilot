@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 @Component
 public class PrometheusPushRewriter {
@@ -20,11 +21,6 @@ public class PrometheusPushRewriter {
         }
     }
 
-    private static class Label {
-        final String name;
-        final String value;
-        Label(String name, String value) { this.name = name; this.value = value; }
-    }
 
     public byte[] rewrite(byte[] snappyCompressed, Map<String, String> injectedLabels, int maxDecodedBytes, int[] stats) {
         try {
@@ -52,7 +48,7 @@ public class PrometheusPushRewriter {
                     ByteArrayOutputStream tsBaos = new ByteArrayOutputStream();
                     CodedOutputStream tsOut = CodedOutputStream.newInstance(tsBaos);
                     
-                    List<Label> labels = new ArrayList<>();
+                    Map<String, String> sortedLabels = new TreeMap<>();
                     List<byte[]> samples = new ArrayList<>();
                     
                     while (!in.isAtEnd()) {
@@ -70,7 +66,14 @@ public class PrometheusPushRewriter {
                                 else if (lTag >>> 3 == 2) value = in.readStringRequireUtf8();
                                 else in.skipField(lTag);
                             }
-                            labels.add(new Label(name, value));
+                            
+                            String lowerName = name.toLowerCase();
+                            if (lowerName.equals("project") || lowerName.equals("environment") || lowerName.equals("source")) {
+                                // ignore client-supplied protected labels case-insensitively
+                            } else {
+                                sortedLabels.put(name, value);
+                            }
+                            
                             in.popLimit(lLimit);
                         } else if (tsTag >>> 3 == 2 && (tsTag & 7) == 2) { // TimeSeries.samples
                             samplesCount++;
@@ -83,19 +86,17 @@ public class PrometheusPushRewriter {
                     }
                     in.popLimit(limit);
                     
-                    // Remove client-supplied labels that match injected labels
-                    labels.removeIf(l -> injectedLabels.containsKey(l.name));
                     // Add injected labels
                     for (Map.Entry<String, String> e : injectedLabels.entrySet()) {
-                        labels.add(new Label(e.getKey(), e.getValue()));
+                        sortedLabels.put(e.getKey(), e.getValue());
                     }
                     
-                    for (Label l : labels) {
+                    for (Map.Entry<String, String> l : sortedLabels.entrySet()) {
                         tsOut.writeTag(1, 2);
-                        int lSize = CodedOutputStream.computeStringSize(1, l.name) + CodedOutputStream.computeStringSize(2, l.value);
+                        int lSize = CodedOutputStream.computeStringSize(1, l.getKey()) + CodedOutputStream.computeStringSize(2, l.getValue());
                         tsOut.writeUInt32NoTag(lSize);
-                        tsOut.writeString(1, l.name);
-                        tsOut.writeString(2, l.value);
+                        tsOut.writeString(1, l.getKey());
+                        tsOut.writeString(2, l.getValue());
                     }
                     for (byte[] s : samples) {
                         tsOut.writeTag(2, 2);

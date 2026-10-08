@@ -56,14 +56,13 @@ public class SecurityConfig {
                 })
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/ingest/loki/**", "/api/ingest/loki/**").hasAuthority(IngestTokenFilter.AUTHORITY)
+                .requestMatchers("/api/v1/ingest/loki/**", "/api/ingest/loki/**", "/api/v1/ingest/metrics/**", "/api/ingest/metrics/**").hasAuthority(IngestTokenFilter.AUTHORITY)
                 .requestMatchers(
                     "/api/auth/**", "/api/v1/auth/**",
                     "/api/webhooks/**", "/api/v1/webhooks/**",
                     "/api/cicd/webhooks/**", "/api/v1/cicd/webhooks/**",
                     "/api/monitoring/probe", "/api/v1/monitoring/probe",
                     "/api/monitoring/live-events/**", "/api/v1/monitoring/live-events/**",
-                    "/api/ingest/**", "/api/v1/ingest/**",
                     "/h2-console/**", "/error", "/swagger-ui/**", "/v3/api-docs/**",
                     "/actuator/**"
                 ).permitAll()

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type DockerSource } from '../services/api';
+import { api, type DockerSource, type Project } from '../services/api';
 import { Box, Plus, Trash2, ArrowLeft, Copy, Eye } from 'lucide-react';
 import { useConfirm } from '../components/ConfirmProvider';
 
 export const LogSources: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [sources, setSources] = useState<DockerSource[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
@@ -17,6 +18,7 @@ export const LogSources: React.FC = () => {
   // Form State
   const [sourceName, setSourceName] = useState('');
   const [environment, setEnvironment] = useState('production');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   const fetchSources = async () => {
     try {
@@ -25,6 +27,8 @@ export const LogSources: React.FC = () => {
         setSources(data.filter(s => s.projectId === Number(projectId)));
       } else {
         setSources(data);
+        const projData = await api.getProjects();
+        setProjects(projData);
       }
     } catch (err) {
       console.error('Failed to fetch log sources', err);
@@ -39,16 +43,21 @@ export const LogSources: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!projectId) return;
+    const finalProjectId = projectId || selectedProjectId;
+    if (!finalProjectId) {
+      alert("Please select a project.");
+      return;
+    }
     try {
       const newSource = await api.createDockerSource({
-        projectId: Number(projectId),
+        projectId: Number(finalProjectId),
         name: sourceName,
         environment
       });
       setIsModalOpen(false);
       setSourceName('');
       setEnvironment('production');
+      setSelectedProjectId('');
       fetchSources();
       
       // Show config modal immediately for the new source with the real token
@@ -89,13 +98,17 @@ export const LogSources: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <div className="flex items-center gap-3">
-              <Link to="/projects" className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-500 transition-colors">
-                <ArrowLeft className="w-4 h-4" />
-              </Link>
+              {projectId && (
+                <Link to="/projects" className="p-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-500 transition-colors">
+                  <ArrowLeft className="w-4 h-4" />
+                </Link>
+              )}
               <h1 className="text-3xl font-bold tracking-tight text-slate-800">Host Log Sources</h1>
             </div>
             <p className="text-sm font-medium text-slate-500 mt-2 ml-12">
-              Manage Docker host sources streaming telemetry into Project #{projectId}
+              {projectId 
+                ? `Manage Docker host sources streaming telemetry into Project #${projectId}`
+                : "Manage Docker host sources streaming telemetry across all projects"}
             </p>
           </div>
           <button
@@ -168,6 +181,22 @@ export const LogSources: React.FC = () => {
             <div className="glass-panel rounded-3xl w-full max-w-md p-8 shadow-2xl">
               <h2 className="text-xl font-bold text-slate-800 mb-6">Register Docker Host</h2>
               <form onSubmit={handleSave} className="space-y-5">
+                {!projectId && (
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Project</label>
+                    <select
+                      required
+                      value={selectedProjectId}
+                      onChange={e => setSelectedProjectId(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-op-accent outline-none"
+                    >
+                      <option value="" disabled>Select a project</option>
+                      {projects.map(p => (
+                        <option key={p.id} value={p.id}>{p.projectName}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Host Name</label>
                   <input type="text" required value={sourceName} onChange={e => setSourceName(e.target.value)} placeholder="e.g. prod-db-server" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-op-accent outline-none" />

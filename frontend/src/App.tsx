@@ -21,7 +21,6 @@ import { NotificationCenter } from './pages/NotificationCenter';
 import { PlatformGuide } from './pages/PlatformGuide';
 import { LandingPage } from './pages/LandingPage';
 import { LogSources } from './pages/LogSources';
-import { DockerPage } from './pages/DockerPage';
 import { DeploymentsPage } from './pages/DeploymentsPage';
 import { UserManagement } from './pages/UserManagement';
 import { SecuritySettings } from './pages/SecuritySettings';
@@ -235,7 +234,7 @@ export const App: React.FC = () => {
               path="/docker"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><DockerPage /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><LogSources /></RoleRoute>
                 </ProtectedRoute>
               }
             />

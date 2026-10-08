@@ -8,6 +8,7 @@ import com.opspilot.security.ingest.IngestPrincipal;
 import com.opspilot.service.DockerSourceStatusService;
 import com.opspilot.service.LogLabelEnforcer;
 import com.opspilot.service.LokiPushParser;
+import com.opspilot.service.RateLimitService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -28,6 +29,7 @@ class LokiPushControllerTest {
 
     private LogStore store;
     private DockerSourceStatusService status;
+    private RateLimitService rateLimitService;
     private LokiPushController controller;
     private final UUID sourceId = UUID.randomUUID();
     private final IngestPrincipal principal = new IngestPrincipal(sourceId, 5L, "dev", "laptop");
@@ -37,8 +39,14 @@ class LokiPushControllerTest {
         store = mock(LogStore.class);
         when(store.isEnabled()).thenReturn(true);
         status = mock(DockerSourceStatusService.class);
+        rateLimitService = mock(RateLimitService.class);
+
+        io.github.bucket4j.Bucket bucket = mock(io.github.bucket4j.Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(true);
+        when(rateLimitService.resolveBucket(any())).thenReturn(bucket);
+
         controller = new LokiPushController(new LokiPushParser(new ObjectMapper()), new LogLabelEnforcer(), store,
-                status, 1024 * 1024, 100);
+                status, rateLimitService, 1024 * 1024, 100);
     }
 
     private MockHttpServletRequest json(String body) {
@@ -91,7 +99,7 @@ class LokiPushControllerTest {
     @Test
     void oversizedBodyReturns413() {
         LokiPushController tiny = new LokiPushController(new LokiPushParser(new ObjectMapper()), new LogLabelEnforcer(),
-                store, status, 10, 100);
+                store, status, rateLimitService, 10, 100);
         assertEquals(413, tiny.push(principal, json(body("{}"))).getStatusCode().value());
     }
 
@@ -106,5 +114,14 @@ class LokiPushControllerTest {
     void storeRejectionReturns400() {
         doThrow(new LogStoreException("bad", true, null)).when(store).push(any());
         assertEquals(400, controller.push(principal, json(body("{}"))).getStatusCode().value());
+    }
+
+    @Test
+    void rateLimitExceededReturns429() {
+        io.github.bucket4j.Bucket bucket = mock(io.github.bucket4j.Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(false);
+        when(rateLimitService.resolveBucket(any())).thenReturn(bucket);
+        
+        assertEquals(429, controller.push(principal, json(body("{}"))).getStatusCode().value());
     }
 }

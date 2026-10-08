@@ -3,6 +3,7 @@ package com.opspilot.controller;
 import com.opspilot.security.ingest.IngestPrincipal;
 import com.opspilot.service.DockerSourceStatusService;
 import com.opspilot.service.PrometheusPushRewriter;
+import com.opspilot.service.RateLimitService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -20,13 +21,20 @@ class PrometheusPushControllerTest {
 
     private PrometheusPushRewriter rewriter;
     private DockerSourceStatusService statusService;
+    private RateLimitService rateLimitService;
     private PrometheusPushController controller;
 
     @BeforeEach
     void setUp() {
         rewriter = Mockito.mock(PrometheusPushRewriter.class);
         statusService = Mockito.mock(DockerSourceStatusService.class);
-        controller = new PrometheusPushController(rewriter, statusService, 1000, 100, "http://localhost:9090");
+        rateLimitService = Mockito.mock(RateLimitService.class);
+        
+        io.github.bucket4j.Bucket bucket = Mockito.mock(io.github.bucket4j.Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(true);
+        when(rateLimitService.resolveBucket(any())).thenReturn(bucket);
+
+        controller = new PrometheusPushController(rewriter, statusService, rateLimitService, 1000, 100, "http://localhost:9090");
     }
 
     @Test
@@ -54,5 +62,17 @@ class PrometheusPushControllerTest {
         IngestPrincipal principal = new IngestPrincipal(UUID.randomUUID(), 1L, "env1", "src1");
         ResponseEntity<Void> res = controller.push(principal, req);
         assertEquals(400, res.getStatusCode().value());
+    }
+
+    @Test
+    void testRateLimitExceededReturns429() {
+        MockHttpServletRequest req = new MockHttpServletRequest();
+        io.github.bucket4j.Bucket bucket = Mockito.mock(io.github.bucket4j.Bucket.class);
+        when(bucket.tryConsume(1)).thenReturn(false);
+        when(rateLimitService.resolveBucket(any())).thenReturn(bucket);
+        
+        IngestPrincipal principal = new IngestPrincipal(UUID.randomUUID(), 1L, "env1", "src1");
+        ResponseEntity<Void> res = controller.push(principal, req);
+        assertEquals(429, res.getStatusCode().value());
     }
 }

@@ -7,6 +7,7 @@ import com.opspilot.security.ingest.IngestPrincipal;
 import com.opspilot.service.DockerSourceStatusService;
 import com.opspilot.service.LogLabelEnforcer;
 import com.opspilot.service.LokiPushParser;
+import com.opspilot.service.RateLimitService;
 import com.opspilot.service.LokiPushParser.PushFormatException;
 import com.opspilot.service.LokiPushParser.RawStream;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,17 +36,20 @@ public class LokiPushController {
     private final LogLabelEnforcer enforcer;
     private final LogStore logStore;
     private final DockerSourceStatusService statusService;
+    private final RateLimitService rateLimitService;
     private final int maxBodyBytes;
     private final int maxLines;
 
     public LokiPushController(LokiPushParser parser, LogLabelEnforcer enforcer, LogStore logStore,
                               DockerSourceStatusService statusService,
+                              RateLimitService rateLimitService,
                               @Value("${ingest.max-body-bytes:5242880}") int maxBodyBytes,
                               @Value("${ingest.max-lines:50000}") int maxLines) {
         this.parser = parser;
         this.enforcer = enforcer;
         this.logStore = logStore;
         this.statusService = statusService;
+        this.rateLimitService = rateLimitService;
         this.maxBodyBytes = maxBodyBytes;
         this.maxLines = maxLines;
     }
@@ -54,6 +58,10 @@ public class LokiPushController {
     public ResponseEntity<Void> push(@AuthenticationPrincipal IngestPrincipal principal, HttpServletRequest request) {
         if (principal == null) return ResponseEntity.status(401).build();
         if (!logStore.isEnabled()) return ResponseEntity.status(503).build();
+
+        if (!rateLimitService.resolveBucket(principal.sourceId()).tryConsume(1)) {
+            return ResponseEntity.status(429).build();
+        }
 
         byte[] body;
         try {

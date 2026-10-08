@@ -1,0 +1,3 @@
+INSERT INTO users (id, created_at, email, name, password, provider, role) VALUES (1, now(), 'test@test.com', 'test', 'pwd', 'LOCAL', 'ADMIN') ON CONFLICT DO NOTHING;
+INSERT INTO projects (id, created_at, project_name, status, owner_id) VALUES (1, now(), 'test', 'ACTIVE', 1) ON CONFLICT DO NOTHING;
+INSERT INTO docker_log_sources (id, created_at, environment, name, project_id, status, token_hash, token_prefix, type) VALUES ('123e4567-e89b-12d3-a456-426614174000', now(), 'prod', 'test', 1, 'ACTIVE', '24b622b25f59ff11930a073826ac1efaec110949c70be561e7dfb28b54969411', 'opl_testtoke', 'DOCKER') ON CONFLICT DO NOTHING;

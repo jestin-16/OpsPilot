@@ -25,6 +25,7 @@
         <module>auth-service</module>
         <module>core-service</module>
         <module>observability-service</module>
+        <module>log-watcher-service</module>
     </modules>
 
     <properties>

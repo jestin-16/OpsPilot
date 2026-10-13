@@ -103,6 +103,29 @@ services:
       - OPSPILOT_INGEST_RATE_LIMIT_CAPACITY=2
       - OPSPILOT_INGEST_RATE_LIMIT_REFILL_TOKENS=2
 
+  log-watcher-service:
+    build:
+      context: ./backend
+      dockerfile: log-watcher-service/Dockerfile
+    container_name: opspilot-log-watcher-service
+    ports:
+      - "8084:8084"
+    restart: unless-stopped
+    depends_on:
+      - service-registry
+    volumes:
+      - ~/.kube:/home/opspilot/.kube:ro
+    environment:
+      - SERVER_PORT=8084
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - WATCH_NAMESPACE=${WATCH_NAMESPACE:-default}
+      - WATCH_LABEL_SELECTOR=${WATCH_LABEL_SELECTOR:-}
+      - LOG_BUFFER_MAX_LINES=${LOG_BUFFER_MAX_LINES:-5000}
+      - LOG_MASKING_ENABLED=${LOG_MASKING_ENABLED:-true}
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
+      - JWT_SECRET=${JWT_SECRET:-***REMOVED-JWT-SECRET***}
+      - JAVA_OPTS=-Xms64m -Xmx192m -XX:+UseG1GC
+
   api-gateway:
     build:
       context: ./backend

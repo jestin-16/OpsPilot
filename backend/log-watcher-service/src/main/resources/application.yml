@@ -1,0 +1,54 @@
+server:
+  port: ${SERVER_PORT:8084}
+  servlet:
+    context-path: /
+
+spring:
+  application:
+    name: log-watcher-service
+
+kubernetes:
+  watch-namespace: ${WATCH_NAMESPACE:default}
+  watch-label-selector: ${WATCH_LABEL_SELECTOR:}
+  master-url: ${KUBERNETES_MASTER:}
+
+log-watcher:
+  buffer-max-lines: ${LOG_BUFFER_MAX_LINES:5000}
+  masking-enabled: ${LOG_MASKING_ENABLED:true}
+  reconnect:
+    initial-backoff-ms: ${RECONNECT_INITIAL_BACKOFF_MS:1000}
+    max-backoff-ms: ${RECONNECT_MAX_BACKOFF_MS:30000}
+    multiplier: 2.0
+    jitter: true
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:***REMOVED-JWT-SECRET***}
+  auth:
+    enabled: ${AUTH_ENABLED:true}
+
+eureka:
+  client:
+    enabled: ${EUREKA_ENABLED:true}
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://service-registry:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

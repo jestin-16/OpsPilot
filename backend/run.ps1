@@ -25,6 +25,9 @@ Start-Process -NoNewWindow -FilePath "java" -ArgumentList "-jar", ".mvn\wrapper\
 Write-Host "Starting Observability Service..."
 Start-Process -NoNewWindow -FilePath "java" -ArgumentList "-jar", ".mvn\wrapper\maven-wrapper.jar", "spring-boot:run", "-pl", "observability-service"
 
+Write-Host "Starting Log Watcher Service..."
+Start-Process -NoNewWindow -FilePath "java" -ArgumentList "-jar", ".mvn\wrapper\maven-wrapper.jar", "spring-boot:run", "-pl", "log-watcher-service"
+
 Write-Host "Starting API Gateway..."
 Start-Process -NoNewWindow -FilePath "java" -ArgumentList "-jar", ".mvn\wrapper\maven-wrapper.jar", "spring-boot:run", "-pl", "api-gateway"
 

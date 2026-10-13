@@ -39,6 +39,10 @@ echo "Starting Core Service on port 8082..."
 echo "Starting Observability Service on port 8083..."
 ./mvnw spring-boot:run -pl observability-service &
 
+# Start Log Watcher Service
+echo "Starting Log Watcher Service on port 8084..."
+./mvnw spring-boot:run -pl log-watcher-service &
+
 # Start API Gateway
 echo "Starting API Gateway on port 8080..."
 ./mvnw spring-boot:run -pl api-gateway &

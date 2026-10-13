@@ -1,12 +1,12 @@
 package com.opspilot.logwatcher.service;
 
+import com.google.gson.reflect.TypeToken;
 import com.opspilot.logwatcher.model.PodSummaryDto;
-import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.WatcherException;
-import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
+import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.*;
+import io.kubernetes.client.util.Watch;
+import okhttp3.Call;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,18 +16,18 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
-public class KubernetesPodWatcher implements Watcher<Pod> {
+public class KubernetesPodWatcher {
 
     private static final Logger log = LoggerFactory.getLogger(KubernetesPodWatcher.class);
 
-    private final KubernetesClient kubernetesClient;
+    private final ApiClient apiClient;
+    private final CoreV1Api coreV1Api;
     private final KubernetesLogStreamer logStreamer;
     private final MetricsService metricsService;
 
@@ -41,22 +41,24 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
     // Container previous restart counts tracking: "namespace/pod/container" -> restartCount
     private final Map<String, Integer> containerRestartCounts = new ConcurrentHashMap<>();
 
-    private Watch activeWatch;
+    private Watch<V1Pod> activeWatch;
     private final AtomicBoolean running = new AtomicBoolean(true);
-    private final ScheduledExecutorService reconnectScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "k8s-pod-watcher-reconnect");
+    private final ExecutorService watchExecutor = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "k8s-pod-watch-loop");
         t.setDaemon(true);
         return t;
     });
 
-    public KubernetesPodWatcher(KubernetesClient kubernetesClient,
+    public KubernetesPodWatcher(ApiClient apiClient,
+                                CoreV1Api coreV1Api,
                                 KubernetesLogStreamer logStreamer,
                                 MetricsService metricsService,
                                 @Value("${kubernetes.watch-namespace:default}") String watchNamespace,
                                 @Value("${kubernetes.watch-label-selector:}") String watchLabelSelector,
                                 @Value("${log-watcher.reconnect.initial-backoff-ms:1000}") long initialBackoffMs,
                                 @Value("${log-watcher.reconnect.max-backoff-ms:30000}") long maxBackoffMs) {
-        this.kubernetesClient = kubernetesClient;
+        this.apiClient = apiClient;
+        this.coreV1Api = coreV1Api;
         this.logStreamer = logStreamer;
         this.metricsService = metricsService;
         this.watchNamespace = watchNamespace;
@@ -67,46 +69,73 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
     @EventListener(ApplicationReadyEvent.class)
     public void start() {
         log.info("Starting KubernetesPodWatcher in namespace '{}' (label selector: '{}')...",
-                watchNamespace, watchLabelSelector != null ? watchLabelSelector : "none");
-        initAndWatch();
+                watchNamespace, watchLabelSelector != null && !watchLabelSelector.isBlank() ? watchLabelSelector : "none");
+        watchExecutor.submit(this::watchLoop);
     }
 
-    public synchronized void initAndWatch() {
-        if (!running.get()) {
-            return;
-        }
+    private void watchLoop() {
+        while (running.get()) {
+            try {
+                // Populate initial pods cache
+                listInitialPods();
 
-        try {
-            // First, initial list to populate cache and start streams
-            listInitialPods();
+                Call call = coreV1Api.listNamespacedPod(watchNamespace)
+                        .labelSelector((watchLabelSelector != null && !watchLabelSelector.isBlank()) ? watchLabelSelector : null)
+                        .watch(true)
+                        .buildCall(null);
 
-            // Then start watch
-            FilterWatchListDeletable<Pod, PodList> operation = kubernetesClient.pods().inNamespace(watchNamespace);
-            if (watchLabelSelector != null && !watchLabelSelector.isBlank()) {
-                operation = operation.withLabelSelector(watchLabelSelector);
+                activeWatch = Watch.createWatch(
+                        apiClient,
+                        call,
+                        new TypeToken<Watch.Response<V1Pod>>() {}.getType()
+                );
+
+                watchBackoff.reset(); // Successfully connected
+                log.info("Kubernetes pod watch established on namespace '{}'", watchNamespace);
+
+                for (Watch.Response<V1Pod> item : activeWatch) {
+                    if (!running.get()) {
+                        break;
+                    }
+                    if (item != null && item.object != null) {
+                        handleWatchEvent(item.type, item.object);
+                    }
+                }
+            } catch (Exception e) {
+                if (!running.get()) {
+                    break;
+                }
+                metricsService.incrementReconnect();
+                long backoffMs = watchBackoff.nextBackoffMillis();
+                log.warn("Kubernetes pod watch disconnected ({}). Reconnecting in {}ms (attempt {})",
+                        e.getMessage(), backoffMs, watchBackoff.getAttempt());
+
+                try {
+                    Thread.sleep(backoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            } finally {
+                if (activeWatch != null) {
+                    try {
+                        activeWatch.close();
+                    } catch (Exception ignored) {
+                    }
+                }
             }
-
-            activeWatch = operation.watch(this);
-            watchBackoff.reset();
-            log.info("Kubernetes pod watch successfully established for namespace '{}'", watchNamespace);
-        } catch (Exception e) {
-            metricsService.incrementReconnect();
-            long delay = watchBackoff.nextBackoffMillis();
-            log.warn("Failed to establish pod watch ({}). Retrying in {}ms (attempt {})",
-                    e.getMessage(), delay, watchBackoff.getAttempt());
-            scheduleReconnect(delay);
         }
     }
 
-    private void listInitialPods() {
+    public void listInitialPods() {
         try {
-            FilterWatchListDeletable<Pod, PodList> operation = kubernetesClient.pods().inNamespace(watchNamespace);
+            CoreV1Api.APIlistNamespacedPodRequest request = coreV1Api.listNamespacedPod(watchNamespace);
             if (watchLabelSelector != null && !watchLabelSelector.isBlank()) {
-                operation = operation.withLabelSelector(watchLabelSelector);
+                request = request.labelSelector(watchLabelSelector);
             }
-            PodList podList = operation.list();
-            if (podList != null && podList.getItems() != null) {
-                for (Pod pod : podList.getItems()) {
+            V1PodList list = request.execute();
+            if (list != null && list.getItems() != null) {
+                for (V1Pod pod : list.getItems()) {
                     handlePodAddOrModify(pod);
                 }
             }
@@ -115,8 +144,7 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
         }
     }
 
-    @Override
-    public void eventReceived(Action action, Pod pod) {
+    private void handleWatchEvent(String action, V1Pod pod) {
         if (pod == null || pod.getMetadata() == null) {
             return;
         }
@@ -125,36 +153,14 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
         String ns = pod.getMetadata().getNamespace() != null ? pod.getMetadata().getNamespace() : watchNamespace;
         log.debug("Pod event received: {} for {}/{}", action, ns, name);
 
-        if (action == Action.ADDED || action == Action.MODIFIED) {
+        if ("ADDED".equalsIgnoreCase(action) || "MODIFIED".equalsIgnoreCase(action)) {
             handlePodAddOrModify(pod);
-        } else if (action == Action.DELETED) {
+        } else if ("DELETED".equalsIgnoreCase(action)) {
             handlePodDeleted(ns, name);
         }
     }
 
-    @Override
-    public void onClose(WatcherException cause) {
-        if (!running.get()) {
-            return;
-        }
-        metricsService.incrementReconnect();
-        long delay = watchBackoff.nextBackoffMillis();
-        if (cause != null) {
-            log.warn("Pod watch dropped due to error: {}. Reconnecting in {}ms", cause.getMessage(), delay);
-        } else {
-            log.info("Pod watch closed gracefully by server. Reconnecting in {}ms", delay);
-        }
-        scheduleReconnect(delay);
-    }
-
-    private void scheduleReconnect(long delayMs) {
-        if (!running.get()) {
-            return;
-        }
-        reconnectScheduler.schedule(this::initAndWatch, delayMs, TimeUnit.MILLISECONDS);
-    }
-
-    private void handlePodAddOrModify(Pod pod) {
+    public void handlePodAddOrModify(V1Pod pod) {
         String ns = pod.getMetadata().getNamespace() != null ? pod.getMetadata().getNamespace() : watchNamespace;
         String name = pod.getMetadata().getName();
         String cacheKey = ns + "/" + name;
@@ -162,24 +168,23 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
         PodSummaryDto summary = buildPodSummary(pod);
         podCache.put(cacheKey, summary);
 
-        // Manage log streams for containers
+        // Check containers and start log streaming
         if (pod.getSpec() != null && pod.getSpec().getContainers() != null) {
-            Map<String, ContainerStatus> statusMap = new HashMap<>();
+            Map<String, V1ContainerStatus> statusMap = new HashMap<>();
             if (pod.getStatus() != null && pod.getStatus().getContainerStatuses() != null) {
-                for (ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
+                for (V1ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
                     statusMap.put(cs.getName(), cs);
                 }
             }
 
-            for (Container container : pod.getSpec().getContainers()) {
+            for (V1Container container : pod.getSpec().getContainers()) {
                 String cName = container.getName();
                 String restartKey = ns + "/" + name + "/" + cName;
-                ContainerStatus cs = statusMap.get(cName);
+                V1ContainerStatus cs = statusMap.get(cName);
 
-                int currentRestarts = cs != null ? cs.getRestartCount() : 0;
+                int currentRestarts = (cs != null && cs.getRestartCount() != null) ? cs.getRestartCount() : 0;
                 Integer previousRestarts = containerRestartCounts.get(restartKey);
 
-                // Detect container restart or CrashLoopBackOff -> fetch previous logs
                 boolean isCrashLoop = cs != null && cs.getState() != null && cs.getState().getWaiting() != null
                         && "CrashLoopBackOff".equalsIgnoreCase(cs.getState().getWaiting().getReason());
 
@@ -193,8 +198,7 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
 
                 containerRestartCounts.put(restartKey, currentRestarts);
 
-                // Start live log streaming if container is running or waiting
-                String phase = pod.getStatus() != null ? pod.getStatus().getPhase() : "";
+                String phase = (pod.getStatus() != null && pod.getStatus().getPhase() != null) ? pod.getStatus().getPhase() : "";
                 if (!"Succeeded".equalsIgnoreCase(phase) && !"Failed".equalsIgnoreCase(phase)) {
                     logStreamer.startStream(ns, name, cName);
                 }
@@ -202,29 +206,31 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
         }
     }
 
-    private void handlePodDeleted(String ns, String name) {
+    public void handlePodDeleted(String ns, String name) {
         String cacheKey = ns + "/" + name;
         podCache.remove(cacheKey);
         logStreamer.stopAllStreamsForPod(ns, name);
         log.info("Pod deleted: {}/{}", ns, name);
     }
 
-    private PodSummaryDto buildPodSummary(Pod pod) {
+    private PodSummaryDto buildPodSummary(V1Pod pod) {
         String name = pod.getMetadata().getName();
         String ns = pod.getMetadata().getNamespace() != null ? pod.getMetadata().getNamespace() : watchNamespace;
         String phase = pod.getStatus() != null && pod.getStatus().getPhase() != null ? pod.getStatus().getPhase() : "Unknown";
 
         int totalRestarts = 0;
         int readyCount = 0;
-        int totalContainers = pod.getSpec() != null && pod.getSpec().getContainers() != null ? pod.getSpec().getContainers().size() : 0;
+        int totalContainers = (pod.getSpec() != null && pod.getSpec().getContainers() != null) ? pod.getSpec().getContainers().size() : 0;
 
         List<String> containerNames = new ArrayList<>();
         Map<String, String> containerStatuses = new HashMap<>();
 
         if (pod.getStatus() != null && pod.getStatus().getContainerStatuses() != null) {
-            for (ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
+            for (V1ContainerStatus cs : pod.getStatus().getContainerStatuses()) {
                 containerNames.add(cs.getName());
-                totalRestarts += cs.getRestartCount();
+                if (cs.getRestartCount() != null) {
+                    totalRestarts += cs.getRestartCount();
+                }
                 if (Boolean.TRUE.equals(cs.getReady())) {
                     readyCount++;
                 }
@@ -236,7 +242,7 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
                     } else if (cs.getState().getWaiting() != null) {
                         state = cs.getState().getWaiting().getReason() != null ? cs.getState().getWaiting().getReason() : "Waiting";
                         if ("CrashLoopBackOff".equalsIgnoreCase(state)) {
-                            phase = "CrashLoopBackOff"; // Surface critical state in status
+                            phase = "CrashLoopBackOff";
                         }
                     } else if (cs.getState().getTerminated() != null) {
                         state = cs.getState().getTerminated().getReason() != null ? cs.getState().getTerminated().getReason() : "Terminated";
@@ -248,15 +254,16 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
                 containerStatuses.put(cs.getName(), state);
             }
         } else if (pod.getSpec() != null && pod.getSpec().getContainers() != null) {
-            for (Container c : pod.getSpec().getContainers()) {
+            for (V1Container c : pod.getSpec().getContainers()) {
                 containerNames.add(c.getName());
                 containerStatuses.put(c.getName(), "Pending");
             }
         }
 
         String ready = readyCount + "/" + totalContainers;
-        String creationTimestamp = pod.getMetadata().getCreationTimestamp();
-        String age = calculateAge(creationTimestamp);
+        OffsetDateTime creationTime = pod.getMetadata().getCreationTimestamp();
+        String creationTimestamp = creationTime != null ? creationTime.toString() : null;
+        String age = calculateAge(creationTime);
         String podIP = pod.getStatus() != null ? pod.getStatus().getPodIP() : null;
         String nodeName = pod.getSpec() != null ? pod.getSpec().getNodeName() : null;
         Map<String, String> labels = pod.getMetadata().getLabels() != null ? pod.getMetadata().getLabels() : Map.of();
@@ -264,24 +271,19 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
         return new PodSummaryDto(name, ns, phase, totalRestarts, age, ready, podIP, nodeName, containerNames, containerStatuses, labels, creationTimestamp);
     }
 
-    private String calculateAge(String creationTimestamp) {
-        if (creationTimestamp == null) {
+    private String calculateAge(OffsetDateTime creationTime) {
+        if (creationTime == null) {
             return "unknown";
         }
-        try {
-            Instant created = Instant.parse(creationTimestamp);
-            Duration duration = Duration.between(created, Instant.now());
-            long seconds = duration.getSeconds();
-            if (seconds < 60) return seconds + "s";
-            long minutes = seconds / 60;
-            if (minutes < 60) return minutes + "m";
-            long hours = minutes / 60;
-            if (hours < 24) return hours + "h";
-            long days = hours / 24;
-            return days + "d";
-        } catch (DateTimeParseException e) {
-            return creationTimestamp;
-        }
+        Duration duration = Duration.between(creationTime, OffsetDateTime.now());
+        long seconds = duration.getSeconds();
+        if (seconds < 60) return seconds + "s";
+        long minutes = seconds / 60;
+        if (minutes < 60) return minutes + "m";
+        long hours = minutes / 60;
+        if (hours < 24) return hours + "h";
+        long days = hours / 24;
+        return days + "d";
     }
 
     public List<PodSummaryDto> getAllPods() {
@@ -302,10 +304,9 @@ public class KubernetesPodWatcher implements Watcher<Pod> {
         if (activeWatch != null) {
             try {
                 activeWatch.close();
-            } catch (Exception e) {
-                log.debug("Error closing pod watch: {}", e.getMessage());
+            } catch (Exception ignored) {
             }
         }
-        reconnectScheduler.shutdownNow();
+        watchExecutor.shutdownNow();
     }
 }

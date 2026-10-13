@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { 
   Server, Box, Activity, Network, HardDrive, RefreshCw, AlertCircle, X, Terminal
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 
 export const KubernetesDashboard: React.FC = () => {
@@ -117,12 +118,20 @@ export const KubernetesDashboard: React.FC = () => {
                   Cluster monitoring, workloads, and operational insights.
                 </p>
               </div>
-              <button
-                onClick={() => loadData(activeTab)}
-                className="px-4 py-2 bg-op-raised hover:bg-op-border text-op-fg text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/kubernetes/logs"
+                  className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Terminal className="w-4 h-4" /> Live Pod Logs & Watcher
+                </Link>
+                <button
+                  onClick={() => loadData(activeTab)}
+                  className="px-4 py-2 bg-op-raised hover:bg-op-border text-op-fg text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}

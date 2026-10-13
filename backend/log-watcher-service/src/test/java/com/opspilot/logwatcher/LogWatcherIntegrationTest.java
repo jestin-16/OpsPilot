@@ -3,15 +3,16 @@ package com.opspilot.logwatcher;
 import com.opspilot.logwatcher.model.ClusterHealthSummaryDto;
 import com.opspilot.logwatcher.model.ParsedLogLine;
 import com.opspilot.logwatcher.model.PodSummaryDto;
-import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
-import io.fabric8.kubernetes.client.server.mock.KubernetesMockServer;
+import com.opspilot.logwatcher.service.KubernetesPodWatcher;
+import com.opspilot.logwatcher.service.PodLogBufferManager;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
@@ -20,13 +21,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@EnableKubernetesMockClient(crud = true)
 @TestPropertySource(properties = {
         "app.auth.enabled=false",
         "eureka.client.enabled=false",
@@ -34,45 +38,53 @@ import static org.junit.jupiter.api.Assertions.*;
 })
 class LogWatcherIntegrationTest {
 
-    private static KubernetesMockServer server;
-    private static KubernetesClient client;
-
     @LocalServerPort
     private int port;
 
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @BeforeEach
-    void setUp() {
-        // Create mock pod in the in-memory Kubernetes server
-        Pod pod = new PodBuilder()
-                .withNewMetadata()
-                .withName("django-showcase-app")
-                .withNamespace("default")
-                .withLabels(Map.of("app", "django"))
-                .endMetadata()
-                .withNewSpec()
-                .addNewContainer()
-                .withName("web")
-                .withImage("django:4.2")
-                .endContainer()
-                .endSpec()
-                .withNewStatus()
-                .withPhase("Running")
-                .addNewContainerStatus()
-                .withName("web")
-                .withReady(true)
-                .withRestartCount(0)
-                .withNewState()
-                .withNewRunning()
-                .endRunning()
-                .endState()
-                .endContainerStatus()
-                .endStatus()
-                .build();
+    @Autowired
+    private KubernetesPodWatcher podWatcher;
 
-        client.pods().inNamespace("default").resource(pod).createOrReplace();
+    @Autowired
+    private PodLogBufferManager bufferManager;
+
+    @MockBean
+    private CoreV1Api coreV1Api;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        V1Pod pod = new V1Pod()
+                .metadata(new V1ObjectMeta()
+                        .name("django-showcase-app")
+                        .namespace("default")
+                        .creationTimestamp(OffsetDateTime.now().minusMinutes(5))
+                        .labels(Map.of("app", "django")))
+                .spec(new V1PodSpec()
+                        .nodeName("ip-172-31-0-10")
+                        .containers(List.of(new V1Container().name("web").image("django:4.2"))))
+                .status(new V1PodStatus()
+                        .phase("Running")
+                        .podIP("10.42.0.15")
+                        .containerStatuses(List.of(
+                                new V1ContainerStatus()
+                                        .name("web")
+                                        .ready(true)
+                                        .restartCount(0)
+                                        .state(new V1ContainerState().running(new V1ContainerStateRunning()))
+                        )));
+
+        V1PodList podList = new V1PodList().items(List.of(pod));
+        CoreV1Api.APIlistNamespacedPodRequest mockReq = org.mockito.Mockito.mock(CoreV1Api.APIlistNamespacedPodRequest.class);
+        when(coreV1Api.listNamespacedPod(any())).thenReturn(mockReq);
+        when(mockReq.labelSelector(any())).thenReturn(mockReq);
+        when(mockReq.execute()).thenReturn(podList);
+
+        podWatcher.handlePodAddOrModify(pod);
+
+        bufferManager.appendLog("default", "django-showcase-app",
+                new ParsedLogLine("2026-10-13T12:00:00Z", Instant.now(), "default", "django-showcase-app", "web", "INFO", "Django application initialized", "raw"));
     }
 
     @Test
@@ -88,6 +100,12 @@ class LogWatcherIntegrationTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
+        assertFalse(response.getBody().isEmpty());
+
+        PodSummaryDto pod = response.getBody().get(0);
+        assertEquals("django-showcase-app", pod.getName());
+        assertEquals("Running", pod.getStatus());
+        assertEquals("1/1", pod.getReady());
     }
 
     @Test
@@ -101,7 +119,8 @@ class LogWatcherIntegrationTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertTrue(response.getBody().getWindowMinutes() == 10);
+        assertEquals(10, response.getBody().getWindowMinutes());
+        assertTrue(response.getBody().getTotalPods() >= 1);
     }
 
     @Test
@@ -117,5 +136,7 @@ class LogWatcherIntegrationTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
+        assertFalse(response.getBody().isEmpty());
+        assertEquals("Django application initialized", response.getBody().get(0).getMessage());
     }
 }

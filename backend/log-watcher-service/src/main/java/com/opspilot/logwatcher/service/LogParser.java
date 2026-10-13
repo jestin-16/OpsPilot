@@ -25,8 +25,7 @@ public class LogParser {
 
     // Level detection heuristics
     private static final Pattern ERROR_PATTERN = Pattern.compile(
-            "\\b(ERROR|FATAL|SEVERE|CRITICAL|FAIL|FAILED|FAILURE|EXCEPTION|Traceback|Panic|5\\d{2}\\s+Internal)\\b",
-            Pattern.CASE_INSENSITIVE
+            "(?i)(\\b(ERROR|FATAL|SEVERE|CRITICAL|FAIL|FAILED|FAILURE|EXCEPTION|Traceback|Panic|5\\d{2}\\s+Internal)\\b|\\w+Error:|\\w+Exception:|[a-zA-Z0-9_]*(Error|Exception)\\b)"
     );
 
     private static final Pattern WARN_PATTERN = Pattern.compile(

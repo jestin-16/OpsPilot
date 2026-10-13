@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opspilot-log-watcher-config
+  namespace: default
+  labels:
+    app.kubernetes.io/name: log-watcher-service
+    app.kubernetes.io/part-of: opspilot
+data:
+  WATCH_NAMESPACE: "default"
+  WATCH_LABEL_SELECTOR: "app=django"
+  LOG_BUFFER_MAX_LINES: "5000"
+  LOG_MASKING_ENABLED: "true"
+  SERVER_PORT: "8084"
+  EUREKA_ENABLED: "false"
+  AUTH_ENABLED: "true"
+  RECONNECT_INITIAL_BACKOFF_MS: "1000"
+  RECONNECT_MAX_BACKOFF_MS: "30000"

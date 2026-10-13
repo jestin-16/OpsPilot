@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: opspilot-log-watcher
+  namespace: default
+  labels:
+    app: opspilot-log-watcher
+    app.kubernetes.io/name: log-watcher-service
+    app.kubernetes.io/part-of: opspilot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: opspilot-log-watcher
+  template:
+    metadata:
+      labels:
+        app: opspilot-log-watcher
+        app.kubernetes.io/name: log-watcher-service
+        app.kubernetes.io/part-of: opspilot
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8084"
+    spec:
+      serviceAccountName: opspilot-log-watcher
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: log-watcher
+          image: opspilot/log-watcher-service:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+          ports:
+            - name: http
+              containerPort: 8084
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: opspilot-log-watcher-config
+                  key: SERVER_PORT
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                configMapKeyRef:
+                  name: opspilot-log-watcher-config
+                  key: WATCH_NAMESPACE
+            - name: WATCH_LABEL_SELECTOR
+              valueFrom:
+                configMapKeyRef:
+                  name: opspilot-log-watcher-config
+                  key: WATCH_LABEL_SELECTOR
+            - name: LOG_BUFFER_MAX_LINES
+              valueFrom:
+                configMapKeyRef:
+                  name: opspilot-log-watcher-config
+                  key: LOG_BUFFER_MAX_LINES
+            - name: LOG_MASKING_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: opspilot-log-watcher-config
+                  key: LOG_MASKING_ENABLED
+            - name: EUREKA_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: opspilot-log-watcher-config
+                  key: EUREKA_ENABLED
+            - name: AUTH_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: opspilot-log-watcher-config
+                  key: AUTH_ENABLED
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: opspilot-secrets
+                  key: JWT_SECRET
+                  optional: true
+            - name: JAVA_OPTS
+              value: "-Xms64m -Xmx192m -XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8084
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2

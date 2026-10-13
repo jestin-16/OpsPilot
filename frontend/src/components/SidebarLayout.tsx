@@ -60,7 +60,8 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       title: 'INFRASTRUCTURE',
       items: [
         { name: 'Docker', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-        { name: 'Kubernetes', path: '/kubernetes', icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+        { name: 'Kubernetes', path: '/kubernetes', icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Pod Log Watcher', path: '/kubernetes/logs', icon: Activity, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
       ]
     },
     {

@@ -907,9 +907,96 @@ export const api = {
   getPlatformSettings: async (): Promise<PlatformSetting[]> => (await axiosInstance.get('/admin/settings')).data,
   savePlatformSetting: async (key: string, value: string): Promise<PlatformSetting> => (await axiosInstance.put(`/admin/settings/${encodeURIComponent(key)}`, { value })).data,
   
+  // Kubernetes Log Watcher APIs
+  getWatcherPods: async (): Promise<WatcherPodSummary[]> => {
+    // Try via API gateway or direct watcher
+    const res = await axiosInstance.get<WatcherPodSummary[]>('/pods');
+    return res.data;
+  },
+
+  getWatcherLogs: async (
+    namespace: string,
+    pod: string,
+    params?: { container?: string; tail?: number; since?: string; level?: string }
+  ): Promise<ParsedWatcherLogLine[]> => {
+    const res = await axiosInstance.get<ParsedWatcherLogLine[]>(`/logs/${encodeURIComponent(namespace)}/${encodeURIComponent(pod)}`, {
+      params,
+    });
+    return res.data;
+  },
+
+  getClusterHealthSummary: async (windowMinutes: number = 15): Promise<ClusterHealthSummary> => {
+    const res = await axiosInstance.get<ClusterHealthSummary>('/health/summary', {
+      params: { windowMinutes },
+    });
+    return res.data;
+  },
+
+  getWatcherStreamUrl: (namespace: string, pod: string, container?: string, tail: number = 100): string => {
+    const token = localStorage.getItem('opspilot_token') || '';
+    const base = API_BASE_URL.endsWith('/api/v1') 
+      ? API_BASE_URL.slice(0, -3) // converts http://.../api/v1 to http://.../api
+      : API_BASE_URL;
+    const url = new URL(`${base}/logs/${encodeURIComponent(namespace)}/${encodeURIComponent(pod)}/stream`, window.location.origin);
+    if (container && container !== 'ALL') url.searchParams.set('container', container);
+    if (tail > 0) url.searchParams.set('tail', tail.toString());
+    if (token) url.searchParams.set('token', token);
+    return url.toString();
+  },
+
   // Generic methods
   get: async <T = any>(url: string, config?: any): Promise<{ data: T }> => axiosInstance.get(url, config),
   post: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => axiosInstance.post(url, data, config),
   put: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => axiosInstance.put(url, data, config),
   delete: async <T = any>(url: string, config?: any): Promise<{ data: T }> => axiosInstance.delete(url, config),
 };
+
+export interface WatcherPodSummary {
+  name: string;
+  namespace: string;
+  status: string;
+  restarts: number;
+  age: string;
+  ready: string;
+  podIP?: string;
+  nodeName?: string;
+  containers: string[];
+  containerStatuses?: Record<string, string>;
+  labels?: Record<string, string>;
+  creationTimestamp?: string;
+}
+
+export interface CrashLoopPod {
+  podName: string;
+  namespace: string;
+  containerName: string;
+  restartCount: number;
+  reason: string;
+  exitCode?: number;
+  message?: string;
+  lastTerminationTime?: string;
+}
+
+export interface ClusterHealthSummary {
+  totalPods: number;
+  podsByPhase: Record<string, number>;
+  totalRestarts: number;
+  overallErrorRate: number;
+  errorRatePerPod: Record<string, number>;
+  crashLoopPods: CrashLoopPod[];
+  oomKilledPods: CrashLoopPod[];
+  windowMinutes: number;
+  totalLogLinesAnalyzed: number;
+}
+
+export interface ParsedWatcherLogLine {
+  timestamp: string;
+  parsedTimestamp?: string;
+  namespace: string;
+  pod: string;
+  container: string;
+  level: string;
+  message: string;
+  raw?: string;
+}
+

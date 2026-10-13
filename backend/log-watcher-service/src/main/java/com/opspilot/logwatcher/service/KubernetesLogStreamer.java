@@ -1,8 +1,8 @@
 package com.opspilot.logwatcher.service;
 
 import com.opspilot.logwatcher.model.ParsedLogLine;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.LogWatch;
+import io.kubernetes.client.PodLogs;
+import io.kubernetes.client.openapi.apis.CoreV1Api;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +12,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import jakarta.annotation.PreDestroy;
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -24,7 +25,8 @@ public class KubernetesLogStreamer {
 
     private static final Logger log = LoggerFactory.getLogger(KubernetesLogStreamer.class);
 
-    private final KubernetesClient kubernetesClient;
+    private final PodLogs podLogs;
+    private final CoreV1Api coreV1Api;
     private final LogParser logParser;
     private final PodLogBufferManager bufferManager;
     private final MetricsService metricsService;
@@ -46,7 +48,7 @@ public class KubernetesLogStreamer {
 
     private static class EmitterSubscription {
         final SseEmitter emitter;
-        final String containerFilter; // null or empty for all containers
+        final String containerFilter;
 
         EmitterSubscription(SseEmitter emitter, String containerFilter) {
             this.emitter = emitter;
@@ -60,7 +62,7 @@ public class KubernetesLogStreamer {
         final String container;
         final AtomicBoolean running = new AtomicBoolean(true);
         final ExponentialBackoff backoff;
-        LogWatch logWatch;
+        InputStream activeInputStream;
         Future<?> workerFuture;
 
         ActiveStreamTask(String namespace, String pod, String container) {
@@ -72,11 +74,11 @@ public class KubernetesLogStreamer {
 
         void stop() {
             running.set(false);
-            if (logWatch != null) {
+            if (activeInputStream != null) {
                 try {
-                    logWatch.close();
+                    activeInputStream.close();
                 } catch (Exception e) {
-                    log.debug("Error closing logWatch: {}", e.getMessage());
+                    log.debug("Error closing inputStream: {}", e.getMessage());
                 }
             }
             if (workerFuture != null) {
@@ -85,13 +87,15 @@ public class KubernetesLogStreamer {
         }
     }
 
-    public KubernetesLogStreamer(KubernetesClient kubernetesClient,
+    public KubernetesLogStreamer(PodLogs podLogs,
+                                 CoreV1Api coreV1Api,
                                  LogParser logParser,
                                  PodLogBufferManager bufferManager,
                                  MetricsService metricsService,
                                  @Value("${log-watcher.reconnect.initial-backoff-ms:1000}") long initialBackoffMs,
                                  @Value("${log-watcher.reconnect.max-backoff-ms:30000}") long maxBackoffMs) {
-        this.kubernetesClient = kubernetesClient;
+        this.podLogs = podLogs;
+        this.coreV1Api = coreV1Api;
         this.logParser = logParser;
         this.bufferManager = bufferManager;
         this.metricsService = metricsService;
@@ -131,13 +135,10 @@ public class KubernetesLogStreamer {
         streamExecutor.submit(() -> {
             try {
                 log.info("Fetching previous logs for terminated/restarted container: {}/{}/{}", namespace, pod, container);
-                String prevLogs = kubernetesClient.pods()
-                        .inNamespace(namespace)
-                        .withName(pod)
-                        .inContainer(container)
-                        .terminated()
-                        .withPrettyOutput()
-                        .getLog();
+                String prevLogs = coreV1Api.readNamespacedPodLog(pod, namespace)
+                        .container(container)
+                        .previous(true)
+                        .execute();
 
                 if (prevLogs != null && !prevLogs.isBlank()) {
                     String[] lines = prevLogs.split("\\r?\\n");
@@ -162,22 +163,19 @@ public class KubernetesLogStreamer {
         while (task.running.get()) {
             try {
                 log.debug("Opening log stream for {}/{}/{}", task.namespace, task.pod, task.container);
-                task.logWatch = kubernetesClient.pods()
-                        .inNamespace(task.namespace)
-                        .withName(task.pod)
-                        .inContainer(task.container)
-                        .tailingLines(50)
-                        .usingTimestamps()
-                        .watchLog();
+                // Stream with tailLines=50, timestamps=true
+                task.activeInputStream = podLogs.streamNamespacedPodLog(
+                        task.namespace, task.pod, task.container, null, 50, true
+                );
 
-                if (task.logWatch == null || task.logWatch.getOutput() == null) {
-                    throw new IllegalStateException("Kubernetes logWatch returned null stream");
+                if (task.activeInputStream == null) {
+                    throw new IllegalStateException("Kubernetes PodLogs returned null stream");
                 }
 
                 task.backoff.reset(); // Successfully connected, reset backoff
 
                 try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(task.logWatch.getOutput(), StandardCharsets.UTF_8))) {
+                        new InputStreamReader(task.activeInputStream, StandardCharsets.UTF_8))) {
                     String line;
                     while (task.running.get() && (line = reader.readLine()) != null) {
                         ParsedLogLine parsed = logParser.parse(line, task.namespace, task.pod, task.container);
@@ -242,8 +240,7 @@ public class KubernetesLogStreamer {
      * Subscribes a client to SSE stream for a specific pod.
      */
     public SseEmitter subscribe(String namespace, String pod, String container, int tail) {
-        // 10 minutes timeout for SSE session
-        SseEmitter emitter = new SseEmitter(600_000L);
+        SseEmitter emitter = new SseEmitter(600_000L); // 10 minutes timeout
         String pKey = podKey(namespace, pod);
 
         EmitterSubscription sub = new EmitterSubscription(emitter, container);
@@ -253,7 +250,6 @@ public class KubernetesLogStreamer {
         emitter.onTimeout(() -> removeSubscription(pKey, sub));
         emitter.onError(t -> removeSubscription(pKey, sub));
 
-        // Send initial connect notification
         try {
             emitter.send(SseEmitter.event()
                     .name("CONNECTED")
@@ -311,9 +307,6 @@ public class KubernetesLogStreamer {
         }
     }
 
-    /**
-     * Periodic heartbeat comment to keep SSE connections alive across reverse proxies and Ingress.
-     */
     @Scheduled(fixedRate = 15000)
     public void sendHeartbeats() {
         for (Map.Entry<String, CopyOnWriteArrayList<EmitterSubscription>> entry : sseSubscriptions.entrySet()) {

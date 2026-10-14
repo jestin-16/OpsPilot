@@ -8,7 +8,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-@SpringBootTest(properties = "app.jwt.secret=integration-test-secret-longer-than-32-bytes")
+// Self-contained: an in-memory database instead of the default localhost:5432, so running the tests never
+// touches (or migrates) a developer's real database.
+@SpringBootTest(properties = {
+        "app.jwt.secret=integration-test-secret-longer-than-32-bytes",
+        "spring.datasource.url=jdbc:h2:mem:ingest-security;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.flyway.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "eureka.client.enabled=false"
+})
 @AutoConfigureMockMvc
 public class IngestSecurityIntegrationTest {
 

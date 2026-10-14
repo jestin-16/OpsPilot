@@ -10,9 +10,10 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping({"/api/v1", "/api"})
 public class IntegrationController {
 
     @Autowired
@@ -23,6 +24,12 @@ public class IntegrationController {
             @PathVariable Long projectId,
             @RequestBody IntegrationRequest request,
             @AuthenticationPrincipal User currentUser) {
+        if (request.getProvider() == null) {
+            throw new IllegalArgumentException("provider is required");
+        }
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new IllegalArgumentException("name is required");
+        }
         return ResponseEntity.ok(integrationService.createIntegration(projectId, request, currentUser));
     }
 
@@ -31,6 +38,63 @@ public class IntegrationController {
             @PathVariable Long projectId,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(integrationService.getIntegrationsByProject(projectId, currentUser));
+    }
+
+    @GetMapping("/projects/{projectId}/integrations/{integrationId}")
+    public ResponseEntity<IntegrationResponse> getProjectIntegration(
+            @PathVariable Long projectId,
+            @PathVariable Long integrationId,
+            @AuthenticationPrincipal User currentUser) {
+        IntegrationResponse response = integrationService.getIntegrationById(integrationId, currentUser);
+        if (!projectId.equals(response.getProjectId())) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/projects/{projectId}/integrations/{integrationId}")
+    public ResponseEntity<IntegrationResponse> updateIntegration(
+            @PathVariable Long projectId,
+            @PathVariable Long integrationId,
+            @RequestBody IntegrationRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(integrationService.updateIntegration(projectId, integrationId, request, currentUser));
+    }
+
+    /** Runs the connector's connection test and returns the integration with its new status and a message. */
+    @PostMapping("/projects/{projectId}/integrations/{integrationId}/test")
+    public ResponseEntity<IntegrationResponse> testIntegration(
+            @PathVariable Long projectId,
+            @PathVariable Long integrationId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(integrationService.testIntegration(projectId, integrationId, currentUser));
+    }
+
+    @PostMapping("/projects/{projectId}/integrations/{integrationId}/disconnect")
+    public ResponseEntity<IntegrationResponse> disconnectIntegration(
+            @PathVariable Long projectId,
+            @PathVariable Long integrationId,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(integrationService.disconnectIntegration(projectId, integrationId, currentUser));
+    }
+
+    /** Pickers: kind = containers | namespaces | pods (depending on the integration type). */
+    @GetMapping("/projects/{projectId}/integrations/{integrationId}/resources")
+    public ResponseEntity<List<Map<String, Object>>> discoverResources(
+            @PathVariable Long projectId,
+            @PathVariable Long integrationId,
+            @RequestParam(required = false, defaultValue = "") String kind,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(integrationService.discoverResources(projectId, integrationId, kind, currentUser));
+    }
+
+    @DeleteMapping("/projects/{projectId}/integrations/{integrationId}")
+    public ResponseEntity<Void> deleteProjectIntegration(
+            @PathVariable Long projectId,
+            @PathVariable Long integrationId,
+            @AuthenticationPrincipal User currentUser) {
+        integrationService.deleteIntegration(projectId, integrationId, currentUser);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/integrations/{integrationId}")

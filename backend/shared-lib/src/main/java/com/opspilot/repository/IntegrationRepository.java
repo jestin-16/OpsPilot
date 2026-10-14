@@ -7,4 +7,10 @@ import java.util.List;
 
 public interface IntegrationRepository extends JpaRepository<Integration, Long> {
     List<Integration> findByProjectId(Long projectId);
+
+    java.util.Optional<Integration> findByIdAndProjectId(Long id, Long projectId);
+
+    java.util.Optional<Integration> findByIngestTokenHash(String ingestTokenHash);
+
+    List<Integration> findByStatus(com.opspilot.enums.IntegrationStatus status);
 }

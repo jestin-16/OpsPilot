@@ -55,8 +55,6 @@ interface ProbeResult {
     firstPaint: number;
     browserError?: string;
   };
-  openPorts?: number[];
-  sqliVulnerable?: boolean;
   dnsChain?: string[];
 
   error?: string;
@@ -192,9 +190,8 @@ export const BlackboxMonitoring: React.FC = () => {
         if (isUp) {
           const geo = data.geo ? ` · 📍 ${data.geo.city}, ${data.geo.countryCode} (${data.geo.isp})` : '';
           const cdn = data.headers?.cdn && data.headers.cdn !== 'None detected' ? ` · CDN: ${data.headers.cdn}` : '';
-          const ports = data.openPorts ? ` · Ports: [${data.openPorts.join(',')}]` : '';
           addLog(
-            `✅ HTTP ${data.httpStatus} · ${fmt(latMs,0)}ms · ${data.httpVersion} · ${data.tlsVersion ?? 'TLS?'}${geo}${cdn}${ports}`,
+            `✅ HTTP ${data.httpStatus} · ${fmt(latMs,0)}ms · ${data.httpVersion} · ${data.tlsVersion ?? 'TLS?'}${geo}${cdn}`,
             'success'
           );
         } else {
@@ -442,8 +439,6 @@ export const BlackboxMonitoring: React.FC = () => {
                   <KV k="HSTS Enforced" v={current.headers?.security?.hsts ? '✅ Yes' : '❌ No'} badge={<RealBadge />} />
                   <KV k="Content Security" v={current.headers?.security?.csp ? '✅ Yes' : '❌ No'} badge={<RealBadge />} />
                   <div className="border-t border-slate-100 my-2 pt-2"></div>
-                  <KV k="SQLi Vuln Test" v={current.sqliVulnerable ? '⚠️ VULNERABLE' : '✅ SECURE'} badge={<RealBadge />} />
-                  <KV k="Open Ports" v={current.openPorts?.join(', ') || 'None'} badge={<RealBadge />} />
                 </div>
               ) : <div className="text-slate-400 text-sm py-4 text-center">Data populated on probe</div>}
             </Panel>

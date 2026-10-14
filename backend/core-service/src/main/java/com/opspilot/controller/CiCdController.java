@@ -4,11 +4,14 @@ import com.opspilot.entity.PipelineRunEntity;
 import com.opspilot.exception.ForbiddenException;
 import com.opspilot.exception.ResourceNotFoundException;
 import com.opspilot.repository.PipelineRunRepository;
+import com.opspilot.entity.User;
+import com.opspilot.security.ProjectScope;
 import com.opspilot.service.CiCdService;
 import com.opspilot.util.WebhookSignature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
@@ -27,6 +30,9 @@ public class CiCdController {
     @Autowired
     private CiCdService ciCdService;
 
+    @Autowired
+    private ProjectScope projectScope;
+
     // Shared secrets for the global webhook endpoints; per-source endpoints use their own (SourceWebhookController).
     @Value("${GITHUB_WEBHOOK_SECRET:}")
     private String githubWebhookSecret;
@@ -35,21 +41,20 @@ public class CiCdController {
     private String jenkinsWebhookSecret;
 
     @GetMapping("/runs")
-    public ResponseEntity<List<PipelineRunEntity>> getPipelineRuns() {
-        return ResponseEntity.ok(pipelineRunRepository.findAllByOrderByCreatedAtDesc());
+    public ResponseEntity<List<PipelineRunEntity>> getPipelineRuns(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(projectScope.visibleProjectIds(currentUser)
+                .map(ids -> ids.isEmpty() ? List.<PipelineRunEntity>of() : pipelineRunRepository.findByProject_IdInOrderByCreatedAtDesc(ids))
+                .orElseGet(pipelineRunRepository::findAllByOrderByCreatedAtDesc));
     }
 
     @GetMapping("/runs/{runId}")
-    public ResponseEntity<PipelineRunEntity> getPipelineRun(@PathVariable Long runId) {
-        PipelineRunEntity run = pipelineRunRepository.findById(runId)
-                .orElseThrow(() -> new ResourceNotFoundException("Pipeline run not found with id: " + runId));
-        return ResponseEntity.ok(run);
+    public ResponseEntity<PipelineRunEntity> getPipelineRun(@PathVariable Long runId, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(findVisibleRun(runId, currentUser));
     }
 
     @GetMapping("/runs/{runId}/logs")
-    public ResponseEntity<Map<String, Object>> getPipelineRunLogs(@PathVariable Long runId) {
-        PipelineRunEntity run = pipelineRunRepository.findById(runId)
-                .orElseThrow(() -> new ResourceNotFoundException("Pipeline run not found with id: " + runId));
+    public ResponseEntity<Map<String, Object>> getPipelineRunLogs(@PathVariable Long runId, @AuthenticationPrincipal User currentUser) {
+        PipelineRunEntity run = findVisibleRun(runId, currentUser);
         Map<String, Object> response = new HashMap<>();
         response.put("runId", run.getRunId());
         response.put("status", run.getStatus());
@@ -57,6 +62,13 @@ public class CiCdController {
         response.put("logs", run.getBuildLogs() != null ? run.getBuildLogs() : "");
         response.put("durationMs", run.getDurationMs());
         return ResponseEntity.ok(response);
+    }
+
+    private PipelineRunEntity findVisibleRun(Long runId, User currentUser) {
+        PipelineRunEntity run = pipelineRunRepository.findById(runId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pipeline run not found with id: " + runId));
+        projectScope.requireAccessToProjectId(run.getProject() != null ? run.getProject().getId() : null, currentUser);
+        return run;
     }
 
     @PostMapping("/webhooks/github")

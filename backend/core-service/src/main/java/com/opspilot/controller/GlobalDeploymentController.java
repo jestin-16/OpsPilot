@@ -18,18 +18,20 @@ public class GlobalDeploymentController {
     private DeploymentService deploymentService;
 
     @GetMapping
-    public ResponseEntity<List<DeploymentResponse>> getAllDeployments() {
-        return ResponseEntity.ok(deploymentService.getAllDeployments());
+    public ResponseEntity<List<DeploymentResponse>> getAllDeployments(@org.springframework.security.core.annotation.AuthenticationPrincipal com.opspilot.entity.User currentUser) {
+        return ResponseEntity.ok(deploymentService.getAllDeployments(currentUser));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DeploymentResponse> getDeployment(@org.springframework.web.bind.annotation.PathVariable Long id) {
-        return ResponseEntity.ok(deploymentService.getDeploymentById(id));
+    public ResponseEntity<DeploymentResponse> getDeployment(@org.springframework.web.bind.annotation.PathVariable Long id,
+                                                            @org.springframework.security.core.annotation.AuthenticationPrincipal com.opspilot.entity.User currentUser) {
+        return ResponseEntity.ok(deploymentService.getDeploymentById(id, currentUser));
     }
 
     @GetMapping("/{id}/logs")
-    public ResponseEntity<List<com.opspilot.entity.LogEntity>> getDeploymentLogs(@org.springframework.web.bind.annotation.PathVariable Long id) {
-        return ResponseEntity.ok(deploymentService.getDeploymentLogs(id));
+    public ResponseEntity<List<com.opspilot.entity.LogEntity>> getDeploymentLogs(@org.springframework.web.bind.annotation.PathVariable Long id,
+                                                                              @org.springframework.security.core.annotation.AuthenticationPrincipal com.opspilot.entity.User currentUser) {
+        return ResponseEntity.ok(deploymentService.getDeploymentLogs(id, currentUser));
     }
 
     @org.springframework.web.bind.annotation.PostMapping("/{id}/rollback")

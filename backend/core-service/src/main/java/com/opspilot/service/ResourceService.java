@@ -37,6 +37,17 @@ public class ResourceService {
         return resourceRepository.findAll();
     }
 
+    public List<Resource> getResourcesForProjects(java.util.Collection<Long> projectIds) {
+        return projectIds.isEmpty() ? List.of() : resourceRepository.findByProjectIdIn(projectIds);
+    }
+
+    /** The project an integration belongs to, for access checks on integration-scoped resources. */
+    public Long projectIdOfIntegration(Long integrationId) {
+        Integration integration = integrationRepository.findById(integrationId)
+                .orElseThrow(() -> new IllegalArgumentException("Integration not found"));
+        return integration.getProject() != null ? integration.getProject().getId() : null;
+    }
+
     public List<Resource> getResourcesByIntegration(Long integrationId) {
         return resourceRepository.findByIntegrationId(integrationId);
     }

@@ -21,4 +21,7 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
             @Param("projectId") Long projectId, 
             @Param("statuses") List<String> statuses
     );
+
+    // Scoped list for non-privileged users (ProjectScope.visibleProjectIds).
+    List<Incident> findByProject_IdInOrderByCreatedAtDesc(java.util.Collection<Long> projectIds);
 }

@@ -1,12 +1,11 @@
 package com.opspilot.service;
 
+import com.opspilot.util.PublicUrls;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.*;
 
 import java.net.InetAddress;
-import java.net.Socket;
-import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import org.xbill.DNS.Lookup;
@@ -56,6 +55,8 @@ public class BlackboxService {
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> probeUrl(String url) {
+        // Public internet targets only: this endpoint fetches whatever URL it is given.
+        PublicUrls.requirePublic(url);
         Map<String, Object> result = new LinkedHashMap<>();
 
         // 1. Blackbox Exporter — raw Prometheus text
@@ -88,30 +89,20 @@ public class BlackboxService {
             browserProbeService.probeWithBrowser(url)
         );
 
-        CompletableFuture<List<Integer>> portsFuture = CompletableFuture.supplyAsync(() -> 
-            ips.isEmpty() ? new ArrayList<>() : scanPorts(ips.get(0))
-        );
-
-        CompletableFuture<Boolean> sqliFuture = CompletableFuture.supplyAsync(() -> 
-            checkSqli(url)
-        );
-
         CompletableFuture<List<String>> dnsFuture = CompletableFuture.supplyAsync(() -> 
             traceDns(hostname)
         );
 
         // Wait for all to complete
-        CompletableFuture.allOf(geoFuture, headersFuture, browserFuture, portsFuture, sqliFuture, dnsFuture).join();
+        CompletableFuture.allOf(geoFuture, headersFuture, browserFuture, dnsFuture).join();
 
         // Populate results
         try {
             if (!ips.isEmpty()) {
                 result.put("geo", geoFuture.get());
-                result.put("openPorts", portsFuture.get());
             }
             result.put("headers", headersFuture.get());
             result.put("browser", browserFuture.get());
-            result.put("sqliVulnerable", sqliFuture.get());
             result.put("dnsChain", dnsFuture.get());
         } catch (Exception e) {
             e.printStackTrace();
@@ -121,31 +112,6 @@ public class BlackboxService {
     }
 
     // ── Advanced Security & DNS ───────────────────────────────────────────────
-
-    private List<Integer> scanPorts(String ip) {
-        List<Integer> openPorts = new ArrayList<>();
-        int[] ports = {22, 80, 443, 3306, 5432, 27017, 8080};
-        for (int port : ports) {
-            try (Socket socket = new Socket()) {
-                socket.connect(new InetSocketAddress(ip, port), 500);
-                openPorts.add(port);
-            } catch (Exception ignored) {}
-        }
-        return openPorts;
-    }
-
-    private boolean checkSqli(String url) {
-        try {
-            String testUrl = url + (url.contains("?") ? "&" : "?") + "q=' OR '1'='1";
-            ResponseEntity<String> resp = restTemplate.getForEntity(testUrl, String.class);
-            String body = resp.getBody();
-            if (body != null) {
-                String lower = body.toLowerCase();
-                return lower.contains("syntax error") || lower.contains("mysql_fetch") || lower.contains("ora-01756");
-            }
-        } catch (Exception ignored) {}
-        return false;
-    }
 
     private List<String> traceDns(String hostname) {
         List<String> chain = new ArrayList<>();

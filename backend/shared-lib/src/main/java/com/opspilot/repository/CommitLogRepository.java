@@ -13,4 +13,7 @@ public interface CommitLogRepository extends JpaRepository<CommitLogEntity, Long
     boolean existsByCommitShaAndProject_Id(String commitSha, Long projectId);
     boolean existsByCommitSha(String commitSha);
     void deleteByProject_Id(Long projectId);
+
+    // Scoped list for non-privileged users (ProjectScope.visibleProjectIds).
+    List<CommitLogEntity> findTop50ByProject_IdInOrderByTimestampDesc(java.util.Collection<Long> projectIds);
 }

@@ -62,6 +62,8 @@ public class DeploymentServiceTest {
 
     @BeforeEach
     void setUp() {
+        org.springframework.test.util.ReflectionTestUtils.setField(deploymentService, "projectScope",
+                new com.opspilot.security.ProjectScope(projectRepository));
         owner = new User();
         owner.setId(1L);
         owner.setRoles(Collections.singleton(new Role("USER", "")));

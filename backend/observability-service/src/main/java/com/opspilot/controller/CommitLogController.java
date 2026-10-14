@@ -1,6 +1,9 @@
 package com.opspilot.controller;
 
 import com.opspilot.entity.CommitLogEntity;
+import com.opspilot.entity.User;
+import com.opspilot.security.ProjectScope;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.opspilot.repository.CommitLogRepository;
 import com.opspilot.service.GithubSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,22 +23,32 @@ public class CommitLogController {
     @Autowired
     private GithubSyncService githubSyncService;
 
+    @Autowired
+    private ProjectScope projectScope;
+
     @GetMapping
-    public ResponseEntity<List<CommitLogEntity>> getAllCommits() {
-        List<CommitLogEntity> commits = commitLogRepository.findTop50ByOrderByTimestampDesc();
+    public ResponseEntity<List<CommitLogEntity>> getAllCommits(@AuthenticationPrincipal User currentUser) {
+        List<CommitLogEntity> commits = projectScope.visibleProjectIds(currentUser)
+                .map(ids -> ids.isEmpty() ? List.<CommitLogEntity>of() : commitLogRepository.findTop50ByProject_IdInOrderByTimestampDesc(ids))
+                .orElseGet(commitLogRepository::findTop50ByOrderByTimestampDesc);
         return ResponseEntity.ok(commits);
     }
 
     @GetMapping("/project/{projectId}")
-    public ResponseEntity<List<CommitLogEntity>> getProjectCommits(@PathVariable Long projectId) {
+    public ResponseEntity<List<CommitLogEntity>> getProjectCommits(@PathVariable Long projectId, @AuthenticationPrincipal User currentUser) {
+        projectScope.require(projectId, currentUser);
         List<CommitLogEntity> commits = commitLogRepository.findByProject_IdOrderByTimestampDesc(projectId);
         return ResponseEntity.ok(commits);
     }
 
     @PostMapping("/sync")
-    public ResponseEntity<?> syncAllProjects() {
+    public ResponseEntity<?> syncAllProjects(@AuthenticationPrincipal User currentUser) {
         try {
-            int count = githubSyncService.syncAllProjects();
+            // DevOps and Admin sync every project; anyone else syncs only the projects they own.
+            java.util.Optional<List<Long>> visible = projectScope.visibleProjectIds(currentUser);
+            int count = visible.isEmpty()
+                    ? githubSyncService.syncAllProjects()
+                    : visible.get().stream().mapToInt(githubSyncService::syncHistoricalCommits).sum();
             return ResponseEntity.ok(Map.of("synced_count", count));
         } catch (Exception e) {
             return ResponseEntity.ok(Map.of("synced_count", 0, "warning", e.getMessage()));
@@ -43,7 +56,8 @@ public class CommitLogController {
     }
 
     @PostMapping("/project/{projectId}/sync")
-    public ResponseEntity<?> syncHistoricalCommits(@PathVariable Long projectId) {
+    public ResponseEntity<?> syncHistoricalCommits(@PathVariable Long projectId, @AuthenticationPrincipal User currentUser) {
+        projectScope.require(projectId, currentUser);
         try {
             int count = githubSyncService.syncHistoricalCommits(projectId);
             return ResponseEntity.ok(Map.of("synced_count", count));

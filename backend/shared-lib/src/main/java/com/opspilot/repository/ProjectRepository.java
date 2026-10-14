@@ -12,6 +12,9 @@ import java.util.List;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByOwner(User owner);
+
+    @org.springframework.data.jpa.repository.Query("SELECT p.id FROM Project p WHERE p.owner = :owner")
+    List<Long> findIdsByOwner(@org.springframework.data.repository.query.Param("owner") User owner);
     Page<Project> findByOwner(User owner, Pageable pageable);
     List<Project> findByRepositoryUrl(String repositoryUrl);
     boolean existsBySlug(String slug);

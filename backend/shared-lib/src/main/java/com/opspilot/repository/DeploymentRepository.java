@@ -17,4 +17,7 @@ public interface DeploymentRepository extends JpaRepository<Deployment, Long> {
     Optional<Deployment> findFirstByOrderByDeployedAtDesc();
     Optional<Deployment> findFirstByProject_OwnerOrderByDeployedAtDesc(User owner);
     void deleteByProjectId(Long projectId);
+
+    // Scoped list for non-privileged users (ProjectScope.visibleProjectIds).
+    List<Deployment> findByProject_IdInOrderByDeployedAtDesc(java.util.Collection<Long> projectIds);
 }

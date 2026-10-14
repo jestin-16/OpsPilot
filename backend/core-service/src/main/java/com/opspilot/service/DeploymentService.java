@@ -1,5 +1,6 @@
 package com.opspilot.service;
 
+import com.opspilot.security.ProjectScope;
 import com.opspilot.dto.DeploymentRequest;
 import com.opspilot.dto.DeploymentResponse;
 import com.opspilot.entity.*;
@@ -37,21 +38,14 @@ public class DeploymentService {
     private NotificationRepository notificationRepository;
 
     @Autowired
-    private UserRepository userRepository;
+    private ProjectScope projectScope;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);
 
     public DeploymentResponse createDeployment(Long projectId, DeploymentRequest request, User currentUser) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-
+        // Only someone who can see the project may deploy it; the deployment is attributed to them.
+        Project project = projectScope.require(projectId, currentUser);
         User effectiveUser = currentUser;
-        if (effectiveUser == null) {
-            effectiveUser = project.getOwner();
-        }
-        if (effectiveUser == null) {
-            effectiveUser = userRepository.findAll().stream().findFirst().orElse(null);
-        }
 
         Deployment deployment = new Deployment(
                 project,
@@ -81,9 +75,8 @@ public class DeploymentService {
         return mapToResponse(savedDeployment);
     }
 
-    public List<DeploymentResponse> getDeploymentsForProject(Long projectId) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+    public List<DeploymentResponse> getDeploymentsForProject(Long projectId, User currentUser) {
+        Project project = projectScope.require(projectId, currentUser);
 
         List<Deployment> deployments = deploymentRepository.findByProjectOrderByDeployedAtDesc(project);
         return deployments.stream()
@@ -91,16 +84,24 @@ public class DeploymentService {
                 .collect(Collectors.toList());
     }
 
-    public List<DeploymentResponse> getAllDeployments() {
-        return deploymentRepository.findAllByOrderByDeployedAtDesc().stream()
+    public List<DeploymentResponse> getAllDeployments(User currentUser) {
+        List<Deployment> deployments = projectScope.visibleProjectIds(currentUser)
+                .map(ids -> ids.isEmpty() ? List.<Deployment>of() : deploymentRepository.findByProject_IdInOrderByDeployedAtDesc(ids))
+                .orElseGet(deploymentRepository::findAllByOrderByDeployedAtDesc);
+        return deployments.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    public DeploymentResponse getDeploymentById(Long id) {
+    public DeploymentResponse getDeploymentById(Long id, User currentUser) {
+        return mapToResponse(findVisibleDeployment(id, currentUser));
+    }
+
+    private Deployment findVisibleDeployment(Long id, User currentUser) {
         Deployment d = deploymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Deployment not found"));
-        return mapToResponse(d);
+        projectScope.requireAccess(d.getProject(), currentUser);
+        return d;
     }
 
     @Transactional
@@ -151,10 +152,8 @@ public class DeploymentService {
         }
     }
 
-    public List<LogEntity> getDeploymentLogs(Long id) {
-        Deployment d = deploymentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Deployment not found"));
-        return logRepository.findByDeploymentOrderByTimestampAsc(d);
+    public List<LogEntity> getDeploymentLogs(Long id, User currentUser) {
+        return logRepository.findByDeploymentOrderByTimestampAsc(findVisibleDeployment(id, currentUser));
     }
 
     private void scheduleStatusProgression(Long deploymentId) {

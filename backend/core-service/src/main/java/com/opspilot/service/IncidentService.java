@@ -46,6 +46,10 @@ public class IncidentService {
         return incidentRepository.findAllByOrderByCreatedAtDesc();
     }
 
+    public List<Incident> getIncidentsForProjects(java.util.Collection<Long> projectIds) {
+        return projectIds.isEmpty() ? List.of() : incidentRepository.findByProject_IdInOrderByCreatedAtDesc(projectIds);
+    }
+
     public List<Incident> getIncidentsByProject(Long projectId) {
         return incidentRepository.findByProject_IdOrderByCreatedAtDesc(projectId);
     }

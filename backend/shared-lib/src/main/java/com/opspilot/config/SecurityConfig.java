@@ -63,7 +63,6 @@ public class SecurityConfig {
                     "/api/auth/**", "/api/v1/auth/**",
                     "/api/webhooks/**", "/api/v1/webhooks/**",
                     "/api/cicd/webhooks/**", "/api/v1/cicd/webhooks/**",
-                    "/api/monitoring/probe", "/api/v1/monitoring/probe",
                     "/error", "/swagger-ui/**", "/v3/api-docs/**",
                     "/actuator/**"
                 ).permitAll()

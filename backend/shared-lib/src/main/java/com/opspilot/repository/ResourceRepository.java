@@ -10,4 +10,7 @@ import java.util.List;
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
     List<Resource> findByProjectId(Long projectId);
     List<Resource> findByIntegrationId(Long integrationId);
+
+    // Scoped list for non-privileged users (ProjectScope.visibleProjectIds).
+    List<Resource> findByProjectIdIn(java.util.Collection<Long> projectIds);
 }

@@ -14,4 +14,7 @@ public interface PipelineRunRepository extends JpaRepository<PipelineRunEntity, 
     java.util.Optional<PipelineRunEntity> findByExternalRunId(String externalRunId);
     java.util.Optional<PipelineRunEntity> findFirstBySource_IdAndExternalRunId(Long sourceId, String externalRunId);
     java.util.Optional<PipelineRunEntity> findFirstBySource_IdOrderByCreatedAtDesc(Long sourceId);
+
+    // Scoped list for non-privileged users (ProjectScope.visibleProjectIds).
+    List<PipelineRunEntity> findByProject_IdInOrderByCreatedAtDesc(java.util.Collection<Long> projectIds);
 }

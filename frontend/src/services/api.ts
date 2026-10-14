@@ -93,7 +93,8 @@ export const RegisterSchema = z.object({
     .string()
     .min(8, 'Password must be at least 8 characters long')
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/, 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 digit'),
-  role: z.string().min(1, 'Role is required'),
+  // Administrator access is granted by an existing admin, never chosen at sign-up.
+  role: z.enum(['Developer', 'DevOps'], { message: 'Choose Developer or DevOps' }),
 });
 
 export const SignupSchema = RegisterSchema.extend({

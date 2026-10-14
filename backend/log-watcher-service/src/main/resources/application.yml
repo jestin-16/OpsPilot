@@ -24,7 +24,7 @@ log-watcher:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:***REMOVED-JWT-SECRET***}
+    secret: ${JWT_SECRET:}
   auth:
     enabled: ${AUTH_ENABLED:true}
 

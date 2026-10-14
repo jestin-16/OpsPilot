@@ -121,14 +121,7 @@ public class AuthService {
                 throw new RoleRequiredException("Role is required for first-time Google login");
             }
             
-            String roleNameStr = request.getRole();
-            Role role = roleRepository.findByRoleName(roleNameStr)
-                    .orElseGet(() -> {
-                        return roleRepository.findAll().stream()
-                                .filter(r -> r.getRoleName().equalsIgnoreCase(roleNameStr))
-                                .findFirst()
-                                .orElseGet(() -> roleRepository.save(new Role(roleNameStr, roleNameStr + " role")));
-                    });
+            Role role = resolveSelfServiceRole(request.getRole());
 
             Set<Role> roles = new HashSet<>();
             roles.add(role);
@@ -169,20 +162,31 @@ public class AuthService {
         return new AuthResponse(accessToken, user.getId(), user.getName(), user.getEmail(), roleNames);
     }
 
+    /**
+     * Maps the role a user picked at sign-up to one of the seeded roles. Only DEVELOPER and DEVOPS can be
+     * self-selected; ADMIN is granted by an existing administrator (PUT /api/users/{id}/roles), and unknown
+     * names are rejected rather than created.
+     */
+    Role resolveSelfServiceRole(String requested) {
+        String normalized = requested == null ? "" : requested.trim().toUpperCase().replaceAll("[\\s_-]+", "");
+        String roleName = switch (normalized) {
+            case "DEVELOPER" -> "DEVELOPER";
+            case "DEVOPS", "DEVOPSENGINEER" -> "DEVOPS";
+            case "ADMIN", "ADMINISTRATOR" -> throw new IllegalArgumentException(
+                    "Administrator access can't be chosen at sign-up; ask an existing administrator to grant it");
+            default -> throw new IllegalArgumentException("Role must be Developer or DevOps");
+        };
+        return roleRepository.findByRoleName(roleName)
+                .orElseThrow(() -> new IllegalStateException("Role " + roleName + " is not seeded"));
+    }
+
     public RegistrationResponse register(RegisterRequest request) {
         String email = request.getEmail().trim();
         if (userRepository.findByEmailIgnoreCase(email).isPresent()) {
             throw new IllegalArgumentException("Email address is already in use: " + request.getEmail());
         }
 
-        String roleNameStr = request.getRole();
-        Role role = roleRepository.findByRoleName(roleNameStr)
-                .orElseGet(() -> {
-                    return roleRepository.findAll().stream()
-                            .filter(r -> r.getRoleName().equalsIgnoreCase(roleNameStr))
-                            .findFirst()
-                            .orElseGet(() -> roleRepository.save(new Role(roleNameStr, roleNameStr + " role")));
-                });
+        Role role = resolveSelfServiceRole(request.getRole());
 
         Set<Role> roles = new HashSet<>();
         roles.add(role);

@@ -8,7 +8,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.jwt.secret=integration-test-secret-longer-than-32-bytes")
 @AutoConfigureMockMvc
 public class IngestSecurityIntegrationTest {
 

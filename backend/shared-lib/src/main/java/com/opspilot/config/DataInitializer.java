@@ -5,6 +5,7 @@ import com.opspilot.entity.User;
 import com.opspilot.repository.RoleRepository;
 import com.opspilot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -23,6 +24,11 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    static final String DEMO_PASSWORD = "Password123!";
+
+    @Value("${app.seed.demo-users:false}")
+    private boolean demoUsersEnabled;
+
     @Override
     public void run(String... args) throws Exception {
         // Seed Initial Roles
@@ -35,30 +41,21 @@ public class DataInitializer implements CommandLineRunner {
         Role adminRole = roleRepository.findByRoleName("ADMIN")
                 .orElseGet(() -> roleRepository.save(new Role("ADMIN", "Admin role with full system access")));
 
-        // Seed User Accounts if not present
-        if (userRepository.findByEmail("jestinshaji777@gmail.com").isEmpty()) {
-            User jestinUser = new User("Jestin Shaji", "jestinshaji777@gmail.com", passwordEncoder.encode("***REMOVED-PASSWORD***"), Set.of(adminRole));
-            userRepository.save(jestinUser);
+        if (!demoUsersEnabled) {
+            return;
         }
 
-        if (userRepository.findByEmail("admin@opspilot.io").isEmpty()) {
-            User admin = new User("System Administrator", "admin@opspilot.io", passwordEncoder.encode("Password123!"), Set.of(adminRole));
-            userRepository.save(admin);
-        }
+        // Demo accounts behind the login page's demo buttons. Their passwords are public, so they are only
+        // created when DEMO_USERS_ENABLED=true (local development); never enable this on a shared deployment.
+        seedUser("System Administrator", "admin@opspilot.io", adminRole);
+        seedUser("Lead Developer", "developer@opspilot.io", devRole);
+        seedUser("DevOps Lead", "devops@opspilot.io", devOpsRole);
+        seedUser("Audit Other", "opspilot-audit-other@example.com", devRole);
+    }
 
-        if (userRepository.findByEmail("developer@opspilot.io").isEmpty()) {
-            User dev = new User("Lead Developer", "developer@opspilot.io", passwordEncoder.encode("Password123!"), Set.of(devRole));
-            userRepository.save(dev);
-        }
-
-        if (userRepository.findByEmail("devops@opspilot.io").isEmpty()) {
-            User devops = new User("DevOps Lead", "devops@opspilot.io", passwordEncoder.encode("Password123!"), Set.of(devOpsRole));
-            userRepository.save(devops);
-        }
-
-        if (userRepository.findByEmail("opspilot-audit-other@example.com").isEmpty()) {
-            User otherDev = new User("Audit Other", "opspilot-audit-other@example.com", passwordEncoder.encode("Password123!"), Set.of(devRole));
-            userRepository.save(otherDev);
+    private void seedUser(String name, String email, Role role) {
+        if (userRepository.findByEmail(email).isEmpty()) {
+            userRepository.save(new User(name, email, passwordEncoder.encode(DEMO_PASSWORD), Set.of(role)));
         }
     }
 }

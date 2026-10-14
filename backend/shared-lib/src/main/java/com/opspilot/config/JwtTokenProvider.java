@@ -2,6 +2,7 @@ package com.opspilot.config;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -15,7 +16,8 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${app.jwt.secret:***REMOVED-JWT-SECRET***}")
+    // Shared by every service that issues or checks tokens; comes from JWT_SECRET, never from source.
+    @Value("${app.jwt.secret:}")
     private String jwtSecret;
 
     // Short-lived access token duration: 15 minutes (900000 ms)
@@ -25,6 +27,11 @@ public class JwtTokenProvider {
     // Refresh token duration: 7 days (604800000 ms)
     @Value("${app.jwt.refresh-expiration-ms:604800000}")
     private long jwtRefreshExpirationMs;
+
+    @PostConstruct
+    void requireSecret() {
+        JwtSecrets.requireStrong(jwtSecret);
+    }
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
@@ -47,19 +54,6 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .subject(email)
                 .claim("roles", roles)
-                .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(getSigningKey())
-                .compact();
-    }
-
-    public String generateRefreshTokenFromEmail(String email) {
-        Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + jwtRefreshExpirationMs);
-
-        return Jwts.builder()
-                .subject(email)
-                .claim("type", "refresh")
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(getSigningKey())

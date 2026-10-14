@@ -21,8 +21,11 @@ spring:
     show-sql: false
 
 app:
+  seed:
+    # Creates the public demo accounts (admin@opspilot.io etc.). Local development only.
+    demo-users: ${DEMO_USERS_ENABLED:false}
   jwt:
-    secret: ***REMOVED-JWT-SECRET***
+    secret: ${JWT_SECRET:}
     expiration-ms: 900000
     refresh-expiration-ms: 604800000
 

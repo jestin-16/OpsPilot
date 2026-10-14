@@ -18,11 +18,36 @@ import {
   Rocket, Server, Activity, RefreshCw, AlertCircle, 
   Terminal, Plus, Filter, ChevronDown
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
+const PROVIDER_LABELS: Record<string, string> = {
+  DOCKER: 'Docker',
+  KUBERNETES: 'Kubernetes',
+  AWS: 'AWS',
+  VERCEL: 'Vercel',
+  ORACLE_CLOUD: 'Oracle Cloud',
+  GITHUB: 'GitHub',
+};
+
+const SEVERITY_LABELS: Record<string, string> = {
+  CRITICAL: 'Critical / Error',
+  WARNING: 'Warning',
+  INFO: 'Info / Success',
+};
+
+const BREAKDOWN_PROVIDERS = ['DOCKER', 'KUBERNETES', 'AWS', 'VERCEL', 'ORACLE_CLOUD'];
+
+const FilterTrigger: React.FC<{ label: string }> = ({ label }) => (
+  <div className="group flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-op-accent/5 border border-op-accent/15 rounded-full text-sm font-semibold text-op-fg hover:bg-op-accent/10 hover:border-op-accent/40 transition-colors duration-200 cursor-pointer shadow-sm">
+    <span className="truncate">{label}</span>
+    <ChevronDown className="w-4 h-4 text-op-accent ml-3 shrink-0 transition-transform duration-200 group-hover:translate-y-0.5" />
+  </div>
+);
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
-  
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -207,18 +232,19 @@ export const Dashboard: React.FC = () => {
   };
 
   const getSystemStatusReason = () => {
+    if (criticalResources > 0) return 'Critical';
     if (!health) return 'Inactive';
-    if (health.overallStatus === 'CRITICAL' || criticalResources > 0) return 'System Critical';
-    if (health.overallStatus === 'DEGRADED') return 'System Degraded';
-    if (health.overallStatus === 'OPERATIONAL_WITH_WARNINGS' || warningResources > 0) return 'System Operational with Warnings';
-    return 'System Operational';
+    if (health.overallStatus === 'CRITICAL') return 'Critical';
+    if (health.overallStatus === 'DEGRADED') return 'Degraded';
+    if (health.overallStatus === 'OPERATIONAL_WITH_WARNINGS' || warningResources > 0) return 'Operational with warnings';
+    return 'Operational';
   };
 
   if (loading && !refreshing && projects.length === 0) {
     return (
       <SidebarLayout>
         <div className="flex h-full min-h-[60vh] items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-op-accent"></div>
         </div>
       </SidebarLayout>
     );
@@ -226,52 +252,50 @@ export const Dashboard: React.FC = () => {
 
   return (
     <SidebarLayout>
-      <div className="p-8 max-w-[1600px] mx-auto space-y-8 animate-fade-in-up">
-        
+      <div className="p-6 lg:p-8 space-y-6">
+
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+          <div className="min-w-0">
+            <h1 className="text-3xl font-bold tracking-tight text-op-fg">
               OpsPilot Command Center
             </h1>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-sm font-medium text-op-muted mt-2">
               Welcome, {user?.name}. Here is your operational overview across all connected providers.
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <StatusIndicator status={getSystemStatus()} text={`System: ${getSystemStatusReason()}`} />
-            <Button variant="secondary" onClick={() => fetchData(true)} isLoading={refreshing}>
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 
-              <span className="ml-2">Refresh</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <StatusIndicator status={getSystemStatus()} text={`System: ${getSystemStatusReason()}`} className="mr-1" />
+            <Button variant="secondary" onClick={() => fetchData(true)} disabled={refreshing} className="gap-2">
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
-            <Link to="/projects/new">
-              <Button variant="primary">
-                <Plus className="w-4 h-4 mr-2" /> New Project
-              </Button>
-            </Link>
+            <Button variant="primary" onClick={() => navigate('/projects/new')} className="gap-2">
+              <Plus className="w-4 h-4" />
+              New Project
+            </Button>
           </div>
         </div>
 
         {error && (
-          <div className="bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 p-4 rounded-xl border border-rose-200 dark:border-rose-900/30 flex items-center gap-3">
-            <AlertCircle className="w-5 h-5" />
+          <div className="bg-rose-50 text-rose-700 p-4 rounded-xl border border-rose-200 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 shrink-0" />
             <p className="text-sm font-medium">{error}</p>
           </div>
         )}
 
         {/* Global Filters */}
-        <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-md p-4 rounded-2xl shadow-sm border border-gray-200/50 dark:border-gray-700/50 flex flex-wrap gap-4 items-center">
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-bold mr-2 uppercase tracking-wider">
-            <Filter className="w-4 h-4 text-indigo-500 dark:text-indigo-400"/> Filters
+        <div className="bg-op-surface/70 backdrop-blur-md p-4 rounded-xl shadow-sm border border-op-border flex flex-wrap gap-3 items-center">
+          <div className="flex items-center gap-2 text-xs text-op-muted font-bold mr-2 uppercase tracking-wider">
+            <Filter className="w-4 h-4 text-op-accent" /> Filters
           </div>
-          
+
           <Dropdown
             align="left"
             trigger={
-              <div className="group flex items-center justify-between min-w-[190px] px-4 py-2.5 bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-full text-sm font-bold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/50 dark:hover:bg-indigo-500/20 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
-                <span className="truncate">{filterProject === 'ALL' ? 'All Projects' : projects.find(p => p.id.toString() === filterProject)?.projectName || 'Select Project'}</span>
-                <ChevronDown className="w-4 h-4 text-indigo-400 dark:text-indigo-300 transition-transform duration-300 group-hover:translate-y-0.5 ml-3 flex-shrink-0" />
-              </div>
+              <FilterTrigger
+                label={filterProject === 'ALL' ? 'All Projects' : projects.find(p => p.id.toString() === filterProject)?.projectName || 'Select Project'}
+              />
             }
             items={[
               { key: 'ALL', label: 'All Projects', onClick: () => setFilterProject('ALL') },
@@ -285,107 +309,81 @@ export const Dashboard: React.FC = () => {
 
           <Dropdown
             align="left"
-            trigger={
-              <div className="group flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-full text-sm font-bold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/50 dark:hover:bg-indigo-500/20 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
-                <span className="truncate">{
-                  filterProvider === 'ALL' ? 'All Providers' : 
-                  filterProvider === 'DOCKER' ? 'Docker' :
-                  filterProvider === 'KUBERNETES' ? 'Kubernetes' :
-                  filterProvider === 'AWS' ? 'AWS' :
-                  filterProvider === 'VERCEL' ? 'Vercel' :
-                  filterProvider === 'ORACLE_CLOUD' ? 'Oracle Cloud' :
-                  filterProvider === 'GITHUB' ? 'GitHub' : filterProvider
-                }</span>
-                <ChevronDown className="w-4 h-4 text-indigo-400 dark:text-indigo-300 transition-transform duration-300 group-hover:translate-y-0.5 ml-3 flex-shrink-0" />
-              </div>
-            }
+            trigger={<FilterTrigger label={filterProvider === 'ALL' ? 'All Providers' : PROVIDER_LABELS[filterProvider] ?? filterProvider} />}
             items={[
               { key: 'ALL', label: 'All Providers', onClick: () => setFilterProvider('ALL') },
-              { key: 'DOCKER', label: 'Docker', onClick: () => setFilterProvider('DOCKER') },
-              { key: 'KUBERNETES', label: 'Kubernetes', onClick: () => setFilterProvider('KUBERNETES') },
-              { key: 'AWS', label: 'AWS', onClick: () => setFilterProvider('AWS') },
-              { key: 'VERCEL', label: 'Vercel', onClick: () => setFilterProvider('VERCEL') },
-              { key: 'ORACLE_CLOUD', label: 'Oracle Cloud', onClick: () => setFilterProvider('ORACLE_CLOUD') },
-              { key: 'GITHUB', label: 'GitHub', onClick: () => setFilterProvider('GITHUB') }
+              ...Object.entries(PROVIDER_LABELS).map(([key, label]) => ({
+                key,
+                label,
+                onClick: () => setFilterProvider(key)
+              }))
             ]}
           />
 
           <Dropdown
             align="left"
-            trigger={
-              <div className="group flex items-center justify-between min-w-[180px] px-4 py-2.5 bg-indigo-50/50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 rounded-full text-sm font-bold text-indigo-900 dark:text-indigo-100 hover:bg-indigo-100/50 dark:hover:bg-indigo-500/20 hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md">
-                <span className="truncate">{
-                  filterSeverity === 'ALL' ? 'All Severities' : 
-                  filterSeverity === 'CRITICAL' ? 'Critical / Error' :
-                  filterSeverity === 'WARNING' ? 'Warning' :
-                  filterSeverity === 'INFO' ? 'Info / Success' : filterSeverity
-                }</span>
-                <ChevronDown className="w-4 h-4 text-indigo-400 dark:text-indigo-300 transition-transform duration-300 group-hover:translate-y-0.5 ml-3 flex-shrink-0" />
-              </div>
-            }
+            trigger={<FilterTrigger label={filterSeverity === 'ALL' ? 'All Severities' : SEVERITY_LABELS[filterSeverity] ?? filterSeverity} />}
             items={[
               { key: 'ALL', label: 'All Severities', onClick: () => setFilterSeverity('ALL') },
-              { key: 'CRITICAL', label: 'Critical / Error', onClick: () => setFilterSeverity('CRITICAL') },
-              { key: 'WARNING', label: 'Warning', onClick: () => setFilterSeverity('WARNING') },
-              { key: 'INFO', label: 'Info / Success', onClick: () => setFilterSeverity('INFO') }
+              ...Object.entries(SEVERITY_LABELS).map(([key, label]) => ({
+                key,
+                label,
+                onClick: () => setFilterSeverity(key)
+              }))
             ]}
           />
         </div>
 
         {/* Statistics Grid - Normalized Resources */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard 
-            title="Total Resources" 
-            value={filteredResources.length} 
-            icon={<Server className="w-6 h-6" />} 
+          <StatsCard
+            title="Total Resources"
+            value={filteredResources.length}
+            icon={<Server className="w-6 h-6" />}
           />
-          <StatsCard 
-            title="Healthy Resources" 
-            value={healthyResources} 
-            icon={<Activity className="w-6 h-6 text-green-500" />} 
+          <StatsCard
+            title="Healthy Resources"
+            value={healthyResources}
+            icon={<Activity className="w-6 h-6 text-emerald-600" />}
           />
-          <StatsCard 
-            title="Warning Resources" 
-            value={warningResources} 
-            icon={<AlertCircle className="w-6 h-6 text-yellow-500" />} 
+          <StatsCard
+            title="Warning Resources"
+            value={warningResources}
+            icon={<AlertCircle className="w-6 h-6 text-amber-600" />}
           />
-          <StatsCard 
-            title="Critical Resources" 
-            value={criticalResources} 
-            icon={<AlertCircle className="w-6 h-6 text-red-500" />} 
+          <StatsCard
+            title="Critical Resources"
+            value={criticalResources}
+            icon={<AlertCircle className="w-6 h-6 text-rose-600" />}
           />
         </div>
 
         {/* Provider Breakdown & Pipeline */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-3">
-             <Card>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Provider Breakdown</h3>
-              <div className="flex flex-wrap gap-4">
-                {['DOCKER', 'KUBERNETES', 'AWS', 'VERCEL', 'ORACLE_CLOUD'].map(provider => (
-                  <div key={provider} className="flex-1 min-w-[120px] p-4 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-100 dark:border-gray-700 text-center">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-bold mb-1">{provider.replace('_', ' ')}</p>
-                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{providerCounts[provider] || 0}</p>
-                  </div>
-                ))}
-              </div>
-             </Card>
-          </div>
-          <div className="lg:col-span-2">
-             <StatsCard 
-              title="Pipeline Success Rate" 
-              value={`${pipelineSuccessRate}%`} 
-              icon={<Activity className="w-6 h-6" />}
-              className="h-full"
-            />
-          </div>
+          <Card className="lg:col-span-3">
+            <h3 className="text-lg font-bold text-op-fg mb-4">Provider Breakdown</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+              {BREAKDOWN_PROVIDERS.map(provider => (
+                <div key={provider} className="p-4 bg-op-raised rounded-xl border border-op-border text-center">
+                  <p className="text-xs text-op-muted font-semibold uppercase tracking-wider mb-1 truncate">{PROVIDER_LABELS[provider]}</p>
+                  <p className="text-2xl font-bold text-op-accent">{providerCounts[provider] || 0}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+          <StatsCard
+            title="Pipeline Success Rate"
+            value={`${pipelineSuccessRate}%`}
+            icon={<Activity className="w-6 h-6" />}
+            className="lg:col-span-2 justify-between"
+          />
         </div>
 
         {/* Middle Section: Tables and Activity Feed */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6 min-w-0">
             <Card>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Recent Deployments</h3>
+              <h3 className="text-lg font-bold text-op-fg mb-4">Recent Deployments</h3>
               {deployments.length > 0 ? (
                 <Table data={deployments.slice(0, 5)} columns={deploymentColumns} keyExtractor={(d) => d.id} />
               ) : (
@@ -394,26 +392,26 @@ export const Dashboard: React.FC = () => {
             </Card>
 
             <Card>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Normalized Alerts & Incidents</h3>
+              <h3 className="text-lg font-bold text-op-fg mb-4">Normalized Alerts & Incidents</h3>
               {incidents.length > 0 || alerts.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {incidents.slice(0, 5).map(i => (
-                    <div key={`inc-${i.id}`} className="flex justify-between items-center p-4 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-lg">
-                      <div>
-                        <span className="font-bold text-red-700 dark:text-red-400">Incident: {i.title}</span>
-                        <p className="text-xs text-red-600 dark:text-red-500 mt-1">Severity: {i.severity} | Status: {i.status}</p>
+                    <div key={`inc-${i.id}`} className="flex justify-between items-center gap-4 p-4 bg-rose-50 border border-rose-100 rounded-lg">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-rose-700 truncate">Incident: {i.title}</p>
+                        <p className="text-xs text-rose-600 mt-1">Severity: {i.severity} | Status: {i.status}</p>
                       </div>
-                      <Badge variant="error">Active</Badge>
+                      <Badge variant="error" className="shrink-0">Active</Badge>
                     </div>
                   ))}
                   {alerts.slice(0, 5).map(a => (
-                     <div key={`alert-${a.id}`} className="flex justify-between items-center p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30 rounded-lg">
-                     <div>
-                       <span className="font-bold text-yellow-700 dark:text-yellow-400">Alert: {a.ruleName || a.eventType}</span>
-                       <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-1">Severity: {a.severity} | Provider: {a.provider}</p>
-                     </div>
-                     <Badge variant="warning">{a.status}</Badge>
-                   </div>
+                    <div key={`alert-${a.id}`} className="flex justify-between items-center gap-4 p-4 bg-amber-50 border border-amber-100 rounded-lg">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-amber-800 truncate">Alert: {a.ruleName || a.eventType}</p>
+                        <p className="text-xs text-amber-700 mt-1">Severity: {a.severity} | Provider: {a.provider}</p>
+                      </div>
+                      <Badge variant="warning" className="shrink-0">{a.status}</Badge>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -422,14 +420,14 @@ export const Dashboard: React.FC = () => {
             </Card>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-6 min-w-0">
             <Card>
-              <div className="flex justify-between items-center mb-4">
-                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Live Activity Feed</h3>
-                 <Badge variant="info">{activityFeed.length} events</Badge>
+              <div className="flex justify-between items-center gap-3 mb-4">
+                <h3 className="text-lg font-bold text-op-fg">Live Activity Feed</h3>
+                <Badge variant="info" className="shrink-0">{activityFeed.length} events</Badge>
               </div>
               {activityFeed.length > 0 ? (
-                <div className="max-h-[600px] overflow-y-auto pr-2">
+                <div className="max-h-[600px] overflow-y-auto pr-2 pt-1">
                   <Timeline events={activityFeed} />
                 </div>
               ) : (
@@ -438,27 +436,28 @@ export const Dashboard: React.FC = () => {
             </Card>
 
             <Card>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Infrastructure Health</h3>
-              <div className="space-y-4">
-                {health?.integrations && health.integrations.length > 0 ? (
-                  health.integrations.map(integration => (
-                    <div key={integration.provider} className="flex flex-col p-3 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-medium text-sm text-gray-900 dark:text-white">{integration.provider}</span>
-                        <StatusIndicator 
-                          status={integration.status === 'CONNECTED' ? 'active' : integration.status === 'DISABLED' ? 'inactive' : 'error'} 
-                          text={integration.status} 
+              <h3 className="text-lg font-bold text-op-fg mb-4">Infrastructure Health</h3>
+              {health?.integrations && health.integrations.length > 0 ? (
+                <div className="space-y-3">
+                  {health.integrations.map(integration => (
+                    <div key={integration.provider} className="flex flex-col gap-1 p-3 border border-op-border rounded-lg bg-op-raised">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-medium text-sm text-op-fg truncate">{PROVIDER_LABELS[integration.provider] ?? integration.provider}</span>
+                        <StatusIndicator
+                          status={integration.status === 'CONNECTED' ? 'active' : integration.status === 'DISABLED' ? 'inactive' : 'error'}
+                          text={integration.status.toLowerCase()}
+                          className="shrink-0"
                         />
                       </div>
                       {integration.message && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{integration.message}</span>
+                        <span className="text-xs text-op-muted break-words">{integration.message}</span>
                       )}
                     </div>
-                  ))
-                ) : (
-                  <EmptyState title="No Integrations" description="Health metrics are unavailable." />
-                )}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title="No Integrations" description="Health metrics are unavailable." />
+              )}
             </Card>
           </div>
         </div>

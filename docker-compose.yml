@@ -49,6 +49,8 @@ services:
       - OTP_EXPIRATION_MINUTES=${OTP_EXPIRATION_MINUTES:-5}
       - OTP_MAX_ATTEMPTS=${OTP_MAX_ATTEMPTS:-5}
       - OTP_RESEND_COOLDOWN_SECONDS=${OTP_RESEND_COOLDOWN_SECONDS:-60}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
+      - DEMO_USERS_ENABLED=${DEMO_USERS_ENABLED:-false}
 
   core-service:
     build:
@@ -72,6 +74,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
       - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:-}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - KUBERNETES_ENABLED=${KUBERNETES_ENABLED:-true}
       - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-true}
@@ -102,6 +105,7 @@ services:
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
       - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:-}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - PROMETHEUS_URL=http://prometheus:9090
       - LOKI_ENABLED=${LOKI_ENABLED:-true}
@@ -135,7 +139,7 @@ services:
       - LOG_BUFFER_MAX_LINES=${LOG_BUFFER_MAX_LINES:-5000}
       - LOG_MASKING_ENABLED=${LOG_MASKING_ENABLED:-true}
       - AUTH_ENABLED=${AUTH_ENABLED:-true}
-      - JWT_SECRET=${JWT_SECRET:-***REMOVED-JWT-SECRET***}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
       - JAVA_OPTS=-Xms64m -Xmx192m -XX:+UseG1GC
 
   api-gateway:

@@ -20,6 +20,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private static final int MAX_ATTEMPTS = 50;
     private static final long WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
+    /** Above this many tracked clients, idle entries are swept so the map can't grow without bound. */
+    static final int SWEEP_THRESHOLD = 10_000;
+
     private final Map<String, List<Long>> requestCounts = new ConcurrentHashMap<>();
 
     @Override
@@ -47,6 +50,10 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
                 timestamps.add(currentTime);
             }
+
+            if (requestCounts.size() > SWEEP_THRESHOLD) {
+                sweepIdle(currentTime);
+            }
         }
 
         filterChain.doFilter(request, response);
@@ -57,11 +64,35 @@ public class RateLimitingFilter extends OncePerRequestFilter {
                path.endsWith("/api/v1/auth/login") || path.endsWith("/api/v1/auth/register");
     }
 
-    private String getClientIP(HttpServletRequest request) {
+    /**
+     * The API gateway appends the address it received the request from to X-Forwarded-For, so the right-most
+     * entry is the only one a client can't forge; anything to its left is client-supplied.
+     */
+    String getClientIP(HttpServletRequest request) {
         String xfHeader = request.getHeader("X-Forwarded-For");
-        if (xfHeader == null || xfHeader.isEmpty()) {
-            return request.getRemoteAddr();
+        if (xfHeader != null) {
+            String[] hops = xfHeader.split(",");
+            for (int i = hops.length - 1; i >= 0; i--) {
+                String hop = hops[i].trim();
+                if (!hop.isEmpty()) {
+                    return hop;
+                }
+            }
         }
-        return xfHeader.split(",")[0];
+        return request.getRemoteAddr();
+    }
+
+    private void sweepIdle(long now) {
+        requestCounts.entrySet().removeIf(entry -> {
+            List<Long> timestamps = entry.getValue();
+            synchronized (timestamps) {
+                timestamps.removeIf(t -> (now - t) > WINDOW_MS);
+                return timestamps.isEmpty();
+            }
+        });
+    }
+
+    int trackedClients() {
+        return requestCounts.size();
     }
 }

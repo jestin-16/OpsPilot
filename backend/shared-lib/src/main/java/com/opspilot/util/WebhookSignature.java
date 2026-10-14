@@ -1,4 +1,4 @@
-package com.opspilot.projectlogs;
+package com.opspilot.util;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;

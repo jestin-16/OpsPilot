@@ -64,16 +64,12 @@ public class SecurityConfig {
                     "/api/webhooks/**", "/api/v1/webhooks/**",
                     "/api/cicd/webhooks/**", "/api/v1/cicd/webhooks/**",
                     "/api/monitoring/probe", "/api/v1/monitoring/probe",
-                    "/api/monitoring/live-events/**", "/api/v1/monitoring/live-events/**",
-                    "/h2-console/**", "/error", "/swagger-ui/**", "/v3/api-docs/**",
+                    "/error", "/swagger-ui/**", "/v3/api-docs/**",
                     "/actuator/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             );
-
-        // Allow H2 console frames if accessed
-        http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(ingestTokenFilter, UsernamePasswordAuthenticationFilter.class);

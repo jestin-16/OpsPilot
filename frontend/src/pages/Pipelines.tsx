@@ -122,9 +122,6 @@ export const Pipelines: React.FC = () => {
             <Button variant="primary" onClick={() => setAddSourceOpen(true)}>
               <Plus className="w-4 h-4 mr-2" /> Add source
             </Button>
-            <Button variant="secondary" onClick={() => api.simulateGitHubWebhook('push').then(() => fetchRuns(true))}>
-              Simulate Webhook
-            </Button>
           </div>
         </div>
 

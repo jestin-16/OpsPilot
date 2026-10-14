@@ -773,33 +773,6 @@ export const api = {
     return res.data;
   },
 
-  simulateGitHubWebhook: async (eventType = 'push'): Promise<any> => {
-    const res = await axiosInstance.post(
-      '/cicd/webhooks/github',
-      {
-        ref: 'refs/heads/main',
-        repository: {
-          name: 'payment-engine',
-          clone_url: 'https://github.com/opspilot/payment-engine',
-        },
-        head_commit: {
-          id: '8f3e4d29a01',
-          message: 'feat(core): Optimize payment gateway latency',
-          author: {
-            name: 'GitHub Webhook Bot',
-            email: 'bot@github.com',
-          },
-        },
-      },
-      {
-        headers: {
-          'X-GitHub-Event': eventType,
-        },
-      }
-    );
-    return res.data;
-  },
-
   // AI Assistant
   queryAiAssistant: async (data: { prompt: string; deploymentId?: number }): Promise<AiDiagnosisResponse> => {
     const res = await axiosInstance.post<AiDiagnosisResponse>('/ai/query', data);

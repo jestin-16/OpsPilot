@@ -1,5 +1,6 @@
 package com.opspilot.projectlogs;
 
+import com.opspilot.util.WebhookSignature;
 import com.opspilot.connector.LogEntry;
 import com.opspilot.entity.Integration;
 import com.opspilot.entity.Project;

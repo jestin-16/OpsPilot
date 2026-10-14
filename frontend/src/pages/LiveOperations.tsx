@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, API_BASE_URL, type LogEntry, type Deployment, type NotificationItem } from '../services/api';
+import { api, type LogEntry, type Deployment, type NotificationItem } from '../services/api';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
 import { Activity, Server, AlertCircle, AlertTriangle, Terminal, Rocket, Bell, Radio } from 'lucide-react';
@@ -20,7 +20,6 @@ export const LiveOperations: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const fetchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -60,51 +59,8 @@ export const LiveOperations: React.FC = () => {
       fetchAllData();
     }, 5000);
 
-    // Setup SSE for live events
-    const setupSSE = () => {
-      try {
-        const token = localStorage.getItem('opspilot_token');
-        const eventSourceUrl = `${API_BASE_URL}/monitoring/live-events/stream${token ? `?token=${token}` : ''}`;
-        
-        eventSourceRef.current = new EventSource(eventSourceUrl);
-        
-        eventSourceRef.current.onopen = () => {
-          setConnStatus('LIVE');
-        };
-
-        eventSourceRef.current.addEventListener('posthog-event', (e) => {
-          try {
-            const newEvent = JSON.parse(e.data);
-            setEvents(prev => [{
-              id: `sse-${Date.now()}-${Math.random()}`,
-              eventType: newEvent.event,
-              message: `Live event: ${newEvent.event}`,
-              timestamp: new Date().toISOString(),
-              severity: 'INFO',
-              provider: 'PostHog'
-            }, ...prev].slice(0, 50));
-          } catch (err) {
-            console.error('Error parsing SSE event', err);
-          }
-        });
-
-        eventSourceRef.current.onerror = () => {
-          setConnStatus('RECONNECTING');
-          eventSourceRef.current?.close();
-          // Attempt to reconnect SSE after 5 seconds
-          setTimeout(setupSSE, 5000);
-        };
-      } catch (err) {
-        console.error('Failed to setup SSE', err);
-        setConnStatus('OFFLINE');
-      }
-    };
-
-    setupSSE();
-
     return () => {
       if (fetchIntervalRef.current) clearInterval(fetchIntervalRef.current);
-      if (eventSourceRef.current) eventSourceRef.current.close();
     };
   }, [fetchAllData]);
 

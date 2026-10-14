@@ -37,10 +37,14 @@ public class AuthController {
     @Value("${app.jwt.refresh-expiration-ms:604800000}")
     private long jwtRefreshExpirationMs;
 
+    // Secure by default; AUTH_COOKIE_SECURE=false only for plain-HTTP local development.
+    @Value("${app.auth.cookie-secure:true}")
+    private boolean cookieSecure;
+
     private ResponseCookie createRefreshTokenCookie(String refreshTokenValue) {
         return ResponseCookie.from("opspilot_refresh_token", refreshTokenValue)
                 .httpOnly(true)
-                .secure(false) // Set to true in production over HTTPS
+                .secure(cookieSecure)
                 // The frontend uses /api/v1/auth while legacy clients may use /api/auth.
                 // Scope the cookie to /api so it is sent to both refresh endpoints.
                 .path("/api")
@@ -52,6 +56,7 @@ public class AuthController {
     private ResponseCookie createCleanRefreshTokenCookie() {
         return ResponseCookie.from("opspilot_refresh_token", "")
                 .httpOnly(true)
+                .secure(cookieSecure)
                 .path("/api")
                 .maxAge(0)
                 .sameSite("Lax")

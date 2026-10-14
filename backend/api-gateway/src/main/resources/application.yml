@@ -54,6 +54,10 @@ management:
       exposure:
         include: health,info,prometheus
   endpoint:
+    health:
+      # /actuator/health/readiness backs the container healthcheck
+      probes:
+        enabled: true
     prometheus:
       enabled: true
   metrics:

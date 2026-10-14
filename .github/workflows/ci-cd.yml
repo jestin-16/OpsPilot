@@ -6,6 +6,7 @@ on:
     paths:
       - 'backend/log-watcher-service/**'
       - 'backend/pom.xml'
+      - 'backend/Dockerfile'
       - 'k8s/log-watcher/**'
       - '.github/workflows/ci-cd.yml'
   pull_request:
@@ -101,7 +102,10 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          file: ./backend/log-watcher-service/Dockerfile
+          file: ./backend/Dockerfile
+          build-args: |
+            SERVICE=log-watcher-service
+            PORT=8084
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

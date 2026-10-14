@@ -1,3 +1,10 @@
+# Ports other than the API gateway (8080) are published on 127.0.0.1 only: they are for local debugging,
+# and the services, database and dashboards should not be reachable from the rest of the network.
+
+x-backend-build: &backend-build
+  context: ./backend
+  dockerfile: Dockerfile
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -7,33 +14,40 @@ services:
       POSTGRES_USER: opspilot
       POSTGRES_PASSWORD: opspilot
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opspilot -d opspilot"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     restart: unless-stopped
 
   service-registry:
     build:
-      context: ./backend
-      dockerfile: service-registry/Dockerfile
+      <<: *backend-build
+      args: { SERVICE: service-registry, PORT: "8761" }
     container_name: opspilot-service-registry
     ports:
-      - "8761:8761"
+      - "127.0.0.1:8761:8761"
     restart: unless-stopped
 
   auth-service:
     build:
-      context: ./backend
-      dockerfile: auth-service/Dockerfile
+      <<: *backend-build
+      args: { SERVICE: auth-service, PORT: "8081" }
     container_name: opspilot-auth-service
     env_file:
       - .env
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     restart: unless-stopped
     depends_on:
-      - postgres
-      - service-registry
+      postgres:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
@@ -55,17 +69,19 @@ services:
 
   core-service:
     build:
-      context: ./backend
-      dockerfile: core-service/Dockerfile
+      <<: *backend-build
+      args: { SERVICE: core-service, PORT: "8082" }
     container_name: opspilot-core-service
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     restart: unless-stopped
     depends_on:
-      - postgres
-      - service-registry
+      postgres:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
     volumes:
-      - ~/.kube:/root/.kube:ro
+      - ~/.kube:/home/opspilot/.kube:ro
     extra_hosts:
       - "kubernetes:host-gateway"
     environment:
@@ -91,16 +107,19 @@ services:
 
   observability-service:
     build:
-      context: ./backend
-      dockerfile: observability-service/Dockerfile
+      <<: *backend-build
+      args: { SERVICE: observability-service, PORT: "8083" }
     container_name: opspilot-observability-service
     ports:
-      - "8083:8083"
+      - "127.0.0.1:8083:8083"
     restart: unless-stopped
     depends_on:
-      - postgres
-      - service-registry
-      - loki
+      postgres:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+      loki:
+        condition: service_started
     extra_hosts:
       - "kubernetes:host-gateway"
     environment:
@@ -121,14 +140,15 @@ services:
 
   log-watcher-service:
     build:
-      context: ./backend
-      dockerfile: log-watcher-service/Dockerfile
+      <<: *backend-build
+      args: { SERVICE: log-watcher-service, PORT: "8084" }
     container_name: opspilot-log-watcher-service
     ports:
-      - "8085:8084"
+      - "127.0.0.1:8085:8084"
     restart: unless-stopped
     depends_on:
-      - service-registry
+      service-registry:
+        condition: service_healthy
     volumes:
       - ~/.kube:/home/opspilot/.kube:ro
     extra_hosts:
@@ -144,23 +164,25 @@ services:
       - LOG_MASKING_ENABLED=${LOG_MASKING_ENABLED:-true}
       - AUTH_ENABLED=${AUTH_ENABLED:-true}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
-      - JAVA_OPTS=-Xms64m -Xmx192m -XX:+UseG1GC
+      - JAVA_OPTS=-Xms64m -Xmx192m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError
 
   api-gateway:
     build:
-      context: ./backend
-      dockerfile: api-gateway/Dockerfile
+      <<: *backend-build
+      args: { SERVICE: api-gateway, PORT: "8080" }
     container_name: opspilot-api-gateway
     ports:
       - "8080:8080"
     restart: unless-stopped
     depends_on:
-      - service-registry
+      service-registry:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
 
+  # Third-party images are pinned so a rebuild can't silently pick up a new major version.
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.14.0
     container_name: opspilot-prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
@@ -170,6 +192,9 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    depends_on:
+      service-registry:
+        condition: service_healthy
 
   # Log store for the push-model Docker monitoring. Internal only: agents push through the OpsPilot
   # ingest endpoint (token-authenticated), never directly to Loki, so 3100 is intentionally not published.
@@ -183,12 +208,13 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.2.0
     container_name: opspilot-grafana
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      # Only applied when the grafana_data volume is first created.
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -198,10 +224,10 @@ services:
       - postgres
 
   blackbox:
-    image: prom/blackbox-exporter:latest
+    image: prom/blackbox-exporter:v0.28.0
     container_name: opspilot-blackbox
     ports:
-      - "9115:9115"
+      - "127.0.0.1:9115:9115"
     dns:
       - 8.8.8.8
       - 8.8.4.4

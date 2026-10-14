@@ -68,7 +68,11 @@ management:
         include: health,info,prometheus
   endpoint:
     health:
-      show-details: always
+      # Component details (database, mail) only for authenticated callers; this endpoint is public.
+      show-details: when-authorized
+      # /actuator/health/readiness backs the container healthcheck
+      probes:
+        enabled: true
     prometheus:
       enabled: true
   metrics:

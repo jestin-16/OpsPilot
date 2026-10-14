@@ -1,43 +1,51 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
 import { AuthPage } from './pages/AuthPage';
-import { VerifyEmailOTP } from './pages/VerifyEmailOTP';
-import { Dashboard } from './pages/Dashboard';
-import { Projects } from './pages/Projects';
-import { LiveOperations } from './pages/LiveOperations';
-import { ProjectDetail } from './pages/ProjectDetail';
-import { ProjectWizard } from './pages/ProjectWizard';
-import { BlackboxMonitoring } from './pages/BlackboxMonitoring';
-import { WhiteboxMonitoring } from './pages/WhiteboxMonitoring';
-import { LiveProjectDashboard } from './pages/LiveProjectDashboard';
-import { LogManagement } from './pages/LogManagement';
-import { KubernetesDashboard } from './pages/KubernetesDashboard';
-import { KubernetesLogsPage } from './pages/KubernetesLogsPage';
-import { GithubActivity } from './pages/GithubActivity';
-import { IncidentManagement } from './pages/IncidentManagement';
-import { NotificationCenter } from './pages/NotificationCenter';
-import { PlatformGuide } from './pages/PlatformGuide';
 import { LandingPage } from './pages/LandingPage';
-import { LogSources } from './pages/LogSources';
-import { DeploymentsPage } from './pages/DeploymentsPage';
-import { UserManagement } from './pages/UserManagement';
-import { SecuritySettings } from './pages/SecuritySettings';
 import { AlertProvider } from './components/AlertProvider';
-import { AdminGovernance } from './pages/AdminGovernance';
 import { canAccessRole, isAdmin, type PlatformRole } from './utils/roles';
-import { AdminDashboard } from './pages/AdminDashboard';
-import { AdminProjectManagement } from './pages/AdminProjectManagement';
-import { ProfilePage } from './pages/ProfilePage';
-import { Pipelines } from './pages/Pipelines';
-import { PipelineDetail } from './pages/PipelineDetail';
-import { DeploymentDetail } from './pages/DeploymentDetail';
-import { ProjectOverview } from './pages/ProjectOverview';
-import { ProjectIntegrations } from './pages/ProjectIntegrations';
-import { ProjectLogs } from './pages/ProjectLogs';
-import { IntegrationLogs } from './pages/IntegrationLogs';
 import { ProjectProvider, useProject } from './context/ProjectContext';
+
+// Each page is its own chunk, loaded the first time its route is visited. The landing and sign-in
+// pages stay in the main bundle because they are what a visitor sees first.
+function lazyPage<K extends string>(load: () => Promise<Record<K, React.ComponentType>>, name: K) {
+  return lazy(() => load().then((module) => ({ default: module[name] })));
+}
+
+const VerifyEmailOTP = lazyPage(() => import('./pages/VerifyEmailOTP'), 'VerifyEmailOTP');
+const Dashboard = lazyPage(() => import('./pages/Dashboard'), 'Dashboard');
+const Projects = lazyPage(() => import('./pages/Projects'), 'Projects');
+const LiveOperations = lazyPage(() => import('./pages/LiveOperations'), 'LiveOperations');
+const ProjectDetail = lazyPage(() => import('./pages/ProjectDetail'), 'ProjectDetail');
+const ProjectWizard = lazyPage(() => import('./pages/ProjectWizard'), 'ProjectWizard');
+const BlackboxMonitoring = lazyPage(() => import('./pages/BlackboxMonitoring'), 'BlackboxMonitoring');
+const WhiteboxMonitoring = lazyPage(() => import('./pages/WhiteboxMonitoring'), 'WhiteboxMonitoring');
+const LiveProjectDashboard = lazyPage(() => import('./pages/LiveProjectDashboard'), 'LiveProjectDashboard');
+const LogManagement = lazyPage(() => import('./pages/LogManagement'), 'LogManagement');
+const KubernetesDashboard = lazyPage(() => import('./pages/KubernetesDashboard'), 'KubernetesDashboard');
+const KubernetesLogsPage = lazyPage(() => import('./pages/KubernetesLogsPage'), 'KubernetesLogsPage');
+const GithubActivity = lazyPage(() => import('./pages/GithubActivity'), 'GithubActivity');
+const IncidentManagement = lazyPage(() => import('./pages/IncidentManagement'), 'IncidentManagement');
+const NotificationCenter = lazyPage(() => import('./pages/NotificationCenter'), 'NotificationCenter');
+const PlatformGuide = lazyPage(() => import('./pages/PlatformGuide'), 'PlatformGuide');
+const LogSources = lazyPage(() => import('./pages/LogSources'), 'LogSources');
+const DeploymentsPage = lazyPage(() => import('./pages/DeploymentsPage'), 'DeploymentsPage');
+const UserManagement = lazyPage(() => import('./pages/UserManagement'), 'UserManagement');
+const SecuritySettings = lazyPage(() => import('./pages/SecuritySettings'), 'SecuritySettings');
+const AdminGovernance = lazyPage(() => import('./pages/AdminGovernance'), 'AdminGovernance');
+const AdminDashboard = lazyPage(() => import('./pages/AdminDashboard'), 'AdminDashboard');
+const AdminProjectManagement = lazyPage(() => import('./pages/AdminProjectManagement'), 'AdminProjectManagement');
+const ProfilePage = lazyPage(() => import('./pages/ProfilePage'), 'ProfilePage');
+const Pipelines = lazyPage(() => import('./pages/Pipelines'), 'Pipelines');
+const PipelineDetail = lazyPage(() => import('./pages/PipelineDetail'), 'PipelineDetail');
+const DeploymentDetail = lazyPage(() => import('./pages/DeploymentDetail'), 'DeploymentDetail');
+const ProjectOverview = lazyPage(() => import('./pages/ProjectOverview'), 'ProjectOverview');
+const ProjectIntegrations = lazyPage(() => import('./pages/ProjectIntegrations'), 'ProjectIntegrations');
+const ProjectLogs = lazyPage(() => import('./pages/ProjectLogs'), 'ProjectLogs');
+const IntegrationLogs = lazyPage(() => import('./pages/IntegrationLogs'), 'IntegrationLogs');
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -46,6 +54,13 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+/** Shown while a page's chunk downloads; usually a few milliseconds. */
+const PageLoading: React.FC = () => (
+  <div className="flex min-h-screen items-center justify-center bg-[#FAFAFA]" role="status" aria-label="Loading">
+    <span className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-black" />
+  </div>
+);
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isSessionLoading } = useAuth();
@@ -100,6 +115,7 @@ export const App: React.FC = () => {
           <ConfirmProvider>
           <BrowserRouter>
             <ProjectProvider>
+            <Suspense fallback={<PageLoading />}>
             <Routes>
             <Route
               path="/"
@@ -369,6 +385,7 @@ export const App: React.FC = () => {
             />
             <Route path="*" element={<Navigate to="/monitoring" replace />} />
             </Routes>
+            </Suspense>
             </ProjectProvider>
           </BrowserRouter>
           </ConfirmProvider>

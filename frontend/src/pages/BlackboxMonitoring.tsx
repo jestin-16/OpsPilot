@@ -1,16 +1,14 @@
-// @ts-nocheck
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api } from '../services/api';
 import {
   Activity, Globe, Shield, Terminal,
   XCircle, RefreshCw, ChevronDown,
-  Info, MapPin, Server, Lock, Layers,
+  Info, MapPin, Layers,
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer,
-  CartesianGrid, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  ReferenceLine,
+  CartesianGrid, BarChart, Bar,
 } from 'recharts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -78,29 +76,12 @@ const REFRESH_OPTIONS = [
   { label: '3s', ms: 3000 }, { label: '5s', ms: 5000 },
   { label: '10s', ms: 10000 }, { label: '30s', ms: 30000 },
 ];
-const PIE_COLORS = ['#F59E0B', '#3B82F6', '#8B5CF6', '#10B981', '#06B6D4'];
 const fmt = (n: number, d = 0) => n.toFixed(d);
-
-function percentile(arr: number[], p: number): number {
-  if (!arr.length) return 0;
-  const s = [...arr].sort((a, b) => a - b);
-  return s[Math.max(0, Math.ceil((p / 100) * s.length) - 1)];
-}
-
-function fmtBytes(bytes: number): string {
-  if (bytes <= 0) return '—';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-}
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const RealBadge = () => (
   <span className="text-[9px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold tracking-wider">LIVE</span>
-);
-const CalcBadge = () => (
-  <span className="text-[9px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200 font-bold tracking-wider">CALC</span>
 );
 
 const Panel: React.FC<{
@@ -162,8 +143,6 @@ export const BlackboxMonitoring: React.FC = () => {
   const [history, setHistory]             = useState<TimePoint[]>([]);
   const [current, setCurrent]             = useState<ProbeResult | null>(null);
   const [logs, setLogs]                   = useState<LogEntry[]>([]);
-  const [totalChecks, setTotalChecks]     = useState(0);
-  const [successChecks, setSuccessChecks] = useState(0);
   const [startTime]                       = useState(() => Date.now());
   const [elapsedSec, setElapsedSec]       = useState(0);
   const [serviceStatus, setServiceStatus] = useState<'ready' | 'starting' | 'error'>('ready');
@@ -180,7 +159,7 @@ export const BlackboxMonitoring: React.FC = () => {
   }, []);
 
   const resetSession = useCallback(() => {
-    setHistory([]); setTotalChecks(0); setSuccessChecks(0); setCurrent(null); setLogs([]);
+    setHistory([]); setCurrent(null); setLogs([]);
   }, []);
 
   useEffect(() => {
@@ -199,8 +178,6 @@ export const BlackboxMonitoring: React.FC = () => {
         setCurrent(data);
         const latMs = data.duration * 1000;
         const isUp  = data.success === 1.0;
-        setTotalChecks(n => n + 1);
-        if (isUp) setSuccessChecks(n => n + 1);
         setHistory(prev => [...prev, {
           time:       ts,
           latency:    +latMs.toFixed(1),
@@ -255,28 +232,12 @@ export const BlackboxMonitoring: React.FC = () => {
   }, [logs]);
 
   // Computed metrics
-  const lats    = history.map(p => p.latency);
-  const avgLat  = lats.length ? Math.round(lats.reduce((s, v) => s + v, 0) / lats.length) : 0;
-  const minLat  = lats.length ? Math.round(Math.min(...lats)) : 0;
-  const maxLat  = lats.length ? Math.round(Math.max(...lats)) : 0;
-  const p50     = Math.round(percentile(lats, 50));
-  const p95     = Math.round(percentile(lats, 95));
-  const p99     = Math.round(percentile(lats, 99));
-  const uptimePct  = totalChecks > 0 ? ((successChecks / totalChecks) * 100).toFixed(2) : '—';
-  const errorRate  = totalChecks > 0 ? (((totalChecks - successChecks) / totalChecks) * 100).toFixed(1) : '0.0';
   const sslDays    = current?.sslExpiry ? Math.max(0, Math.floor((current.sslExpiry - Date.now() / 1000) / 86400)) : null;
   const last       = history[history.length - 1];
   const prev       = history[history.length - 2];
   const latTrend   = last && prev ? (last.latency > prev.latency ? 'up' : 'down') : null;
   const elapsed    = `${Math.floor(elapsedSec / 60)}m ${elapsedSec % 60}s`;
 
-  const phaseData = current ? [
-    { name: 'DNS',        value: +(current.dnsSeconds * 1000).toFixed(1) },
-    { name: 'TCP',        value: +(current.connectSeconds * 1000).toFixed(1) },
-    { name: 'TLS',        value: +(current.tlsSeconds * 1000).toFixed(1) },
-    { name: 'Processing', value: +(current.processSeconds * 1000).toFixed(1) },
-    { name: 'Transfer',   value: +(current.transferSeconds * 1000).toFixed(1) },
-  ] : [];
 
   return (
     <SidebarLayout>
@@ -394,7 +355,7 @@ export const BlackboxMonitoring: React.FC = () => {
                     <XAxis dataKey="time" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                     <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} unit="ms" />
                     <RTooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: 8, fontSize: 12, boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      formatter={(v: number) => [`${v}ms`, 'Latency']} />
+                      formatter={(v) => [`${v}ms`, 'Latency']} />
                     <Area type="monotone" dataKey="latency" stroke="var(--color-op-accent)" strokeWidth={2.5} fill="url(#gLat)" dot={false} activeDot={{ r: 5, fill: 'var(--color-op-accent)' }} />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -442,7 +403,7 @@ export const BlackboxMonitoring: React.FC = () => {
                     <XAxis dataKey="time" stroke="#94a3b8" fontSize={9} tickLine={false} axisLine={false} />
                     <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} unit="ms" />
                     <RTooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', borderRadius: 8, fontSize: 11 }}
-                      formatter={(v: number, n: string) => [`${v}ms`, n]} />
+                      formatter={(v, n) => [`${v}ms`, String(n)]} />
                     <Bar dataKey="dns"        stackId="a" fill="#F59E0B" name="DNS" />
                     <Bar dataKey="connect"    stackId="a" fill="#3B82F6" name="TCP" />
                     <Bar dataKey="tls"        stackId="a" fill="#8B5CF6" name="TLS" />

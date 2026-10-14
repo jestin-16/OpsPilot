@@ -41,8 +41,10 @@ axiosInstance.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest: any = error.config;
 
-    const isAuthError = error.response?.status === 401 || error.response?.status === 403;
-    if (isAuthError && !originalRequest._retry && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/register') && !originalRequest.url?.includes('/auth/refresh')) {
+    // Only 401 means the access token is missing or expired. A 403 is a valid user who isn't allowed to do
+    // this; refreshing wouldn't change that, and a failed refresh would wrongly sign them out.
+    const isAuthError = error.response?.status === 401;
+    if (isAuthError &&!originalRequest._retry && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/register') && !originalRequest.url?.includes('/auth/refresh')) {
       originalRequest._retry = true;
 
       if (isRefreshing) {

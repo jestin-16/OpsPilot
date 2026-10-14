@@ -51,6 +51,7 @@ services:
       - OTP_RESEND_COOLDOWN_SECONDS=${OTP_RESEND_COOLDOWN_SECONDS:-60}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
       - DEMO_USERS_ENABLED=${DEMO_USERS_ENABLED:-false}
+      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}
 
   core-service:
     build:
@@ -75,6 +76,8 @@ services:
       - SPRING_DATASOURCE_PASSWORD=opspilot
       - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:-}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
+      - JENKINS_WEBHOOK_SECRET=${JENKINS_WEBHOOK_SECRET:-}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - KUBERNETES_ENABLED=${KUBERNETES_ENABLED:-true}
       - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-true}
@@ -106,6 +109,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=opspilot
       - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:-}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - PROMETHEUS_URL=http://prometheus:9090
       - LOKI_ENABLED=${LOKI_ENABLED:-true}

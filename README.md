@@ -147,7 +147,7 @@ Everything starts with a **project**. Inside it you connect the systems you care
 2. **Connect integrations** (`/projects/:id/integrations`): each card has *Connect*, *Configure*, *Test* and *Disconnect*.
 3. **Watch logs**: `/projects/:id/logs` is one stream for every source (filters: source, level, time range, text; pause/resume, auto-scroll, source badges, colour-coded levels). `/projects/:id/logs/:integrationId` is a dedicated page per integration.
 
-The project switcher in the sidebar keeps the selection. Existing global pages (`/logs`, `/pipelines`, `/deployments`, `/incidents`, `/github`) follow the selected project, and a banner offers *Show all projects*. Data created before this flow is moved into a **Default Project** by migration `V15`.
+The project switcher in the sidebar keeps the selection. Existing global pages (`/logs`, `/pipelines`, `/deployments`, `/incidents`, `/github`) follow the selected project, and a banner offers *Show all projects*. On a new database, migration `V15` moves data created before this flow into a **Default Project**; databases created before Flyway was enabled skip it (see *Database schema* below).
 
 ### Integrations
 
@@ -201,6 +201,11 @@ All paths also exist under `/api/projects/...` (without `v1`).
 
 | Variable | Service | Default | Purpose |
 |---|---|---|---|
+| `JWT_SECRET` | auth, core, observability, log-watcher | **required** | Signs login tokens; must be identical in every service and at least 32 bytes. `openssl rand -base64 48`. Changing it signs everyone out |
+| `DEMO_USERS_ENABLED` | auth, core, observability | `false` | Creates the public demo accounts (`admin@opspilot.io` / `Password123!` etc.). Local development only |
+| `AUTH_COOKIE_SECURE` | auth | `true` | Send the refresh cookie over HTTPS only; `false` for plain-HTTP local development |
+| `GITHUB_WEBHOOK_SECRET` | core, observability | empty | Secret for the global GitHub webhook URLs. Empty = those URLs refuse every delivery; per-project and per-source webhook URLs use their own secrets |
+| `JENKINS_WEBHOOK_SECRET` | core | empty | Token for the global Jenkins webhook URL; empty = refused |
 | `OPSPILOT_ENCRYPTION_KEY` | core, observability | dev-only fallback | Key for integration secrets. **Set it in production**; changing it makes stored secrets unreadable. `openssl rand -base64 32` |
 | `LOGS_RUNNER_ENABLED` | observability | `true` | Follow pull integrations (set `false` on replicas that should only serve reads) |
 | `LOGS_RUNNER_INTERVAL_MS` | observability | `30000` | How often to look for new / changed / disconnected integrations |
@@ -209,6 +214,12 @@ All paths also exist under `/api/projects/...` (without `v1`).
 | `VITE_API_BASE_URL` | frontend | `http://localhost:8080/api/v1` | API gateway URL |
 
 Integration endpoints are fetched by the server, so only point them at hosts you trust; `http(s)` only, and link-local addresses (cloud metadata) are refused.
+
+### Database schema
+
+Flyway owns the schema (`backend/shared-lib/src/main/resources/db/migration`) and Hibernate only validates it (`ddl-auto: validate`), so a service refuses to start if its entities and the database disagree. Change the schema by adding a new `V<n>__description.sql`; never edit one that has shipped.
+
+Flyway was not actually on the classpath before `V18`, so databases created earlier were built by Hibernate and have no `flyway_schema_history`. On first start they are baselined at version 17 and `V18` brings them in line; empty databases run every migration from `V1`. auth, core and observability all run Flyway, and its PostgreSQL lock lets them start at the same time.
 
 ---
 

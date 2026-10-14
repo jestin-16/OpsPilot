@@ -29,7 +29,7 @@ public class ProjectAccess {
         return project;
     }
 
-    static boolean isPrivileged(User user) {
+    public static boolean isPrivileged(User user) {
         if (user.getRoles() == null) return false;
         return user.getRoles().stream().anyMatch(role -> {
             String name = role.getRoleName() != null ? role.getRoleName().toUpperCase() : "";

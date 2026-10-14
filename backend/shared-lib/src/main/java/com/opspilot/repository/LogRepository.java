@@ -20,6 +20,19 @@ public interface LogRepository extends JpaRepository<LogEntity, Long>, org.sprin
     
     java.util.Optional<LogEntity> findFirstBySourceServiceOrderByTimestampDesc(String sourceService);
 
+    /** One project's logs (attached directly or through a deployment) in a time window, newest first. */
+    @Query("SELECT l FROM LogEntity l LEFT JOIN l.deployment d WHERE " +
+           "(l.project.id = :projectId OR d.project.id = :projectId) AND " +
+           "l.timestamp BETWEEN :from AND :to AND " +
+           "(:errorsOnly = false OR UPPER(l.logLevel) IN ('ERROR', 'WARN', 'WARNING')) " +
+           "ORDER BY l.timestamp DESC")
+    List<LogEntity> findProjectLogsBetween(
+            @Param("projectId") Long projectId,
+            @Param("from") java.time.LocalDateTime from,
+            @Param("to") java.time.LocalDateTime to,
+            @Param("errorsOnly") boolean errorsOnly,
+            org.springframework.data.domain.Pageable page);
+
     @Query("SELECT l FROM LogEntity l LEFT JOIN l.deployment d LEFT JOIN d.project deploymentProject LEFT JOIN l.project directProject WHERE " +
            "(:projectId IS NULL OR deploymentProject.id = :projectId OR directProject.id = :projectId) AND " +
            "(:sourceService IS NULL OR l.sourceService = :sourceService) AND " +

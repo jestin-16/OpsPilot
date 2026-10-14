@@ -139,6 +139,79 @@ The signup flow is `POST /api/auth/register`, `POST /api/auth/verify-otp`, then 
 
 ---
 
+## 🧭 Project-first flow: connect, then watch
+
+Everything starts with a **project**. Inside it you connect the systems you care about and watch all their logs in one live dashboard.
+
+1. **Create a project** (`/projects` → *Create Project*): name, environment (`dev` / `staging` / `prod`), optional repository.
+2. **Connect integrations** (`/projects/:id/integrations`): each card has *Connect*, *Configure*, *Test* and *Disconnect*.
+3. **Watch logs**: `/projects/:id/logs` is one stream for every source (filters: source, level, time range, text; pause/resume, auto-scroll, source badges, colour-coded levels). `/projects/:id/logs/:integrationId` is a dedicated page per integration.
+
+The project switcher in the sidebar keeps the selection. Existing global pages (`/logs`, `/pipelines`, `/deployments`, `/incidents`, `/github`) follow the selected project, and a banner offers *Show all projects*. Data created before this flow is moved into a **Default Project** by migration `V15`.
+
+### Integrations
+
+| Type | Reads from | Settings (secrets in *italics*) | Notes |
+|---|---|---|---|
+| **Docker** | Docker Engine API over TCP | `host`, `containers`, *`caCert`* | Container picker on its page. Unix sockets are not supported; expose the API over TCP or a socket proxy. |
+| **Kubernetes** | Kubernetes API | `apiServer`, `namespace`, `podName`, `labelSelector`, `container`, *`token`*, *`caCert`* | Uses the in-cluster service account when no `apiServer` is set. Needs `get/list pods` and `get pods/log`. Kubeconfig files are not parsed; use a service-account token. |
+| **Git** (`GITHUB`) | GitHub REST API + webhooks | `repo`, `apiBaseUrl`, `pollSeconds`, *`token`*, *`webhookSecret`* | Pushes, pull requests, workflow runs as a timeline. GitLab is not implemented. |
+| **CI/CD** | GitHub Actions or Jenkins | GitHub: `repo`, *`token`*. Jenkins: `baseUrl`, `job`, *`username`*, *`apiToken`* | Run list; opening a run reads its jobs/steps (GitHub) or console (Jenkins). The Jenkins live stream reports build state changes. |
+| **App Logs** | Pushed by your app | `app` | An ingest token is shown **once** at creation. |
+
+Secrets are split from settings by the server, encrypted at rest (AES-256-GCM), never returned by any API, and masked in error messages and log lines. Editing an integration keeps stored secrets unless you send new ones.
+
+### Sending application logs
+
+```bash
+curl -X POST "$API/api/v1/ingest/{projectId}" \
+  -H "Authorization: Bearer opl_..." -H "Content-Type: application/json" \
+  -d '[{"level":"ERROR","message":"payment failed","order_id":"A-1042"}]'
+```
+
+Accepts a JSON object, an array, `{"logs":[...]}`, NDJSON, or plain text (one entry per line); up to 1,000 entries and `INGEST_MAX_BODY_BYTES` per request. `message`, `level` and `timestamp` (ISO-8601 or epoch seconds/ms) are understood; other simple fields become searchable metadata. The integration page shows a ready-made Django logging handler.
+
+GitHub webhooks (optional, for instant Git events): payload URL `/api/v1/ingest/{projectId}/github/{integrationId}`, content type JSON, secret = the integration's `webhookSecret`. Deliveries are verified with `X-Hub-Signature-256`.
+
+### Project, integration and log API
+
+All paths also exist under `/api/projects/...` (without `v1`).
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` `GET` `PUT` `DELETE` | `/api/v1/projects[/{id}]` | Project CRUD (`name`, `description`, `environment`, `repositoryUrl`; `slug` is generated) |
+| `GET` `POST` | `/api/v1/projects/{id}/integrations` | List / create (`provider`, `name`, `category`, `config{}`, `secrets{}`) |
+| `GET` `PUT` `DELETE` | `/api/v1/projects/{id}/integrations/{iid}` | Read / update / delete |
+| `POST` | `.../integrations/{iid}/test` | Run the connection test; returns the integration with `status` and `statusMessage` |
+| `POST` | `.../integrations/{iid}/disconnect` | Stop collecting |
+| `GET` | `.../integrations/{iid}/resources?kind=containers\|namespaces\|pods` | Pickers |
+| `GET` | `.../integrations/{iid}/history?...` | Read straight from the source (selectors: `container`, `namespace`, `pod`, `run`, `build`) |
+| `GET` | `/api/v1/projects/{id}/logs?integrationId&type&level&from&to&q&container&namespace&pod&page&size` | Stored logs, newest first |
+| `GET` | `/api/v1/projects/{id}/logs/stream?...` | Server-sent events with the same filters; 15 s keepalive; honours `Last-Event-ID` to replay what was missed |
+| `POST` | `/api/v1/ingest/{projectId}` | Push logs (Bearer ingest token) |
+
+### How it fits together
+
+- **core-service** owns projects and integrations, the `IntegrationConnector` implementations' *test / discover / history* calls, and encrypted credentials.
+- **observability-service** owns the log store: it runs a `ConnectorRunner` that follows every `CONNECTED` pull integration (reconnecting with backoff), accepts pushes, serves the query and SSE endpoints, and fans new lines out to live viewers.
+- Connectors implement `IntegrationConnector` (`testConnection`, `streamLogs`, `fetchHistory`) in `shared-lib`, so a new source type is one class plus a form definition in `frontend/src/lib/integrationTypes.ts`.
+- The browser reads the stream with `fetch` (not `EventSource`, which cannot send the `Authorization` header), reconnects automatically, and resumes from the last event id. At most 5,000 lines are kept in memory and the list is virtualized.
+
+### Configuration
+
+| Variable | Service | Default | Purpose |
+|---|---|---|---|
+| `OPSPILOT_ENCRYPTION_KEY` | core, observability | dev-only fallback | Key for integration secrets. **Set it in production**; changing it makes stored secrets unreadable. `openssl rand -base64 32` |
+| `LOGS_RUNNER_ENABLED` | observability | `true` | Follow pull integrations (set `false` on replicas that should only serve reads) |
+| `LOGS_RUNNER_INTERVAL_MS` | observability | `30000` | How often to look for new / changed / disconnected integrations |
+| `LOGS_RUNNER_REFRESH` | observability | `10m` | Re-resolve containers and pods for Docker / Kubernetes streams |
+| `INGEST_MAX_BODY_BYTES` | observability | `5242880` | Largest accepted push body |
+| `VITE_API_BASE_URL` | frontend | `http://localhost:8080/api/v1` | API gateway URL |
+
+Integration endpoints are fetched by the server, so only point them at hosts you trust; `http(s)` only, and link-local addresses (cloud metadata) are refused.
+
+---
+
 ## 🎨 Locked Dark Theme Design System
 
 OpsPilot strictly implements a high-contrast dark theme optimized for DevOps operations:
@@ -190,4 +263,8 @@ The frontend application will be accessible at `http://localhost:5173`.
 - **Frontend Typecheck & Production Build**:
   ```bash
   cd frontend && npm run build
+  ```
+- **Frontend Unit Tests** (SSE parser, reconnect/resume, log buffer, integration forms):
+  ```bash
+  cd frontend && npm test
   ```

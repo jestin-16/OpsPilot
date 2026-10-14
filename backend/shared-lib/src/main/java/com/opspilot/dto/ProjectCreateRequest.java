@@ -7,7 +7,11 @@ import jakarta.validation.constraints.Size;
 public class ProjectCreateRequest {
     @NotBlank(message = "Project name is required")
     @Size(max = 100, message = "Project name must be 100 characters or fewer")
+    @com.fasterxml.jackson.annotation.JsonAlias("name")
     private String projectName;
+
+    @Pattern(regexp = "^$|dev|staging|prod", message = "Environment must be dev, staging or prod")
+    private String environment;
 
     @Size(max = 1000, message = "Description must be 1000 characters or fewer")
     private String description;
@@ -40,5 +44,13 @@ public class ProjectCreateRequest {
 
     public void setRepositoryUrl(String repositoryUrl) {
         this.repositoryUrl = repositoryUrl;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 }

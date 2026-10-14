@@ -4,6 +4,7 @@ import com.opspilot.dto.ProjectRequest;
 import com.opspilot.dto.ProjectCreateRequest;
 import com.opspilot.dto.ProjectResponse;
 import com.opspilot.entity.Project;
+import com.opspilot.util.Slugs;
 import com.opspilot.entity.User;
 import com.opspilot.event.AuditEvent;
 import com.opspilot.exception.ForbiddenException;
@@ -123,6 +124,11 @@ public class ProjectService {
                 "SETUP_IN_PROGRESS"
         );
 
+        project.setSlug(Slugs.unique(Slugs.slugify(projectName), projectRepository::existsBySlug));
+        if (request.getEnvironment() != null && !request.getEnvironment().isBlank()) {
+            project.setEnvironment(request.getEnvironment());
+        }
+
         Project savedProject = projectRepository.save(project);
 
         if (eventPublisher != null) {
@@ -151,6 +157,9 @@ public class ProjectService {
 
         if (request.getProjectName() != null) {
             project.setProjectName(request.getProjectName());
+        }
+        if (request.getEnvironment() != null && !request.getEnvironment().isBlank()) {
+            project.setEnvironment(request.getEnvironment());
         }
         if (request.getDescription() != null) {
             project.setDescription(request.getDescription());
@@ -247,7 +256,7 @@ public class ProjectService {
 
     private ProjectResponse mapToResponse(Project project) {
         String deployedUrl = "http://localhost:8080/api/v1/projects/" + project.getId() + "/output";
-        return new ProjectResponse(
+        ProjectResponse response = new ProjectResponse(
                 project.getId(),
                 project.getProjectName(),
                 project.getDescription(),
@@ -264,5 +273,8 @@ public class ProjectService {
                 project.getStatus(),
                 project.getCreatedAt()
         );
+        response.setSlug(project.getSlug());
+        response.setEnvironment(project.getEnvironment());
+        return response;
     }
 }

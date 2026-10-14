@@ -17,6 +17,8 @@ public class ProjectResponse {
     private String lokiAppLabel;
     private String ociLogGroupOcid;
     private String credentialsJson;
+    private String slug;
+    private String environment;
     private String status;
     private LocalDateTime createdAt;
 
@@ -166,5 +168,27 @@ public class ProjectResponse {
 
     public void setCredentialsJson(String credentialsJson) {
         this.credentialsJson = credentialsJson;
+    }
+
+    /** Alias of projectName for the project-first API. */
+    @com.fasterxml.jackson.annotation.JsonProperty("name")
+    public String getName() {
+        return projectName;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 }

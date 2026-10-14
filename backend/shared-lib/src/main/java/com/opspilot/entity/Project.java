@@ -14,6 +14,12 @@ public class Project {
     @Column(name = "project_name", nullable = false)
     private String projectName;
 
+    @Column(nullable = false, unique = true, length = 120)
+    private String slug;
+
+    @Column(nullable = false, length = 20)
+    private String environment = "dev";
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -50,6 +56,7 @@ public class Project {
 
     public Project(String projectName, String description, String repositoryUrl, User owner, String status) {
         this.projectName = projectName;
+        this.slug = com.opspilot.util.Slugs.slugify(projectName);
         this.description = description;
         this.repositoryUrl = repositoryUrl;
         this.owner = owner;
@@ -151,5 +158,21 @@ public class Project {
 
     public void setCredentialsJson(String credentialsJson) {
         this.credentialsJson = credentialsJson;
+    }
+
+    public String getSlug() {
+        return slug;
+    }
+
+    public void setSlug(String slug) {
+        this.slug = slug;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 }

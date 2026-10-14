@@ -5,7 +5,11 @@ import jakarta.validation.constraints.NotBlank;
 public class ProjectRequest {
 
     @NotBlank(message = "Project name is required")
+    @com.fasterxml.jackson.annotation.JsonAlias("name")
     private String projectName;
+
+    @jakarta.validation.constraints.Pattern(regexp = "^$|dev|staging|prod", message = "Environment must be dev, staging or prod")
+    private String environment;
 
     private String description;
 
@@ -108,5 +112,13 @@ public class ProjectRequest {
 
     public void setCredentialsJson(String credentialsJson) {
         this.credentialsJson = credentialsJson;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
     }
 }

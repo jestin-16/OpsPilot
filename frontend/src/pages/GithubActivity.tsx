@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useProject } from '../context/ProjectContext';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Project } from '../services/api';
 import { 
@@ -18,7 +19,8 @@ export const GithubActivity: React.FC = () => {
   const [warning, setWarning] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const [projectId, setProjectId] = useState<number>(-1);
+  const { currentProjectId } = useProject();
+  const [projectId, setProjectId] = useState<number>(currentProjectId ?? -1);
   const [selectedCommit, setSelectedCommit] = useState<any>(null);
 
   const loadData = async () => {

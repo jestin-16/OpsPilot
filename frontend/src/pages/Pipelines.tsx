@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { useProject } from '../context/ProjectContext';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type PipelineRun } from '../services/api';
 import { Table, type Column } from '../components/Table';
@@ -18,6 +19,7 @@ export const Pipelines: React.FC = () => {
   const [addSourceOpen, setAddSourceOpen] = useState(false);
   
   const navigate = useNavigate();
+  const { currentProjectId } = useProject();
 
   const fetchRuns = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -39,6 +41,7 @@ export const Pipelines: React.FC = () => {
 
   const filteredRuns = useMemo(() => {
     return runs.filter(run => {
+      if (currentProjectId != null && run.project?.id !== currentProjectId) return false;
       const matchesSearch = 
         run.commitMessage.toLowerCase().includes(search.toLowerCase()) || 
         run.commitSha.toLowerCase().includes(search.toLowerCase()) ||

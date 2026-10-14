@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
+import { useProject } from '../context/ProjectContext';
 import { api, type Project } from '../services/api';
 import { 
   AlertTriangle, ShieldAlert, AlertOctagon, Info,
@@ -11,7 +12,8 @@ export const IncidentManagement: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const [projectId, setProjectId] = useState<number>(-1);
+  const { currentProjectId } = useProject();
+  const [projectId, setProjectId] = useState<number>(currentProjectId ?? -1);
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
   
   const [isCreating, setIsCreating] = useState(false);

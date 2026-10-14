@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useProject } from '../context/ProjectContext';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Deployment, type Project } from '../services/api';
 import { Table, type Column } from '../components/Table';
@@ -19,7 +20,8 @@ export const DeploymentsPage: React.FC = () => {
   
   // Filters
   const [search, setSearch] = useState('');
-  const [projectFilter, setProjectFilter] = useState('ALL');
+  const { currentProjectId } = useProject();
+  const [projectFilter, setProjectFilter] = useState(currentProjectId != null ? String(currentProjectId) : 'ALL');
   const [envFilter, setEnvFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
 

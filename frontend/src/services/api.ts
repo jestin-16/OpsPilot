@@ -155,6 +155,10 @@ export interface RegistrationResponse {
 export interface Project {
   id: number;
   projectName: string;
+  /** Alias of projectName from the project-first API. */
+  name?: string;
+  slug?: string;
+  environment?: 'dev' | 'staging' | 'prod';
   description: string;
   repositoryUrl: string;
   ownerId: number;

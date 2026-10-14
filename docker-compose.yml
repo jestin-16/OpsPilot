@@ -111,7 +111,7 @@ services:
       dockerfile: log-watcher-service/Dockerfile
     container_name: opspilot-log-watcher-service
     ports:
-      - "8084:8084"
+      - "8085:8084"
     restart: unless-stopped
     depends_on:
       - service-registry

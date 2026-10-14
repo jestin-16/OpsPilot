@@ -8,12 +8,22 @@ import {
   LogOut, User as UserIcon, Terminal, Server, ShieldCheck, GitCommit, AlertTriangle, Undo2, Settings
 } from 'lucide-react';
 import { canAccessRole } from '../utils/roles';
+import { useProject } from '../context/ProjectContext';
+import { ProjectSwitcher } from './project/ProjectSwitcher';
+import { useProjectIntegrations } from '../hooks/useProjectIntegrations';
+import { INTEGRATION_TYPES } from '../lib/integrationTypes';
+
+/** Global pages that follow the project chosen in the switcher. */
+const SCOPED_PATHS = ['/pipelines', '/deployments', '/incidents', '/github'];
 
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const { currentProject, currentProjectId, selectProject } = useProject();
+  const { data: projectIntegrations = [] } = useProjectIntegrations(currentProjectId, false);
+  const pid = currentProjectId;
 
   const fetchUnreadCount = async () => {
     try {
@@ -45,9 +55,22 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       title: 'PROJECTS',
       items: [
         { name: 'All Projects', path: '/projects', icon: FolderGit2, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-        { name: 'Add Project', path: '/projects/new', icon: Plus, roles: ['DEVELOPER', 'ADMIN'] as const }
+        { name: 'Add Project', path: '/projects?create=1', icon: Plus, roles: ['DEVELOPER', 'ADMIN'] as const }
       ]
     },
+    ...(pid != null ? [{
+      title: (currentProject?.name ?? currentProject?.projectName ?? 'CURRENT PROJECT').toUpperCase(),
+      items: [
+        { name: 'Overview', path: `/projects/${pid}`, icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Integrations', path: `/projects/${pid}/integrations`, icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Unified Logs', path: `/projects/${pid}/logs`, icon: FileText, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        // one entry per connected source type, linking to its dedicated page
+        ...INTEGRATION_TYPES.flatMap((t) => {
+          const first = projectIntegrations.find((i) => i.provider === t.type);
+          return first ? [{ name: t.type === 'APP_LOGS' ? 'App logs' : `${t.label} logs`, path: `/projects/${pid}/logs/${first.id}`, icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }] : [];
+        }),
+      ]
+    }] : []),
     {
       title: 'DELIVERY',
       items: [
@@ -68,7 +91,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       title: 'OBSERVABILITY',
       items: [
         { name: 'Monitoring', path: '/monitoring', icon: Activity, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-        { name: 'Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Logs', path: pid != null ? `/projects/${pid}/logs` : '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
         { name: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
       ]
     },
@@ -105,6 +128,8 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
             </div>
           </div>
 
+          <ProjectSwitcher />
+
           {/* Navigation */}
           <nav className="p-4 space-y-6">
             {navGroups.map((group) => {
@@ -120,7 +145,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                   <div className="space-y-1">
                     {groupItems.map((item) => {
                       const Icon = item.icon;
-                      const isActive = location.pathname === item.path;
+                      const isActive = location.pathname + location.search === item.path || location.pathname === item.path;
 
                       return (
                         <Link
@@ -183,6 +208,12 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
           <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[50%] rounded-full bg-purple-200/30 blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
         </div>
         <div className="h-full w-full max-w-[1600px] mx-auto p-2">
+          {pid != null && SCOPED_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`)) && (
+            <div role="status" className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-2 text-xs font-semibold text-indigo-800 sm:mx-8">
+              <span>Showing data for <strong>{currentProject?.name ?? currentProject?.projectName ?? 'the selected project'}</strong>.</span>
+              <button onClick={() => selectProject(null)} className="rounded-md border border-indigo-200 bg-white px-2.5 py-1 font-bold text-indigo-700 hover:bg-indigo-100">Show all projects</button>
+            </div>
+          )}
           {children}
         </div>
       </main>

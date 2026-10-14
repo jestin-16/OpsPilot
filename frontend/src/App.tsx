@@ -34,7 +34,11 @@ import { ProfilePage } from './pages/ProfilePage';
 import { Pipelines } from './pages/Pipelines';
 import { PipelineDetail } from './pages/PipelineDetail';
 import { DeploymentDetail } from './pages/DeploymentDetail';
-import { IntegrationManagement } from './pages/IntegrationManagement';
+import { ProjectOverview } from './pages/ProjectOverview';
+import { ProjectIntegrations } from './pages/ProjectIntegrations';
+import { ProjectLogs } from './pages/ProjectLogs';
+import { IntegrationLogs } from './pages/IntegrationLogs';
+import { ProjectProvider, useProject } from './context/ProjectContext';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -56,6 +60,12 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const RoleRoute: React.FC<{ allowedRoles: PlatformRole[]; children: React.ReactNode }> = ({ allowedRoles, children }) => {
   const { user } = useAuth();
   return canAccessRole(user?.roles, allowedRoles) ? <>{children}</> : <Navigate to="/dashboard" replace />;
+};
+
+/** /logs: with a project selected, go to its unified live logs; otherwise keep the cross-project search. */
+const LogsEntry: React.FC = () => {
+  const { currentProjectId } = useProject();
+  return currentProjectId != null ? <Navigate to={`/projects/${currentProjectId}/logs`} replace /> : <LogManagement />;
 };
 
 const DashboardEntry: React.FC = () => {
@@ -90,6 +100,7 @@ export const App: React.FC = () => {
           <AlertProvider>
           <ConfirmProvider>
           <BrowserRouter>
+            <ProjectProvider>
             <Routes>
             <Route
               path="/"
@@ -147,7 +158,31 @@ export const App: React.FC = () => {
               path="/projects/:id"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><ProjectDetail /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><ProjectOverview /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id/details"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><ProjectDetail /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id/logs"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><ProjectLogs /></RoleRoute>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id/logs/:integrationId"
+              element={
+                <ProtectedRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><IntegrationLogs /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -168,10 +203,10 @@ export const App: React.FC = () => {
               }
             />
             <Route
-              path="/projects/:projectId/integrations"
+              path="/projects/:id/integrations"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><IntegrationManagement /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><ProjectIntegrations /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -211,7 +246,7 @@ export const App: React.FC = () => {
               path="/logs"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><LogManagement /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><LogsEntry /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -335,6 +370,7 @@ export const App: React.FC = () => {
             />
             <Route path="*" element={<Navigate to="/monitoring" replace />} />
             </Routes>
+            </ProjectProvider>
           </BrowserRouter>
           </ConfirmProvider>
         </AlertProvider>

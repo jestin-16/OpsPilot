@@ -1,6 +1,7 @@
+import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useState, useMemo } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type LogEntry, type Project, API_BASE_URL } from '../services/api';
+import { api, type LogEntry, type Project } from '../services/api';
 import {
   Search, RefreshCw, AlertCircle,
   Pause, Play, ChevronRight, X, Box, Rocket, Terminal, Activity
@@ -8,6 +9,7 @@ import {
 import { Link } from 'react-router-dom';
 
 export const LogManagement: React.FC = () => {
+  const navigate = useNavigate();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,79 +81,15 @@ export const LogManagement: React.FC = () => {
     setStreamLogs([]);
   };
 
+  // Live streaming moved to the project logs page, which follows every connected source with reconnect and replay.
   const startStreams = async () => {
-    if (!liveStream) return;
-
-    // Cleanup old streams
-    activeStreamControllers.forEach(ctrl => ctrl.abort());
-    setActiveStreamControllers([]);
-
     if (projectId === 'ALL') {
       setError('Select a project to start live streams');
+      setLiveStream(false);
       return;
     }
-
-    try {
-      const integrations = await api.getIntegrationsByProject(Number(projectId));
-      if (integrations.length === 0) {
-        setError('No integrations found for this project');
-        return;
-      }
-
-      const newControllers: AbortController[] = [];
-      const token = localStorage.getItem('opspilot_token');
-
-      // Start a stream for each integration 
-      // Note: for this demo, we assume the backend doesn't strictly require containerId/podName, 
-      // or we pass a generic one if we don't have it.
-      // Wait, earlier we required containerId/podName in backend!
-      // Let's pass a dummy or require the user to input it.
-
-      for (const integ of integrations) {
-        const ctrl = new AbortController();
-        newControllers.push(ctrl);
-
-        let url = `${API_BASE_URL}/projects/${projectId}/logs/stream?integrationId=${integ.id}`;
-        if (integ.provider === 'DOCKER') {
-          // just fetch containers to get one? Or require params?
-          // For safety, we'll try streaming, backend might fail if containerId is missing
-          url += `&containerId=demo-container`; // Hack for testing
-        } else if (integ.provider === 'KUBERNETES') {
-          url += `&podName=demo-pod&namespace=default`;
-        }
-
-        fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          signal: ctrl.signal
-        }).then(async response => {
-          if (!response.body) return;
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder('utf-8');
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
-            for (const line of lines) {
-              if (line.startsWith('data:')) {
-                try {
-                  const data = JSON.parse(line.replace('data:', ''));
-                  setStreamLogs(prev => [data, ...prev].slice(0, 1000));
-                } catch (e) { }
-              }
-            }
-          }
-        }).catch(err => console.log('Stream ended', err));
-      }
-
-      setActiveStreamControllers(newControllers);
-    } catch (e: any) {
-      setError('Failed to start streams: ' + e.message);
-    }
+    setLiveStream(false);
+    navigate(`/projects/${projectId}/logs`);
   };
 
   useEffect(() => {

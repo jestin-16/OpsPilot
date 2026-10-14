@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
+import { CreateProjectModal } from '../components/project/CreateProjectModal';
 import { useAuth } from '../context/AuthContext';
 import { api, API_BASE_URL, type Project, type Deployment } from '../services/api';
 import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText, XCircle, Activity, TriangleAlert } from 'lucide-react';
@@ -20,6 +21,8 @@ export const Projects: React.FC = () => {
   const [triggering, setTriggering] = useState(false);
   const [projectPendingDeletion, setProjectPendingDeletion] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const fetchProjects = async () => {
     try {
@@ -35,6 +38,16 @@ export const Projects: React.FC = () => {
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  // The sidebar's "Add Project" link arrives as /projects?create=1
+  useEffect(() => {
+    if (searchParams.get('create') === '1') {
+      setCreating(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete('create');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleDeleteProject = async () => {
     if (!projectPendingDeletion) return;
@@ -98,13 +111,14 @@ export const Projects: React.FC = () => {
               Manage your microservices, trigger pipelines, and inspect active deployment status
             </p>
           </div>
-          <Link
-            to="/projects/new"
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
             className="px-5 py-2.5 bg-op-accent hover:bg-op-accent-hover text-white text-sm font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md hover:shadow-op-accent/30"
           >
             <Plus className="w-4 h-4" />
-            <span>New Project</span>
-          </Link>
+            <span>Create Project</span>
+          </button>
         </div>
 
         {error && (
@@ -121,13 +135,14 @@ export const Projects: React.FC = () => {
           <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
             <FolderGit2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <h3 className="text-sm font-bold text-slate-800">No projects registered yet</h3>
-            <p className="text-xs font-medium text-slate-500 mt-1">Add your first project repository to start deploying.</p>
-            <Link
-              to="/projects/new"
-              className="mt-4 px-4 py-2 bg-op-accent hover:bg-op-accent-hover text-white text-sm font-bold rounded-xl shadow-md transition-colors inline-block"
+            <p className="text-xs font-medium text-slate-500 mt-1">Create a project, then connect Docker, Kubernetes, Git, CI/CD and app logs to watch them in one place.</p>
+            <button
+              type="button"
+              onClick={() => setCreating(true)}
+              className="mt-4 px-4 py-2 bg-op-accent hover:bg-op-accent-hover text-white text-sm font-bold rounded-xl shadow-md transition-colors inline-block cursor-pointer"
             >
-              Add Project
-            </Link>
+              Create Project
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -141,8 +156,13 @@ export const Projects: React.FC = () => {
                     <Link to={`/projects/${project.id}`}>
                       <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-op-accent hover:underline transition-colors">{project.projectName}</h3>
                     </Link>
-                    <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm">
-                      {project.status}
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      {project.environment && (
+                        <span className="px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-slate-50 text-slate-600 border border-slate-200">{project.environment}</span>
+                      )}
+                      <span className="px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-200 shadow-sm">
+                        {project.status}
+                      </span>
                     </span>
                   </div>
                   <p className="text-sm text-slate-500 mb-5 font-medium line-clamp-2 leading-relaxed">{project.description}</p>
@@ -370,6 +390,7 @@ export const Projects: React.FC = () => {
           </div>
         )}
       </div>
+      <CreateProjectModal isOpen={creating} onClose={() => setCreating(false)} />
     </SidebarLayout>
   );
 };

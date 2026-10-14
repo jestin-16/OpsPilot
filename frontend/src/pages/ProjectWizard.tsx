@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAlert } from '../components/AlertProvider';
 import { api, type Project } from '../services/api';
-import { ProviderType, IntegrationCategory } from './IntegrationManagement';
+import { ProviderType, IntegrationCategory } from '../lib/legacyProviders';
 import {
   FolderGit2, CheckCircle2, ChevronRight, ChevronLeft, Loader2, Server, Cloud, Cpu, Code, Plus, ShieldCheck, Activity, Bell, Boxes, TerminalSquare, Search
 } from 'lucide-react';

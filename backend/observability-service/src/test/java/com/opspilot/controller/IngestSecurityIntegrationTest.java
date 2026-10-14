@@ -30,4 +30,29 @@ public class IngestSecurityIntegrationTest {
                 .content(""))
                 .andExpect(MockMvcResultMatchers.status().isUnauthorized());
     }
+
+    @Test
+    public void testProjectIngestWithoutTokenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/ingest/7")
+                .contentType("application/json")
+                .content("[{\"message\":\"hi\"}]"))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
+    }
+
+    @Test
+    public void testProjectIngestWithGarbageTokenReturnsUnauthorized() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/ingest/7")
+                .header("Authorization", "Bearer opl_not-a-real-token")
+                .contentType("application/json")
+                .content("[{\"message\":\"hi\"}]"))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
+    }
+
+    @Test
+    public void testProjectLogsRequireAuthentication() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/projects/7/logs"))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/projects/7/logs/stream"))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized());
+    }
 }

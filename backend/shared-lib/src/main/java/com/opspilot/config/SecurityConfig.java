@@ -57,7 +57,9 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/ingest/loki/**", "/api/ingest/loki/**", "/api/v1/ingest/metrics/**", "/api/ingest/metrics/**").hasAuthority(IngestTokenFilter.AUTHORITY)
+                .requestMatchers("/api/ingest/*", "/api/v1/ingest/*").hasAuthority(IngestTokenFilter.AUTHORITY)
                 .requestMatchers(
+                    "/api/ingest/*/github/*", "/api/v1/ingest/*/github/*",
                     "/api/auth/**", "/api/v1/auth/**",
                     "/api/webhooks/**", "/api/v1/webhooks/**",
                     "/api/cicd/webhooks/**", "/api/v1/cicd/webhooks/**",

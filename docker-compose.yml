@@ -67,6 +67,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
+      - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:-}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - KUBERNETES_ENABLED=${KUBERNETES_ENABLED:-true}
       - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-true}
@@ -94,6 +95,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
+      - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:-}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - PROMETHEUS_URL=http://prometheus:9090
       - LOKI_ENABLED=${LOKI_ENABLED:-true}

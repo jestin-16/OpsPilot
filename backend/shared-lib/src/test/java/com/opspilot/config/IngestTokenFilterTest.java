@@ -26,6 +26,7 @@ class IngestTokenFilterTest {
 
     private final IngestTokenService tokens = new IngestTokenService();
     private DockerLogSourceRepository repo;
+    private com.opspilot.repository.IntegrationRepository integrations;
     private IngestTokenFilter filter;
     private FilterChain chain;
 
@@ -33,7 +34,8 @@ class IngestTokenFilterTest {
     void setUp() {
         repo = mock(DockerLogSourceRepository.class);
         chain = mock(FilterChain.class);
-        filter = new IngestTokenFilter(repo, tokens);
+        integrations = mock(com.opspilot.repository.IntegrationRepository.class);
+        filter = new IngestTokenFilter(repo, integrations, tokens);
         SecurityContextHolder.clearContext();
     }
 
@@ -136,5 +138,88 @@ class IngestTokenFilterTest {
         verify(chain).doFilter(any(), any());
         verifyNoInteractions(repo);
         assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    // ---- POST /api/ingest/{projectId} (APP_LOGS integration tokens) ----
+
+    private com.opspilot.entity.Integration appLogs(String rawToken, long projectId, com.opspilot.enums.IntegrationStatus status) {
+        com.opspilot.entity.Project p = new com.opspilot.entity.Project();
+        p.setId(projectId);
+        com.opspilot.entity.Integration i = new com.opspilot.entity.Integration();
+        i.setId(55L);
+        i.setName("django-demo");
+        i.setProject(p);
+        i.setProvider(com.opspilot.enums.ProviderType.APP_LOGS);
+        i.setStatus(status);
+        i.setIngestTokenHash(tokens.hash(rawToken));
+        return i;
+    }
+
+    @Test
+    void projectIngest_validTokenAuthenticatesAsThatIntegration() throws Exception {
+        String raw = tokens.generate();
+        when(integrations.findByIngestTokenHash(tokens.hash(raw)))
+                .thenReturn(Optional.of(appLogs(raw, 7L, com.opspilot.enums.IntegrationStatus.CONNECTED)));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(request("/api/ingest/7", "Bearer " + raw), res, chain);
+
+        verify(chain).doFilter(any(), any());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        com.opspilot.security.ingest.ProjectIngestPrincipal principal = (com.opspilot.security.ingest.ProjectIngestPrincipal) auth.getPrincipal();
+        assertEquals(7L, principal.projectId());
+        assertEquals(55L, principal.integrationId());
+    }
+
+    @Test
+    void projectIngest_tokenForAnotherProjectIsRejected() throws Exception {
+        String raw = tokens.generate();
+        when(integrations.findByIngestTokenHash(tokens.hash(raw)))
+                .thenReturn(Optional.of(appLogs(raw, 7L, com.opspilot.enums.IntegrationStatus.CONNECTED)));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(request("/api/v1/ingest/8", "Bearer " + raw), res, chain);
+
+        assertEquals(401, res.getStatus());
+        verify(chain, never()).doFilter(any(), any());
+        assertFalse(res.getContentAsString().contains(raw));
+    }
+
+    @Test
+    void projectIngest_disconnectedIntegrationIsRejected() throws Exception {
+        String raw = tokens.generate();
+        when(integrations.findByIngestTokenHash(tokens.hash(raw)))
+                .thenReturn(Optional.of(appLogs(raw, 7L, com.opspilot.enums.IntegrationStatus.DISCONNECTED)));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(request("/api/ingest/7", "Bearer " + raw), res, chain);
+
+        assertEquals(401, res.getStatus());
+    }
+
+    @Test
+    void projectIngest_dockerSourceTokenIsNotAccepted() throws Exception {
+        String raw = tokens.generate();
+        MockHttpServletResponse res = new MockHttpServletResponse();
+        when(integrations.findByIngestTokenHash(any())).thenReturn(Optional.empty());
+
+        filter.doFilter(request("/api/ingest/7", "Bearer " + raw), res, chain);
+
+        assertEquals(401, res.getStatus());
+        verifyNoInteractions(repo);
+    }
+
+    @Test
+    void projectIngest_missingHeaderFallsThroughToTheEntryPoint() throws Exception {
+        filter.doFilter(request("/api/ingest/7", null), new MockHttpServletResponse(), chain);
+        verify(chain).doFilter(any(), any());
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    void otherIngestPathsAreNotTouched() {
+        assertTrue(filter.shouldNotFilter(request("/api/v1/ingest/webhook/abc", null)));
+        assertTrue(filter.shouldNotFilter(request("/api/ingest/7/github/3", null)));
+        assertFalse(filter.shouldNotFilter(request("/api/ingest/7", null)));
     }
 }

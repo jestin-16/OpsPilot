@@ -1,6 +1,13 @@
 package com.opspilot.config;
 
 import com.opspilot.entity.DockerLogSource;
+import com.opspilot.entity.Integration;
+import com.opspilot.enums.IntegrationStatus;
+import com.opspilot.enums.ProviderType;
+import com.opspilot.repository.IntegrationRepository;
+import com.opspilot.security.ingest.ProjectIngestPrincipal;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import com.opspilot.repository.DockerLogSourceRepository;
 import com.opspilot.security.ingest.IngestPrincipal;
 import com.opspilot.security.ingest.IngestTokenService;
@@ -29,18 +36,24 @@ public class IngestTokenFilter extends OncePerRequestFilter {
     public static final String AUTHORITY = "SCOPE_INGEST";
     static final List<String> INGEST_PREFIXES = List.of("/api/v1/ingest/loki/", "/api/ingest/loki/", "/api/v1/ingest/metrics/", "/api/ingest/metrics/");
 
+    /** POST /api/ingest/{projectId}: pushed application logs, authenticated by an APP_LOGS integration token. */
+    static final Pattern PROJECT_INGEST_PATH = Pattern.compile("^/api(?:/v1)?/ingest/(\\d+)/?$");
+
     private final DockerLogSourceRepository sourceRepository;
+    private final IntegrationRepository integrationRepository;
     private final IngestTokenService tokenService;
 
-    public IngestTokenFilter(DockerLogSourceRepository sourceRepository, IngestTokenService tokenService) {
+    public IngestTokenFilter(DockerLogSourceRepository sourceRepository, IntegrationRepository integrationRepository,
+                             IngestTokenService tokenService) {
         this.sourceRepository = sourceRepository;
+        this.integrationRepository = integrationRepository;
         this.tokenService = tokenService;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return INGEST_PREFIXES.stream().noneMatch(path::startsWith);
+        return INGEST_PREFIXES.stream().noneMatch(path::startsWith) && !PROJECT_INGEST_PATH.matcher(path).matches();
     }
 
     @Override
@@ -52,6 +65,11 @@ public class IngestTokenFilter extends OncePerRequestFilter {
             return;
         }
         String token = header.substring(7).trim();
+        Matcher projectPath = PROJECT_INGEST_PATH.matcher(request.getRequestURI());
+        if (projectPath.matches()) {
+            authenticateProjectIngest(Long.parseLong(projectPath.group(1)), token, response, chain, request);
+            return;
+        }
         Optional<DockerLogSource> source = Optional.empty();
         if (token.startsWith(IngestTokenService.PREFIX) && token.length() <= 128) {
             source = sourceRepository.findByTokenHash(tokenService.hash(token))
@@ -65,6 +83,29 @@ public class IngestTokenFilter extends OncePerRequestFilter {
         }
         DockerLogSource s = source.get();
         IngestPrincipal principal = new IngestPrincipal(s.getId(), s.getProjectId(), s.getEnvironment(), s.getName());
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
+                principal, null, List.of(new SimpleGrantedAuthority(AUTHORITY))));
+        chain.doFilter(request, response);
+    }
+
+    private void authenticateProjectIngest(Long projectId, String token, HttpServletResponse response, FilterChain chain,
+                                           HttpServletRequest request) throws IOException, ServletException {
+        Optional<Integration> integration = Optional.empty();
+        if (token.startsWith(IngestTokenService.PREFIX) && token.length() <= 128) {
+            integration = integrationRepository.findByIngestTokenHash(tokenService.hash(token))
+                    .filter(i -> tokenService.matches(token, i.getIngestTokenHash()))
+                    .filter(i -> i.getProvider() == ProviderType.APP_LOGS)
+                    .filter(i -> i.getStatus() != IntegrationStatus.DISCONNECTED)
+                    .filter(i -> i.getProject() != null && projectId.equals(i.getProject().getId()));
+        }
+        if (integration.isEmpty()) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Unauthorized\",\"message\":\"Invalid ingest token\"}");
+            return;
+        }
+        Integration i = integration.get();
+        ProjectIngestPrincipal principal = new ProjectIngestPrincipal(projectId, i.getId(), i.getName());
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(
                 principal, null, List.of(new SimpleGrantedAuthority(AUTHORITY))));
         chain.doFilter(request, response);

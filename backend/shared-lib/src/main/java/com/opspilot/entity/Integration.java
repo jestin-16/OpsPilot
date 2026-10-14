@@ -36,7 +36,7 @@ public class Integration {
     @Column(columnDefinition = "TEXT")
     private String configuration;
 
-    @Column(name = "credential_reference")
+    @Column(name = "credential_reference", columnDefinition = "TEXT")
     @Convert(converter = com.opspilot.converter.SecretEncryptionConverter.class)
     private String credentialReference;
 

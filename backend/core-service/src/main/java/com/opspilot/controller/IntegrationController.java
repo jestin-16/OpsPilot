@@ -1,5 +1,7 @@
 package com.opspilot.controller;
 
+import com.opspilot.connector.LogEntry;
+import com.opspilot.connector.LogFilters;
 import com.opspilot.dto.IntegrationRequest;
 import com.opspilot.dto.IntegrationResponse;
 import com.opspilot.entity.User;
@@ -112,13 +114,28 @@ public class IntegrationController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping(value = "/projects/{projectId}/logs/stream", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
-    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter streamLogs(
+    /**
+     * Reads entries directly from the integration's source. Selectors (container, namespace, pod, run, build) narrow it.
+     * Live streaming and stored history are served by observability-service at /projects/{id}/logs.
+     */
+    @GetMapping("/projects/{projectId}/integrations/{integrationId}/history")
+    public ResponseEntity<List<LogEntry>> history(
             @PathVariable Long projectId,
-            @RequestParam Long integrationId,
-            @RequestParam java.util.Map<String, Object> params,
+            @PathVariable Long integrationId,
+            @RequestParam(required = false) String level,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String container,
+            @RequestParam(required = false) String namespace,
+            @RequestParam(required = false) String pod,
+            @RequestParam(required = false) String run,
+            @RequestParam(required = false) String build,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size,
             @AuthenticationPrincipal User currentUser) {
-        return integrationService.streamLogs(projectId, integrationId, params, currentUser);
+        LogFilters filters = LogFilters.none().level(level).query(q).pageSize(size)
+                .selector("container", container).selector("namespace", namespace).selector("pod", pod)
+                .selector("run", run).selector("build", build);
+        return ResponseEntity.ok(integrationService.history(projectId, integrationId, filters, page, currentUser));
     }
 
     @GetMapping("/projects/{projectId}/metrics")

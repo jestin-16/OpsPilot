@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface LogRepository extends JpaRepository<LogEntity, Long> {
+public interface LogRepository extends JpaRepository<LogEntity, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<LogEntity> {
 
     List<LogEntity> findAllByOrderByTimestampDesc();
     

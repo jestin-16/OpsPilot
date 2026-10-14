@@ -4,6 +4,9 @@ import com.opspilot.connector.ConnectionResult;
 import com.opspilot.connector.ConnectorConfig;
 import com.opspilot.connector.ConnectorRegistry;
 import com.opspilot.connector.ConnectorSecrets;
+import com.opspilot.connector.IntegrationConnector;
+import com.opspilot.connector.LogEntry;
+import com.opspilot.connector.LogFilters;
 import com.opspilot.dto.IntegrationRequest;
 import com.opspilot.dto.IntegrationResponse;
 import com.opspilot.entity.Integration;
@@ -258,57 +261,11 @@ public class IntegrationService {
         });
     }
 
-    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter streamLogs(Long projectId, Long integrationId, java.util.Map<String, Object> params, User currentUser) {
-        Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
-                
-        if (!project.getOwner().getId().equals(currentUser.getId()) && !isPrivileged(currentUser)) {
-            throw new ForbiddenException("You do not have permission to view logs for this project");
-        }
-
-        Integration integration = integrationRepository.findById(integrationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Integration not found"));
-
-        if (!integration.getProject().getId().equals(project.getId())) {
-            throw new IllegalArgumentException("Integration does not belong to the specified project");
-        }
-
-        com.opspilot.integration.IntegrationAdapter adapter = providerRegistry.getAdapter(integration.getProvider())
-                .orElseThrow(() -> new IllegalStateException("Provider adapter not found for " + integration.getProvider()));
-
-        if (!(adapter instanceof com.opspilot.log.LogCollector)) {
-            throw new IllegalStateException("Adapter does not support log collection");
-        }
-
-        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(300000L); // 5 min timeout
-        com.opspilot.log.LogCollector logCollector = (com.opspilot.log.LogCollector) adapter;
-
-        java.util.concurrent.ExecutorService sseMvcExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
-        sseMvcExecutor.execute(() -> {
-            try {
-                logCollector.stream(integration, params, (record) -> {
-                    try {
-                        org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEventBuilder event = org.springframework.web.servlet.mvc.method.annotation.SseEmitter.event()
-                                .data(record)
-                                .id(record.getId())
-                                .name("log-record");
-                        emitter.send(event);
-                    } catch (Exception e) {
-                        emitter.completeWithError(e);
-                        throw new RuntimeException(e);
-                    }
-                });
-                emitter.complete();
-            } catch (Exception ex) {
-                emitter.completeWithError(ex);
-            }
-        });
-
-        emitter.onCompletion(sseMvcExecutor::shutdown);
-        emitter.onError((e) -> sseMvcExecutor.shutdown());
-        emitter.onTimeout(sseMvcExecutor::shutdown);
-
-        return emitter;
+    /** On-demand read straight from the source (Git timeline, CI console ...); live streaming lives in observability-service. */
+    public List<LogEntry> history(Long projectId, Long integrationId, LogFilters filters, int page, User currentUser) {
+        Integration integration = loadAuthorized(projectId, integrationId, currentUser, "read logs from");
+        IntegrationConnector connector = connectorRegistry.require(integration.getProvider());
+        return connector.fetchHistory(toConnectorConfig(integration), filters, page);
     }
 
     public List<com.opspilot.metric.MetricRecord> getMetrics(Long projectId, Long integrationId, java.util.Map<String, Object> params, User currentUser) {

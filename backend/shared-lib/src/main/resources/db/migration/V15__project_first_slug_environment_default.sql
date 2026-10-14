@@ -15,6 +15,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_projects_slug ON projects(slug);
 ALTER TABLE projects DROP CONSTRAINT IF EXISTS chk_projects_environment;
 ALTER TABLE projects ADD CONSTRAINT chk_projects_environment CHECK (environment IN ('dev', 'staging', 'prod'));
 
+-- Logs that belong to a deployment inherit that deployment's project before anything is treated as an orphan.
+UPDATE logs l SET project_id = d.project_id
+FROM deployments d
+WHERE l.deployment_id = d.id AND l.project_id IS NULL;
+
 -- Default Project: owned by the first ADMIN (else the first user). Skipped on an empty database.
 DO $$
 DECLARE

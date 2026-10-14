@@ -30,11 +30,21 @@ public class LogEntity {
     @Column(name = "log_level", nullable = false)
     private String logLevel; // e.g. INFO, WARN, ERROR
 
-    @Column(nullable = false, length = 2048)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
     @Column(nullable = false)
     private LocalDateTime timestamp;
+
+    @Column(name = "integration_id")
+    private Long integrationId;
+
+    @Column(name = "source_type", length = 30)
+    private String sourceType;
+
+    /** JSON object (container / pod / repo ...), serialized by the ingest layer. */
+    @Column(columnDefinition = "TEXT")
+    private String metadata;
 
     @Transient
     private String providerSource = "local";
@@ -105,6 +115,30 @@ public class LogEntity {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public Long getIntegrationId() {
+        return integrationId;
+    }
+
+    public void setIntegrationId(Long integrationId) {
+        this.integrationId = integrationId;
+    }
+
+    public String getSourceType() {
+        return sourceType;
+    }
+
+    public void setSourceType(String sourceType) {
+        this.sourceType = sourceType;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
     }
 
     public String getProviderSource() {

@@ -25,6 +25,10 @@ spring:
           uri: lb://log-watcher-service
           predicates:
             - Path=/api/pods, /api/pods/**, /api/v1/pods, /api/v1/pods/**, /api/logs/*/*, /api/logs/*/*/stream, /api/v1/logs/*/*, /api/v1/logs/*/*/stream, /api/health/summary, /api/v1/health/summary, /api/log-watcher/**
+        - id: project-logs
+          uri: lb://observability-service
+          predicates:
+            - Path=/api/projects/*/logs, /api/projects/*/logs/**, /api/v1/projects/*/logs, /api/v1/projects/*/logs/**, /api/ingest/*, /api/ingest/*/github/*, /api/v1/ingest/*, /api/v1/ingest/*/github/*
         - id: observability-service
           uri: lb://observability-service
           predicates:

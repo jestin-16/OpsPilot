@@ -14,8 +14,8 @@ Before implementing the scalable multi-provider architecture, a full system base
 | :--- | :--- | :--- | :--- |
 | **Backend Unit Tests** | `.\mvnw.cmd test` | **FAIL** | `NotesAppTest.testValidationDeliberatelyFailing` intentionally fails. |
 | **Backend Integration Tests** | `.\mvnw.cmd test` | **FAIL** | Runs concurrently with unit tests; intentionally failing test stops the suite. |
-| **Developer E2E** | `bash .\verify-developer-role.sh` | **PASS (Mostly)** | 19 PASS, 0 FAIL, 1 BLOCKED (No own Docker container fixture). |
-| **DevOps E2E** | `bash .\verify-devops-role.sh` | **FAIL** | 9 PASS, 5 FAIL, 0 BLOCKED. Failures relate to cross-project visibility and Kubernetes connection. |
+| **Developer E2E** | `bash scripts/verify-developer-role.sh` | **PASS (Mostly)** | 19 PASS, 0 FAIL, 1 BLOCKED (No own Docker container fixture). |
+| **DevOps E2E** | `bash scripts/verify-devops-role.sh` | **FAIL** | 9 PASS, 5 FAIL, 0 BLOCKED. Failures relate to cross-project visibility and Kubernetes connection. |
 
 ## 3. Infrastructure & Services
 The backend services are deployed locally via `docker-compose`.

@@ -42,3 +42,8 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+
+# Python caches
+__pycache__/
+*.pyc
+.pytest_cache/

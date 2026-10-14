@@ -11,6 +11,7 @@ kubernetes:
   watch-namespace: ${WATCH_NAMESPACE:default}
   watch-label-selector: ${WATCH_LABEL_SELECTOR:}
   master-url: ${KUBERNETES_MASTER:}
+  loopback-host: ${KUBERNETES_LOOPBACK_HOST:}
 
 log-watcher:
   buffer-max-lines: ${LOG_BUFFER_MAX_LINES:5000}

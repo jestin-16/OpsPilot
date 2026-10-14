@@ -48,7 +48,7 @@ export const INTEGRATION_TYPES: IntegrationTypeDef[] = [
     category: 'KUBERNETES',
     color: 'indigo',
     fields: [
-      { key: 'apiServer', label: 'API server URL', kind: 'text', required: true, placeholder: 'https://10.0.0.1:6443' },
+      { key: 'apiServer', label: 'API server URL', kind: 'text', required: true, placeholder: 'https://10.0.0.1:6443', help: 'For a cluster on the machine running the Docker Compose stack (k3s, Docker Desktop), use https://kubernetes:6443; 127.0.0.1 would mean the OpsPilot container itself.' },
       { key: 'token', label: 'Service-account token', kind: 'password', secret: true, required: true, help: 'Needs get/list on pods and get on pods/log.' },
       { key: 'namespace', label: 'Namespace', kind: 'text', defaultValue: 'default' },
       { key: 'podName', label: 'Pods', kind: 'text', placeholder: 'api-7d9f, worker-1', help: 'Comma-separated. Empty = all pods matching the label selector.' },

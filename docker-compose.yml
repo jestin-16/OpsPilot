@@ -63,7 +63,11 @@ services:
       - service-registry
     volumes:
       - ~/.kube:/root/.kube:ro
+    extra_hosts:
+      - "kubernetes:host-gateway"
     environment:
+      - KUBERNETES_LOOPBACK_HOST=${KUBERNETES_LOOPBACK_HOST:-kubernetes}
+      - KUBERNETES_MASTER=${KUBERNETES_MASTER:-}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
@@ -91,6 +95,8 @@ services:
       - postgres
       - service-registry
       - loki
+    extra_hosts:
+      - "kubernetes:host-gateway"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
@@ -117,7 +123,11 @@ services:
       - service-registry
     volumes:
       - ~/.kube:/home/opspilot/.kube:ro
+    extra_hosts:
+      - "kubernetes:host-gateway"
     environment:
+      - KUBERNETES_LOOPBACK_HOST=${KUBERNETES_LOOPBACK_HOST:-kubernetes}
+      - KUBERNETES_MASTER=${KUBERNETES_MASTER:-}
       - SERVER_PORT=8084
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - WATCH_NAMESPACE=${WATCH_NAMESPACE:-default}

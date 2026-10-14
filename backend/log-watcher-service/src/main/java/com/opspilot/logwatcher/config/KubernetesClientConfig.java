@@ -21,6 +21,9 @@ public class KubernetesClientConfig {
     @Value("${kubernetes.master-url:}")
     private String masterUrl;
 
+    @Value("${kubernetes.loopback-host:}")
+    private String loopbackHost;
+
     @Bean
     @ConditionalOnMissingBean
     public ApiClient kubernetesApiClient() {
@@ -57,6 +60,12 @@ public class KubernetesClientConfig {
         if (masterUrl != null && !masterUrl.isBlank()) {
             log.info("Overriding Kubernetes master URL with: {}", masterUrl);
             client.setBasePath(masterUrl);
+        } else {
+            String rewritten = rewriteLoopback(client.getBasePath(), loopbackHost);
+            if (!rewritten.equals(client.getBasePath())) {
+                log.info("Kubeconfig points at loopback ({}); using {} from inside the container", client.getBasePath(), rewritten);
+                client.setBasePath(rewritten);
+            }
         }
 
         // Set default timeout and verify configuration
@@ -74,5 +83,32 @@ public class KubernetesClientConfig {
     @ConditionalOnMissingBean
     public PodLogs podLogs(ApiClient apiClient) {
         return new PodLogs(apiClient);
+    }
+
+    /**
+     * A kubeconfig written for the host (k3s, Docker Desktop, kind) points at 127.0.0.1, which inside a container is the
+     * container itself. When kubernetes.loopback-host is set, a loopback API server address is pointed at that host
+     * instead (docker-compose maps "kubernetes" to the host gateway). "kubernetes" is in the API server certificate, so
+     * TLS verification stays on. Non-loopback addresses are never changed.
+     */
+    static String rewriteLoopback(String basePath, String replacementHost) {
+        if (basePath == null || replacementHost == null || replacementHost.isBlank()) {
+            return basePath;
+        }
+        try {
+            java.net.URI uri = java.net.URI.create(basePath);
+            String host = uri.getHost();
+            if (host == null) {
+                return basePath;
+            }
+            String h = host.replace("[", "").replace("]", "");
+            if (!(h.equals("127.0.0.1") || h.equalsIgnoreCase("localhost") || h.equals("::1") || h.equals("0:0:0:0:0:0:0:1"))) {
+                return basePath;
+            }
+            return new java.net.URI(uri.getScheme(), uri.getUserInfo(), replacementHost.trim(), uri.getPort(),
+                    uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
+        } catch (IllegalArgumentException | java.net.URISyntaxException e) {
+            return basePath;
+        }
     }
 }

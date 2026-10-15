@@ -255,7 +255,7 @@ public class ProjectService {
     }
 
     private ProjectResponse mapToResponse(Project project) {
-        String deployedUrl = "http://localhost:8080/api/v1/projects/" + project.getId() + "/output";
+        String deployedUrl = null; // OpsPilot does not host projects; see the integrations for where they run
         ProjectResponse response = new ProjectResponse(
                 project.getId(),
                 project.getProjectName(),

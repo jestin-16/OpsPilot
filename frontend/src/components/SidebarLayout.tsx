@@ -30,7 +30,9 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       const data = await api.getNotifications();
       const unread = data.filter(n => !n.read).length;
       setUnreadCount(unread);
-    } catch (err) {}
+    } catch {
+      // The badge is best-effort; the notifications page shows errors.
+    }
   };
 
   useEffect(() => {

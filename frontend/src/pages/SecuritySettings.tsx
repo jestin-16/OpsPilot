@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -13,7 +13,7 @@ export const SecuritySettings: React.FC = () => {
 
   const isUserAdmin = isAdmin(user?.roles);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!isUserAdmin) return;
     try {
       const data = await api.getAllUsers();
@@ -21,11 +21,11 @@ export const SecuritySettings: React.FC = () => {
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [isUserAdmin]);
 
   useEffect(() => {
     fetchUsers();
-  }, [isUserAdmin]);
+  }, [fetchUsers]);
 
   const handleToggleStatus = async (id: number, active: boolean) => {
     try {

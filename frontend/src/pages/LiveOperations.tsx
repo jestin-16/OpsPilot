@@ -45,7 +45,7 @@ export const LiveOperations: React.FC = () => {
       setNotifications(notificationsData);
       
       setConnStatus('LIVE');
-    } catch (error) {
+    } catch {
       setConnStatus('OFFLINE');
     }
   }, []);

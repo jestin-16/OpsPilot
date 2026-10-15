@@ -51,7 +51,7 @@ export const Pipelines: React.FC = () => {
       const matchesStatus = statusFilter === 'ALL' || run.status.toUpperCase() === statusFilter.toUpperCase();
       return matchesSearch && matchesStatus;
     });
-  }, [runs, search, statusFilter]);
+  }, [runs, search, statusFilter, currentProjectId]);
 
   const columns: Column<PipelineRun>[] = [
     { key: 'runId', header: 'Run ID', render: (r) => <span className="font-mono font-medium text-op-fg">#{r.runId}</span> },

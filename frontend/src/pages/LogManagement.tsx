@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type LogEntry, type Project } from '../services/api';
 import {
@@ -20,12 +20,13 @@ export const LogManagement: React.FC = () => {
   const [sourceService, setSourceService] = useState('ALL');
   const [logLevel, setLogLevel] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  // The text box filters loaded logs as you type; the server is queried with the submitted text.
+  const [appliedQuery, setAppliedQuery] = useState('');
   const [timeRange, setTimeRange] = useState('1h');
 
   // State
   const [watching, setWatching] = useState(true);
   const [liveStream, setLiveStream] = useState(false);
-  const [activeStreamControllers, setActiveStreamControllers] = useState<AbortController[]>([]);
   const [streamLogs, setStreamLogs] = useState<LogEntry[]>([]);
   const refreshSeconds = 5;
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
@@ -34,7 +35,7 @@ export const LogManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setError('');
     setLoading(true);
     try {
@@ -43,7 +44,7 @@ export const LogManagement: React.FC = () => {
           projectId: projectId !== 'ALL' ? Number(projectId) : undefined,
           sourceService: sourceService !== 'ALL' ? sourceService : undefined,
           logLevel: logLevel !== 'ALL' ? logLevel : undefined,
-          query: searchQuery.trim() !== '' ? searchQuery.trim() : undefined,
+          query: appliedQuery.trim() !== '' ? appliedQuery.trim() : undefined,
           limit: 1000 // Get up to 1000 for client side pagination/time filtering
         }),
         api.getProjects().catch(() => [])
@@ -55,24 +56,26 @@ export const LogManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId, sourceService, logLevel, appliedQuery]);
 
   useEffect(() => {
     fetchData();
-  }, [projectId, sourceService, logLevel]);
+  }, [fetchData]);
 
   useEffect(() => {
     if (!watching) return;
     const timer = window.setInterval(fetchData, refreshSeconds * 1000);
     return () => window.clearInterval(timer);
-  }, [watching, refreshSeconds, projectId, sourceService, logLevel, searchQuery]);
+  }, [watching, fetchData]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (liveStream) {
       startStreams();
-    } else {
+    } else if (searchQuery === appliedQuery) {
       fetchData();
+    } else {
+      setAppliedQuery(searchQuery); // refetches through the fetchData effect
     }
   };
 
@@ -82,7 +85,7 @@ export const LogManagement: React.FC = () => {
   };
 
   // Live streaming moved to the project logs page, which follows every connected source with reconnect and replay.
-  const startStreams = async () => {
+  const startStreams = useCallback(() => {
     if (projectId === 'ALL') {
       setError('Select a project to start live streams');
       setLiveStream(false);
@@ -90,19 +93,11 @@ export const LogManagement: React.FC = () => {
     }
     setLiveStream(false);
     navigate(`/projects/${projectId}/logs`);
-  };
+  }, [projectId, navigate]);
 
   useEffect(() => {
-    if (liveStream) {
-      startStreams();
-    } else {
-      activeStreamControllers.forEach(ctrl => ctrl.abort());
-      setActiveStreamControllers([]);
-    }
-    return () => {
-      activeStreamControllers.forEach(ctrl => ctrl.abort());
-    };
-  }, [liveStream, projectId]);
+    if (liveStream) startStreams();
+  }, [liveStream, startStreams]);
 
   // Client-side time range filter
   const filteredLogs = useMemo(() => {

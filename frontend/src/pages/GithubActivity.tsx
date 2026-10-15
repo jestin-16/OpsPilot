@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Project } from '../services/api';
@@ -23,7 +23,7 @@ export const GithubActivity: React.FC = () => {
   const [projectId, setProjectId] = useState<number>(currentProjectId ?? -1);
   const [selectedCommit, setSelectedCommit] = useState<any>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -35,7 +35,7 @@ export const GithubActivity: React.FC = () => {
       ]);
       setCommits(commitsData);
       
-      if (projects.length === 0) setProjects(projectsData);
+      setProjects((prev) => (prev.length === 0 ? projectsData : prev));
       setPipelines(pipelinesData);
       setDeployments(deploymentsData);
     } catch (err: any) {
@@ -43,11 +43,11 @@ export const GithubActivity: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
     loadData();
-  }, [projectId]);
+  }, [loadData]);
 
   const handleSync = async () => {
     setSyncing(true);

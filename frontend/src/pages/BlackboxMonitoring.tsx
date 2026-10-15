@@ -172,7 +172,7 @@ export const BlackboxMonitoring: React.FC = () => {
       try {
         const data: ProbeResult = await api.probeUrl(url, controller.signal);
         if (!active) return;
-        if (serviceStatus !== 'ready') setServiceStatus('ready');
+        setServiceStatus('ready'); // React skips the render when it is already 'ready'
         setCurrent(data);
         const latMs = data.duration * 1000;
         const isUp  = data.success === 1.0;

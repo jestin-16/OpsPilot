@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Deployment, type LogEntry } from '../services/api';
@@ -26,7 +26,7 @@ export const DeploymentDetail: React.FC = () => {
   const { confirm } = useConfirm();
   const { showAlert } = useAlert();
 
-  const fetchDetail = async (isRefresh = false) => {
+  const fetchDetail = useCallback(async (isRefresh = false) => {
     if (!id) return;
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
@@ -51,13 +51,13 @@ export const DeploymentDetail: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchDetail();
     const interval = setInterval(() => fetchDetail(true), 5000);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [fetchDetail]);
 
   if (loading && !refreshing) {
     return (

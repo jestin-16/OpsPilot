@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useProject } from '../context/ProjectContext';
 import { api, type Project } from '../services/api';
@@ -21,7 +21,7 @@ export const IncidentManagement: React.FC = () => {
     title: '', description: '', severity: 'MEDIUM', projectId: -1, affectedService: ''
   });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [incidentsData, projectsData] = await Promise.all([
@@ -29,20 +29,21 @@ export const IncidentManagement: React.FC = () => {
         api.getProjects().catch(() => [])
       ]);
       setIncidents(incidentsData);
-      if (projects.length === 0) {
-        setProjects(projectsData);
-        if (projectsData.length > 0) setNewIncident(prev => ({...prev, projectId: projectsData[0].id}));
+      setProjects((prev) => (prev.length === 0 ? projectsData : prev));
+      // Default the new-incident form to the first project, once.
+      if (projectsData.length > 0) {
+        setNewIncident((prev) => (prev.projectId === -1 ? { ...prev, projectId: projectsData[0].id } : prev));
       }
     } catch (err: any) {
       console.error('Failed to load incidents', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
     loadData();
-  }, [projectId]);
+  }, [loadData]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

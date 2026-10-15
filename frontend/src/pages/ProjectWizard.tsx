@@ -55,7 +55,7 @@ export const ProjectWizard: React.FC = () => {
         setDescription(p.description || '');
         setRepositoryUrl(p.repositoryUrl || '');
         fetchIntegrations(p.id);
-        if (step === 1) setStep(2);
+        setStep((current) => (current === 1 ? 2 : current));
       }).catch(err => setError("Failed to load project: " + err.message));
     }
   }, [projectId]);

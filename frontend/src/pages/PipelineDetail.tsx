@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type PipelineRun } from '../services/api';
@@ -18,7 +18,7 @@ export const PipelineDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchDetail = async (isRefresh = false) => {
+  const fetchDetail = useCallback(async (isRefresh = false) => {
     if (!id) return;
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
@@ -35,11 +35,11 @@ export const PipelineDetail: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchDetail();
-  }, [id]);
+  }, [fetchDetail]);
 
   if (loading && !refreshing) {
     return (

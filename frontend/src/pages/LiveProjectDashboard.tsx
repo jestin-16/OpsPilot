@@ -6,6 +6,7 @@ import type { LogEntry, MetricsData, Project, CommitLog } from '../services/api'
 import { Terminal, CheckCircle, FolderGit2, Activity, Server, Edit3, Save, Lock, GitCommit } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, LineChart, Line } from 'recharts';
 import { Responsive, WidthProvider } from 'react-grid-layout/legacy';
+import type { Layout, ResponsiveLayouts } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -23,7 +24,7 @@ export const LiveProjectDashboard: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const initialLayout = [
+  const initialLayout: Layout = [
     { i: 'kpi-health', x: 0, y: 0, w: 4, h: 3 },
     { i: 'kpi-requests', x: 4, y: 0, w: 4, h: 3 },
     { i: 'kpi-errors', x: 8, y: 0, w: 4, h: 3 },
@@ -35,12 +36,12 @@ export const LiveProjectDashboard: React.FC = () => {
     { i: 'github-commits', x: 0, y: 23, w: 12, h: 8 },
   ];
 
-  const [layouts, setLayouts] = useState(() => {
+  const [layouts, setLayouts] = useState<ResponsiveLayouts>(() => {
     const saved = localStorage.getItem('opspilot_dashboard_layout_v2');
     return saved ? JSON.parse(saved) : { lg: initialLayout };
   });
 
-  const onLayoutChange = (_layout: any, allLayouts: any) => {
+  const onLayoutChange = (_layout: Layout, allLayouts: ResponsiveLayouts) => {
     setLayouts(allLayouts);
     localStorage.setItem('opspilot_dashboard_layout_v2', JSON.stringify(allLayouts));
   };

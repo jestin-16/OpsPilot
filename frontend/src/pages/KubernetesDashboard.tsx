@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api } from '../services/api';
+import type {
+  KubernetesClusterOverview,
+  KubernetesNode,
+  KubernetesEnhancedPod,
+  KubernetesServiceItem,
+  KubernetesNamespace,
+  KubernetesPodDetails,
+  KubernetesContainerSpec,
+  KubernetesEvent
+} from '../services/api';
 import { 
   Server, Box, Activity, Network, HardDrive, RefreshCw, AlertCircle, X, Terminal
 } from 'lucide-react';
@@ -8,20 +18,42 @@ import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
 import { errorMessage } from '../services/projectApi';
 
+const TABS = [
+  { id: 'overview', icon: Activity, label: 'Overview' },
+  { id: 'nodes', icon: HardDrive, label: 'Nodes' },
+  { id: 'pods', icon: Box, label: 'Pods' },
+  { id: 'services', icon: Network, label: 'Services' },
+  { id: 'namespaces', icon: Server, label: 'Namespaces' },
+] as const;
+
+type DashboardTab = (typeof TABS)[number]['id'];
+
+const formatDate = (iso?: string | null): string => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+};
+
+const formatDateTime = (iso?: string | null): string => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleString();
+};
+
 export const KubernetesDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'nodes' | 'pods' | 'services' | 'namespaces'>('overview');
+  const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   
-  const [overview, setOverview] = useState<any>(null);
-  const [nodes, setNodes] = useState<any[]>([]);
-  const [pods, setPods] = useState<any[]>([]);
-  const [services, setServices] = useState<any[]>([]);
-  const [namespaces, setNamespaces] = useState<any[]>([]);
+  const [overview, setOverview] = useState<KubernetesClusterOverview | null>(null);
+  const [nodes, setNodes] = useState<KubernetesNode[]>([]);
+  const [pods, setPods] = useState<KubernetesEnhancedPod[]>([]);
+  const [services, setServices] = useState<KubernetesServiceItem[]>([]);
+  const [namespaces, setNamespaces] = useState<KubernetesNamespace[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  const [selectedPod, setSelectedPod] = useState<any>(null);
-  const [podDetails, setPodDetails] = useState<any>(null);
+  const [selectedPod, setSelectedPod] = useState<KubernetesEnhancedPod | null>(null);
+  const [podDetails, setPodDetails] = useState<KubernetesPodDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
   const fetchOverview = async () => {
@@ -82,7 +114,7 @@ export const KubernetesDashboard: React.FC = () => {
     loadData(activeTab);
   }, [activeTab]);
 
-  const handlePodSelect = async (pod: any) => {
+  const handlePodSelect = async (pod: KubernetesEnhancedPod) => {
     setSelectedPod(pod);
     setLoadingDetails(true);
     try {
@@ -137,16 +169,10 @@ export const KubernetesDashboard: React.FC = () => {
 
             {/* Tabs */}
             <div className="flex gap-4 border-b border-op-border">
-              {[
-                { id: 'overview', icon: Activity, label: 'Overview' },
-                { id: 'nodes', icon: HardDrive, label: 'Nodes' },
-                { id: 'pods', icon: Box, label: 'Pods' },
-                { id: 'services', icon: Network, label: 'Services' },
-                { id: 'namespaces', icon: Server, label: 'Namespaces' },
-              ].map(tab => (
+              {TABS.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3 border-b-2 font-bold text-sm transition-colors ${
                     activeTab === tab.id 
                       ? 'border-op-accent text-op-accent' 
@@ -227,7 +253,7 @@ export const KubernetesDashboard: React.FC = () => {
                             </td>
                             <td className="py-3 px-5">{node.role}</td>
                             <td className="py-3 px-5">{node.version}</td>
-                            <td className="py-3 px-5 text-op-muted">{new Date(node.createdAt).toLocaleDateString()}</td>
+                            <td className="py-3 px-5 text-op-muted">{formatDate(node.createdAt)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -309,7 +335,7 @@ export const KubernetesDashboard: React.FC = () => {
                             <td className="py-3 px-5">
                               <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(ns.status)}`}>{ns.status}</span>
                             </td>
-                            <td className="py-3 px-5 text-op-muted">{new Date(ns.createdAt).toLocaleDateString()}</td>
+                            <td className="py-3 px-5 text-op-muted">{formatDate(ns.createdAt)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -367,7 +393,7 @@ export const KubernetesDashboard: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-3">
                           <span className="text-op-muted">Start Time</span>
-                          <span className="col-span-2">{podDetails.status?.startTime ? new Date(podDetails.status.startTime).toLocaleString() : '-'}</span>
+                          <span className="col-span-2">{formatDateTime(podDetails.status?.startTime)}</span>
                         </div>
                       </div>
                     </div>
@@ -375,7 +401,7 @@ export const KubernetesDashboard: React.FC = () => {
                     {/* Containers */}
                     <div>
                       <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3">Containers</h4>
-                      {podDetails.spec?.containers?.map((c: any, i: number) => (
+                      {podDetails.spec?.containers?.map((c: KubernetesContainerSpec, i: number) => (
                         <div key={i} className="bg-black/30 p-4 rounded-xl text-sm border border-white/5 mb-3">
                           <div className="font-bold mb-1">{c.name}</div>
                           <div className="text-xs text-op-muted font-mono break-all">{c.image}</div>
@@ -398,11 +424,11 @@ export const KubernetesDashboard: React.FC = () => {
                       <div>
                         <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3">Recent Events</h4>
                         <div className="space-y-2">
-                          {podDetails.events.map((e: any, i: number) => (
+                          {podDetails.events.map((e: KubernetesEvent, i: number) => (
                             <div key={i} className="bg-black/30 p-3 rounded-xl border border-white/5 text-xs">
                               <div className="flex justify-between mb-1">
                                 <span className={`font-bold ${e.type === 'Warning' ? 'text-rose-400' : 'text-emerald-400'}`}>{e.reason}</span>
-                                <span className="text-op-muted">{new Date(e.lastTimestamp).toLocaleString()}</span>
+                                <span className="text-op-muted">{formatDateTime(e.lastTimestamp || e.eventTime)}</span>
                               </div>
                               <div className="text-slate-400">{e.message}</div>
                             </div>

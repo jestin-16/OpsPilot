@@ -1,4 +1,4 @@
-import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { z } from 'zod';
 import type { ProjectIntegration } from './projectApi';
 
@@ -305,6 +305,94 @@ export interface KubernetesSummaryResponse {
   failedPodCount: number;
   pods: PodSummary[];
 }
+
+export interface KubernetesClusterOverview {
+  status: 'Healthy' | 'Disconnected' | string;
+  nodeCount: number;
+  podCount: number;
+  runningPods: number;
+  failedPods: number;
+}
+
+export interface KubernetesNode {
+  name: string;
+  status: 'Ready' | 'NotReady' | 'Unknown' | string;
+  role: 'control-plane' | 'worker' | '<none>' | string;
+  version: string;
+  createdAt: string;
+}
+
+export interface KubernetesServiceItem {
+  name: string;
+  namespace: string;
+  type: string;
+  clusterIP: string;
+  createdAt: string;
+}
+
+export interface KubernetesNamespace {
+  name: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface KubernetesEnhancedPod {
+  name: string;
+  namespace: string;
+  status: string;
+  node: string;
+  createdAt: string;
+  restartCount: number;
+}
+
+export interface KubernetesContainerSpec {
+  name: string;
+  image: string;
+  ports?: Array<{ containerPort?: number; protocol?: string; name?: string }>;
+  resources?: Record<string, unknown>;
+}
+
+export interface KubernetesPodStatus {
+  phase?: string;
+  podIP?: string;
+  hostIP?: string;
+  startTime?: string;
+  containerStatuses?: Array<{
+    name?: string;
+    ready?: boolean;
+    restartCount?: number;
+    image?: string;
+  }>;
+}
+
+export interface KubernetesPodSpec {
+  nodeName?: string;
+  containers?: KubernetesContainerSpec[];
+}
+
+export interface KubernetesEvent {
+  type?: string;
+  reason?: string;
+  message?: string;
+  lastTimestamp?: string;
+  eventTime?: string;
+  count?: number;
+}
+
+export interface KubernetesPodDetails {
+  metadata?: {
+    name?: string;
+    namespace?: string;
+    creationTimestamp?: string;
+    labels?: Record<string, string>;
+  };
+  status?: KubernetesPodStatus;
+  spec?: KubernetesPodSpec;
+  restartCount: number;
+  logs: string;
+  events?: KubernetesEvent[];
+}
+
 
 export type PipelineSourceProvider = 'GITHUB_ACTIONS' | 'JENKINS';
 
@@ -674,33 +762,33 @@ export const api = {
     return res.data;
   },
 
-  getKubernetesOverview: async (): Promise<any> => {
-    const res = await axiosInstance.get('/kubernetes/overview');
+  getKubernetesOverview: async (): Promise<KubernetesClusterOverview> => {
+    const res = await axiosInstance.get<KubernetesClusterOverview>('/kubernetes/overview');
     return res.data;
   },
 
-  getKubernetesNodes: async (): Promise<any[]> => {
-    const res = await axiosInstance.get('/kubernetes/nodes');
+  getKubernetesNodes: async (): Promise<KubernetesNode[]> => {
+    const res = await axiosInstance.get<KubernetesNode[]>('/kubernetes/nodes');
     return res.data;
   },
 
-  getKubernetesServices: async (): Promise<any[]> => {
-    const res = await axiosInstance.get('/kubernetes/services');
+  getKubernetesServices: async (): Promise<KubernetesServiceItem[]> => {
+    const res = await axiosInstance.get<KubernetesServiceItem[]>('/kubernetes/services');
     return res.data;
   },
 
-  getKubernetesNamespaces: async (): Promise<any[]> => {
-    const res = await axiosInstance.get('/kubernetes/namespaces');
+  getKubernetesNamespaces: async (): Promise<KubernetesNamespace[]> => {
+    const res = await axiosInstance.get<KubernetesNamespace[]>('/kubernetes/namespaces');
     return res.data;
   },
 
-  getEnhancedPods: async (): Promise<any[]> => {
-    const res = await axiosInstance.get('/kubernetes/enhanced-pods');
+  getEnhancedPods: async (): Promise<KubernetesEnhancedPod[]> => {
+    const res = await axiosInstance.get<KubernetesEnhancedPod[]>('/kubernetes/enhanced-pods');
     return res.data;
   },
 
-  getKubernetesPodDetails: async (namespace: string, name: string): Promise<any> => {
-    const res = await axiosInstance.get(`/kubernetes/pods/${namespace}/${name}`);
+  getKubernetesPodDetails: async (namespace: string, name: string): Promise<KubernetesPodDetails> => {
+    const res = await axiosInstance.get<KubernetesPodDetails>(`/kubernetes/pods/${namespace}/${name}`);
     return res.data;
   },
 
@@ -983,10 +1071,10 @@ export const api = {
   },
 
   // Generic methods
-  get: async <T = any>(url: string, config?: any): Promise<{ data: T }> => axiosInstance.get(url, config),
-  post: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => axiosInstance.post(url, data, config),
-  put: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => axiosInstance.put(url, data, config),
-  delete: async <T = any>(url: string, config?: any): Promise<{ data: T }> => axiosInstance.delete(url, config),
+  get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => axiosInstance.get<T>(url, config),
+  post: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<AxiosResponse<T>> => axiosInstance.post<T>(url, data, config),
+  put: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<AxiosResponse<T>> => axiosInstance.put<T>(url, data, config),
+  delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => axiosInstance.delete<T>(url, config),
 };
 
 export interface WatcherPodSummary {

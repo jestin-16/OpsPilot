@@ -60,7 +60,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
 
   // SSE EventSource reference
   const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<any>(null);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 1. Fetch available pods for selector
   const fetchPods = useCallback(async () => {

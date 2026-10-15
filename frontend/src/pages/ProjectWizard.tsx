@@ -7,7 +7,25 @@ import { ProviderType, IntegrationCategory } from '../lib/legacyProviders';
 import {
   FolderGit2, CheckCircle2, ChevronRight, ChevronLeft, Loader2, Server, Cloud, Cpu, Code, Plus, ShieldCheck, Activity, Bell, Boxes, TerminalSquare, Search
 } from 'lucide-react';
-import { errorMessage } from '../services/projectApi';
+import { errorMessage, type ProjectIntegration } from '../services/projectApi';
+
+interface ProviderOption {
+  provider: ProviderType;
+  name: string;
+  category: IntegrationCategory;
+  icon: typeof Code;
+  capabilities: string[];
+}
+
+type MonitoringKey = 'logs' | 'metrics' | 'events' | 'alerts';
+const MONITORING_KEYS: MonitoringKey[] = ['logs', 'metrics', 'events', 'alerts'];
+
+type NotificationKey = 'inApp' | 'email' | 'webhook';
+const NOTIFICATION_CHANNELS: Record<NotificationKey, string> = {
+  inApp: 'Platform Dashboard',
+  email: 'Email Digests',
+  webhook: 'External Webhooks'
+};
 
 export const ProjectWizard: React.FC = () => {
   const navigate = useNavigate();
@@ -26,20 +44,20 @@ export const ProjectWizard: React.FC = () => {
   const [submitting1, setSubmitting1] = useState(false);
 
   // Step 2 State
-  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [integrations, setIntegrations] = useState<ProjectIntegration[]>([]);
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderOption | null>(null);
   const [configJson, setConfigJson] = useState('{}');
   const [secretsJson, setSecretsJson] = useState('{}');
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Step 5 State
-  const [monitoring, setMonitoring] = useState({ logs: true, metrics: true, events: true, alerts: true });
+  const [monitoring, setMonitoring] = useState<Record<MonitoringKey, boolean>>({ logs: true, metrics: true, events: true, alerts: true });
 
   // Step 6 State
-  const [notifications, setNotifications] = useState({ inApp: true, email: false, webhook: false });
+  const [notifications, setNotifications] = useState<Record<NotificationKey, boolean>>({ inApp: true, email: false, webhook: false });
 
-  const AVAILABLE_PROVIDERS = [
+  const AVAILABLE_PROVIDERS: ProviderOption[] = [
     { provider: ProviderType.GITHUB, name: 'GitHub', category: IntegrationCategory.SOURCE_CONTROL, icon: Code, capabilities: ['RESOURCE_DISCOVERY', 'EVENTS'] },
     { provider: ProviderType.DOCKER, name: 'Docker', category: IntegrationCategory.CONTAINERS, icon: Server, capabilities: ['RESOURCE_DISCOVERY', 'LIVE_LOGS', 'EVENTS'] },
     { provider: ProviderType.KUBERNETES, name: 'Kubernetes', category: IntegrationCategory.KUBERNETES, icon: Cpu, capabilities: ['RESOURCE_DISCOVERY', 'LOGS', 'METRICS', 'EVENTS'] },
@@ -63,7 +81,7 @@ export const ProjectWizard: React.FC = () => {
 
   const fetchIntegrations = async (id: number) => {
     try {
-      const res = await api.get(`/projects/${id}/integrations`);
+      const res = await api.get<ProjectIntegration[]>(`/projects/${id}/integrations`);
       setIntegrations(res.data);
     } catch (e) {
       console.error(e);
@@ -91,7 +109,7 @@ export const ProjectWizard: React.FC = () => {
     }
   };
 
-  const openProviderWizard = (provider: any) => {
+  const openProviderWizard = (provider: ProviderOption) => {
     setSelectedProvider(provider);
     setConfigJson('{}');
     setSecretsJson('{}');
@@ -99,9 +117,10 @@ export const ProjectWizard: React.FC = () => {
   };
 
   const connectProvider = async () => {
+    if (!selectedProvider || !project) return;
     setIsConnecting(true);
     try {
-      await api.post(`/projects/${project!.id}/integrations`, {
+      await api.post(`/projects/${project.id}/integrations`, {
         provider: selectedProvider.provider,
         name: `${selectedProvider.name} Integration`,
         category: selectedProvider.category,
@@ -111,7 +130,7 @@ export const ProjectWizard: React.FC = () => {
       });
       showAlert(`${selectedProvider.name} connected successfully!`, 'success');
       setWizardOpen(false);
-      fetchIntegrations(project!.id);
+      fetchIntegrations(project.id);
     } catch (error) {
       showAlert(errorMessage(error, 'Failed to connect integration'), 'error');
     } finally {
@@ -398,10 +417,10 @@ export const ProjectWizard: React.FC = () => {
               </div>
 
               <div className="max-w-3xl space-y-4">
-                {['logs', 'metrics', 'events', 'alerts'].map((key) => (
-                  <label key={key} className={`flex cursor-pointer items-start gap-4 rounded-2xl border p-5 transition ${((monitoring as any)[key]) ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                {MONITORING_KEYS.map((key) => (
+                  <label key={key} className={`flex cursor-pointer items-start gap-4 rounded-2xl border p-5 transition ${monitoring[key] ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
                     <div className="flex h-6 items-center">
-                      <input type="checkbox" checked={(monitoring as any)[key]} onChange={e => setMonitoring({...monitoring, [key]: e.target.checked})} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
+                      <input type="checkbox" checked={monitoring[key]} onChange={e => setMonitoring({...monitoring, [key]: e.target.checked})} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
                     </div>
                     <div>
                       <h4 className="text-base font-bold capitalize text-slate-900">{key} Pipeline</h4>
@@ -432,10 +451,10 @@ export const ProjectWizard: React.FC = () => {
               </div>
 
               <div className="max-w-3xl space-y-4">
-                {Object.entries({ inApp: 'Platform Dashboard', email: 'Email Digests', webhook: 'External Webhooks' }).map(([key, label]) => (
-                  <label key={key} className={`flex cursor-pointer items-start gap-4 rounded-2xl border p-5 transition ${((notifications as any)[key]) ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
+                {(Object.entries(NOTIFICATION_CHANNELS) as [NotificationKey, string][]).map(([key, label]) => (
+                  <label key={key} className={`flex cursor-pointer items-start gap-4 rounded-2xl border p-5 transition ${notifications[key] ? 'border-indigo-200 bg-indigo-50/30' : 'border-slate-200 bg-white hover:bg-slate-50'}`}>
                     <div className="flex h-6 items-center">
-                      <input type="checkbox" checked={(notifications as any)[key]} onChange={e => setNotifications({...notifications, [key]: e.target.checked})} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
+                      <input type="checkbox" checked={notifications[key]} onChange={e => setNotifications({...notifications, [key]: e.target.checked})} className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
                     </div>
                     <div>
                       <h4 className="text-base font-bold text-slate-900">{label}</h4>

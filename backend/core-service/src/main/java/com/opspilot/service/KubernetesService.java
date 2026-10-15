@@ -1,7 +1,6 @@
 package com.opspilot.service;
 
 import com.opspilot.entity.PodEntity;
-import com.opspilot.repository.PodRepository;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
@@ -16,8 +15,6 @@ public class KubernetesService {
     @Autowired(required = false)
     private ApiClient apiClient;
 
-    @Autowired
-    private PodRepository podRepository;
 
     public Map<String, Object> getClusterOverview() {
         Map<String, Object> overview = new HashMap<>();
@@ -147,16 +144,7 @@ public class KubernetesService {
     public List<Map<String, Object>> getEnhancedPods() {
         List<Map<String, Object>> pods = new ArrayList<>();
         if (apiClient == null) {
-            // fallback to DB if kubernetes isn't active
-            for(PodEntity entity : podRepository.findAll()) {
-                Map<String, Object> p = new HashMap<>();
-                p.put("name", entity.getPodName());
-                p.put("namespace", entity.getNamespace());
-                p.put("status", entity.getPodStatus());
-                p.put("node", entity.getNodeName());
-                p.put("restartCount", 0);
-                pods.add(p);
-            }
+            // No cluster connected: there are no pods to show (getClusterOverview reports "Disconnected").
             return pods;
         }
         try {
@@ -231,7 +219,7 @@ public class KubernetesService {
             try {
                 CoreV1Api coreApi = new CoreV1Api(apiClient);
                 V1PodList podList = coreApi.listPodForAllNamespaces().execute();
-                if (podList != null && podList.getItems() != null && !podList.getItems().isEmpty()) {
+                if (podList != null && podList.getItems() != null) {
                     List<PodEntity> livePods = new ArrayList<>();
                     long id = 1;
                     for (V1Pod p : podList.getItems()) {
@@ -246,8 +234,9 @@ public class KubernetesService {
                         pod.setNamespace(ns);
                         pod.setNodeName(node);
                         pod.setPodStatus(phase);
-                        pod.setCpuUsage("100m");
-                        pod.setMemoryUsage("128Mi");
+                        // Usage needs the metrics API, which this call does not query; leave it unknown.
+                        pod.setCpuUsage(null);
+                        pod.setMemoryUsage(null);
                         livePods.add(pod);
                     }
                     return livePods;
@@ -256,6 +245,6 @@ public class KubernetesService {
                 System.err.println("Live Kubernetes call failed: " + e.getMessage());
             }
         }
-        return podRepository.findAll();
+        return List.of(); // disconnected or failed: no pods rather than stored placeholders
     }
 }

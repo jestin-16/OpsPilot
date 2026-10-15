@@ -7,6 +7,7 @@ import {
   GitBranch, Clock, User, ArrowRight, PlayCircle, Rocket 
 } from 'lucide-react';
 import { errorMessage } from '../services/projectApi';
+import { isSuccessfulDeployment } from '../lib/deployments';
 
 export const GithubActivity: React.FC = () => {
   const [commits, setCommits] = useState<CommitLog[]>([]);
@@ -277,7 +278,7 @@ export const GithubActivity: React.FC = () => {
                       {deployment ? (
                         <div className="relative">
                           <div className={`absolute -left-[29px] w-5 h-5 rounded-full border-4 border-[#121214] ${
-                            deployment.status === 'Running' ? 'bg-emerald-500' : 'bg-amber-500'
+                            isSuccessfulDeployment(deployment.status) ? 'bg-emerald-500' : 'bg-amber-500'
                           }`}></div>
                           <div className="font-bold text-sm flex items-center gap-2">
                             <Rocket className="w-4 h-4" /> Deployment #{deployment.id}

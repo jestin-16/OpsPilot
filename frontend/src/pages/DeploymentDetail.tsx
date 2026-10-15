@@ -1,6 +1,4 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { errorMessage } from '../services/projectApi';
-import { isAxiosError } from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Deployment, type LogEntry } from '../services/api';
@@ -8,13 +6,11 @@ import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { Timeline } from '../components/Timeline';
-import { 
-  ArrowLeft, RefreshCw, Terminal, 
-  CheckCircle2, XCircle, Clock, PlayCircle, RotateCcw, Building2
-} from 'lucide-react';
+import { ArrowLeft, RefreshCw, Terminal, Clock, Building2, ExternalLink, GitBranch, User } from 'lucide-react';
+import { DEPLOYMENT_SOURCE_LABEL, deployedBy, deploymentStatusVariant } from '../lib/deployments';
 
-import { useConfirm } from '../components/ConfirmProvider';
-import { useAlert } from '../components/AlertProvider';
+/** While GitHub is still reporting progress, refresh on this interval; finished deployments don't change. */
+const IN_PROGRESS_REFRESH_MS = 10000;
 
 export const DeploymentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,10 +19,6 @@ export const DeploymentDetail: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [rollingBack, setRollingBack] = useState(false);
-  const [previousStable, setPreviousStable] = useState<Deployment | null>(null);
-  const { confirm } = useConfirm();
-  const { showAlert } = useAlert();
 
   const fetchDetail = useCallback(async (isRefresh = false) => {
     if (!id) return;
@@ -39,14 +31,6 @@ export const DeploymentDetail: React.FC = () => {
       ]);
       setDeployment(depData);
       setLogs(logsData);
-      
-      const allDeps = await api.getDeployments(depData.projectId);
-      const stable = allDeps.find(d => 
-        d.status.toLowerCase() === 'running' && 
-        d.id !== depData.id && 
-        new Date(d.deployedAt).getTime() < new Date(depData.deployedAt).getTime()
-      );
-      setPreviousStable(stable || null);
     } catch (err) {
       console.error('Failed to fetch deployment detail', err);
     } finally {
@@ -57,9 +41,14 @@ export const DeploymentDetail: React.FC = () => {
 
   useEffect(() => {
     fetchDetail();
-    const interval = setInterval(() => fetchDetail(true), 5000);
-    return () => clearInterval(interval);
   }, [fetchDetail]);
+
+  const inProgress = deployment?.status === 'In progress';
+  useEffect(() => {
+    if (!inProgress) return;
+    const interval = setInterval(() => fetchDetail(true), IN_PROGRESS_REFRESH_MS);
+    return () => clearInterval(interval);
+  }, [inProgress, fetchDetail]);
 
   if (loading && !refreshing) {
     return (
@@ -79,46 +68,12 @@ export const DeploymentDetail: React.FC = () => {
     );
   }
 
-  const handleRollback = async () => {
-    if (!await confirm('Trigger a rollback for this deployment to the previous stable version?', { isDestructive: true, confirmText: 'Rollback' })) return;
-    setRollingBack(true);
-    try {
-      await api.rollbackDeployment(deployment.id);
-      navigate('/deployments');
-    } catch (err) {
-      console.error(err);
-      if (isAxiosError(err) && err.response?.status === 403) {
-        showAlert('Forbidden: You are not authorized to perform a rollback.', 'error');
-      } else {
-        showAlert('Rollback Failed: ' + errorMessage(err, 'unknown error'), 'error');
-      }
-    } finally {
-      setRollingBack(false);
-    }
-  };
-
-  // Determine stage visual state based on backend status string
-  const s = deployment.status.toLowerCase();
-  
-  const lifecycleStages = [
-    { name: 'Draft', status: 'success' },
-    { name: 'Building', status: s === 'draft' ? 'pending' : (s === 'failed' ? 'error' : 'success') },
-    { name: 'Deploying', status: (s === 'draft' || s === 'building') ? 'pending' : (s === 'failed' ? 'error' : 'success') },
-    { name: 'Running', status: s === 'running' ? 'success' : (s === 'failed' ? 'error' : 'pending') },
-  ];
-
-  if (s.includes('roll')) {
-    lifecycleStages.push(
-      { name: 'Rolling Back', status: 'success' },
-      { name: 'Previous Version', status: 'success' },
-      { name: 'Health Check', status: 'pending' }
-    );
-  }
+  const notable = logs.filter(l => l.logLevel === 'ERROR' || l.logLevel === 'WARN').slice(-10).reverse();
 
   return (
     <SidebarLayout>
       <div className="p-8 max-w-[1400px] mx-auto space-y-8 animate-fade-in-up">
-        
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-4">
@@ -128,24 +83,33 @@ export const DeploymentDetail: React.FC = () => {
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold text-op-fg">Deployment #{deployment.id}</h1>
-                <Badge variant={s === 'running' ? 'success' : s === 'failed' ? 'error' : 'warning'}>{deployment.status}</Badge>
+                <Badge variant={deploymentStatusVariant(deployment.status)}>{deployment.status}</Badge>
+                <Badge variant={deployment.source === 'SIMULATED' ? 'neutral' : 'info'}>{DEPLOYMENT_SOURCE_LABEL[deployment.source]}</Badge>
               </div>
-              <p className="text-sm font-medium text-op-subtle mt-1 flex items-center gap-2">
-                Deployed by <span className="text-op-fg">{deployment.deployedByName || 'System'}</span> on {new Date(deployment.deployedAt).toLocaleString()}
+              <p className="text-sm font-medium text-op-subtle mt-1">
+                Deployed by <span className="text-op-fg">{deployedBy(deployment)}</span> on {new Date(deployment.deployedAt).toLocaleString()}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {deployment.url && (
+              <a href={deployment.url} target="_blank" rel="noreferrer"
+                 className="inline-flex items-center rounded-lg border border-op-border px-4 py-2 text-sm font-semibold text-op-fg hover:bg-op-raised">
+                <ExternalLink className="w-4 h-4 mr-2" /> Open
+              </a>
+            )}
             <Button variant="secondary" onClick={() => fetchDetail(true)} isLoading={refreshing}>
               <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
             </Button>
-            {s !== 'rolledback' && previousStable && (
-              <Button variant="secondary" onClick={handleRollback} isLoading={rollingBack}>
-                <RotateCcw className="w-4 h-4 mr-2 text-rose-500" /> Rollback
-              </Button>
-            )}
           </div>
         </div>
+
+        {deployment.source === 'SIMULATED' && (
+          <Card className="border border-amber-200 bg-amber-50 text-sm text-amber-800">
+            This record was produced by the deployment simulator that has been removed; it does not describe a real deployment.
+            Remove such records with <code className="font-mono">scripts/db/delete_simulated_deployments.sql</code>.
+          </Card>
+        )}
 
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -156,10 +120,11 @@ export const DeploymentDetail: React.FC = () => {
               {deployment.projectName}
             </div>
           </Card>
-          
+
           <Card className="flex flex-col gap-2">
             <span className="text-xs font-bold text-op-muted uppercase tracking-wider">Version</span>
             <div className="flex items-center gap-2 text-op-fg font-mono text-sm">
+              <GitBranch className="w-4 h-4 text-op-accent" />
               <Badge>{deployment.version}</Badge>
             </div>
           </Card>
@@ -172,90 +137,54 @@ export const DeploymentDetail: React.FC = () => {
           </Card>
 
           <Card className="flex flex-col gap-2">
-            <span className="text-xs font-bold text-op-muted uppercase tracking-wider">Timing</span>
+            <span className="text-xs font-bold text-op-muted uppercase tracking-wider">Deployed by</span>
             <div className="flex items-center gap-2 text-op-fg font-medium">
-              <Clock className="w-4 h-4 text-op-accent" />
-              {new Date(deployment.deployedAt).toLocaleTimeString()}
+              <User className="w-4 h-4 text-op-accent" />
+              {deployedBy(deployment)}
+              <Clock className="w-4 h-4 text-op-subtle ml-2" />
+              <span className="text-sm text-op-muted">{new Date(deployment.deployedAt).toLocaleTimeString()}</span>
             </div>
           </Card>
-          
-          {previousStable && (
-            <Card className="flex flex-col gap-2 md:col-span-4 bg-op-raised/50 border border-op-border">
-              <span className="text-xs font-bold text-op-muted uppercase tracking-wider">Previous Stable Version</span>
-              <div className="flex items-center gap-2 text-op-fg font-medium text-sm">
-                Deployment #{previousStable.id} (<Badge variant="success">{previousStable.version}</Badge>) deployed at {new Date(previousStable.deployedAt).toLocaleString()}
-              </div>
-            </Card>
-          )}
         </div>
 
-        {/* Visual Lifecycle */}
-        <div className="bg-op-surface border border-op-border rounded-2xl p-8 shadow-sm">
-          <h3 className="text-sm font-bold text-op-muted uppercase tracking-wider mb-8">Deployment Lifecycle</h3>
-          <div className="relative flex justify-between items-center w-full">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-op-raised -z-10 rounded-full"></div>
-            
-            {lifecycleStages.map((stage, i) => {
-              const isError = stage.status === 'error';
-              const isSuccess = stage.status === 'success';
-              const bg = isSuccess ? 'bg-emerald-500' : isError ? 'bg-rose-500' : 'bg-op-raised';
-              const text = (isSuccess || isError) ? 'text-white' : 'text-op-muted';
-              const ring = isSuccess ? 'ring-emerald-100' : isError ? 'ring-rose-100' : 'ring-op-surface';
-              
-              let Icon = PlayCircle;
-              if (stage.name === 'Running' || stage.name === 'Health Check' || stage.name === 'Previous Version') Icon = CheckCircle2;
-              if (stage.name === 'Draft' || stage.name === 'Building') Icon = Terminal;
-              if (stage.name === 'Rolling Back') Icon = RotateCcw;
-              
-              return (
-                <div key={i} className="flex flex-col items-center gap-3 bg-op-surface px-2">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${bg} ${text} ring-8 ${ring} transition-all duration-300`}>
-                    {isError ? <XCircle className="w-6 h-6" /> : (
-                      stage.status === 'pending' && i > 0 && lifecycleStages[i-1].status === 'success' ? (
-                        <RefreshCw className="w-5 h-5 animate-spin" />
-                      ) : <Icon className="w-5 h-5" />
-                    )}
-                  </div>
-                  <div className="text-sm font-bold text-op-fg whitespace-nowrap">{stage.name}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Content Tabs (Logs vs History) */}
+        {/* Logs around the deployment */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-lg font-bold text-op-fg">Deployment Logs</h3>
+            <h3 className="text-lg font-bold text-op-fg">Project logs around this deployment</h3>
+            <p className="text-xs text-op-muted -mt-2">From 5 minutes before to 15 minutes after it was deployed.</p>
             <Card className="p-0 overflow-hidden bg-[#1E1E1E] border-none shadow-xl">
               <div className="bg-[#2D2D2D] px-4 py-3 flex items-center gap-2 border-b border-[#404040]">
                 <Terminal className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-semibold text-slate-200">System Logs</span>
+                <span className="text-sm font-semibold text-slate-200">Logs</span>
               </div>
               <div className="p-6 text-sm font-mono overflow-x-auto whitespace-pre-wrap max-h-[500px] overflow-y-auto leading-relaxed flex flex-col gap-1">
                 {logs.length > 0 ? logs.map(l => (
                   <div key={l.logId} className="flex gap-4">
                     <span className="text-slate-500 shrink-0">{new Date(l.timestamp).toLocaleTimeString()}</span>
                     <span className="text-slate-400 shrink-0">[{l.sourceService}]</span>
-                    <span className={l.logLevel === 'ERROR' ? 'text-rose-400' : 'text-slate-300'}>{l.message}</span>
+                    <span className={l.logLevel === 'ERROR' ? 'text-rose-400' : l.logLevel === 'WARN' ? 'text-amber-300' : 'text-slate-300'}>{l.message}</span>
                   </div>
-                )) : <span className="text-slate-500 italic">No logs generated for this deployment yet.</span>}
+                )) : <span className="text-slate-500 italic">No logs from this project around the deployment.</span>}
               </div>
             </Card>
           </div>
-          
+
           <div className="space-y-4">
-            <h3 className="text-lg font-bold text-op-fg">Event History</h3>
+            <h3 className="text-lg font-bold text-op-fg">Errors and warnings</h3>
             <Card>
-              <Timeline 
-                events={logs.slice(0, 10).map(l => ({
-                  id: l.logId,
-                  title: l.logLevel,
-                  description: l.message,
-                  timestamp: new Date(l.timestamp).toLocaleString(),
-                  status: l.logLevel === 'ERROR' ? 'error' : 'success'
-                }))} 
-              />
+              {notable.length > 0 ? (
+                <Timeline
+                  events={notable.map(l => ({
+                    id: l.logId,
+                    title: `${l.logLevel} · ${l.sourceService}`,
+                    description: l.message,
+                    timestamp: new Date(l.timestamp).toLocaleString(),
+                    status: l.logLevel === 'ERROR' ? 'error' : 'warning'
+                  }))}
+                />
+              ) : (
+                <p className="text-sm text-op-muted">None in this window.</p>
+              )}
             </Card>
           </div>
         </div>

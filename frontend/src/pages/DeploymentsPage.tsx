@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Deployment, type Project } from '../services/api';
+import { DEPLOYMENT_SOURCE_LABEL, deployedBy, deploymentStatusVariant } from '../lib/deployments';
 import { Table, type Column } from '../components/Table';
 import { Badge } from '../components/Badge';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { StatusIndicator } from '../components/StatusIndicator';
 import { 
-  Rocket, RefreshCw, Search, PlayCircle, Box
+  Rocket, RefreshCw, Search, PlayCircle
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -71,24 +71,10 @@ export const DeploymentsPage: React.FC = () => {
     { key: 'projectName', header: 'Project', render: (d) => <span className="font-bold">{d.projectName}</span> },
     { key: 'version', header: 'Version', render: (d) => <Badge>{d.version}</Badge> },
     { key: 'environment', header: 'Environment', render: (d) => <span className="capitalize text-sm font-mono">{d.environment}</span> },
-    { key: 'status', header: 'Status', render: (d) => {
-      const s = d.status.toLowerCase();
-      if (s === 'running' || s === 'success') return <Badge variant="success">{d.status}</Badge>;
-      if (s === 'failed') return <Badge variant="error">{d.status}</Badge>;
-      if (s === 'building' || s === 'deploying') return <div className="flex items-center gap-2"><StatusIndicator status="pending" /><span className="text-xs font-bold text-amber-600">{d.status}</span></div>;
-      return <Badge variant="neutral">{d.status}</Badge>;
-    }},
-    { key: 'deployedByName', header: 'Deployed By', render: (d) => <span className="text-op-subtle">{d.deployedByName || 'System'}</span> },
+    { key: 'status', header: 'Status', render: (d) => <Badge variant={deploymentStatusVariant(d.status)}>{d.status}</Badge> },
+    { key: 'source', header: 'Source', render: (d) => <span className="text-xs text-op-muted">{DEPLOYMENT_SOURCE_LABEL[d.source]}</span> },
+    { key: 'deployedByName', header: 'Deployed By', render: (d) => <span className="text-op-subtle">{deployedBy(d)}</span> },
     { key: 'deployedAt', header: 'Time', render: (d) => <span className="text-op-muted text-sm">{new Date(d.deployedAt).toLocaleString()}</span> },
-    { key: 'actions', header: '', render: (d) => (
-      <div className="flex justify-end gap-2" onClick={e => e.stopPropagation()}>
-        {d.status === 'Running' && (
-          <Link to="/docker" className="p-1.5 bg-op-raised text-op-muted hover:text-op-accent rounded transition-colors" title="View Containers">
-            <Box className="w-4 h-4" />
-          </Link>
-        )}
-      </div>
-    )}
   ];
 
   return (
@@ -110,7 +96,7 @@ export const DeploymentsPage: React.FC = () => {
             </Button>
             <Link to="/projects">
               <Button variant="primary">
-                <PlayCircle className="w-4 h-4 mr-2" /> Trigger Deployment
+                <PlayCircle className="w-4 h-4 mr-2" /> Record a deployment
               </Button>
             </Link>
           </div>
@@ -157,11 +143,10 @@ export const DeploymentsPage: React.FC = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="ALL">All Statuses</option>
-              <option value="RUNNING">Running</option>
-              <option value="BUILDING">Building</option>
-              <option value="DEPLOYING">Deploying</option>
+              <option value="SUCCEEDED">Succeeded</option>
               <option value="FAILED">Failed</option>
-              <option value="ROLLEDBACK">Rolled Back</option>
+              <option value="IN PROGRESS">In progress</option>
+              <option value="INACTIVE">Inactive</option>
             </select>
           </div>
         </Card>

@@ -4,7 +4,9 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { CreateProjectModal } from '../components/project/CreateProjectModal';
 import { useAuth } from '../context/AuthContext';
-import { api, API_BASE_URL, type Project, type Deployment } from '../services/api';
+import { api, type Project, type Deployment, type DeploymentStatus } from '../services/api';
+import { DEPLOYMENT_SOURCE_LABEL, deployedBy, deploymentStatusVariant } from '../lib/deployments';
+import { Badge } from '../components/Badge';
 import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText, XCircle, Activity, TriangleAlert } from 'lucide-react';
 import { errorMessage } from '../services/projectApi';
 
@@ -14,11 +16,12 @@ export const Projects: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Trigger Deployment Modal State
+  // Deployments dialog state (records deployments; OpsPilot does not run them)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [version, setVersion] = useState('v1.0.0');
   const [environment, setEnvironment] = useState('Production');
+  const [deploymentStatus, setDeploymentStatus] = useState<DeploymentStatus>('Succeeded');
   const [triggering, setTriggering] = useState(false);
   const [projectPendingDeletion, setProjectPendingDeletion] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState(false);
@@ -79,11 +82,11 @@ export const Projects: React.FC = () => {
     if (!selectedProject) return;
     setTriggering(true);
     try {
-      await api.triggerDeployment(selectedProject.id, { version, environment });
+      await api.recordDeployment(selectedProject.id, { version, environment, status: deploymentStatus });
       const updatedHistory = await api.getDeployments(selectedProject.id);
       setDeployments(updatedHistory);
     } catch (err) {
-      alert(errorMessage(err, 'Failed to trigger deployment'));
+      alert(errorMessage(err, 'Failed to record deployment'));
     } finally {
       setTriggering(false);
     }
@@ -189,18 +192,20 @@ export const Projects: React.FC = () => {
                       className="flex-1 px-4 py-2.5 bg-op-accent/10 hover:bg-op-accent text-op-accent hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
                     >
                       <Rocket className="w-4 h-4" />
-                      <span>Deploy</span>
+                      <span>Deployments</span>
                     </button>
 
-                    <a
-                      href={project.deployedUrl || `${API_BASE_URL}/projects/${project.id}/output`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex-1 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span>Live Output</span>
-                    </a>
+                    {project.repositoryUrl && (
+                      <a
+                        href={project.repositoryUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex-1 px-4 py-2.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                      >
+                        <Globe className="w-4 h-4" />
+                        <span>Repository</span>
+                      </a>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between gap-3">
@@ -283,16 +288,20 @@ export const Projects: React.FC = () => {
           document.body,
         )}
 
-        {/* Trigger Deployment Modal */}
+        {/* Deployments dialog */}
         {selectedProject && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in-up">
             <div className="glass-panel rounded-3xl max-w-2xl w-full p-8 shadow-2xl space-y-6">
               <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-800">
-                    Deploy <span className="text-op-accent">{selectedProject.projectName}</span>
+                    Deployments of <span className="text-op-accent">{selectedProject.projectName}</span>
                   </h3>
-                  <span className="text-sm font-medium text-slate-500 mt-1 block">Trigger automated CI/CD pipeline execution</span>
+                  <span className="text-sm font-medium text-slate-500 mt-1 block">
+                    OpsPilot records deployments; it doesn't run them. Deployments made through GitHub environments are
+                    captured automatically by a Git integration. Other CI systems can report them with an App Logs
+                    integration's ingest token: POST /api/v1/ingest/{selectedProject.id}/deployments. Or record one here.
+                  </span>
                 </div>
                 <button onClick={() => setSelectedProject(null)} className="text-slate-400 hover:text-slate-800 transition-colors">
                   <XCircle className="w-6 h-6" />
@@ -300,7 +309,7 @@ export const Projects: React.FC = () => {
               </div>
 
               {/* Trigger Form */}
-              <form onSubmit={handleTriggerDeployment} className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-end bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
+              <form onSubmit={handleTriggerDeployment} className="grid grid-cols-1 sm:grid-cols-4 gap-6 items-end bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                     Environment
@@ -330,13 +339,28 @@ export const Projects: React.FC = () => {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
+                    Outcome
+                  </label>
+                  <select
+                    value={deploymentStatus}
+                    onChange={(e) => setDeploymentStatus(e.target.value as DeploymentStatus)}
+                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 font-medium text-sm focus:outline-none focus:border-op-accent focus:ring-2 focus:ring-op-accent/20 shadow-sm"
+                  >
+                    <option value="Succeeded">Succeeded</option>
+                    <option value="Failed">Failed</option>
+                    <option value="In progress">In progress</option>
+                  </select>
+                </div>
+
                 <button
                   type="submit"
                   disabled={triggering}
                   className="px-5 py-3 bg-op-accent hover:bg-op-accent-hover text-white font-bold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-colors h-[46px]"
                 >
                   <Play className="w-4 h-4 fill-current" />
-                  <span>{triggering ? 'Triggering...' : 'Run Pipeline'}</span>
+                  <span>{triggering ? 'Recording...' : 'Record deployment'}</span>
                 </button>
               </form>
 
@@ -348,7 +372,7 @@ export const Projects: React.FC = () => {
                 </h4>
                 {deployments.length === 0 ? (
                   <div className="text-center py-10 text-sm font-medium text-slate-500 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-                    No deployment executions recorded for this project yet.
+                    No deployments recorded for this project yet.
                   </div>
                 ) : (
                   <div className="max-h-64 overflow-y-auto border border-slate-200 rounded-xl shadow-inner">
@@ -359,6 +383,7 @@ export const Projects: React.FC = () => {
                           <th className="py-3 px-5">Env</th>
                           <th className="py-3 px-5">Status</th>
                           <th className="py-3 px-5">Deployed By</th>
+                          <th className="py-3 px-5">Source</th>
                           <th className="py-3 px-5 text-right">Timestamp</th>
                         </tr>
                       </thead>
@@ -368,13 +393,10 @@ export const Projects: React.FC = () => {
                             <td className="py-3 px-5 font-mono text-op-accent font-bold text-xs">{d.version}</td>
                             <td className="py-3 px-5 font-semibold text-slate-700 text-xs">{d.environment}</td>
                             <td className="py-3 px-5">
-                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-                                d.status === 'Running' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
-                              }`}>
-                                {d.status}
-                              </span>
+                              <Badge variant={deploymentStatusVariant(d.status)}>{d.status}</Badge>
                             </td>
-                            <td className="py-3 px-5 font-medium text-slate-600 text-xs">{d.deployedByName}</td>
+                            <td className="py-3 px-5 font-medium text-slate-600 text-xs">{deployedBy(d)}</td>
+                            <td className="py-3 px-5 text-xs text-slate-500">{DEPLOYMENT_SOURCE_LABEL[d.source]}</td>
                             <td className="py-3 px-5 text-slate-400 font-mono text-xs text-right">
                               {new Date(d.deployedAt).toLocaleString(undefined, {
                                 month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'

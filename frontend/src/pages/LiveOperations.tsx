@@ -3,6 +3,7 @@ import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type LogEntry, type Deployment, type NotificationItem, type PlatformResource, type InfrastructureEvent, type Alert, type Incident } from '../services/api';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
+import { deploymentStatusVariant } from '../lib/deployments';
 import { Activity, Server, AlertCircle, AlertTriangle, Terminal, Rocket, Bell, Radio } from 'lucide-react';
 
 type ConnectionStatus = 'LIVE' | 'RECONNECTING' | 'OFFLINE';
@@ -177,7 +178,7 @@ export const LiveOperations: React.FC = () => {
                       <span className="font-bold text-sm text-gray-900 dark:text-white">{d.projectName} - v{d.version}</span>
                       <span className="text-xs text-gray-500">{new Date(d.deployedAt).toLocaleDateString()} • {d.environment}</span>
                     </div>
-                    <Badge variant={d.status.toLowerCase() === 'success' || d.status.toLowerCase() === 'running' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'}>
+                    <Badge variant={deploymentStatusVariant(d.status)}>
                       {d.status}
                     </Badge>
                   </div>

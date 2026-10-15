@@ -1,7 +1,6 @@
 package com.opspilot.service;
 
 import com.opspilot.dto.MetricsResponse;
-import com.opspilot.repository.ContainerRepository;
 import com.opspilot.repository.DeploymentRepository;
 import com.opspilot.repository.ProjectRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,8 +21,6 @@ public class MonitoringService {
     @Autowired
     private DeploymentRepository deploymentRepository;
 
-    @Autowired
-    private ContainerRepository containerRepository;
 
     public MetricsResponse getSystemMetrics(String providerName) {
         if ("prometheus".equalsIgnoreCase(providerName)) {
@@ -47,31 +44,37 @@ public class MonitoringService {
             }
         }
 
-        // Local / default multi-project aggregated telemetry
+        // No Prometheus: report what can actually be measured here, the observability service's own JVM.
+        // Request counts and history need Prometheus, so they are left empty rather than invented.
         int projectCount = (int) projectRepository.count();
         int deploymentCount = (int) deploymentRepository.count();
-        int containerCount = (int) containerRepository.count();
 
-        long totalMem = Runtime.getRuntime().totalMemory() / (1024 * 1024);
-        long freeMem = Runtime.getRuntime().freeMemory() / (1024 * 1024);
-        long usedMem = totalMem - freeMem;
-        long maxMem = Runtime.getRuntime().maxMemory() / (1024 * 1024);
-
-        double cpuPercent = Math.min(100.0, Math.max(5.0, (containerCount * 4.5)));
+        Runtime runtime = Runtime.getRuntime();
+        long usedMem = (runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024);
+        long maxMem = runtime.maxMemory() / (1024 * 1024);
+        double cpuPercent = processCpuPercent();
 
         MetricsResponse response = new MetricsResponse(
                 cpuPercent,
                 usedMem,
-                maxMem > 0 ? maxMem : totalMem,
-                containerCount * 2 + projectCount,
+                maxMem,
+                0,
                 deploymentCount,
-                List.of(
-                        new MetricsResponse.MetricPoint("10:00", 12.0, usedMem, 4),
-                        new MetricsResponse.MetricPoint("11:00", 18.5, usedMem, 8)
-                )
+                List.of(new MetricsResponse.MetricPoint(
+                        java.time.LocalTime.now().withNano(0).toString(), cpuPercent, usedMem, 0))
         );
         response.setActiveProjects(projectCount);
-        return withMetadata(response, "Local Aggregator", "AVAILABLE", null);
+        return withMetadata(response, "OpsPilot JVM (connect Prometheus for cluster metrics)", "LIMITED", null);
+    }
+
+    /** This JVM's recent CPU load as a percentage, or 0 when the platform doesn't report it. */
+    private static double processCpuPercent() {
+        java.lang.management.OperatingSystemMXBean os = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+        if (os instanceof com.sun.management.OperatingSystemMXBean sun) {
+            double load = sun.getProcessCpuLoad();
+            return load < 0 ? 0.0 : Math.round(load * 1000.0) / 10.0;
+        }
+        return 0.0;
     }
 
     private MetricsResponse withMetadata(MetricsResponse response, String source, String status, String error) {

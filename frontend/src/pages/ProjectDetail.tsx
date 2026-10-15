@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type Project, type Deployment, type PipelineRun, type CommitLog, type Container, type Pod, type Incident } from '../services/api';
-import { FolderGit2, Rocket, FileText, Activity, Server, Terminal, GitCommit, AlertTriangle, PlayCircle, Undo2, ChevronLeft } from 'lucide-react';
+import { api, type Project, type Deployment, type PipelineRun, type CommitLog, type Incident } from '../services/api';
+import type { ProjectIntegration } from '../services/projectApi';
+import { deploymentStatusVariant } from '../lib/deployments';
+import { FolderGit2, Rocket, FileText, Activity, Server, GitCommit, AlertTriangle, PlayCircle, Undo2, ChevronLeft } from 'lucide-react';
 import { Badge } from '../components/Badge';
 
 export const ProjectDetail: React.FC = () => {
@@ -14,22 +16,20 @@ export const ProjectDetail: React.FC = () => {
   const [pipelines, setPipelines] = useState<PipelineRun[]>([]);
   const [commits, setCommits] = useState<CommitLog[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
-  const [containers, setContainers] = useState<Container[]>([]);
-  const [pods, setPods] = useState<Pod[]>([]);
+  const [integrations, setIntegrations] = useState<ProjectIntegration[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [proj, deps, runs, projCommits, projIncidents, allContainers, allPods] = await Promise.all([
+        const [proj, deps, runs, projCommits, projIncidents, projIntegrations] = await Promise.all([
           api.getProjectById(projectId).catch(() => null),
           api.getDeployments(projectId).catch(() => []),
           api.getPipelineRuns().catch(() => []),
           api.getCommits(projectId).catch(() => []),
           api.getIncidents(projectId).catch(() => []),
-          api.getDockerContainers().catch(() => []),
-          api.getKubernetesPods().catch(() => [])
+          api.getIntegrationsByProject(projectId).catch(() => [] as ProjectIntegration[])
         ]);
 
         if (proj) setProject(proj);
@@ -37,9 +37,7 @@ export const ProjectDetail: React.FC = () => {
         setPipelines(runs.filter(r => r.project?.id === projectId));
         setCommits(projCommits);
         setIncidents(projIncidents);
-        // Simplified container/pod matching
-        setContainers(allContainers);
-        setPods(allPods);
+        setIntegrations(projIntegrations);
       } catch (err) {
         console.error(err);
       } finally {
@@ -190,22 +188,20 @@ export const ProjectDetail: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500 flex items-center gap-2"><Rocket className="w-4 h-4"/> Latest Deployment</span>
                     {latestDeployment ? (
-                      <Badge variant={latestDeployment.status === 'Running' ? 'success' : 'neutral'}>{latestDeployment.version}</Badge>
+                      <Badge variant={deploymentStatusVariant(latestDeployment.status)}>{latestDeployment.version} · {latestDeployment.status}</Badge>
                     ) : <span className="text-slate-400">None</span>}
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500 flex items-center gap-2"><Activity className="w-4 h-4"/> Pipeline Status</span>
                     {latestPipeline ? (
-                      <Badge variant={latestPipeline.status === 'SUCCESS' ? 'success' : 'error'}>{latestPipeline.status}</Badge>
+                      <Badge variant={latestPipeline.status === 'SUCCESS' ? 'success' : latestPipeline.status === 'FAILED' ? 'error' : 'neutral'}>{latestPipeline.status}</Badge>
                     ) : <span className="text-slate-400">None</span>}
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500 flex items-center gap-2"><Terminal className="w-4 h-4"/> Container Count</span>
-                    <span className="font-bold text-slate-800">{containers.length}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-500 flex items-center gap-2"><Server className="w-4 h-4"/> Pod Count</span>
-                    <span className="font-bold text-slate-800">{pods.length}</span>
+                    <span className="text-slate-500 flex items-center gap-2"><Server className="w-4 h-4"/> Connected Integrations</span>
+                    <span className="font-bold text-slate-800">
+                      {integrations.filter(i => i.status === 'CONNECTED').length} / {integrations.length}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500 flex items-center gap-2"><AlertTriangle className="w-4 h-4"/> Error Count</span>

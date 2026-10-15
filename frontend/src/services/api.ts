@@ -169,7 +169,8 @@ export interface Project {
   ownerId: number;
   ownerName: string;
   ownerEmail: string;
-  deployedUrl: string;
+  /** Always null: OpsPilot observes projects, it does not host them. */
+  deployedUrl: string | null;
   awsLogGroupName?: string;
   githubRepoName?: string;
   lokiAppLabel?: string;
@@ -188,23 +189,34 @@ export interface PagedResponse<T> {
   last: boolean;
 }
 
+/** Where a deployment record came from. SIMULATED rows were made by the old, removed simulator. */
+export type DeploymentSource = 'MANUAL' | 'GITHUB' | 'CI' | 'SIMULATED';
+
+/** Statuses OpsPilot records; SIMULATED rows may still carry the simulator's old values. */
+export type DeploymentStatus = 'In progress' | 'Succeeded' | 'Failed' | 'Inactive';
+
 export interface Deployment {
   id: number;
   projectId: number;
   projectName: string;
-  deployedById: number;
-  deployedByName: string;
+  /** The OpsPilot user who recorded it; null for deployments reported by GitHub. */
+  deployedById: number | null;
+  /** That user's name, or the GitHub login of whoever deployed. */
+  deployedByName: string | null;
   version: string;
   environment: string;
   status: string;
   deployedAt: string;
+  source: DeploymentSource;
+  url: string | null;
+  actor: string | null;
 }
 
-export interface Container {
-  containerId: number;
-  imageName: string;
-  containerStatus: string;
-  createdAt: string;
+export interface DeploymentInput {
+  version: string;
+  environment: string;
+  status?: DeploymentStatus;
+  url?: string;
 }
 
 export interface Pod {
@@ -650,34 +662,9 @@ export const api = {
     return res.data;
   },
 
-  rollbackDeployment: async (id: number): Promise<Deployment> => {
-    const res = await axiosInstance.post<Deployment>(`/deployments/${id}/rollback`);
-    return res.data;
-  },
-
-  triggerDeployment: async (projectId: number, data: { version: string; environment: string }): Promise<Deployment> => {
+  /** Records a deployment that happened elsewhere (OpsPilot does not run deployments). */
+  recordDeployment: async (projectId: number, data: DeploymentInput): Promise<Deployment> => {
     const res = await axiosInstance.post<Deployment>(`/projects/${projectId}/deployments`, data);
-    return res.data;
-  },
-
-  // Docker
-  getDockerContainers: async (): Promise<Container[]> => {
-    const res = await axiosInstance.get<Container[]>('/docker/containers');
-    return res.data;
-  },
-
-  startContainer: async (id: number): Promise<Container> => {
-    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/start`);
-    return res.data;
-  },
-
-  stopContainer: async (id: number): Promise<Container> => {
-    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/stop`);
-    return res.data;
-  },
-
-  restartContainer: async (id: number): Promise<Container> => {
-    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/restart`);
     return res.data;
   },
 

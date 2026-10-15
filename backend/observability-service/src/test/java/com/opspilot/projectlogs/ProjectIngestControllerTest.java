@@ -30,6 +30,7 @@ class ProjectIngestControllerTest {
     private static final String SECRET = "whsec";
     private LogIngestService ingest;
     private IntegrationRepository integrations;
+    private GitHubDeploymentRecorder deploymentRecorder;
     private ProjectIngestController controller;
 
     @BeforeEach
@@ -37,7 +38,8 @@ class ProjectIngestControllerTest {
         ingest = mock(LogIngestService.class);
         when(ingest.ingest(any(), any(), any(), any())).thenAnswer(i -> i.getArgument(3));
         integrations = mock(IntegrationRepository.class);
-        controller = new ProjectIngestController(ingest, integrations, 1024);
+        deploymentRecorder = mock(GitHubDeploymentRecorder.class);
+        controller = new ProjectIngestController(ingest, integrations, deploymentRecorder, mock(CiDeploymentRecorder.class), 1024);
     }
 
     private static MockHttpServletRequest request(String body, String contentType) {

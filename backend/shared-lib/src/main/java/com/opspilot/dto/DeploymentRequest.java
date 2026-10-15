@@ -10,6 +10,13 @@ public class DeploymentRequest {
     @NotBlank(message = "Environment is required")
     private String environment; // Dev, Staging, Production
 
+    /** Outcome being recorded: In progress, Succeeded (default), Failed or Inactive. */
+    private String status;
+
+    /** Where this deployment is reachable, if known. */
+    @jakarta.validation.constraints.Size(max = 1024)
+    private String url;
+
     public DeploymentRequest() {
     }
 
@@ -32,5 +39,21 @@ public class DeploymentRequest {
 
     public void setEnvironment(String environment) {
         this.environment = environment;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

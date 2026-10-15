@@ -20,4 +20,7 @@ public interface DeploymentRepository extends JpaRepository<Deployment, Long> {
 
     // Scoped list for non-privileged users (ProjectScope.visibleProjectIds).
     List<Deployment> findByProject_IdInOrderByDeployedAtDesc(java.util.Collection<Long> projectIds);
+
+    /** A provider-reported deployment (e.g. GitHub's deployment id), so its status updates hit the same row. */
+    Optional<Deployment> findByProject_IdAndSourceAndExternalId(Long projectId, String source, String externalId);
 }

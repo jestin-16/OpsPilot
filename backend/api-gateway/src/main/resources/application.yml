@@ -28,7 +28,7 @@ spring:
         - id: project-logs
           uri: lb://observability-service
           predicates:
-            - Path=/api/projects/*/logs, /api/projects/*/logs/**, /api/v1/projects/*/logs, /api/v1/projects/*/logs/**, /api/ingest/*, /api/ingest/*/github/*, /api/v1/ingest/*, /api/v1/ingest/*/github/*
+            - Path=/api/projects/*/logs, /api/projects/*/logs/**, /api/v1/projects/*/logs, /api/v1/projects/*/logs/**, /api/ingest/*, /api/ingest/*/github/*, /api/ingest/*/deployments, /api/v1/ingest/*, /api/v1/ingest/*/github/*, /api/v1/ingest/*/deployments
         - id: observability-service
           uri: lb://observability-service
           predicates:
@@ -36,7 +36,7 @@ spring:
         - id: core-service
           uri: lb://core-service
           predicates:
-            - Path=/api/projects/**, /api/deployments/**, /api/docker/**, /api/kubernetes/**, /api/cicd/**, /api/users, /api/users/**, /api/admin/**, /api/v1/projects/**, /api/v1/deployments/**, /api/v1/docker/**, /api/v1/kubernetes/**, /api/v1/cicd/**, /api/v1/users, /api/v1/users/**, /api/v1/admin/**
+            - Path=/api/projects/**, /api/deployments/**, /api/kubernetes/**, /api/cicd/**, /api/users, /api/users/**, /api/admin/**, /api/v1/projects/**, /api/v1/deployments/**, /api/v1/kubernetes/**, /api/v1/cicd/**, /api/v1/users, /api/v1/users/**, /api/v1/admin/**
 
 eureka:
   client:

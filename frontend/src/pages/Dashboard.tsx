@@ -17,6 +17,10 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { errorMessage } from '../services/projectApi';
+import { deploymentStatusVariant } from '../lib/deployments';
+
+const timelineStatus = (variant: string): 'success' | 'error' | 'warning' =>
+  variant === 'success' ? 'success' : variant === 'error' ? 'error' : 'warning';
 
 const PROVIDER_LABELS: Record<string, string> = {
   DOCKER: 'Docker',
@@ -144,7 +148,7 @@ export const Dashboard: React.FC = () => {
         timestamp: new Date(d.deployedAt).toLocaleString(),
         rawDate: d.deployedAt,
         icon: <Rocket className="w-4 h-4" />,
-        status: d.status.toLowerCase() === 'success' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'
+        status: timelineStatus(deploymentStatusVariant(d.status))
       });
     });
 
@@ -203,7 +207,7 @@ export const Dashboard: React.FC = () => {
     { key: 'version', header: 'Version', render: (d) => <Badge>{d.version}</Badge> },
     { key: 'environment', header: 'Environment', render: (d) => <span className="capitalize">{d.environment}</span> },
     { key: 'status', header: 'Status', render: (d) => (
-      <Badge variant={d.status.toLowerCase() === 'running' || d.status.toLowerCase() === 'success' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'}>
+      <Badge variant={deploymentStatusVariant(d.status)}>
         {d.status}
       </Badge>
     )},

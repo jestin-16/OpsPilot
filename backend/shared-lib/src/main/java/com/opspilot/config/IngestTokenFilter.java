@@ -37,7 +37,8 @@ public class IngestTokenFilter extends OncePerRequestFilter {
     static final List<String> INGEST_PREFIXES = List.of("/api/v1/ingest/loki/", "/api/ingest/loki/", "/api/v1/ingest/metrics/", "/api/ingest/metrics/");
 
     /** POST /api/ingest/{projectId}: pushed application logs, authenticated by an APP_LOGS integration token. */
-    static final Pattern PROJECT_INGEST_PATH = Pattern.compile("^/api(?:/v1)?/ingest/(\\d+)/?$");
+    // Project-token paths: pushed logs (/ingest/{projectId}) and CI-reported deployments (/ingest/{projectId}/deployments).
+    static final Pattern PROJECT_INGEST_PATH = Pattern.compile("^/api(?:/v1)?/ingest/(\\d+)(?:/deployments)?/?$");
 
     private final DockerLogSourceRepository sourceRepository;
     private final IntegrationRepository integrationRepository;

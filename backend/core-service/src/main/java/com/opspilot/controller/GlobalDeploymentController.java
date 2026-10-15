@@ -33,11 +33,4 @@ public class GlobalDeploymentController {
                                                                               @org.springframework.security.core.annotation.AuthenticationPrincipal com.opspilot.entity.User currentUser) {
         return ResponseEntity.ok(deploymentService.getDeploymentLogs(id, currentUser));
     }
-
-    @org.springframework.web.bind.annotation.PostMapping("/{id}/rollback")
-    public ResponseEntity<DeploymentResponse> rollbackDeployment(
-            @org.springframework.web.bind.annotation.PathVariable Long id,
-            @org.springframework.security.core.annotation.AuthenticationPrincipal com.opspilot.entity.User currentUser) {
-        return ResponseEntity.ok(deploymentService.rollbackDeployment(id, currentUser));
-    }
 }

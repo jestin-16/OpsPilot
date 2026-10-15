@@ -4,164 +4,135 @@ import com.opspilot.dto.DeploymentRequest;
 import com.opspilot.dto.DeploymentResponse;
 import com.opspilot.entity.*;
 import com.opspilot.exception.ForbiddenException;
-import com.opspilot.exception.ResourceNotFoundException;
-import com.opspilot.exception.UnauthorizedException;
 import com.opspilot.repository.*;
+import com.opspilot.security.ProjectScope;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+/** Deployments are recorded, never simulated: no timers, containers or pods are involved. */
 @ExtendWith(MockitoExtension.class)
-public class DeploymentServiceTest {
+@MockitoSettings(strictness = Strictness.LENIENT)
+class DeploymentServiceTest {
 
     @Mock
     private DeploymentRepository deploymentRepository;
-
     @Mock
     private ProjectRepository projectRepository;
-    
     @Mock
     private LogRepository logRepository;
-    
     @Mock
     private NotificationRepository notificationRepository;
-    
-    @Mock
-    private ContainerRepository containerRepository;
-    
-    @Mock
-    private PodRepository podRepository;
-    
-    @Mock
-    private UserRepository userRepository;
 
     @InjectMocks
     private DeploymentService deploymentService;
 
     private User owner;
-    private User devops;
-    private User admin;
-    private User unauthorizedUser;
+    private User stranger;
     private Project project;
-    private Deployment currentDeployment;
-    private Deployment previousStable;
 
     @BeforeEach
     void setUp() {
-        org.springframework.test.util.ReflectionTestUtils.setField(deploymentService, "projectScope",
-                new com.opspilot.security.ProjectScope(projectRepository));
-        owner = new User();
-        owner.setId(1L);
-        owner.setRoles(Collections.singleton(new Role("USER", "")));
-
-        devops = new User();
-        devops.setId(2L);
-        devops.setRoles(Collections.singleton(new Role("DEVOPS", "")));
-
-        admin = new User();
-        admin.setId(3L);
-        admin.setRoles(Collections.singleton(new Role("ADMIN", "")));
-
-        unauthorizedUser = new User();
-        unauthorizedUser.setId(4L);
-        unauthorizedUser.setRoles(Collections.singleton(new Role("USER", "")));
-
-        project = new Project();
+        ReflectionTestUtils.setField(deploymentService, "projectScope", new ProjectScope(projectRepository));
+        owner = user(1L, "Owner", "DEVELOPER");
+        stranger = user(2L, "Stranger", "DEVELOPER");
+        project = new Project("Payments", "", null, owner, "Active");
         project.setId(10L);
-        project.setOwner(owner);
-        project.setProjectName("TestProject");
-
-        currentDeployment = new Deployment(project, owner, "v2", "production", "Failed");
-        currentDeployment.setId(100L);
-        currentDeployment.setDeployedAt(LocalDateTime.now());
-
-        previousStable = new Deployment(project, owner, "v1", "production", "Running");
-        previousStable.setId(99L);
-        previousStable.setDeployedAt(LocalDateTime.now().minusDays(1));
-    }
-
-    @Test
-    void testRollbackDeployment_AuthorizedOwner_Success() {
-        when(deploymentRepository.findById(100L)).thenReturn(Optional.of(currentDeployment));
         when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
-        when(deploymentRepository.findByProjectOrderByDeployedAtDesc(project))
-                .thenReturn(Arrays.asList(currentDeployment, previousStable));
-        
-        Deployment rollbackMock = new Deployment(project, owner, "v1", "production", "Draft");
-        rollbackMock.setId(101L);
-        when(deploymentRepository.save(any(Deployment.class))).thenAnswer(invocation -> {
-            Deployment arg = invocation.getArgument(0);
-            if (arg.getId() == null) {
-                return rollbackMock;
-            }
-            return arg;
-        });
-
-        DeploymentResponse response = deploymentService.rollbackDeployment(100L, owner);
-
-        assertNotNull(response);
-        assertEquals("v1", response.getVersion());
-        assertEquals("RolledBack", currentDeployment.getStatus());
-        verify(deploymentRepository, times(2)).save(any(Deployment.class)); // 1 for status update, 1 for new deployment
-    }
-
-    @Test
-    void testRollbackDeployment_AuthorizedDevOps_Success() {
-        when(deploymentRepository.findById(100L)).thenReturn(Optional.of(currentDeployment));
-        when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
-        when(deploymentRepository.findByProjectOrderByDeployedAtDesc(project))
-                .thenReturn(Arrays.asList(currentDeployment, previousStable));
-        
-        Deployment rollbackMock = new Deployment(project, devops, "v1", "production", "Draft");
-        rollbackMock.setId(101L);
-        when(deploymentRepository.save(any(Deployment.class))).thenReturn(rollbackMock);
-
-        DeploymentResponse response = deploymentService.rollbackDeployment(100L, devops);
-
-        assertNotNull(response);
-        assertEquals("v1", response.getVersion());
-    }
-
-    @Test
-    void testRollbackDeployment_Unauthorized_ThrowsForbidden() {
-        when(deploymentRepository.findById(100L)).thenReturn(Optional.of(currentDeployment));
-
-        assertThrows(ForbiddenException.class, () -> {
-            deploymentService.rollbackDeployment(100L, unauthorizedUser);
+        when(deploymentRepository.save(any(Deployment.class))).thenAnswer(call -> {
+            Deployment d = call.getArgument(0);
+            if (d.getId() == null) d.setId(100L);
+            return d;
         });
     }
 
-    @Test
-    void testRollbackDeployment_InvalidDeployment_ThrowsNotFound() {
-        when(deploymentRepository.findById(999L)).thenReturn(Optional.empty());
+    private static User user(long id, String name, String role) {
+        User user = new User(name, name.toLowerCase() + "@example.com", "hash", Set.of(new Role(role, role)));
+        user.setId(id);
+        return user;
+    }
 
-        assertThrows(ResourceNotFoundException.class, () -> {
-            deploymentService.rollbackDeployment(999L, owner);
-        });
+    private static DeploymentRequest request(String status) {
+        DeploymentRequest request = new DeploymentRequest("v2.8.4", "production");
+        request.setStatus(status);
+        return request;
     }
 
     @Test
-    void testRollbackDeployment_NoPreviousStable_ThrowsIllegalState() {
-        when(deploymentRepository.findById(100L)).thenReturn(Optional.of(currentDeployment));
-        when(deploymentRepository.findByProjectOrderByDeployedAtDesc(project))
-                .thenReturn(Collections.singletonList(currentDeployment));
+    void recordsADeploymentAttributedToTheCaller() {
+        DeploymentResponse response = deploymentService.recordDeployment(10L, request(null), owner);
 
-        assertThrows(IllegalStateException.class, () -> {
-            deploymentService.rollbackDeployment(100L, owner);
-        });
+        assertEquals(Deployment.SUCCEEDED, response.getStatus(), "no status means it succeeded");
+        assertEquals("Owner", response.getDeployedByName());
+        assertEquals(Deployment.SOURCE_MANUAL, response.getSource());
+        verify(deploymentRepository, times(1)).save(any(Deployment.class));
+    }
+
+    @Test
+    void someoneWhoCannotSeeTheProjectCannotRecordADeployment() {
+        assertThrows(ForbiddenException.class, () -> deploymentService.recordDeployment(10L, request(null), stranger));
+
+        verify(deploymentRepository, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "success, Succeeded", "SUCCEEDED, Succeeded", "failure, Failed", "error, Failed",
+            "in_progress, In progress", "pending, In progress", "inactive, Inactive",
+    })
+    void normalisesStatusSpellings(String given, String expected) {
+        assertEquals(expected, DeploymentService.normalizeStatus(given));
+    }
+
+    @Test
+    void rejectsUnknownStatuses() {
+        assertThrows(IllegalArgumentException.class, () -> DeploymentService.normalizeStatus("Deploying soon"));
+    }
+
+    @Test
+    void notifiesTheOwnerWhenAFailureIsRecorded() {
+        deploymentService.recordDeployment(10L, request("failed"), owner);
+
+        ArgumentCaptor<NotificationEntity> sent = ArgumentCaptor.forClass(NotificationEntity.class);
+        verify(notificationRepository).save(sent.capture());
+        assertTrue(sent.getValue().getMessage().contains("failed"));
+    }
+
+    @Test
+    void deploymentLogsAreTheProjectsLogsAroundIt() {
+        Deployment deployment = new Deployment(project, owner, "v1", "staging", Deployment.SUCCEEDED);
+        deployment.setId(7L);
+        LocalDateTime at = LocalDateTime.of(2026, 10, 1, 12, 0);
+        deployment.setDeployedAt(at);
+        when(deploymentRepository.findById(7L)).thenReturn(Optional.of(deployment));
+        LogEntity newer = new LogEntity(deployment, "api", "INFO", "second");
+        LogEntity older = new LogEntity(deployment, "api", "INFO", "first");
+        when(logRepository.findProjectLogsBetween(eq(10L), any(), any(), eq(false), any(Pageable.class)))
+                .thenReturn(new ArrayList<>(List.of(newer, older)));
+
+        List<LogEntity> logs = deploymentService.getDeploymentLogs(7L, owner);
+
+        verify(logRepository).findProjectLogsBetween(eq(10L), eq(at.minusMinutes(5)), eq(at.plusMinutes(15)), eq(false), any(Pageable.class));
+        assertEquals(List.of(older, newer), logs, "oldest first");
     }
 }

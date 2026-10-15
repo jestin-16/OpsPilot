@@ -25,7 +25,7 @@ public class DeploymentController {
             @PathVariable Long projectId,
             @Valid @RequestBody DeploymentRequest request,
             @AuthenticationPrincipal User currentUser) {
-        DeploymentResponse response = deploymentService.createDeployment(projectId, request, currentUser);
+        DeploymentResponse response = deploymentService.recordDeployment(projectId, request, currentUser);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 

@@ -64,6 +64,7 @@ services:
       - OTP_MAX_ATTEMPTS=${OTP_MAX_ATTEMPTS:-5}
       - OTP_RESEND_COOLDOWN_SECONDS=${OTP_RESEND_COOLDOWN_SECONDS:-60}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
+      - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:?OPSPILOT_ENCRYPTION_KEY must be set in .env (openssl rand -base64 32)}
       - DEMO_USERS_ENABLED=${DEMO_USERS_ENABLED:-false}
       - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}
 
@@ -90,7 +91,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
-      - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:-}
+      - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:?OPSPILOT_ENCRYPTION_KEY must be set in .env (openssl rand -base64 32)}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
       - JENKINS_WEBHOOK_SECRET=${JENKINS_WEBHOOK_SECRET:-}
@@ -126,7 +127,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
-      - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:-}
+      - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:?OPSPILOT_ENCRYPTION_KEY must be set in .env (openssl rand -base64 32)}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/

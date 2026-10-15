@@ -15,6 +15,8 @@ import java.util.List;
 @RequestMapping({"/api/v1/logs", "/api/logs"})
 public class LogController {
 
+    static final int MAX_LIMIT = 1000;
+
     @Autowired
     private LogService logService;
 
@@ -25,9 +27,12 @@ public class LogController {
             @RequestParam(required = false) String logLevel,
             @RequestParam(required = false) String query,
             @RequestParam(required = false, defaultValue = "local") String providerName,
+            @RequestParam(defaultValue = "500") int limit,
             @AuthenticationPrincipal User currentUser
     ) {
-        return ResponseEntity.ok(logService.searchLogs(currentUser, projectId, sourceService, logLevel, query, providerName));
+        // Without a cap an unfiltered search returned the whole logs table.
+        int bounded = Math.max(1, Math.min(limit, MAX_LIMIT));
+        return ResponseEntity.ok(logService.searchLogs(currentUser, projectId, sourceService, logLevel, query, providerName, bounded));
     }
 
     @PostMapping

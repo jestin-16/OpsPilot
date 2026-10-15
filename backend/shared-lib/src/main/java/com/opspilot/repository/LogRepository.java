@@ -43,7 +43,8 @@ public interface LogRepository extends JpaRepository<LogEntity, Long>, org.sprin
             @Param("projectId") Long projectId,
             @Param("sourceService") String sourceService,
             @Param("logLevel") String logLevel,
-            @Param("query") String query
+            @Param("query") String query,
+            org.springframework.data.domain.Pageable page
     );
 
             @Query("SELECT l FROM LogEntity l LEFT JOIN l.deployment d LEFT JOIN d.project deploymentProject LEFT JOIN l.project directProject WHERE " +
@@ -58,7 +59,8 @@ public interface LogRepository extends JpaRepository<LogEntity, Long>, org.sprin
             @Param("projectId") Long projectId,
             @Param("sourceService") String sourceService,
             @Param("logLevel") String logLevel,
-            @Param("query") String query
+            @Param("query") String query,
+            org.springframework.data.domain.Pageable page
     );
     
     @org.springframework.data.jpa.repository.Modifying

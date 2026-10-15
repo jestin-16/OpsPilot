@@ -28,7 +28,7 @@ public class AdminGovernanceService {
     public AdminGovernanceService(UserRepository users, ProjectRepository projects, AuditLogRepository auditLogs, PlatformIntegrationRepository integrations, PlatformSettingRepository settings, ApplicationEventPublisher events) {
         this.users = users; this.projects = projects; this.auditLogs = auditLogs; this.integrations = integrations; this.settings = settings; this.events = events;
     }
-    public AdminOverviewResponse overview() { return new AdminOverviewResponse(users.count(), users.findAll().stream().filter(u -> !Boolean.FALSE.equals(u.getIsActive())).count(), projects.count(), integrations.count(), auditLogs.count()); }
+    public AdminOverviewResponse overview() { return new AdminOverviewResponse(users.count(), users.countActive(), projects.count(), integrations.count(), auditLogs.count()); }
     public List<AuditLogResponse> auditLogs() { return auditLogs.findTop100ByOrderByTimestampDesc().stream().map(this::mapAudit).toList(); }
     public List<PlatformIntegration> integrations() { return integrations.findAll(); }
     @Transactional public PlatformIntegration saveIntegration(PlatformIntegration value, User actor) {

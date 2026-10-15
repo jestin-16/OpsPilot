@@ -86,7 +86,7 @@ export const Pipelines: React.FC = () => {
     )},
     { key: 'status', header: 'Status', render: (r) => {
       const s = r.status.toLowerCase();
-      const v = s === 'success' || s === 'completed' ? 'success' : s === 'failed' ? 'error' : 'warning';
+      const v = s === 'success' || s === 'completed' ? 'success' : s === 'failed' ? 'error' : s === 'received' ? 'neutral' : 'warning';
       return <Badge variant={v}>{r.status}</Badge>;
     }},
     { key: 'duration', header: 'Duration', render: (r) => (
@@ -153,6 +153,7 @@ export const Pipelines: React.FC = () => {
               <option value="SUCCESS">Success</option>
               <option value="FAILED">Failed</option>
               <option value="IN_PROGRESS">In Progress</option>
+              <option value="RECEIVED">Received</option>
             </select>
           </div>
         </Card>

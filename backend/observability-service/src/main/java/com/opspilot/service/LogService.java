@@ -19,7 +19,9 @@ public class LogService {
     @Autowired(required = false)
     private List<com.opspilot.provider.LogProvider> logProviders;
 
-    public List<LogEntity> searchLogs(User currentUser, Long projectId, String sourceService, String logLevel, String query, String providerName) {
+    /** Newest first, at most {@code limit} entries (the caller clamps it). */
+    public List<LogEntity> searchLogs(User currentUser, Long projectId, String sourceService, String logLevel, String query, String providerName, int limit) {
+        org.springframework.data.domain.Pageable page = org.springframework.data.domain.PageRequest.of(0, limit);
         if (currentUser == null) throw new ForbiddenException("Authentication is required to view logs");
         String serviceParam = (sourceService == null || sourceService.trim().isEmpty() || "ALL".equalsIgnoreCase(sourceService)) ? null : sourceService;
         String levelParam = (logLevel == null || logLevel.trim().isEmpty() || "ALL".equalsIgnoreCase(logLevel)) ? null : logLevel;
@@ -33,8 +35,8 @@ public class LogService {
 
         if (fetchLocal) {
             List<LogEntity> localLogs = isPrivileged(currentUser)
-                    ? logRepository.searchLogs(projectId, serviceParam, levelParam, queryParam)
-                    : logRepository.searchLogsForOwner(currentUser.getId(), projectId, serviceParam, levelParam, queryParam);
+                    ? logRepository.searchLogs(projectId, serviceParam, levelParam, queryParam, page)
+                    : logRepository.searchLogsForOwner(currentUser.getId(), projectId, serviceParam, levelParam, queryParam, page);
             localLogs.forEach(log -> log.setProviderSource("local"));
             mergedLogs.addAll(localLogs);
         }
@@ -57,7 +59,7 @@ public class LogService {
             return l2.getTimestamp().compareTo(l1.getTimestamp());
         });
 
-        return mergedLogs;
+        return mergedLogs.size() > limit ? new java.util.ArrayList<>(mergedLogs.subList(0, limit)) : mergedLogs;
     }
 
     private boolean isPrivileged(User user) {

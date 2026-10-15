@@ -7,6 +7,7 @@ import { ProviderType, IntegrationCategory } from '../lib/legacyProviders';
 import {
   FolderGit2, CheckCircle2, ChevronRight, ChevronLeft, Loader2, Server, Cloud, Cpu, Code, Plus, ShieldCheck, Activity, Bell, Boxes, TerminalSquare, Search
 } from 'lucide-react';
+import { errorMessage } from '../services/projectApi';
 
 export const ProjectWizard: React.FC = () => {
   const navigate = useNavigate();
@@ -83,8 +84,8 @@ export const ProjectWizard: React.FC = () => {
         navigate(`/projects/new/${newProject.id}`, { replace: true });
         setStep(2);
       }
-    } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Failed to save project');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to save project'));
     } finally {
       setSubmitting1(false);
     }
@@ -111,8 +112,8 @@ export const ProjectWizard: React.FC = () => {
       showAlert(`${selectedProvider.name} connected successfully!`, 'success');
       setWizardOpen(false);
       fetchIntegrations(project!.id);
-    } catch (error: any) {
-      showAlert(error.response?.data?.error || 'Failed to connect integration', 'error');
+    } catch (error) {
+      showAlert(errorMessage(error, 'Failed to connect integration'), 'error');
     } finally {
       setIsConnecting(false);
     }
@@ -122,8 +123,8 @@ export const ProjectWizard: React.FC = () => {
     try {
       await api.completeProjectSetup(project!.id);
       navigate(`/projects/${project!.id}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to complete setup');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to complete setup'));
     }
   };
 

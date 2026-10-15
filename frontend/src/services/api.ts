@@ -1,5 +1,6 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { z } from 'zod';
+import type { ProjectIntegration } from './projectApi';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
 
@@ -23,9 +24,9 @@ axiosInstance.interceptors.request.use((config) => {
 
 // Response Interceptor: 401 Auto-Refresh Loop
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -39,12 +40,13 @@ const processQueue = (error: any, token: string | null = null) => {
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest: any = error.config;
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
     // Only 401 means the access token is missing or expired. A 403 is a valid user who isn't allowed to do
     // this; refreshing wouldn't change that, and a failed refresh would wrongly sign them out.
     const isAuthError = error.response?.status === 401;
-    if (isAuthError &&!originalRequest._retry && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/register') && !originalRequest.url?.includes('/auth/refresh')) {
+    // config is absent when the request never got built; there is nothing to retry then.
+    if (isAuthError && originalRequest && !originalRequest._retry && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/register') && !originalRequest.url?.includes('/auth/refresh')) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -381,6 +383,88 @@ export interface AdminOverview { userCount: number; activeUserCount: number; pro
 export interface AuditLog { id: number; actorName: string; actorEmail?: string; action: string; resourceType: string; resourceId?: string; details?: string; timestamp: string; }
 export interface PlatformSetting { id: number; settingKey: string; settingValue: string; updatedAt: string; }
 
+/** GET /users (UserResponse). */
+export interface PlatformUser {
+  id: number;
+  name: string;
+  email: string;
+  isActive: boolean | null;
+  createdAt: string;
+  roles: string[];
+}
+
+export interface Incident {
+  id: number;
+  title: string;
+  description?: string | null;
+  severity: string;
+  status: string;
+  project?: Pick<Project, 'id' | 'projectName'> | null;
+  affectedService?: string | null;
+  affectedResources?: string | null;
+  alertCount?: number | null;
+  createdAt: string;
+  startedAt?: string | null;
+  resolvedAt?: string | null;
+  timeline?: string | null;
+  createdBy?: Pick<User, 'id' | 'name' | 'email'> | null;
+  relatedDeployment?: Pick<Deployment, 'id' | 'version' | 'environment'> | null;
+  relatedPipelineRun?: Pick<PipelineRun, 'runId' | 'commitMessage'> | null;
+}
+
+export interface IncidentInput {
+  title: string;
+  description?: string;
+  severity: string;
+  projectId: number;
+  affectedService?: string;
+  deploymentId?: number;
+  pipelineRunId?: number;
+}
+
+export interface Alert {
+  id: number;
+  alertRuleId?: number | null;
+  projectId?: number | null;
+  resource?: string | null;
+  eventType: string;
+  message?: string | null;
+  severity: string;
+  status: string;
+  createdAt: string;
+  resolvedAt?: string | null;
+}
+
+export interface InfrastructureEvent {
+  id: string;
+  timestamp: string;
+  projectId?: number | null;
+  integrationId?: number | null;
+  provider?: string | null;
+  resourceId?: string | null;
+  eventType: string;
+  severity?: string | null;
+  message?: string | null;
+  metadata?: string | null;
+}
+
+/** A provider resource discovered by an integration (GET /resources). */
+export interface PlatformResource {
+  id: number;
+  projectId: number;
+  integrationId?: number | null;
+  provider: string;
+  providerResourceId: string;
+  resourceType: string;
+  name: string;
+  status: string;
+  region?: string | null;
+  environment?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  metadata?: string | null;
+}
+
 export interface LogSource {
   sourceId: number;
   sourceName: string;
@@ -495,18 +579,18 @@ export const api = {
   },
 
   // User Management
-  getAllUsers: async (): Promise<any[]> => {
-    const res = await axiosInstance.get<any[]>('/users');
+  getAllUsers: async (): Promise<PlatformUser[]> => {
+    const res = await axiosInstance.get<PlatformUser[]>('/users');
     return res.data;
   },
 
-  updateUserRoles: async (id: number, roles: string[]): Promise<any> => {
-    const res = await axiosInstance.put<any>(`/users/${id}/roles`, { roles });
+  updateUserRoles: async (id: number, roles: string[]): Promise<PlatformUser> => {
+    const res = await axiosInstance.put<PlatformUser>(`/users/${id}/roles`, { roles });
     return res.data;
   },
 
-  setUserStatus: async (id: number, active: boolean): Promise<any> => {
-    const res = await axiosInstance.patch<any>(`/users/${id}/status`, { active });
+  setUserStatus: async (id: number, active: boolean): Promise<PlatformUser> => {
+    const res = await axiosInstance.patch<PlatformUser>(`/users/${id}/status`, { active });
     return res.data;
   },
 
@@ -720,8 +804,8 @@ export const api = {
     return res.data;
   },
 
-  probeUrl: async (url: string, signal?: AbortSignal): Promise<any> => {
-    const res = await axiosInstance.get(`/monitoring/probe?url=${encodeURIComponent(url)}`, { signal });
+  probeUrl: async <T,>(url: string, signal?: AbortSignal): Promise<T> => {
+    const res = await axiosInstance.get<T>(`/monitoring/probe?url=${encodeURIComponent(url)}`, { signal });
     return res.data;
   },
 
@@ -782,48 +866,35 @@ export const api = {
   },
 
   // Incidents
-  getIncidents: async (projectId?: number): Promise<any[]> => {
+  getIncidents: async (projectId?: number): Promise<Incident[]> => {
     const url = projectId && projectId !== -1 ? `/incidents?projectId=${projectId}` : '/incidents';
-    const res = await axiosInstance.get<any[]>(url);
+    const res = await axiosInstance.get<Incident[]>(url);
     return res.data;
   },
 
-  getIncidentById: async (id: number): Promise<any> => {
-    const res = await axiosInstance.get<any>(`/incidents/${id}`);
+  getIncidentById: async (id: number): Promise<Incident> => {
+    const res = await axiosInstance.get<Incident>(`/incidents/${id}`);
     return res.data;
   },
 
-  createIncident: async (data: { 
-    title: string; 
-    description?: string; 
-    severity: string; 
-    projectId: number;
-    affectedService?: string;
-    deploymentId?: number;
-    pipelineRunId?: number;
-  }): Promise<any> => {
-    const res = await axiosInstance.post<any>('/incidents', data);
+  createIncident: async (data: IncidentInput): Promise<Incident> => {
+    const res = await axiosInstance.post<Incident>('/incidents', data);
     return res.data;
   },
 
-  updateIncidentStatus: async (id: number, status: string): Promise<any> => {
-    const res = await axiosInstance.put<any>(`/incidents/${id}/status`, { status });
+  updateIncidentStatus: async (id: number, status: string): Promise<Incident> => {
+    const res = await axiosInstance.put<Incident>(`/incidents/${id}/status`, { status });
     return res.data;
   },
 
   // Integration Settings
-  getIntegrations: async (): Promise<IntegrationSettings[]> => {
-    const res = await axiosInstance.get<IntegrationSettings[]>('/integrations');
-    return res.data;
-  },
-
   saveIntegration: async (data: IntegrationSettings): Promise<IntegrationSettings> => {
     const res = await axiosInstance.post<IntegrationSettings>('/integrations', data);
     return res.data;
   },
 
-  getIntegrationsByProject: async (projectId: number): Promise<any[]> => {
-    const res = await axiosInstance.get<any[]>(`/projects/${projectId}/integrations`);
+  getIntegrationsByProject: async (projectId: number): Promise<ProjectIntegration[]> => {
+    const res = await axiosInstance.get<ProjectIntegration[]>(`/projects/${projectId}/integrations`);
     return res.data;
   },
 
@@ -859,19 +930,19 @@ export const api = {
     return res.data;
   },
 
-  getAlerts: async (): Promise<any[]> => {
-    const res = await axiosInstance.get<any[]>('/alerts');
+  getAlerts: async (): Promise<Alert[]> => {
+    const res = await axiosInstance.get<Alert[]>('/alerts');
     return res.data;
   },
 
-  getEvents: async (): Promise<any[]> => {
-    const res = await axiosInstance.get<any[]>('/events');
+  getEvents: async (): Promise<InfrastructureEvent[]> => {
+    const res = await axiosInstance.get<InfrastructureEvent[]>('/events');
     return res.data;
   },
 
-  getResources: async (projectId?: number): Promise<any[]> => {
+  getResources: async (projectId?: number): Promise<PlatformResource[]> => {
     const url = projectId ? `/projects/${projectId}/resources` : '/resources';
-    const res = await axiosInstance.get<any[]>(url);
+    const res = await axiosInstance.get<PlatformResource[]>(url);
     return res.data;
   },
 

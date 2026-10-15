@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { errorMessage } from '../services/projectApi';
+import { isAxiosError } from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Deployment, type LogEntry } from '../services/api';
@@ -83,12 +85,12 @@ export const DeploymentDetail: React.FC = () => {
     try {
       await api.rollbackDeployment(deployment.id);
       navigate('/deployments');
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      if (err.response?.status === 403) {
+      if (isAxiosError(err) && err.response?.status === 403) {
         showAlert('Forbidden: You are not authorized to perform a rollback.', 'error');
       } else {
-        showAlert('Rollback Failed: ' + (err.response?.data?.message || err.message), 'error');
+        showAlert('Rollback Failed: ' + errorMessage(err, 'unknown error'), 'error');
       }
     } finally {
       setRollingBack(false);

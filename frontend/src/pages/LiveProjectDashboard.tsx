@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { errorMessage } from '../services/projectApi';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api } from '../services/api';
 import type { LogEntry, MetricsData, Project, CommitLog } from '../services/api';
@@ -119,8 +120,8 @@ export const LiveProjectDashboard: React.FC = () => {
       const commitData = await api.getCommits(selectedProjectId);
       setCommits(commitData || []);
       alert(`Successfully synced ${res?.synced_count ?? 0} historical commits!`);
-    } catch (err: any) {
-      alert("Failed to sync commits: " + (err.response?.data?.error || err.message));
+    } catch (err) {
+      alert("Failed to sync commits: " + errorMessage(err, "unknown error"));
       try {
         const commitData = await api.getCommits(selectedProjectId);
         setCommits(commitData || []);

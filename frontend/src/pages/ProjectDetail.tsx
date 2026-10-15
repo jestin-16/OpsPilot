@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type Project, type Deployment, type PipelineRun, type CommitLog, type Container, type Pod } from '../services/api';
+import { api, type Project, type Deployment, type PipelineRun, type CommitLog, type Container, type Pod, type Incident } from '../services/api';
 import { FolderGit2, Rocket, FileText, Activity, Server, Terminal, GitCommit, AlertTriangle, PlayCircle, Undo2, ChevronLeft } from 'lucide-react';
 import { Badge } from '../components/Badge';
 
@@ -13,7 +13,7 @@ export const ProjectDetail: React.FC = () => {
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [pipelines, setPipelines] = useState<PipelineRun[]>([]);
   const [commits, setCommits] = useState<CommitLog[]>([]);
-  const [incidents, setIncidents] = useState<any[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [containers, setContainers] = useState<Container[]>([]);
   const [pods, setPods] = useState<Pod[]>([]);
   const [loading, setLoading] = useState(true);

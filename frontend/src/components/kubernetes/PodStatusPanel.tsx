@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Layers
 } from 'lucide-react';
+import { errorMessage } from '../../services/projectApi';
 
 interface PodStatusPanelProps {
   onSelectPod?: (podName: string, namespace: string) => void;
@@ -43,9 +44,9 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
       setHealthSummary(healthData);
       setError('');
       setLastRefreshed(new Date());
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load pod status:', err);
-      setError(err.message || 'Failed to communicate with log-watcher service');
+      setError(errorMessage(err, 'Failed to communicate with log-watcher service'));
     } finally {
       setLoading(false);
     }

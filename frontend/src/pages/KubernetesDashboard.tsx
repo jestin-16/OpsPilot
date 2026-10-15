@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
+import { errorMessage } from '../services/projectApi';
 
 export const KubernetesDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'nodes' | 'pods' | 'services' | 'namespaces'>('overview');
@@ -27,40 +28,40 @@ export const KubernetesDashboard: React.FC = () => {
     try {
       const data = await api.getKubernetesOverview();
       setOverview(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load overview');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load overview'));
     }
   };
 
   const fetchNodes = async () => {
     try {
       setNodes(await api.getKubernetesNodes());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load nodes');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load nodes'));
     }
   };
 
   const fetchPods = async () => {
     try {
       setPods(await api.getEnhancedPods());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load pods');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load pods'));
     }
   };
 
   const fetchServices = async () => {
     try {
       setServices(await api.getKubernetesServices());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load services');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load services'));
     }
   };
 
   const fetchNamespaces = async () => {
     try {
       setNamespaces(await api.getKubernetesNamespaces());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load namespaces');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load namespaces'));
     }
   };
 
@@ -87,7 +88,7 @@ export const KubernetesDashboard: React.FC = () => {
     try {
       const details = await api.getKubernetesPodDetails(pod.namespace, pod.name);
       setPodDetails(details);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load pod details', err);
     } finally {
       setLoadingDetails(false);

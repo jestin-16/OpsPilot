@@ -197,10 +197,11 @@ export const BlackboxMonitoring: React.FC = () => {
         } else {
           addLog(`❌ UNREACHABLE — ${data.resolvedIps?.length ? `resolved ${data.resolvedIps.length} IPs` : 'DNS failed'}`, 'error');
         }
-      } catch (err: any) {
+      } catch (err) {
         if (!active) return;
-        if (err?.code === 'ERR_CANCELED' || err?.name === 'CanceledError') return;
-        if (err?.response?.status === 503 || err?.message?.includes('503') || err?.message?.includes('Network Error')) {
+        const e = err as { code?: string; name?: string; message?: string; response?: { status?: number } } | null;
+        if (e?.code === 'ERR_CANCELED' || e?.name === 'CanceledError') return;
+        if (e?.response?.status === 503 || e?.message?.includes('503') || e?.message?.includes('Network Error')) {
           setServiceStatus('starting');
           addLog(`⏳ Backend starting up or downloading dependencies... (503)`, 'warn');
         } else {

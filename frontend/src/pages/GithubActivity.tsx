@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useProject } from '../context/ProjectContext';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, type Project } from '../services/api';
+import { api, type Project, type CommitLog, type PipelineRun, type Deployment } from '../services/api';
 import { 
   GitCommit, RefreshCw, AlertCircle, X, CheckCircle, 
   GitBranch, Clock, User, ArrowRight, PlayCircle, Rocket 
 } from 'lucide-react';
+import { errorMessage } from '../services/projectApi';
 
 export const GithubActivity: React.FC = () => {
-  const [commits, setCommits] = useState<any[]>([]);
+  const [commits, setCommits] = useState<CommitLog[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [pipelines, setPipelines] = useState<any[]>([]);
-  const [deployments, setDeployments] = useState<any[]>([]);
+  const [pipelines, setPipelines] = useState<PipelineRun[]>([]);
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -21,7 +22,7 @@ export const GithubActivity: React.FC = () => {
 
   const { currentProjectId } = useProject();
   const [projectId, setProjectId] = useState<number>(currentProjectId ?? -1);
-  const [selectedCommit, setSelectedCommit] = useState<any>(null);
+  const [selectedCommit, setSelectedCommit] = useState<CommitLog | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -38,8 +39,8 @@ export const GithubActivity: React.FC = () => {
       setProjects((prev) => (prev.length === 0 ? projectsData : prev));
       setPipelines(pipelinesData);
       setDeployments(deploymentsData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load GitHub activity');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load GitHub activity'));
     } finally {
       setLoading(false);
     }
@@ -62,8 +63,8 @@ export const GithubActivity: React.FC = () => {
         setSuccessMsg(`Successfully synced ${res.synced_count} commits.`);
       }
       loadData();
-    } catch (err: any) {
-      setError(err.message || 'Failed to sync commits');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to sync commits'));
     } finally {
       setSyncing(false);
       setTimeout(() => { setWarning(''); setSuccessMsg(''); }, 8000);
@@ -71,14 +72,14 @@ export const GithubActivity: React.FC = () => {
   };
 
   const getPipelineForCommit = (sha: string, projId?: number) => {
-    return pipelines.find(p => p.commitSha === sha && (!projId || p.projectId === projId));
+    return pipelines.find(p => p.commitSha === sha && (!projId || p.project?.id === projId));
   };
 
   const getDeploymentForCommit = (sha: string, projId?: number) => {
     const pipeline = getPipelineForCommit(sha, projId);
     if (!pipeline) return null;
     return deployments.find(d => 
-      d.projectId === (projId || pipeline.projectId) && 
+      d.projectId === (projId || pipeline.project?.id) && 
       d.version === sha.substring(0, 7) // Simple heuristic, matching by tag/sha prefix
     );
   };

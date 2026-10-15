@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { isAxiosError } from 'axios';
 import { AlertCircle, CheckCircle2, Edit3, Mail, Power, RefreshCw, Search, ShieldCheck, Trash2, TriangleAlert, UserPlus, UsersRound, X } from 'lucide-react';
 import { axiosInstance } from '../services/api';
 import { SidebarLayout } from '../components/SidebarLayout';
+import { errorMessage } from '../services/projectApi';
 
 interface User {
   id: number;
@@ -45,9 +47,9 @@ export const UserManagement: React.FC = () => {
       const response = await axiosInstance.get<User[]>('/users');
       setUsers(Array.isArray(response.data) ? response.data : []);
       setError('');
-    } catch (requestError: any) {
+    } catch (requestError) {
       console.error('Failed to fetch users', requestError);
-      setError(requestError.response?.data?.message || `Unable to load users (${requestError.response?.status || 'network error'})`);
+      setError(errorMessage(requestError, `Unable to load users (${(isAxiosError(requestError) && requestError.response?.status) || 'network error'})`));
     } finally {
       setLoading(false);
     }
@@ -84,8 +86,8 @@ export const UserManagement: React.FC = () => {
       setEditingUser(null);
       setForm(emptyForm);
       await fetchUsers();
-    } catch (requestError: any) {
-      setError(requestError.response?.data?.message || 'Unable to save user changes.');
+    } catch (requestError) {
+      setError(errorMessage(requestError, 'Unable to save user changes.'));
     } finally {
       setSaving(false);
     }
@@ -103,8 +105,8 @@ export const UserManagement: React.FC = () => {
       setNotice(`${userToDelete.name} was removed.`);
       setUserToDelete(null);
       await fetchUsers();
-    } catch (requestError: any) {
-      setError(requestError.response?.data?.message || 'Unable to delete user.');
+    } catch (requestError) {
+      setError(errorMessage(requestError, 'Unable to delete user.'));
     } finally {
       setDeleting(false);
     }
@@ -113,12 +115,12 @@ export const UserManagement: React.FC = () => {
   const createUser = async (event: React.FormEvent) => {
     event.preventDefault(); setSaving(true); setError('');
     try { await axiosInstance.post('/users', { ...newUser, roles: [newUser.role] }); setNotice(`${newUser.name} was added to the workspace.`); setCreatingUser(false); setNewUser({ name: '', email: '', password: '', role: 'DEVELOPER' }); await fetchUsers(); }
-    catch (requestError: any) { setError(requestError.response?.data?.message || 'Unable to create user.'); }
+    catch (requestError) { setError(errorMessage(requestError, 'Unable to create user.')); }
     finally { setSaving(false); }
   };
   const toggleUserStatus = async (user: User) => {
     try { await axiosInstance.patch(`/users/${user.id}/status`, { active: user.isActive === false }); setNotice(`${user.name} is now ${user.isActive === false ? 'active' : 'disabled'}.`); await fetchUsers(); }
-    catch (requestError: any) { setError(requestError.response?.data?.message || 'Unable to update user status.'); }
+    catch (requestError) { setError(errorMessage(requestError, 'Unable to update user status.')); }
   };
 
   if (loading) return <SidebarLayout><div className="p-8 text-sm font-medium text-slate-500">Loading users...</div></SidebarLayout>;

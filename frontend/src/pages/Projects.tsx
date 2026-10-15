@@ -6,6 +6,7 @@ import { CreateProjectModal } from '../components/project/CreateProjectModal';
 import { useAuth } from '../context/AuthContext';
 import { api, API_BASE_URL, type Project, type Deployment } from '../services/api';
 import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText, XCircle, Activity, TriangleAlert } from 'lucide-react';
+import { errorMessage } from '../services/projectApi';
 
 export const Projects: React.FC = () => {
   const { user } = useAuth();
@@ -28,8 +29,8 @@ export const Projects: React.FC = () => {
     try {
       const data = await api.getProjects();
       setProjects(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch projects');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to fetch projects'));
     } finally {
       setLoading(false);
     }
@@ -56,8 +57,8 @@ export const Projects: React.FC = () => {
       await api.deleteProject(projectPendingDeletion.id);
       await fetchProjects();
       setProjectPendingDeletion(null);
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete project');
+    } catch (err) {
+      alert(errorMessage(err, 'Failed to delete project'));
     } finally {
       setDeletingProject(false);
     }
@@ -81,8 +82,8 @@ export const Projects: React.FC = () => {
       await api.triggerDeployment(selectedProject.id, { version, environment });
       const updatedHistory = await api.getDeployments(selectedProject.id);
       setDeployments(updatedHistory);
-    } catch (err: any) {
-      alert(err.message || 'Failed to trigger deployment');
+    } catch (err) {
+      alert(errorMessage(err, 'Failed to trigger deployment'));
     } finally {
       setTriggering(false);
     }

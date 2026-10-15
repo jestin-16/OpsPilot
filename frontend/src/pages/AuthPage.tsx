@@ -1,4 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { errorMessage } from '../services/projectApi';
+import { isAxiosError } from 'axios';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, LoginSchema, SignupSchema } from '../services/api';
@@ -13,7 +15,7 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { AuthMascot, type MascotCover, type MascotMood } from '../components/AuthMascot';
 import '../styles/auth.css';
 
@@ -62,9 +64,6 @@ const SPARKLES = [
 ];
 
 const indexStyle = (i: number) => ({ '--i': i }) as React.CSSProperties;
-
-const errorMessage = (err: any, fallback: string) =>
-  err?.response?.data?.message || err?.message || fallback;
 
 const Field: React.FC<{ icon: React.ReactNode; index: number; children: React.ReactNode }> = ({
   icon,
@@ -185,7 +184,7 @@ export const AuthPage: React.FC = () => {
       const res = await api.login({ email, password });
       login(res);
       navigate('/monitoring');
-    } catch (err: any) {
+    } catch (err) {
       fail(errorMessage(err, 'Invalid credentials'));
     } finally {
       setLoading(false);
@@ -206,14 +205,14 @@ export const AuthPage: React.FC = () => {
     try {
       const res = await api.register({ name, email, password, role: validation.data.role });
       navigate(`/verify-email?email=${encodeURIComponent(res.email)}`);
-    } catch (err: any) {
+    } catch (err) {
       fail(errorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) return;
     setError('');
     setLoading(true);
@@ -221,8 +220,9 @@ export const AuthPage: React.FC = () => {
       const res = await api.googleLogin({ idToken: credentialResponse.credential });
       login(res);
       navigate('/monitoring');
-    } catch (err: any) {
-      if (err.response?.status === 428 || err.response?.data?.message?.includes('Role is required')) {
+    } catch (err) {
+      const status = isAxiosError(err) ? err.response?.status : undefined;
+      if (status === 428 || errorMessage(err, '').includes('Role is required')) {
         setPendingGoogleToken(credentialResponse.credential);
         setShowRoleSelection(true);
       } else {
@@ -242,7 +242,7 @@ export const AuthPage: React.FC = () => {
       const res = await api.googleLogin({ idToken: pendingGoogleToken, role: selectedRole });
       login(res);
       navigate('/monitoring');
-    } catch (err: any) {
+    } catch (err) {
       fail(errorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);

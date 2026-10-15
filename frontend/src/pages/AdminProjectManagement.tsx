@@ -4,6 +4,7 @@ import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Project } from '../services/api';
 
 import { useConfirm } from '../components/ConfirmProvider';
+import { errorMessage } from '../services/projectApi';
 
 const isQuarantined = (project: Project) => project.status.toUpperCase() === 'QUARANTINED';
 
@@ -19,8 +20,8 @@ export const AdminProjectManagement: React.FC = () => {
     setError('');
     try {
       setProjects(await api.getProjects());
-    } catch (requestError: any) {
-      setError(requestError.response?.data?.message || 'Unable to load projects.');
+    } catch (requestError) {
+      setError(errorMessage(requestError, 'Unable to load projects.'));
     } finally {
       setLoading(false);
     }
@@ -34,8 +35,8 @@ export const AdminProjectManagement: React.FC = () => {
     try {
       const updated = await api.updateProject(project.id, { status });
       setProjects((current) => current.map((item) => item.id === updated.id ? updated : item));
-    } catch (requestError: any) {
-      setError(requestError.response?.data?.message || 'Unable to update project status.');
+    } catch (requestError) {
+      setError(errorMessage(requestError, 'Unable to update project status.'));
     } finally {
       setWorkingId(null);
     }
@@ -53,8 +54,8 @@ export const AdminProjectManagement: React.FC = () => {
     try {
       await api.deleteProject(project.id);
       setProjects((current) => current.filter((item) => item.id !== project.id));
-    } catch (requestError: any) {
-      setError(requestError.response?.data?.message || 'Unable to delete project.');
+    } catch (requestError) {
+      setError(errorMessage(requestError, 'Unable to delete project.'));
     } finally {
       setWorkingId(null);
     }

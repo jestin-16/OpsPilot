@@ -7,6 +7,7 @@ import {
   Pause, Play, ChevronRight, X, Box, Rocket, Terminal, Activity
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { errorMessage } from '../services/projectApi';
 
 export const LogManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -51,8 +52,8 @@ export const LogManagement: React.FC = () => {
       ]);
       setLogs(logsData);
       setProjects(projsData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to search logs');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to search logs'));
     } finally {
       setLoading(false);
     }

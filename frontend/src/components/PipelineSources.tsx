@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { errorMessage } from '../services/projectApi';
 import { Copy, Check, Pencil, Trash2, Plug, KeyRound, RefreshCw, GitBranch, Server } from 'lucide-react';
 import { api, API_BASE_URL, type PipelineSource, type PipelineSourceInput, type PipelineSourceProvider } from '../services/api';
 import { Modal } from './Modal';
@@ -181,8 +182,8 @@ export const PipelineSources: React.FC<Props> = ({ isAddOpen, onAddClose, onChan
       }
       await load();
       onChanged?.();
-    } catch (err: any) {
-      setSaveError(err?.response?.data?.message || 'Failed to save source');
+    } catch (err) {
+      setSaveError(errorMessage(err, 'Failed to save source'));
     } finally {
       setSaving(false);
     }

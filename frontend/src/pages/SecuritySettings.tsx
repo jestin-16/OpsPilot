@@ -1,14 +1,17 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, type PlatformUser } from '../services/api';
 import { isAdmin } from '../utils/roles';
 import { Shield, Key, Users, Check, ShieldAlert, Clock, Mail } from 'lucide-react';
 import { useConfirm } from '../components/ConfirmProvider';
 
+/** The backend treats a missing flag as active (only an explicit false disables an account). */
+const isActiveUser = (u: PlatformUser) => u.isActive !== false;
+
 export const SecuritySettings: React.FC = () => {
   const { user } = useAuth();
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<PlatformUser[]>([]);
   const { confirm } = useConfirm();
 
   const isUserAdmin = isAdmin(user?.roles);
@@ -153,8 +156,8 @@ export const SecuritySettings: React.FC = () => {
                         </div>
                       </td>
                       <td className="p-4">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${u.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                          {u.isActive ? 'Active' : 'Inactive'}
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${isActiveUser(u) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {isActiveUser(u) ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className="p-4">
@@ -189,13 +192,13 @@ export const SecuritySettings: React.FC = () => {
                         </select>
                         <button
                           onClick={async () => {
-                            if (await confirm(`Toggle access for ${u.name}?`, { isDestructive: u.isActive, confirmText: u.isActive ? 'Revoke Access' : 'Restore Access' })) {
-                              handleToggleStatus(u.id, !u.isActive);
+                            if (await confirm(`Toggle access for ${u.name}?`, { isDestructive: isActiveUser(u), confirmText: isActiveUser(u) ? 'Revoke Access' : 'Restore Access' })) {
+                              handleToggleStatus(u.id, !isActiveUser(u));
                             }
                           }}
-                          className={`ml-2 px-3 py-1 text-xs font-bold rounded ${u.isActive ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
+                          className={`ml-2 px-3 py-1 text-xs font-bold rounded ${isActiveUser(u) ? 'bg-rose-100 text-rose-700 hover:bg-rose-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`}
                         >
-                          {u.isActive ? 'Revoke Access' : 'Restore Access'}
+                          {isActiveUser(u) ? 'Revoke Access' : 'Restore Access'}
                         </button>
                       </td>
                     </tr>

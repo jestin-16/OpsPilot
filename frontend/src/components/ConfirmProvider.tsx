@@ -1,18 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import React, { useState, useCallback, type ReactNode } from 'react';
 import { ConfirmDialog } from './ConfirmDialog';
-
-interface ConfirmOptions {
-  title?: string;
-  confirmText?: string;
-  cancelText?: string;
-  isDestructive?: boolean;
-}
-
-interface ConfirmContextType {
-  confirm: (message: string, options?: ConfirmOptions) => Promise<boolean>;
-}
-
-const ConfirmContext = createContext<ConfirmContextType | undefined>(undefined);
+import { ConfirmContext, type ConfirmOptions } from '../context/ConfirmContext';
 
 export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -55,12 +43,4 @@ export const ConfirmProvider: React.FC<{ children: ReactNode }> = ({ children })
       />
     </ConfirmContext.Provider>
   );
-};
-
-export const useConfirm = () => {
-  const context = useContext(ConfirmContext);
-  if (!context) {
-    throw new Error('useConfirm must be used within a ConfirmProvider');
-  }
-  return context;
 };

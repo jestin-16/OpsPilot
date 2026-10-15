@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type DockerSource, type Project } from '../services/api';
 import { Box, Plus, Trash2, ArrowLeft, Copy, Eye } from 'lucide-react';
-import { useConfirm } from '../components/ConfirmProvider';
+import { useConfirm } from '../context/ConfirmContext';
 import { errorMessage } from '../services/projectApi';
 
 export const LogSources: React.FC = () => {

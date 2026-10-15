@@ -3,7 +3,7 @@ import { AlertTriangle, ExternalLink, FolderGit2, RefreshCw, ShieldAlert, Trash2
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type Project } from '../services/api';
 
-import { useConfirm } from '../components/ConfirmProvider';
+import { useConfirm } from '../context/ConfirmContext';
 import { errorMessage } from '../services/projectApi';
 
 const isQuarantined = (project: Project) => project.status.toUpperCase() === 'QUARANTINED';

@@ -53,6 +53,7 @@ describe('Projects - Deployments Dialog', () => {
       ownerName: 'Alice Admin',
       ownerEmail: 'alice@opspilot.io',
       status: 'ACTIVE',
+      deployedUrl: null,
       createdAt: '2026-01-01T00:00:00Z',
     },
   ];
@@ -65,9 +66,12 @@ describe('Projects - Deployments Dialog', () => {
       version: 'v1.2.3',
       environment: 'Production',
       status: 'Succeeded',
-      deployedBy: 'Alice Admin',
+      deployedById: 1,
+      deployedByName: 'Alice Admin',
+      actor: 'Alice Admin',
       deployedAt: '2026-10-15T08:00:00Z',
       source: 'MANUAL',
+      url: null,
     },
   ];
 

@@ -1,13 +1,15 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthProvider';
+import { useAuth } from './context/AuthContext';
 
 import { AuthPage } from './pages/AuthPage';
 import { LandingPage } from './pages/LandingPage';
 import { AlertProvider } from './components/AlertProvider';
 import { canAccessRole, isAdmin, type PlatformRole } from './utils/roles';
-import { ProjectProvider, useProject } from './context/ProjectContext';
+import { ProjectProvider } from './context/ProjectProvider';
+import { useProject } from './context/ProjectContext';
 
 // Each page is its own chunk, loaded the first time its route is visited. The landing and sign-in
 // pages stay in the main bundle because they are what a visitor sees first.

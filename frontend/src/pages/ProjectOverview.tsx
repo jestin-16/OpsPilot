@@ -6,10 +6,9 @@ import { SidebarLayout } from '../components/SidebarLayout';
 import { ErrorBanner, ProjectHeader } from '../components/project/ProjectHeader';
 import { SourceBadge, StatusPill } from '../components/project/badges';
 import { formatTime } from '../components/logs/LogViewer';
-import { TYPE_ICONS } from './ProjectIntegrations';
 import { useProject } from '../context/ProjectContext';
 import { useProjectIntegrations } from '../hooks/useProjectIntegrations';
-import { INTEGRATION_TYPES } from '../lib/integrationTypes';
+import { INTEGRATION_TYPES, TYPE_ICONS } from '../lib/integrationTypes';
 import { LEVEL_STYLES } from '../lib/logBuffer';
 import { errorMessage, projectApi, type IntegrationStatus, type ProjectIntegration } from '../services/projectApi';
 

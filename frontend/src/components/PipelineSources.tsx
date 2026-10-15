@@ -8,7 +8,7 @@ import { Badge } from './Badge';
 import { Card } from './Card';
 import { Input } from './Input';
 import { Table, type Column } from './Table';
-import { useConfirm } from './ConfirmProvider';
+import { useConfirm } from '../context/ConfirmContext';
 
 const PROVIDER_LABEL: Record<PipelineSourceProvider, string> = {
   GITHUB_ACTIONS: 'GitHub Actions',
@@ -27,7 +27,7 @@ const emptyForm = {
 };
 type FormState = typeof emptyForm;
 
-export const webhookUrlFor = (source: Pick<PipelineSource, 'webhookPath'>): string => {
+const webhookUrlFor = (source: Pick<PipelineSource, 'webhookPath'>): string => {
   let origin = window.location.origin;
   try {
     origin = new URL(API_BASE_URL).origin;

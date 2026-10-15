@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Activity, BellRing, Boxes, FileClock, GitBranch, Plus, RefreshCw, Save, ShieldCheck, Trash2, UsersRound, X } from 'lucide-react';
 import { api, type AdminOverview, type AuditLog, type IntegrationSettings, type PlatformSetting } from '../services/api';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { useConfirm } from '../components/ConfirmProvider';
+import { useConfirm } from '../context/ConfirmContext';
 import { errorMessage } from '../services/projectApi';
 
 export const AdminGovernance: React.FC = () => {

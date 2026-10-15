@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { api, type PlatformUser } from '../services/api';
 import { isAdmin } from '../utils/roles';
 import { Shield, Key, Users, Check, ShieldAlert, Clock, Mail } from 'lucide-react';
-import { useConfirm } from '../components/ConfirmProvider';
+import { useConfirm } from '../context/ConfirmContext';
 
 /** The backend treats a missing flag as active (only an explicit false disables an account). */
 const isActiveUser = (u: PlatformUser) => u.isActive !== false;

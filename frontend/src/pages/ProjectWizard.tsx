@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { useAlert } from '../components/AlertProvider';
+import { useAlert } from '../context/AlertContext';
 import { api, type Project } from '../services/api';
 import { ProviderType, IntegrationCategory } from '../lib/legacyProviders';
 import {

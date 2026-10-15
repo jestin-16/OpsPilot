@@ -1,19 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, Info, TriangleAlert, X } from 'lucide-react';
-
-type AlertTone = 'success' | 'error' | 'warning' | 'info';
+import { AlertContext, type AlertTone } from '../context/AlertContext';
 
 interface AlertItem {
   id: number;
   message: string;
   tone: AlertTone;
 }
-
-interface AlertContextValue {
-  showAlert: (message: string, tone?: AlertTone) => void;
-}
-
-const AlertContext = createContext<AlertContextValue | null>(null);
 
 const inferTone = (message: string): AlertTone => {
   if (/success|synced|complete|saved|created/i.test(message)) return 'success';
@@ -74,10 +67,4 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       </div>
     </AlertContext.Provider>
   );
-};
-
-export const useAlert = (): AlertContextValue => {
-  const context = useContext(AlertContext);
-  if (!context) throw new Error('useAlert must be used within an AlertProvider');
-  return context;
 };

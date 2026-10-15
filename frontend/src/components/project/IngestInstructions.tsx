@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
-import { API_BASE_URL } from '../../services/api';
-
-export const ingestUrl = (projectId: number) => `${API_BASE_URL}/ingest/${projectId}`;
-export const githubWebhookUrl = (projectId: number, integrationId: number) => `${API_BASE_URL}/ingest/${projectId}/github/${integrationId}`;
+import { ingestUrl } from '../../lib/urls';
 
 const CopyButton: React.FC<{ text: string; label?: string }> = ({ text, label = 'Copy' }) => {
   const [copied, setCopied] = useState(false);

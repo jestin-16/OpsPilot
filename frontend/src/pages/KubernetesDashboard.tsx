@@ -271,6 +271,8 @@ export const KubernetesDashboard: React.FC = () => {
                           <th className="py-4 px-5">Namespace</th>
                           <th className="py-4 px-5">Status</th>
                           <th className="py-4 px-5">Restarts</th>
+                          <th className="py-4 px-5">CPU</th>
+                          <th className="py-4 px-5">Memory</th>
                           <th className="py-4 px-5">Node</th>
                         </tr>
                       </thead>
@@ -283,6 +285,8 @@ export const KubernetesDashboard: React.FC = () => {
                               <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(pod.status)}`}>{pod.status}</span>
                             </td>
                             <td className="py-3 px-5">{pod.restartCount}</td>
+                            <td className="py-3 px-5 text-op-muted font-mono">{pod.cpuUsage || '—'}</td>
+                            <td className="py-3 px-5 text-op-muted font-mono">{pod.memoryUsage || '—'}</td>
                             <td className="py-3 px-5 text-op-muted">{pod.node}</td>
                           </tr>
                         ))}
@@ -394,6 +398,14 @@ export const KubernetesDashboard: React.FC = () => {
                         <div className="grid grid-cols-3">
                           <span className="text-op-muted">Start Time</span>
                           <span className="col-span-2">{formatDateTime(podDetails.status?.startTime)}</span>
+                        </div>
+                        <div className="grid grid-cols-3">
+                          <span className="text-op-muted">CPU</span>
+                          <span className="col-span-2 font-mono">{podDetails.cpuUsage || selectedPod.cpuUsage || '—'}</span>
+                        </div>
+                        <div className="grid grid-cols-3">
+                          <span className="text-op-muted">Memory</span>
+                          <span className="col-span-2 font-mono">{podDetails.memoryUsage || selectedPod.memoryUsage || '—'}</span>
                         </div>
                       </div>
                     </div>

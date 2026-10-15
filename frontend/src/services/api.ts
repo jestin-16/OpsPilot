@@ -221,10 +221,12 @@ export interface DeploymentInput {
 
 export interface Pod {
   podId: number;
+  podName?: string;
+  namespace?: string;
   nodeName: string;
   podStatus: string;
-  cpuUsage: string;
-  memoryUsage: string;
+  cpuUsage: string | null;
+  memoryUsage: string | null;
 }
 
 export interface LogEntry {
@@ -343,6 +345,8 @@ export interface KubernetesEnhancedPod {
   node: string;
   createdAt: string;
   restartCount: number;
+  cpuUsage?: string | null;
+  memoryUsage?: string | null;
 }
 
 export interface KubernetesContainerSpec {
@@ -391,6 +395,8 @@ export interface KubernetesPodDetails {
   restartCount: number;
   logs: string;
   events?: KubernetesEvent[];
+  cpuUsage?: string | null;
+  memoryUsage?: string | null;
 }
 
 

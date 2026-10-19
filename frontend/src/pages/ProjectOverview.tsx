@@ -5,7 +5,6 @@ import { ArrowRight, FileText, Plus, Rocket } from 'lucide-react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { ErrorBanner, ProjectHeader } from '../components/project/ProjectHeader';
 import { SourceBadge, StatusPill } from '../components/project/badges';
-import { formatTime } from '../components/logs/LogViewer';
 import { TYPE_ICONS } from './ProjectIntegrations';
 import { useProject } from '../context/ProjectContext';
 import { useProjectIntegrations } from '../hooks/useProjectIntegrations';

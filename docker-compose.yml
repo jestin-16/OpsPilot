@@ -17,6 +17,8 @@ services:
       context: ./backend
       dockerfile: service-registry/Dockerfile
     container_name: opspilot-service-registry
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC
     ports:
       - "8761:8761"
     restart: unless-stopped
@@ -35,6 +37,7 @@ services:
       - postgres
       - service-registry
     environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
@@ -68,6 +71,7 @@ services:
     extra_hosts:
       - "kubernetes:host-gateway"
     environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC
       - KUBERNETES_LOOPBACK_HOST=${KUBERNETES_LOOPBACK_HOST:-kubernetes}
       - KUBERNETES_MASTER=${KUBERNETES_MASTER:-}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
@@ -101,6 +105,7 @@ services:
     extra_hosts:
       - "kubernetes:host-gateway"
     environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
@@ -147,13 +152,14 @@ services:
       context: ./backend
       dockerfile: api-gateway/Dockerfile
     container_name: opspilot-api-gateway
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
     ports:
       - "8080:8080"
     restart: unless-stopped
     depends_on:
       - service-registry
-    environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
 
   prometheus:
     image: prom/prometheus:latest
@@ -205,6 +211,19 @@ services:
       - ./blackbox.yml:/config/blackbox.yml
     command: --config.file=/config/blackbox.yml
     restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE_URL=/api/v1
+    container_name: opspilot-frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
 
 volumes:
   postgres_data:

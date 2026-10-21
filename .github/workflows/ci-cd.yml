@@ -95,8 +95,8 @@ jobs:
       - name: Rebuild & Start Docker Compose Stack
         shell: powershell
         run: |
-          Write-Host "Rebuilding and deploying Docker services..." -ForegroundColor Cyan
-          docker compose up -d --build
+          Write-Host "Rebuilding and deploying Docker services with managed concurrency..." -ForegroundColor Cyan
+          docker compose --parallel 2 up -d --build
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Docker Compose execution failed!"
             exit 1
@@ -106,15 +106,15 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Verifying system readiness on port 80..." -ForegroundColor Cyan
-          $maxAttempts = 15
+          $maxAttempts = 20
           $attempt = 0
           $healthy = $false
 
           while ($attempt -lt $maxAttempts) {
             $attempt++
-            Start-Sleep -Seconds 4
+            Start-Sleep -Seconds 5
             try {
-              $response = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 3
+              $response = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 5
               if ($response.StatusCode -eq 200) {
                 $healthy = $true
                 Write-Host "OpsPilot Frontend & Gateway responding with HTTP 200 OK!" -ForegroundColor Green

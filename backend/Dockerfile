@@ -9,7 +9,7 @@ COPY . .
 # The Maven repository is a BuildKit cache mount, so dependencies download once instead of on every
 # source change.
 RUN --mount=type=cache,target=/root/.m2 \
-    mvn -B -q package -pl "${SERVICE}" -am -DskipTests \
+    mvn -B --no-transfer-progress package -pl "${SERVICE}" -am -DskipTests \
  && cp "${SERVICE}"/target/"${SERVICE}"-*.jar /app/app.jar
 
 FROM eclipse-temurin:17-jre-jammy

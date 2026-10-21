@@ -1,8 +1,6 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Play, Pause, Trash2, ArrowDown, Download, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Play, Pause, Trash2, ArrowDown, Download, AlertTriangle, Loader2 } from 'lucide-react';
 import type { UseProjectLogs } from '../../hooks/useProjectLogs';
-import { LEVEL_STYLES, LEVEL_TEXT } from '../../lib/logBuffer';
-import type { ProjectLogEntry } from '../../services/projectApi';
 
 export function formatTime(iso: string): string {
   if (!iso) return '';
@@ -77,7 +75,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
         {/* Status indicator */}
         <div className="flex items-center gap-2.5 text-xs">
           <span className="flex items-center gap-1.5 font-semibold">
-            {status === 'connected' ? (
+            {status === 'live' ? (
               <>
                 <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-emerald-400">Live</span>

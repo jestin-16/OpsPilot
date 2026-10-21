@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GitCommit, Play, RefreshCw, X, Box, Terminal, Layers, Copy, Check, ExternalLink } from 'lucide-react';
+import { GitCommit, Play, RefreshCw, X, Box, Terminal, Layers, Copy, Check } from 'lucide-react';
 import type { ProjectIntegration, ProjectLogEntry } from '../../services/projectApi';
 import { formatTime } from './LogViewer';
 
@@ -56,7 +56,6 @@ export const KubernetesPanel: React.FC<KubernetesPanelProps> = ({
   pod,
   onNamespace,
   onPod,
-  snapshot,
 }) => {
   const configuredNs = String(integration.config.namespace || 'default');
 
@@ -137,7 +136,7 @@ export interface GitTimelineProps {
   integration: ProjectIntegration;
 }
 
-export const GitTimeline: React.FC<GitTimelineProps> = ({ entries, loading, integration }) => {
+export const GitTimeline: React.FC<GitTimelineProps> = ({ entries, loading }) => {
   if (loading) {
     return <div className="h-48 animate-pulse rounded-2xl bg-slate-100" />;
   }
@@ -181,7 +180,7 @@ export interface CicdRunsProps {
   entries: ProjectLogEntry[];
 }
 
-export const CicdRuns: React.FC<CicdRunsProps> = ({ integration, entries }) => {
+export const CicdRuns: React.FC<CicdRunsProps> = ({ entries }) => {
   return (
     <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <h3 className="flex items-center gap-2 font-semibold text-slate-900 text-sm">

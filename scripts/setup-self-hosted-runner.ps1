@@ -40,14 +40,13 @@ if (-not $RunnerToken) {
 
 # Download latest Windows runner package if not already downloaded
 $runnerPkg = "$runnerDir\actions-runner-win-x64.zip"
-if (-not (Test-Path "$runnerDir\config.cmd")) {
-    Write-Host "Downloading GitHub Actions Runner v2.322.0..." -ForegroundColor Yellow
-    $downloadUrl = "https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-win-x64-2.322.0.zip"
-    Invoke-WebRequest -Uri $downloadUrl -OutFile $runnerPkg
-    Write-Host "Extracting runner files..." -ForegroundColor Yellow
-    Expand-Archive -Path $runnerPkg -DestinationPath $runnerDir -Force
-    Remove-Item $runnerPkg -Force
-}
+$runnerVersion = "2.338.0"
+Write-Host "Downloading GitHub Actions Runner v$runnerVersion..." -ForegroundColor Yellow
+$downloadUrl = "https://github.com/actions/runner/releases/download/v$runnerVersion/actions-runner-win-x64-$runnerVersion.zip"
+curl.exe -L -o $runnerPkg $downloadUrl
+Write-Host "Extracting runner files..." -ForegroundColor Yellow
+Expand-Archive -Path $runnerPkg -DestinationPath $runnerDir -Force
+Remove-Item $runnerPkg -Force
 
 # Configure runner
 Write-Host "Configuring runner against $RepoUrl..." -ForegroundColor Yellow

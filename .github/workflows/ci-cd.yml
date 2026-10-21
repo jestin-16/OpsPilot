@@ -79,7 +79,10 @@ jobs:
         shell: powershell
         run: |
           if (-not (Test-Path ".env")) {
-            if (Test-Path ".env.example") {
+            if (Test-Path "c:\Users\jesvi\OpsPilot\.env") {
+              Write-Host "Copying configured host .env file..." -ForegroundColor Green
+              Copy-Item "c:\Users\jesvi\OpsPilot\.env" ".env" -Force
+            } elseif (Test-Path ".env.example") {
               Write-Host "Creating .env from .env.example..." -ForegroundColor Yellow
               Copy-Item ".env.example" ".env"
             } else {

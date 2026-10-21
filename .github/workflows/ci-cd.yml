@@ -121,7 +121,7 @@ jobs:
                 break
               }
             } catch {
-              Write-Host "Attempt $attempt/$maxAttempts: Waiting for services to become ready..." -ForegroundColor DarkGray
+              Write-Host "Attempt ${attempt}/${maxAttempts} - Waiting for services to become ready..." -ForegroundColor DarkGray
             }
           }
 

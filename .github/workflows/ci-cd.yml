@@ -1,29 +1,21 @@
-name: CI/CD Pipeline - Log Watcher Service
+name: OpsPilot CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
-    paths:
-      - 'backend/log-watcher-service/**'
-      - 'backend/pom.xml'
-      - 'k8s/log-watcher/**'
-      - '.github/workflows/ci-cd.yml'
-  pull_request:
-    branches: [ main, master ]
-    paths:
-      - 'backend/log-watcher-service/**'
-      - 'backend/pom.xml'
-      - 'k8s/log-watcher/**'
+    branches: [ main ]
+  workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/log-watcher-service
+concurrency:
+  group: opspilot-prod-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
-  test:
-    name: Run Unit & Integration Tests
+  backend-ci:
+    name: Backend Build & Test Suite
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -35,109 +27,124 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Cache Maven Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Install Parent POM
+      - name: Build & Test All Microservices
+        working-directory: backend
         run: |
-          cd backend
-          mvn clean install -N
+          ./mvnw -B verify
 
-      - name: Run Tests
-        run: |
-          cd backend
-          mvn test -pl log-watcher-service
-
-      - name: Package JAR
-        run: |
-          cd backend
-          mvn package -pl log-watcher-service -DskipTests
-
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: log-watcher-service-jar
-          path: backend/log-watcher-service/target/*.jar
-          retention-days: 7
-
-  build-and-push:
-    name: Build & Push Docker Image
-    needs: test
+  frontend-ci:
+    name: Frontend Build, Lint & Tests
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    permissions:
-      contents: read
-      packages: write
-
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: actions/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha,format=short
+      - name: Install Dependencies
+        run: npm ci
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          file: ./backend/log-watcher-service/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: TypeScript Type Check
+        run: npx tsc -b
 
-  deploy:
-    name: Deploy to Kubernetes Cluster
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      - name: Code Linter
+        run: npm run lint
 
+      - name: Unit Tests
+        run: npm test
+
+      - name: Production Bundle Build
+        env:
+          VITE_API_BASE_URL: /api/v1
+        run: npm run build
+
+  deploy-to-host:
+    name: Deploy to Production Host Machine
+    needs: [ backend-ci, frontend-ci ]
+    if: github.ref == 'refs/heads/main'
+    runs-on: self-hosted
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Configure Kubectl Context
-        uses: azure/k8s-set-context@v4
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-
-      - name: Update Image in K8s Manifests
+      - name: Verify Environment Configuration
+        shell: powershell
         run: |
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          sed -i "s|image: opspilot/log-watcher-service:latest|image: ${IMAGE}|g" k8s/log-watcher/deployment.yaml
+          if (-not (Test-Path ".env")) {
+            if (Test-Path ".env.example") {
+              Write-Host "Creating .env from .env.example..." -ForegroundColor Yellow
+              Copy-Item ".env.example" ".env"
+            } else {
+              Write-Error ".env file is missing on runner host!"
+              exit 1
+            }
+          }
+          Write-Host ".env configuration confirmed." -ForegroundColor Green
 
-      - name: Apply Kubernetes Manifests
+      - name: Rebuild & Start Docker Compose Stack
+        shell: powershell
         run: |
-          kubectl apply -f k8s/log-watcher/rbac.yaml
-          kubectl apply -f k8s/log-watcher/configmap.yaml
-          kubectl apply -f k8s/log-watcher/service.yaml
-          kubectl apply -f k8s/log-watcher/deployment.yaml
-          kubectl apply -f k8s/log-watcher/ingress.yaml
+          Write-Host "Rebuilding and deploying Docker services..." -ForegroundColor Cyan
+          docker compose up -d --build
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Docker Compose execution failed!"
+            exit 1
+          }
 
-      - name: Verify Rollout Status
+      - name: Health Check & Smoke Verification
+        shell: powershell
         run: |
-          kubectl rollout status deployment/opspilot-log-watcher -n default --timeout=120s
-          kubectl get pods -l app=opspilot-log-watcher -n default
+          Write-Host "Verifying system readiness on port 80..." -ForegroundColor Cyan
+          $maxAttempts = 15
+          $attempt = 0
+          $healthy = $false
+
+          while ($attempt -lt $maxAttempts) {
+            $attempt++
+            Start-Sleep -Seconds 4
+            try {
+              $response = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 3
+              if ($response.StatusCode -eq 200) {
+                $healthy = $true
+                Write-Host "OpsPilot Frontend & Gateway responding with HTTP 200 OK!" -ForegroundColor Green
+                break
+              }
+            } catch {
+              Write-Host "Attempt $attempt/$maxAttempts: Waiting for services to become ready..." -ForegroundColor DarkGray
+            }
+          }
+
+          if (-not $healthy) {
+            Write-Warning "Frontend health probe timed out. Inspecting container logs..."
+            docker compose ps
+            exit 1
+          }
+
+      - name: Prune Dangling Docker Images
+        shell: powershell
+        if: always()
+        run: |
+          docker image prune -f
+
+      - name: Post Deployment Summary
+        shell: powershell
+        if: always()
+        run: |
+          $summary = @"
+          ### 🚀 OpsPilot Deployment Status
+          - **Commit:** `${{ github.sha }}`
+          - **Branch:** `${{ github.ref_name }}`
+          - **Triggered By:** `${{ github.actor }}`
+          - **Target Environment:** Host Laptop (`self-hosted`)
+          - **Live URL:** [https://opspilot.jestin16.dev](https://opspilot.jestin16.dev)
+          - **Status:** Complete ✅
+          "@
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $summary

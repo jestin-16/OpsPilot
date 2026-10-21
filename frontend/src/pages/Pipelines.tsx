@@ -51,7 +51,7 @@ export const Pipelines: React.FC = () => {
       const matchesStatus = statusFilter === 'ALL' || run.status.toUpperCase() === statusFilter.toUpperCase();
       return matchesSearch && matchesStatus;
     });
-  }, [runs, search, statusFilter]);
+  }, [runs, search, statusFilter, currentProjectId]);
 
   const columns: Column<PipelineRun>[] = [
     { key: 'runId', header: 'Run ID', render: (r) => <span className="font-mono font-medium text-op-fg">#{r.runId}</span> },
@@ -86,7 +86,7 @@ export const Pipelines: React.FC = () => {
     )},
     { key: 'status', header: 'Status', render: (r) => {
       const s = r.status.toLowerCase();
-      const v = s === 'success' || s === 'completed' ? 'success' : s === 'failed' ? 'error' : 'warning';
+      const v = s === 'success' || s === 'completed' ? 'success' : s === 'failed' ? 'error' : s === 'received' ? 'neutral' : 'warning';
       return <Badge variant={v}>{r.status}</Badge>;
     }},
     { key: 'duration', header: 'Duration', render: (r) => (
@@ -122,9 +122,6 @@ export const Pipelines: React.FC = () => {
             <Button variant="primary" onClick={() => setAddSourceOpen(true)}>
               <Plus className="w-4 h-4 mr-2" /> Add source
             </Button>
-            <Button variant="secondary" onClick={() => api.simulateGitHubWebhook('push').then(() => fetchRuns(true))}>
-              Simulate Webhook
-            </Button>
           </div>
         </div>
 
@@ -156,6 +153,7 @@ export const Pipelines: React.FC = () => {
               <option value="SUCCESS">Success</option>
               <option value="FAILED">Failed</option>
               <option value="IN_PROGRESS">In Progress</option>
+              <option value="RECEIVED">Received</option>
             </select>
           </div>
         </Card>

@@ -1,3 +1,4 @@
+import { Cpu, FileText, GitBranch, Server, Workflow, type LucideIcon } from 'lucide-react';
 import type { IntegrationType } from '../services/projectApi';
 
 export type FieldKind = 'text' | 'password' | 'textarea' | 'checkbox' | 'select' | 'number';
@@ -105,6 +106,14 @@ export const INTEGRATION_TYPES: IntegrationTypeDef[] = [
 ];
 
 export const TYPE_BY_KEY: Record<string, IntegrationTypeDef> = Object.fromEntries(INTEGRATION_TYPES.map((t) => [t.type, t]));
+
+export const TYPE_ICONS: Record<IntegrationType, LucideIcon> = {
+  DOCKER: Server,
+  KUBERNETES: Cpu,
+  GITHUB: GitBranch,
+  CICD: Workflow,
+  APP_LOGS: FileText,
+};
 
 export const BADGE_COLORS: Record<IntegrationTypeDef['color'], string> = {
   sky: 'bg-sky-50 text-sky-700 border-sky-200',

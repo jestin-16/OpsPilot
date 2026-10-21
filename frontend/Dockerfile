@@ -3,15 +3,15 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy package files and install dependencies
-COPY package*.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Copy source code and build
 COPY . .
 ARG VITE_API_BASE_URL=/api/v1
-ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ARG VITE_GOOGLE_CLIENT_ID=275211051077-gat8a3o8evorpt66b2lana97ktvj8mko.apps.googleusercontent.com
-ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+ENV VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
 RUN npx vite build
 
 # Stage 2: Serve with Nginx

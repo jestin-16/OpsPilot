@@ -14,8 +14,7 @@ graph TD
     subgraph "Backend Core (Spring Boot 3 + Java 17+)"
         AuthService[Auth & RBAC Service]
         ProjService[Project & Audit Service]
-        DeployService[Deployment Engine]
-        DockerService[Docker Container Service]
+        DeployService[Deployment Records]
         K8sService[Kubernetes Service]
         LogService[Structured JSON Log Service]
         NotifService[Notification & Kafka Event Service]
@@ -34,7 +33,6 @@ graph TD
     Gateway --> AuthService
     Gateway --> ProjService
     Gateway --> DeployService
-    Gateway --> DockerService
     Gateway --> K8sService
     Gateway --> LogService
     Gateway --> NotifService
@@ -106,19 +104,19 @@ The signup flow is `POST /api/auth/register`, `POST /api/auth/verify-otp`, then 
 | `PUT` | `/api/projects/{id}` | Project Owner / Admin | Update project details |
 | `DELETE` | `/api/projects/{id}` | Project Owner / Admin | Delete project |
 
-### Deployment Engine
+### Deployments
+OpsPilot records deployments; it does not run them (see *Deployments* below for the three sources).
+
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `GET` | `/api/projects/{id}/deployments` | Authenticated | Get deployment history for a project |
-| `POST` | `/api/projects/{id}/deployments` | Admin, Developer | Trigger a deployment pipeline |
+| `GET` | `/api/projects/{id}/deployments` | Project owner, DevOps, Admin | Deployment history for a project |
+| `POST` | `/api/projects/{id}/deployments` | Project owner, DevOps, Admin | Record a deployment (`version`, `environment`, optional `status`, `url`) |
+| `POST` | `/api/v1/ingest/{projectId}/deployments` | Bearer ingest token | A CI pipeline reports a deployment |
+| `GET` | `/api/deployments/{id}/logs` | Project owner, DevOps, Admin | The project's logs around the deployment |
 
 ### Infrastructure Management
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `GET` | `/api/docker/containers` | Authenticated | List active Docker containers |
-| `POST` | `/api/docker/containers/{id}/start` | DevOps, Admin | Start a Docker container |
-| `POST` | `/api/docker/containers/{id}/stop` | DevOps, Admin | Stop a Docker container |
-| `POST` | `/api/docker/containers/{id}/restart` | DevOps, Admin | Restart a Docker container |
 | `GET` | `/api/kubernetes/pods` | Authenticated | List Minikube / K8s pods |
 
 ### Monitoring, Logs & Notifications
@@ -147,7 +145,7 @@ Everything starts with a **project**. Inside it you connect the systems you care
 2. **Connect integrations** (`/projects/:id/integrations`): each card has *Connect*, *Configure*, *Test* and *Disconnect*.
 3. **Watch logs**: `/projects/:id/logs` is one stream for every source (filters: source, level, time range, text; pause/resume, auto-scroll, source badges, colour-coded levels). `/projects/:id/logs/:integrationId` is a dedicated page per integration.
 
-The project switcher in the sidebar keeps the selection. Existing global pages (`/logs`, `/pipelines`, `/deployments`, `/incidents`, `/github`) follow the selected project, and a banner offers *Show all projects*. Data created before this flow is moved into a **Default Project** by migration `V15`.
+The project switcher in the sidebar keeps the selection. Existing global pages (`/logs`, `/pipelines`, `/deployments`, `/incidents`, `/github`) follow the selected project, and a banner offers *Show all projects*. On a new database, migration `V15` moves data created before this flow into a **Default Project**; databases created before Flyway was enabled skip it (see *Database schema* below).
 
 ### Integrations
 
@@ -155,11 +153,25 @@ The project switcher in the sidebar keeps the selection. Existing global pages (
 |---|---|---|---|
 | **Docker** | Docker Engine API over TCP | `host`, `containers`, *`caCert`* | Container picker on its page. Unix sockets are not supported; expose the API over TCP or a socket proxy. |
 | **Kubernetes** | Kubernetes API | `apiServer`, `namespace`, `podName`, `labelSelector`, `container`, *`token`*, *`caCert`* | Uses the in-cluster service account when no `apiServer` is set. Needs `get/list pods` and `get pods/log`. Kubeconfig files are not parsed; use a service-account token. |
-| **Git** (`GITHUB`) | GitHub REST API + webhooks | `repo`, `apiBaseUrl`, `pollSeconds`, *`token`*, *`webhookSecret`* | Pushes, pull requests, workflow runs as a timeline. GitLab is not implemented. |
+| **Git** (`GITHUB`) | GitHub REST API + webhooks | `repo`, `apiBaseUrl`, `pollSeconds`, *`token`*, *`webhookSecret`* | Pushes, pull requests, workflow runs as a timeline; `deployment` / `deployment_status` events become the project's deployments. GitLab is not implemented. |
 | **CI/CD** | GitHub Actions or Jenkins | GitHub: `repo`, *`token`*. Jenkins: `baseUrl`, `job`, *`username`*, *`apiToken`* | Run list; opening a run reads its jobs/steps (GitHub) or console (Jenkins). The Jenkins live stream reports build state changes. |
 | **App Logs** | Pushed by your app | `app` | An ingest token is shown **once** at creation. |
 
 Secrets are split from settings by the server, encrypted at rest (AES-256-GCM), never returned by any API, and masked in error messages and log lines. Editing an integration keeps stored secrets unless you send new ones.
+
+### Deployments
+
+A deployment record comes from one of three places; OpsPilot never deploys anything itself.
+
+1. **GitHub** (automatic): add a Git integration with a `webhookSecret`, and in the repository's webhook settings subscribe to *Deployments* and *Deployment statuses*. Deploying to a GitHub environment (for example from an Actions job with `environment: production`) then records the deployment, follows its status, and keeps the environment URL.
+2. **Any CI system**: report it with an App Logs integration's ingest token. Send the same `id` again to update the status.
+   ```bash
+   curl -X POST "$API/api/v1/ingest/{projectId}/deployments"      -H "Authorization: Bearer opl_..." -H "Content-Type: application/json"      -d '{"id":"build-512","version":"v2.8.4","environment":"production","status":"success","url":"https://app.example.com"}'
+   ```
+   `status`: `in_progress`, `success`, `failure` or `inactive` (default `success`).
+3. **By hand**: *Projects → Deployments → Record deployment*, or `POST /api/v1/projects/{id}/deployments` with a user token.
+
+A deployment's logs are the project's logs from five minutes before it to fifteen minutes after its last status update. Deployments created by the simulator in earlier versions are labelled *Simulated (legacy)*; `scripts/db/delete_simulated_deployments.sql` removes them.
 
 ### Sending application logs
 
@@ -189,6 +201,7 @@ All paths also exist under `/api/projects/...` (without `v1`).
 | `GET` | `/api/v1/projects/{id}/logs?integrationId&type&level&from&to&q&container&namespace&pod&page&size` | Stored logs, newest first |
 | `GET` | `/api/v1/projects/{id}/logs/stream?...` | Server-sent events with the same filters; 15 s keepalive; honours `Last-Event-ID` to replay what was missed |
 | `POST` | `/api/v1/ingest/{projectId}` | Push logs (Bearer ingest token) |
+| `POST` | `/api/v1/ingest/{projectId}/deployments` | Report a deployment from CI (Bearer ingest token) |
 
 ### How it fits together
 
@@ -201,7 +214,12 @@ All paths also exist under `/api/projects/...` (without `v1`).
 
 | Variable | Service | Default | Purpose |
 |---|---|---|---|
-| `OPSPILOT_ENCRYPTION_KEY` | core, observability | dev-only fallback | Key for integration secrets. **Set it in production**; changing it makes stored secrets unreadable. `openssl rand -base64 32` |
+| `JWT_SECRET` | auth, core, observability, log-watcher | **required** | Signs login tokens; must be identical in every service and at least 32 bytes. `openssl rand -base64 48`. Changing it signs everyone out |
+| `DEMO_USERS_ENABLED` | auth, core, observability | `false` | Creates the public demo accounts (`admin@opspilot.io` / `Password123!` etc.). Local development only |
+| `AUTH_COOKIE_SECURE` | auth | `true` | Send the refresh cookie over HTTPS only; `false` for plain-HTTP local development |
+| `GITHUB_WEBHOOK_SECRET` | core, observability | empty | Secret for the global GitHub webhook URLs. Empty = those URLs refuse every delivery; per-project and per-source webhook URLs use their own secrets |
+| `JENKINS_WEBHOOK_SECRET` | core | empty | Token for the global Jenkins webhook URL; empty = refused |
+| `OPSPILOT_ENCRYPTION_KEY` | auth, core, observability | **required** | Key for stored credentials (AES-256-GCM). Services refuse to start without it; changing it makes stored secrets unreadable. Values written before it was required are re-encrypted under it on core-service's next start. `openssl rand -base64 32` |
 | `LOGS_RUNNER_ENABLED` | observability | `true` | Follow pull integrations (set `false` on replicas that should only serve reads) |
 | `LOGS_RUNNER_INTERVAL_MS` | observability | `30000` | How often to look for new / changed / disconnected integrations |
 | `LOGS_RUNNER_REFRESH` | observability | `10m` | Re-resolve containers and pods for Docker / Kubernetes streams |
@@ -209,6 +227,12 @@ All paths also exist under `/api/projects/...` (without `v1`).
 | `VITE_API_BASE_URL` | frontend | `http://localhost:8080/api/v1` | API gateway URL |
 
 Integration endpoints are fetched by the server, so only point them at hosts you trust; `http(s)` only, and link-local addresses (cloud metadata) are refused.
+
+### Database schema
+
+Flyway owns the schema (`backend/shared-lib/src/main/resources/db/migration`) and Hibernate only validates it (`ddl-auto: validate`), so a service refuses to start if its entities and the database disagree. Change the schema by adding a new `V<n>__description.sql`; never edit one that has shipped.
+
+Flyway was not actually on the classpath before `V18`, so databases created earlier were built by Hibernate and have no `flyway_schema_history`. On first start they are baselined at version 17 and `V18` brings them in line; empty databases run every migration from `V1`. auth, core and observability all run Flyway, and its PostgreSQL lock lets them start at the same time.
 
 ---
 

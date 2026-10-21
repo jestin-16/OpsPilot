@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { UserRound, Save, Loader2 } from 'lucide-react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type User } from '../services/api';
+import { errorMessage } from '../services/projectApi';
 
 export const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<User | null>(null);
@@ -19,7 +20,7 @@ export const ProfilePage: React.FC = () => {
         setName(user.name);
         setEmail(user.email);
       })
-      .catch((err) => setError(err.response?.data?.message || err.message || 'Failed to load profile'))
+      .catch((err) => setError(errorMessage(err, 'Failed to load profile')))
       .finally(() => setLoading(false));
   }, []);
 
@@ -33,8 +34,8 @@ export const ProfilePage: React.FC = () => {
       setProfile(updated);
       localStorage.setItem('opspilot_user', JSON.stringify(updated));
       setMessage('Profile updated.');
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message || 'Failed to update profile');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to update profile'));
     } finally {
       setSaving(false);
     }

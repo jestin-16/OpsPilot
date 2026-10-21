@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertCircle, ArrowRight, CheckCircle2, Clock3, Mail, RefreshCw } from 'lucide-react';
 import { api } from '../services/api';
+import { errorMessage } from '../services/projectApi';
 
-const getErrorMessage = (error: any) => error.response?.data?.message || 'We could not verify that code. Please try again.';
+const getErrorMessage = (error: unknown) => errorMessage(error, 'We could not verify that code. Please try again.');
 
 export const VerifyEmailOTP: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -60,7 +61,7 @@ export const VerifyEmailOTP: React.FC = () => {
       await api.verifyOtp({ email: email.trim(), otp });
       setVerified(true);
       window.setTimeout(() => navigate('/login?verified=true'), 1200);
-    } catch (requestError: any) {
+    } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
       setVerifying(false);
@@ -81,7 +82,7 @@ export const VerifyEmailOTP: React.FC = () => {
       setDigits(['', '', '', '', '', '']);
       setSecondsLeft(60);
       inputs.current[0]?.focus();
-    } catch (requestError: any) {
+    } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
       setResending(false);

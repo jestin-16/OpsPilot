@@ -1,5 +1,7 @@
 package com.opspilot.service;
 
+import com.opspilot.exception.ResourceNotFoundException;
+import com.opspilot.exception.ForbiddenException;
 import com.opspilot.entity.Deployment;
 import com.opspilot.entity.NotificationEntity;
 import com.opspilot.entity.User;
@@ -17,14 +19,18 @@ public class NotificationService {
 
     public List<NotificationEntity> getUserNotifications(User user) {
         if (user == null) {
-            return notificationRepository.findAllByOrderByCreatedAtDesc();
+            return List.of(); // never fall back to everyone's notifications
         }
         return notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
     }
 
-    public NotificationEntity markAsRead(Long notificationId) {
+    public NotificationEntity markAsRead(Long notificationId, User user) {
         NotificationEntity notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notification not found with id: " + notificationId));
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found with id: " + notificationId));
+        // Same rule as getUserNotifications: a user can only see, and so only mark, their own.
+        if (user == null || notification.getUser() == null || !notification.getUser().getId().equals(user.getId())) {
+            throw new ForbiddenException("This notification belongs to another user");
+        }
         notification.setRead(true);
         return notificationRepository.save(notification);
     }

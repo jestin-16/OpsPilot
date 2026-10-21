@@ -1,10 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useAuth } from '../context/AuthContext';
-import { 
-  api, type Project, type Deployment, 
-  type PipelineRun, type LogEntry, type IntegrationHealthResponse 
-} from '../services/api';
+import { api, type Project, type Deployment, type PipelineRun, type LogEntry, type IntegrationHealthResponse, type PlatformResource, type InfrastructureEvent, type Alert, type Incident } from '../services/api';
 import { StatsCard } from '../components/StatsCard';
 import { Table, type Column } from '../components/Table';
 import { Timeline, type TimelineEvent } from '../components/Timeline';
@@ -19,6 +16,11 @@ import {
   Terminal, Plus, Filter, ChevronDown
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { errorMessage } from '../services/projectApi';
+import { deploymentStatusVariant } from '../lib/deployments';
+
+const timelineStatus = (variant: string): 'success' | 'error' | 'warning' =>
+  variant === 'success' ? 'success' : variant === 'error' ? 'error' : 'warning';
 
 const PROVIDER_LABELS: Record<string, string> = {
   DOCKER: 'Docker',
@@ -58,11 +60,10 @@ export const Dashboard: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [health, setHealth] = useState<IntegrationHealthResponse | null>(null);
   
-  const [resources, setResources] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
-  const [incidents, setIncidents] = useState<any[]>([]);
-  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [resources, setResources] = useState<PlatformResource[]>([]);
+  const [events, setEvents] = useState<InfrastructureEvent[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
 
   // Filters
   const [filterProject, setFilterProject] = useState('ALL');
@@ -77,7 +78,7 @@ export const Dashboard: React.FC = () => {
       const [
         projectsData, deploymentsData, pipelinesData, 
         logsData, healthData, resourcesData, eventsData, 
-        alertsData, incidentsData, integrationsData
+        alertsData, incidentsData
       ] = await Promise.all([
         api.getProjects().catch(() => [] as Project[]),
         api.getAllDeployments().catch(() => [] as Deployment[]),
@@ -88,7 +89,6 @@ export const Dashboard: React.FC = () => {
         api.getEvents().catch(() => []),
         api.getAlerts().catch(() => []),
         api.getIncidents().catch(() => []),
-        api.getIntegrations().catch(() => []) // To map integrationId to provider
       ]);
 
       setProjects(projectsData);
@@ -101,9 +101,8 @@ export const Dashboard: React.FC = () => {
       setEvents(eventsData);
       setAlerts(alertsData);
       setIncidents(incidentsData);
-      setIntegrations(integrationsData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load dashboard data');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load dashboard data'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -115,22 +114,14 @@ export const Dashboard: React.FC = () => {
   }, [fetchData]);
 
   // Derived metrics for resources
-  const getProviderName = useCallback((integrationId: number) => {
-    const integ = integrations.find(i => i.id === integrationId);
-    return integ ? integ.providerType : 'Unknown';
-  }, [integrations]);
-
-  const enrichedResources = useMemo(() => {
-    return resources.map(r => ({ ...r, provider: getProviderName(r.integrationId) }));
-  }, [resources, getProviderName]);
 
   const filteredResources = useMemo(() => {
-    return enrichedResources.filter(r => {
+    return resources.filter(r => {
       if (filterProject !== 'ALL' && r.projectId?.toString() !== filterProject) return false;
       if (filterProvider !== 'ALL' && r.provider !== filterProvider) return false;
       return true;
     });
-  }, [enrichedResources, filterProject, filterProvider]);
+  }, [resources, filterProject, filterProvider]);
 
   const healthyResources = filteredResources.filter(r => r.status === 'HEALTHY' || r.status === 'RUNNING' || r.status === 'ACTIVE').length;
   const criticalResources = filteredResources.filter(r => r.status === 'CRITICAL' || r.status === 'FAILED' || r.status === 'STOPPED').length;
@@ -157,7 +148,7 @@ export const Dashboard: React.FC = () => {
         timestamp: new Date(d.deployedAt).toLocaleString(),
         rawDate: d.deployedAt,
         icon: <Rocket className="w-4 h-4" />,
-        status: d.status.toLowerCase() === 'success' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'
+        status: timelineStatus(deploymentStatusVariant(d.status))
       });
     });
 
@@ -166,7 +157,7 @@ export const Dashboard: React.FC = () => {
       allActivities.push({
         id: `evt-${e.id}`,
         title: `Event: ${e.eventType}`,
-        description: e.message || `Provider: ${e.provider}`,
+        description: errorMessage(e, `Provider: ${e.provider}`),
         timestamp: new Date(e.timestamp).toLocaleString(),
         rawDate: e.timestamp,
         icon: <Activity className="w-4 h-4" />,
@@ -216,7 +207,7 @@ export const Dashboard: React.FC = () => {
     { key: 'version', header: 'Version', render: (d) => <Badge>{d.version}</Badge> },
     { key: 'environment', header: 'Environment', render: (d) => <span className="capitalize">{d.environment}</span> },
     { key: 'status', header: 'Status', render: (d) => (
-      <Badge variant={d.status.toLowerCase() === 'running' || d.status.toLowerCase() === 'success' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'}>
+      <Badge variant={deploymentStatusVariant(d.status)}>
         {d.status}
       </Badge>
     )},
@@ -407,8 +398,8 @@ export const Dashboard: React.FC = () => {
                   {alerts.slice(0, 5).map(a => (
                     <div key={`alert-${a.id}`} className="flex justify-between items-center gap-4 p-4 bg-amber-50 border border-amber-100 rounded-lg">
                       <div className="min-w-0">
-                        <p className="font-semibold text-amber-800 truncate">Alert: {a.ruleName || a.eventType}</p>
-                        <p className="text-xs text-amber-700 mt-1">Severity: {a.severity} | Provider: {a.provider}</p>
+                        <p className="font-semibold text-amber-800 truncate">Alert: {a.eventType}</p>
+                        <p className="text-xs text-amber-700 mt-1">Severity: {a.severity} | Resource: {a.resource ?? '—'}</p>
                       </div>
                       <Badge variant="warning" className="shrink-0">{a.status}</Badge>
                     </div>

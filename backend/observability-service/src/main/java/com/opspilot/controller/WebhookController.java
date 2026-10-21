@@ -16,13 +16,16 @@ import com.opspilot.event.EventType;
 import com.opspilot.enums.ProviderType;
 import com.opspilot.messaging.EventPublisher;
 import com.opspilot.messaging.EventEnvelope;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.opspilot.util.WebhookSignature;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.io.IOException;
 import java.time.LocalDateTime;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -47,27 +50,49 @@ public class WebhookController {
     @Autowired
     private EventPublisher eventPublisher;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Value("${GITHUB_WEBHOOK_SECRET:}")
+    private String githubWebhookSecret;
+
     @PostMapping("/github")
     public ResponseEntity<Map<String, Object>> handleGitHubWebhook(
             @RequestHeader(value = "X-GitHub-Event", defaultValue = "push") String eventType,
-            @RequestBody WebhookPayload payload
+            @RequestHeader(value = "X-Hub-Signature-256", required = false) String signature,
+            @RequestBody byte[] rawBody
     ) {
+        // Fail closed: this endpoint is public, so the HMAC signature is the only thing proving GitHub sent it.
+        if (githubWebhookSecret == null || githubWebhookSecret.isBlank()) {
+            return ResponseEntity.status(503).body(Map.of("message",
+                    "GitHub webhook secret is not configured (set GITHUB_WEBHOOK_SECRET), or use a project integration's webhook URL"));
+        }
+        if (!WebhookSignature.verify(githubWebhookSecret, rawBody, signature)) {
+            return ResponseEntity.status(401).body(Map.of("message", "Missing or invalid X-Hub-Signature-256"));
+        }
+        WebhookPayload payload;
+        try {
+            payload = objectMapper.readValue(rawBody, WebhookPayload.class);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid JSON payload"));
+        }
+
         String repoName = payload.getRepository() != null ? payload.getRepository().getName() : "unknown-repo";
-        String branch = payload.getRef() != null ? payload.getRef().replace("refs/heads/", "") : "main";
-        String commitSha = payload.getHeadCommit() != null ? payload.getHeadCommit().getId().substring(0, 7) : "a1b2c3d";
-        String commitMessage = payload.getHeadCommit() != null ? payload.getHeadCommit().getMessage() : "Automated webhook push trigger";
+        // Events without a head commit (ping, tag, branch delete) are recorded as such, not with invented values.
+        String branch = payload.getRef() != null ? payload.getRef().replace("refs/heads/", "") : "unknown";
+        String headId = payload.getHeadCommit() != null ? payload.getHeadCommit().getId() : null;
+        String commitSha = headId != null ? headId.substring(0, Math.min(7, headId.length())) : "none";
+        String commitMessage = payload.getHeadCommit() != null && payload.getHeadCommit().getMessage() != null
+                ? payload.getHeadCommit().getMessage() : "(no commit)";
         String author = (payload.getHeadCommit() != null && payload.getHeadCommit().getAuthor() != null)
                 ? payload.getHeadCommit().getAuthor().getName()
-                : "GitHub Actions Bot";
+                : "unknown";
 
-        // Find matching project by repository URL or name
-        List<Project> projects = projectRepository.findAll();
-        Project matchedProject = projects.stream()
-                .filter(p -> (p.getRepositoryUrl() != null && p.getRepositoryUrl().toLowerCase().contains(repoName.toLowerCase()))
-                        || (p.getGithubRepoName() != null && p.getGithubRepoName().toLowerCase().contains(repoName.toLowerCase()))
-                        || (p.getProjectName() != null && p.getProjectName().toLowerCase().replaceAll("\\s+", "-").contains(repoName.toLowerCase())))
+        // Exact repository match in the database; substring matching filed "api" under "payment-api-gateway".
+        // No match means no project: never attach another repository's events to an unrelated project.
+        Project matchedProject = projectRepository.findByRepositoryName(repoName.toLowerCase()).stream()
                 .findFirst()
-                .orElse(projects.isEmpty() ? null : projects.get(0));
+                .orElse(null);
 
         PipelineRunEntity run = new PipelineRunEntity(
                 matchedProject,
@@ -76,7 +101,7 @@ public class WebhookController {
                 commitSha,
                 commitMessage,
                 author,
-                "SUCCESS"
+                "RECEIVED" // a push says nothing about whether a pipeline passed
         );
 
         PipelineRunEntity savedRun = pipelineRunRepository.save(run);
@@ -102,7 +127,7 @@ public class WebhookController {
         notificationRepository.save(new NotificationEntity(
                 matchedProject != null ? matchedProject.getOwner() : null,
                 null,
-                "CI/CD Pipeline Run #" + savedRun.getRunId() + " (" + eventType + ") passed on " + branch + " [" + commitSha + "]",
+                "GitHub " + eventType + " received on " + branch + " [" + commitSha + "] (run #" + savedRun.getRunId() + ")",
                 "SYSTEM_ALERT"
         ));
 

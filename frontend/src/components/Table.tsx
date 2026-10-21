@@ -44,7 +44,7 @@ export function Table<T>({ data, columns, keyExtractor, onRowClick, className = 
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-6 py-4 text-sm text-op-fg whitespace-nowrap">
-                    {col.render ? col.render(item) : (item as any)[col.key]}
+                    {col.render ? col.render(item) : ((item as Record<string, unknown>)[col.key] as React.ReactNode)}
                   </td>
                 ))}
               </tr>

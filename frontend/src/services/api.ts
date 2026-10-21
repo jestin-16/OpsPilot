@@ -1,7 +1,8 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { z } from 'zod';
+import type { ProjectIntegration } from './projectApi';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 // Axios Instance with Credentials for httpOnly Cookies
 export const axiosInstance = axios.create({
@@ -23,9 +24,9 @@ axiosInstance.interceptors.request.use((config) => {
 
 // Response Interceptor: 401 Auto-Refresh Loop
 let isRefreshing = false;
-let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
 
-const processQueue = (error: any, token: string | null = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -39,10 +40,13 @@ const processQueue = (error: any, token: string | null = null) => {
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest: any = error.config;
+    const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined;
 
-    const isAuthError = error.response?.status === 401 || error.response?.status === 403;
-    if (isAuthError && !originalRequest._retry && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/register') && !originalRequest.url?.includes('/auth/refresh')) {
+    // Only 401 means the access token is missing or expired. A 403 is a valid user who isn't allowed to do
+    // this; refreshing wouldn't change that, and a failed refresh would wrongly sign them out.
+    const isAuthError = error.response?.status === 401;
+    // config is absent when the request never got built; there is nothing to retry then.
+    if (isAuthError && originalRequest && !originalRequest._retry && !originalRequest.url?.includes('/auth/login') && !originalRequest.url?.includes('/auth/register') && !originalRequest.url?.includes('/auth/refresh')) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -165,7 +169,8 @@ export interface Project {
   ownerId: number;
   ownerName: string;
   ownerEmail: string;
-  deployedUrl: string;
+  /** Always null: OpsPilot observes projects, it does not host them. */
+  deployedUrl: string | null;
   awsLogGroupName?: string;
   githubRepoName?: string;
   lokiAppLabel?: string;
@@ -184,31 +189,44 @@ export interface PagedResponse<T> {
   last: boolean;
 }
 
+/** Where a deployment record came from. SIMULATED rows were made by the old, removed simulator. */
+export type DeploymentSource = 'MANUAL' | 'GITHUB' | 'CI' | 'SIMULATED';
+
+/** Statuses OpsPilot records; SIMULATED rows may still carry the simulator's old values. */
+export type DeploymentStatus = 'In progress' | 'Succeeded' | 'Failed' | 'Inactive';
+
 export interface Deployment {
   id: number;
   projectId: number;
   projectName: string;
-  deployedById: number;
-  deployedByName: string;
+  /** The OpsPilot user who recorded it; null for deployments reported by GitHub. */
+  deployedById: number | null;
+  /** That user's name, or the GitHub login of whoever deployed. */
+  deployedByName: string | null;
   version: string;
   environment: string;
   status: string;
   deployedAt: string;
+  source: DeploymentSource;
+  url: string | null;
+  actor: string | null;
 }
 
-export interface Container {
-  containerId: number;
-  imageName: string;
-  containerStatus: string;
-  createdAt: string;
+export interface DeploymentInput {
+  version: string;
+  environment: string;
+  status?: DeploymentStatus;
+  url?: string;
 }
 
 export interface Pod {
   podId: number;
+  podName?: string;
+  namespace?: string;
   nodeName: string;
   podStatus: string;
-  cpuUsage: string;
-  memoryUsage: string;
+  cpuUsage: string | null;
+  memoryUsage: string | null;
 }
 
 export interface LogEntry {
@@ -289,6 +307,98 @@ export interface KubernetesSummaryResponse {
   failedPodCount: number;
   pods: PodSummary[];
 }
+
+export interface KubernetesClusterOverview {
+  status: 'Healthy' | 'Disconnected' | string;
+  nodeCount: number;
+  podCount: number;
+  runningPods: number;
+  failedPods: number;
+}
+
+export interface KubernetesNode {
+  name: string;
+  status: 'Ready' | 'NotReady' | 'Unknown' | string;
+  role: 'control-plane' | 'worker' | '<none>' | string;
+  version: string;
+  createdAt: string;
+}
+
+export interface KubernetesServiceItem {
+  name: string;
+  namespace: string;
+  type: string;
+  clusterIP: string;
+  createdAt: string;
+}
+
+export interface KubernetesNamespace {
+  name: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface KubernetesEnhancedPod {
+  name: string;
+  namespace: string;
+  status: string;
+  node: string;
+  createdAt: string;
+  restartCount: number;
+  cpuUsage?: string | null;
+  memoryUsage?: string | null;
+}
+
+export interface KubernetesContainerSpec {
+  name: string;
+  image: string;
+  ports?: Array<{ containerPort?: number; protocol?: string; name?: string }>;
+  resources?: Record<string, unknown>;
+}
+
+export interface KubernetesPodStatus {
+  phase?: string;
+  podIP?: string;
+  hostIP?: string;
+  startTime?: string;
+  containerStatuses?: Array<{
+    name?: string;
+    ready?: boolean;
+    restartCount?: number;
+    image?: string;
+  }>;
+}
+
+export interface KubernetesPodSpec {
+  nodeName?: string;
+  containers?: KubernetesContainerSpec[];
+}
+
+export interface KubernetesEvent {
+  type?: string;
+  reason?: string;
+  message?: string;
+  lastTimestamp?: string;
+  eventTime?: string;
+  count?: number;
+}
+
+export interface KubernetesPodDetails {
+  metadata?: {
+    name?: string;
+    namespace?: string;
+    creationTimestamp?: string;
+    labels?: Record<string, string>;
+  };
+  status?: KubernetesPodStatus;
+  spec?: KubernetesPodSpec;
+  restartCount: number;
+  logs: string;
+  events?: KubernetesEvent[];
+  cpuUsage?: string | null;
+  memoryUsage?: string | null;
+}
+
 
 export type PipelineSourceProvider = 'GITHUB_ACTIONS' | 'JENKINS';
 
@@ -378,6 +488,88 @@ export interface IntegrationSettings {
 export interface AdminOverview { userCount: number; activeUserCount: number; projectCount: number; integrationCount: number; auditEventCount: number; }
 export interface AuditLog { id: number; actorName: string; actorEmail?: string; action: string; resourceType: string; resourceId?: string; details?: string; timestamp: string; }
 export interface PlatformSetting { id: number; settingKey: string; settingValue: string; updatedAt: string; }
+
+/** GET /users (UserResponse). */
+export interface PlatformUser {
+  id: number;
+  name: string;
+  email: string;
+  isActive: boolean | null;
+  createdAt: string;
+  roles: string[];
+}
+
+export interface Incident {
+  id: number;
+  title: string;
+  description?: string | null;
+  severity: string;
+  status: string;
+  project?: Pick<Project, 'id' | 'projectName'> | null;
+  affectedService?: string | null;
+  affectedResources?: string | null;
+  alertCount?: number | null;
+  createdAt: string;
+  startedAt?: string | null;
+  resolvedAt?: string | null;
+  timeline?: string | null;
+  createdBy?: Pick<User, 'id' | 'name' | 'email'> | null;
+  relatedDeployment?: Pick<Deployment, 'id' | 'version' | 'environment'> | null;
+  relatedPipelineRun?: Pick<PipelineRun, 'runId' | 'commitMessage'> | null;
+}
+
+export interface IncidentInput {
+  title: string;
+  description?: string;
+  severity: string;
+  projectId: number;
+  affectedService?: string;
+  deploymentId?: number;
+  pipelineRunId?: number;
+}
+
+export interface Alert {
+  id: number;
+  alertRuleId?: number | null;
+  projectId?: number | null;
+  resource?: string | null;
+  eventType: string;
+  message?: string | null;
+  severity: string;
+  status: string;
+  createdAt: string;
+  resolvedAt?: string | null;
+}
+
+export interface InfrastructureEvent {
+  id: string;
+  timestamp: string;
+  projectId?: number | null;
+  integrationId?: number | null;
+  provider?: string | null;
+  resourceId?: string | null;
+  eventType: string;
+  severity?: string | null;
+  message?: string | null;
+  metadata?: string | null;
+}
+
+/** A provider resource discovered by an integration (GET /resources). */
+export interface PlatformResource {
+  id: number;
+  projectId: number;
+  integrationId?: number | null;
+  provider: string;
+  providerResourceId: string;
+  resourceType: string;
+  name: string;
+  status: string;
+  region?: string | null;
+  environment?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  metadata?: string | null;
+}
 
 export interface LogSource {
   sourceId: number;
@@ -493,18 +685,18 @@ export const api = {
   },
 
   // User Management
-  getAllUsers: async (): Promise<any[]> => {
-    const res = await axiosInstance.get<any[]>('/users');
+  getAllUsers: async (): Promise<PlatformUser[]> => {
+    const res = await axiosInstance.get<PlatformUser[]>('/users');
     return res.data;
   },
 
-  updateUserRoles: async (id: number, roles: string[]): Promise<any> => {
-    const res = await axiosInstance.put<any>(`/users/${id}/roles`, { roles });
+  updateUserRoles: async (id: number, roles: string[]): Promise<PlatformUser> => {
+    const res = await axiosInstance.put<PlatformUser>(`/users/${id}/roles`, { roles });
     return res.data;
   },
 
-  setUserStatus: async (id: number, active: boolean): Promise<any> => {
-    const res = await axiosInstance.patch<any>(`/users/${id}/status`, { active });
+  setUserStatus: async (id: number, active: boolean): Promise<PlatformUser> => {
+    const res = await axiosInstance.patch<PlatformUser>(`/users/${id}/status`, { active });
     return res.data;
   },
 
@@ -564,34 +756,9 @@ export const api = {
     return res.data;
   },
 
-  rollbackDeployment: async (id: number): Promise<Deployment> => {
-    const res = await axiosInstance.post<Deployment>(`/deployments/${id}/rollback`);
-    return res.data;
-  },
-
-  triggerDeployment: async (projectId: number, data: { version: string; environment: string }): Promise<Deployment> => {
+  /** Records a deployment that happened elsewhere (OpsPilot does not run deployments). */
+  recordDeployment: async (projectId: number, data: DeploymentInput): Promise<Deployment> => {
     const res = await axiosInstance.post<Deployment>(`/projects/${projectId}/deployments`, data);
-    return res.data;
-  },
-
-  // Docker
-  getDockerContainers: async (): Promise<Container[]> => {
-    const res = await axiosInstance.get<Container[]>('/docker/containers');
-    return res.data;
-  },
-
-  startContainer: async (id: number): Promise<Container> => {
-    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/start`);
-    return res.data;
-  },
-
-  stopContainer: async (id: number): Promise<Container> => {
-    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/stop`);
-    return res.data;
-  },
-
-  restartContainer: async (id: number): Promise<Container> => {
-    const res = await axiosInstance.post<Container>(`/docker/containers/${id}/restart`);
     return res.data;
   },
 
@@ -601,33 +768,33 @@ export const api = {
     return res.data;
   },
 
-  getKubernetesOverview: async (): Promise<any> => {
-    const res = await axiosInstance.get('/kubernetes/overview');
+  getKubernetesOverview: async (): Promise<KubernetesClusterOverview> => {
+    const res = await axiosInstance.get<KubernetesClusterOverview>('/kubernetes/overview');
     return res.data;
   },
 
-  getKubernetesNodes: async (): Promise<any[]> => {
-    const res = await axiosInstance.get('/kubernetes/nodes');
+  getKubernetesNodes: async (): Promise<KubernetesNode[]> => {
+    const res = await axiosInstance.get<KubernetesNode[]>('/kubernetes/nodes');
     return res.data;
   },
 
-  getKubernetesServices: async (): Promise<any[]> => {
-    const res = await axiosInstance.get('/kubernetes/services');
+  getKubernetesServices: async (): Promise<KubernetesServiceItem[]> => {
+    const res = await axiosInstance.get<KubernetesServiceItem[]>('/kubernetes/services');
     return res.data;
   },
 
-  getKubernetesNamespaces: async (): Promise<any[]> => {
-    const res = await axiosInstance.get('/kubernetes/namespaces');
+  getKubernetesNamespaces: async (): Promise<KubernetesNamespace[]> => {
+    const res = await axiosInstance.get<KubernetesNamespace[]>('/kubernetes/namespaces');
     return res.data;
   },
 
-  getEnhancedPods: async (): Promise<any[]> => {
-    const res = await axiosInstance.get('/kubernetes/enhanced-pods');
+  getEnhancedPods: async (): Promise<KubernetesEnhancedPod[]> => {
+    const res = await axiosInstance.get<KubernetesEnhancedPod[]>('/kubernetes/enhanced-pods');
     return res.data;
   },
 
-  getKubernetesPodDetails: async (namespace: string, name: string): Promise<any> => {
-    const res = await axiosInstance.get(`/kubernetes/pods/${namespace}/${name}`);
+  getKubernetesPodDetails: async (namespace: string, name: string): Promise<KubernetesPodDetails> => {
+    const res = await axiosInstance.get<KubernetesPodDetails>(`/kubernetes/pods/${namespace}/${name}`);
     return res.data;
   },
 
@@ -718,8 +885,8 @@ export const api = {
     return res.data;
   },
 
-  probeUrl: async (url: string, signal?: AbortSignal): Promise<any> => {
-    const res = await axiosInstance.get(`/monitoring/probe?url=${encodeURIComponent(url)}`, { signal });
+  probeUrl: async <T,>(url: string, signal?: AbortSignal): Promise<T> => {
+    const res = await axiosInstance.get<T>(`/monitoring/probe?url=${encodeURIComponent(url)}`, { signal });
     return res.data;
   },
 
@@ -773,33 +940,6 @@ export const api = {
     return res.data;
   },
 
-  simulateGitHubWebhook: async (eventType = 'push'): Promise<any> => {
-    const res = await axiosInstance.post(
-      '/cicd/webhooks/github',
-      {
-        ref: 'refs/heads/main',
-        repository: {
-          name: 'payment-engine',
-          clone_url: 'https://github.com/opspilot/payment-engine',
-        },
-        head_commit: {
-          id: '8f3e4d29a01',
-          message: 'feat(core): Optimize payment gateway latency',
-          author: {
-            name: 'GitHub Webhook Bot',
-            email: 'bot@github.com',
-          },
-        },
-      },
-      {
-        headers: {
-          'X-GitHub-Event': eventType,
-        },
-      }
-    );
-    return res.data;
-  },
-
   // AI Assistant
   queryAiAssistant: async (data: { prompt: string; deploymentId?: number }): Promise<AiDiagnosisResponse> => {
     const res = await axiosInstance.post<AiDiagnosisResponse>('/ai/query', data);
@@ -807,48 +947,35 @@ export const api = {
   },
 
   // Incidents
-  getIncidents: async (projectId?: number): Promise<any[]> => {
+  getIncidents: async (projectId?: number): Promise<Incident[]> => {
     const url = projectId && projectId !== -1 ? `/incidents?projectId=${projectId}` : '/incidents';
-    const res = await axiosInstance.get<any[]>(url);
+    const res = await axiosInstance.get<Incident[]>(url);
     return res.data;
   },
 
-  getIncidentById: async (id: number): Promise<any> => {
-    const res = await axiosInstance.get<any>(`/incidents/${id}`);
+  getIncidentById: async (id: number): Promise<Incident> => {
+    const res = await axiosInstance.get<Incident>(`/incidents/${id}`);
     return res.data;
   },
 
-  createIncident: async (data: { 
-    title: string; 
-    description?: string; 
-    severity: string; 
-    projectId: number;
-    affectedService?: string;
-    deploymentId?: number;
-    pipelineRunId?: number;
-  }): Promise<any> => {
-    const res = await axiosInstance.post<any>('/incidents', data);
+  createIncident: async (data: IncidentInput): Promise<Incident> => {
+    const res = await axiosInstance.post<Incident>('/incidents', data);
     return res.data;
   },
 
-  updateIncidentStatus: async (id: number, status: string): Promise<any> => {
-    const res = await axiosInstance.put<any>(`/incidents/${id}/status`, { status });
+  updateIncidentStatus: async (id: number, status: string): Promise<Incident> => {
+    const res = await axiosInstance.put<Incident>(`/incidents/${id}/status`, { status });
     return res.data;
   },
 
   // Integration Settings
-  getIntegrations: async (): Promise<IntegrationSettings[]> => {
-    const res = await axiosInstance.get<IntegrationSettings[]>('/integrations');
-    return res.data;
-  },
-
   saveIntegration: async (data: IntegrationSettings): Promise<IntegrationSettings> => {
     const res = await axiosInstance.post<IntegrationSettings>('/integrations', data);
     return res.data;
   },
 
-  getIntegrationsByProject: async (projectId: number): Promise<any[]> => {
-    const res = await axiosInstance.get<any[]>(`/projects/${projectId}/integrations`);
+  getIntegrationsByProject: async (projectId: number): Promise<ProjectIntegration[]> => {
+    const res = await axiosInstance.get<ProjectIntegration[]>(`/projects/${projectId}/integrations`);
     return res.data;
   },
 
@@ -884,19 +1011,19 @@ export const api = {
     return res.data;
   },
 
-  getAlerts: async (): Promise<any[]> => {
-    const res = await axiosInstance.get<any[]>('/alerts');
+  getAlerts: async (): Promise<Alert[]> => {
+    const res = await axiosInstance.get<Alert[]>('/alerts');
     return res.data;
   },
 
-  getEvents: async (): Promise<any[]> => {
-    const res = await axiosInstance.get<any[]>('/events');
+  getEvents: async (): Promise<InfrastructureEvent[]> => {
+    const res = await axiosInstance.get<InfrastructureEvent[]>('/events');
     return res.data;
   },
 
-  getResources: async (projectId?: number): Promise<any[]> => {
+  getResources: async (projectId?: number): Promise<PlatformResource[]> => {
     const url = projectId ? `/projects/${projectId}/resources` : '/resources';
-    const res = await axiosInstance.get<any[]>(url);
+    const res = await axiosInstance.get<PlatformResource[]>(url);
     return res.data;
   },
 
@@ -950,10 +1077,10 @@ export const api = {
   },
 
   // Generic methods
-  get: async <T = any>(url: string, config?: any): Promise<{ data: T }> => axiosInstance.get(url, config),
-  post: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => axiosInstance.post(url, data, config),
-  put: async <T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> => axiosInstance.put(url, data, config),
-  delete: async <T = any>(url: string, config?: any): Promise<{ data: T }> => axiosInstance.delete(url, config),
+  get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => axiosInstance.get<T>(url, config),
+  post: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<AxiosResponse<T>> => axiosInstance.post<T>(url, data, config),
+  put: async <T = unknown, D = unknown>(url: string, data?: D, config?: AxiosRequestConfig<D>): Promise<AxiosResponse<T>> => axiosInstance.put<T>(url, data, config),
+  delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> => axiosInstance.delete<T>(url, config),
 };
 
 export interface WatcherPodSummary {

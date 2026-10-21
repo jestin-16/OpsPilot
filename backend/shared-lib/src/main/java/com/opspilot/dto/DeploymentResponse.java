@@ -13,6 +13,9 @@ public class DeploymentResponse {
     private String environment;
     private String status;
     private LocalDateTime deployedAt;
+    private String source;
+    private String url;
+    private String actor;
 
     public DeploymentResponse() {
     }
@@ -100,5 +103,31 @@ public class DeploymentResponse {
 
     public void setDeployedAt(LocalDateTime deployedAt) {
         this.deployedAt = deployedAt;
+    }
+
+    /** MANUAL, GITHUB, or SIMULATED for records made by the removed simulator. */
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    /** Who deployed when it was not an OpsPilot user (GitHub login). */
+    public String getActor() {
+        return actor;
+    }
+
+    public void setActor(String actor) {
+        this.actor = actor;
     }
 }

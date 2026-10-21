@@ -2,9 +2,11 @@ package com.opspilot.controller;
 
 import com.opspilot.dto.AiDiagnosisResponse;
 import com.opspilot.dto.AiQueryRequest;
+import com.opspilot.entity.User;
 import com.opspilot.service.AiAssistantService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,7 +17,8 @@ public class AiAssistantController {
     private AiAssistantService aiAssistantService;
 
     @PostMapping("/query")
-    public ResponseEntity<AiDiagnosisResponse> queryAi(@RequestBody AiQueryRequest request) {
-        return ResponseEntity.ok(aiAssistantService.diagnose(request));
+    public ResponseEntity<AiDiagnosisResponse> queryAi(@RequestBody AiQueryRequest request,
+                                                       @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(aiAssistantService.diagnose(request, currentUser));
     }
 }

@@ -1,5 +1,6 @@
 package com.opspilot.projectlogs;
 
+import com.opspilot.util.WebhookSignature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opspilot.connector.ConnectorConfig;
@@ -42,12 +43,18 @@ public class ProjectIngestController {
 
     private final LogIngestService ingestService;
     private final IntegrationRepository integrationRepository;
+    private final GitHubDeploymentRecorder deploymentRecorder;
+    private final CiDeploymentRecorder ciDeploymentRecorder;
     private final int maxBodyBytes;
 
     public ProjectIngestController(LogIngestService ingestService, IntegrationRepository integrationRepository,
+                                   GitHubDeploymentRecorder deploymentRecorder,
+                                   CiDeploymentRecorder ciDeploymentRecorder,
                                    @Value("${ingest.max-body-bytes:5242880}") int maxBodyBytes) {
         this.ingestService = ingestService;
         this.integrationRepository = integrationRepository;
+        this.deploymentRecorder = deploymentRecorder;
+        this.ciDeploymentRecorder = ciDeploymentRecorder;
         this.maxBodyBytes = maxBodyBytes;
     }
 
@@ -65,6 +72,32 @@ public class ProjectIngestController {
         IngestPayloadParser.Result parsed = IngestPayloadParser.parse(body, request.getContentType(), MAX_ENTRIES_PER_REQUEST);
         List<LogEntry> stored = ingestService.ingest(projectId, principal.integrationId(), principal.integrationName(), parsed.entries());
         return ResponseEntity.accepted().body(Map.of("accepted", stored.size(), "rejected", parsed.rejected()));
+    }
+
+    /** POST /api/ingest/{projectId}/deployments: a CI pipeline reports a deployment, with the project's ingest token. */
+    @PostMapping("/{projectId}/deployments")
+    public ResponseEntity<Map<String, Object>> recordDeployment(@PathVariable Long projectId,
+                                                                @AuthenticationPrincipal ProjectIngestPrincipal principal,
+                                                                HttpServletRequest request) throws IOException {
+        if (principal == null || !projectId.equals(principal.projectId())) {
+            throw new ForbiddenException("Token does not belong to this project");
+        }
+        byte[] body = readBounded(request.getInputStream());
+        if (body == null) {
+            return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(Map.of("error", "Body too large"));
+        }
+        JsonNode json;
+        try {
+            json = JSON.readTree(body);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Body is not JSON"));
+        }
+        if (json == null || !json.isObject()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Expected a JSON object"));
+        }
+        var deployment = ciDeploymentRecorder.record(projectId, principal.integrationName(), json);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "deploymentId", deployment.getId(), "status", deployment.getStatus()));
     }
 
     @PostMapping("/{projectId}/github/{integrationId}")
@@ -97,6 +130,13 @@ public class ProjectIngestController {
             payload = JSON.readTree(body);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body(Map.of("error", "Body is not JSON"));
+        }
+        // Deployments made through GitHub (Actions environments, the Deployments API) become the project's
+        // deployment records; everything else becomes a timeline log entry.
+        if (GitHubDeploymentRecorder.handles(event)) {
+            return deploymentRecorder.record(projectId, event, payload)
+                    .<ResponseEntity<Map<String, Object>>>map(d -> ResponseEntity.accepted().body(Map.of("accepted", 1, "deploymentId", d.getId())))
+                    .orElseGet(() -> ResponseEntity.ok(Map.of("accepted", 0, "message", "No deployment in payload")));
         }
         Optional<LogEntry> entry = GitHubEventMapper.fromWebhook(event, payload, integration.getProvider());
         if (entry.isEmpty()) {

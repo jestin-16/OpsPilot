@@ -172,6 +172,32 @@ class IngestTokenFilterTest {
     }
 
     @Test
+    void ciDeploymentPathAuthenticatesWithTheProjectsToken() throws Exception {
+        String raw = tokens.generate();
+        when(integrations.findByIngestTokenHash(tokens.hash(raw)))
+                .thenReturn(Optional.of(appLogs(raw, 7L, com.opspilot.enums.IntegrationStatus.CONNECTED)));
+
+        filter.doFilter(request("/api/v1/ingest/7/deployments", "Bearer " + raw), new MockHttpServletResponse(), chain);
+
+        verify(chain).doFilter(any(), any());
+        assertEquals(7L, ((com.opspilot.security.ingest.ProjectIngestPrincipal)
+                SecurityContextHolder.getContext().getAuthentication().getPrincipal()).projectId());
+    }
+
+    @Test
+    void ciDeploymentPathRejectsAnotherProjectsToken() throws Exception {
+        String raw = tokens.generate();
+        when(integrations.findByIngestTokenHash(tokens.hash(raw)))
+                .thenReturn(Optional.of(appLogs(raw, 7L, com.opspilot.enums.IntegrationStatus.CONNECTED)));
+        MockHttpServletResponse res = new MockHttpServletResponse();
+
+        filter.doFilter(request("/api/ingest/8/deployments", "Bearer " + raw), res, chain);
+
+        assertEquals(401, res.getStatus());
+        verify(chain, never()).doFilter(any(), any());
+    }
+
+    @Test
     void projectIngest_tokenForAnotherProjectIsRejected() throws Exception {
         String raw = tokens.generate();
         when(integrations.findByIngestTokenHash(tokens.hash(raw)))

@@ -1,0 +1,146 @@
+================================================================================
+OpsPilot Production Host: Complete CI/CD & Self-Hosted Runner Setup Prompt
+================================================================================
+
+Copy and paste everything below into your AI assistant or PowerShell on your
+host laptop (where OpsPilot is hosted and Cloudflare Tunnel is running):
+
+--------------------------------- PROMPT START ---------------------------------
+
+You are an expert DevOps engineer assisting on the Windows 11 host machine
+where OpsPilot (GitHub: jestin-16/OpsPilot) is hosted and running.
+
+---
+HOST ENVIRONMENT CONTEXT
+---
+- Operating System: Windows 11 (PowerShell running as Administrator)
+- Container Runtime: Docker Desktop with Linux Engine & Docker Compose
+- Ingress Gateway: Cloudflare Tunnel (cloudflared Windows Service) routing HTTPS 
+  traffic from https://opspilot.jestin16.dev to host port 80.
+- Application Architecture:
+  * opspilot-frontend: Nginx Alpine serving React 18 / Vite SPA on port 80,
+    reverse proxying /api/* to http://api-gateway:8080 (with WebSocket & SSE).
+  * opspilot-api-gateway: Spring Cloud Gateway on port 8080.
+  * Backend Services: auth-service (8081), core-service (8082),
+    observability-service (8083), log-watcher-service (8084),
+    service-registry (Eureka - 8761).
+  * Infrastructure: PostgreSQL 15 (5432), Prometheus (9090), Grafana (3000),
+    Loki (3100), Blackbox (9115).
+- Local Repository Path: c:\Users\jesvi\OpsPilot (or local root on this machine)
+
+---
+OBJECTIVE
+---
+1. Pull the latest commits from origin/main containing production routing fixes,
+   Gateway CORS updates, Nginx proxy configuration, and the unified CI/CD workflow.
+2. Verify and configure the host .env file.
+3. Build and launch the updated Docker Compose stack with the new frontend container.
+4. Set up and register this machine as a persistent GitHub Actions Self-Hosted
+   Runner (Windows Service) so that future pushes to main automatically build,
+   test, and auto-deploy to this machine.
+5. Run full local and public smoke tests to verify the deployment.
+
+---
+STEP-BY-STEP EXECUTION RUNBOOK (PowerShell as Administrator)
+---
+
+### Step 1: Open PowerShell as Administrator & Pull Latest main
+cd c:\Users\jesvi\OpsPilot
+
+git fetch origin main
+git checkout main
+git pull origin main
+git status
+
+# Verify you are on commit eac9e39 or newer.
+
+---
+
+### Step 2: Validate Environment File (.env)
+Inspect your .env file in the repository root:
+Get-Content .env | Select-String -Pattern "VITE_API_BASE_URL", "OPSPILOT_PUBLIC_URL", "AUTH_COOKIE_SECURE"
+
+Make sure these settings are present:
+VITE_API_BASE_URL=/api/v1
+VITE_ENABLE_MOCK_DATA=false
+OPSPILOT_PUBLIC_URL=https://opspilot.jestin16.dev
+AUTH_COOKIE_SECURE=true
+
+---
+
+### Step 3: Deploy the Updated Container Stack
+Run the automated deployment script:
+.\scripts\deploy.ps1
+
+Alternatively, you can run:
+docker compose up -d --build
+
+Verify that all containers are running:
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+Confirm that:
+- opspilot-frontend is running on 0.0.0.0:80->80/tcp
+- opspilot-api-gateway is running on 0.0.0.0:8080->8080/tcp
+
+---
+
+### Step 4: Register Continuous Deployment Runner (One-Time Setup)
+This allows GitHub Actions to deploy to this machine automatically whenever
+code is pushed to main.
+
+1. Open your browser and navigate to:
+   https://github.com/jestin-16/OpsPilot/settings/actions/runners/new?arch=x64&os=win
+2. Copy the token generated under the "Configure" section.
+3. In PowerShell, run:
+   .\scripts\setup-self-hosted-runner.ps1
+   (Paste the runner token when prompted).
+
+Manual Alternative (if running directly):
+mkdir C:\actions-runner -Force
+cd C:\actions-runner
+Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-win-x64-2.322.0.zip -OutFile actions-runner.zip
+Expand-Archive -Path actions-runner.zip -DestinationPath . -Force
+Remove-Item actions-runner.zip
+.\config.cmd --url https://github.com/jestin-16/OpsPilot --token <YOUR_RUNNER_TOKEN> --name "opspilot-host-laptop" --work "_work" --labels "self-hosted,windows,x64,opspilot-prod" --unattended --replace
+.\svc.cmd install
+.\svc.cmd start
+
+Verify the runner service is active:
+Get-Service -Name "actions.runner.*"
+
+---
+
+### Step 5: Verify Cloudflare Tunnel Service
+Get-Service -Name "Cloudflared"
+
+If stopped, start it:
+Start-Service -Name "Cloudflared"
+
+---
+
+### Step 6: Full Verification & Smoke Tests
+# 1. Test local Nginx frontend (HTTP 200)
+(Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing).StatusCode
+
+# 2. Test API Gateway reverse proxy via Nginx
+Invoke-WebRequest -Uri "http://127.0.0.1:80/api/v1/auth/login" -Method POST -ContentType "application/json" -Body "{}" -UseBasicParsing -SkipHttpErrorCheck
+
+# 3. Test public production domain via Cloudflare
+(Invoke-WebRequest -Uri "https://opspilot.jestin16.dev" -UseBasicParsing).StatusCode
+
+Now open https://opspilot.jestin16.dev in your browser:
+- Log in with credentials or Google OAuth SSO.
+- Visit Observability and verify live log streams flow without buffering.
+- Verify browser Developer Tools (F12) shows no red mixed-content or connection errors.
+
+---
+
+### Step 7: How Future Deploys Work
+Whenever code is pushed or merged into the main branch:
+1. GitHub Actions runs the CI test suite across all 7 Spring Boot microservices
+   and the React frontend.
+2. The deploy-to-host job activates the self-hosted runner on this machine.
+3. The runner executes docker compose up -d --build, performs a health check,
+   and prunes dangling images with zero downtime.
+
+---------------------------------- PROMPT END ----------------------------------

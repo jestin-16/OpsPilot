@@ -1,27 +1,20 @@
 import React, { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Cloud, Cpu, FileText, GitBranch, Loader2, PlugZap, Plus, Server, Settings2, Trash2, Workflow, Zap } from 'lucide-react';
+import { Cloud, Loader2, PlugZap, Plus, Settings2, Trash2, Zap } from 'lucide-react';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { useAlert } from '../components/AlertProvider';
-import { useConfirm } from '../components/ConfirmProvider';
+import { useAlert } from '../context/AlertContext';
+import { useConfirm } from '../context/ConfirmContext';
 import { ErrorBanner, ProjectHeader } from '../components/project/ProjectHeader';
 import { IntegrationFormModal } from '../components/project/IntegrationFormModal';
-import { AppLogsInstructions, CodeBlock, githubWebhookUrl } from '../components/project/IngestInstructions';
+import { AppLogsInstructions, CodeBlock } from '../components/project/IngestInstructions';
+import { githubWebhookUrl } from '../lib/urls';
 import { StatusPill } from '../components/project/badges';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
 import { useProjectIntegrations, integrationsKey } from '../hooks/useProjectIntegrations';
-import { INTEGRATION_TYPES, TYPE_BY_KEY, type IntegrationTypeDef } from '../lib/integrationTypes';
-import { errorMessage, projectApi, type IntegrationType, type ProjectIntegration } from '../services/projectApi';
-
-export const TYPE_ICONS: Record<IntegrationType, typeof Server> = {
-  DOCKER: Server,
-  KUBERNETES: Cpu,
-  GITHUB: GitBranch,
-  CICD: Workflow,
-  APP_LOGS: FileText,
-};
+import { INTEGRATION_TYPES, TYPE_BY_KEY, TYPE_ICONS, type IntegrationTypeDef } from '../lib/integrationTypes';
+import { errorMessage, projectApi, type ProjectIntegration } from '../services/projectApi';
 
 type FormState = { def: IntegrationTypeDef; existing?: ProjectIntegration } | null;
 

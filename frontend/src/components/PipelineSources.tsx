@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { errorMessage } from '../services/projectApi';
 import { Copy, Check, Pencil, Trash2, Plug, KeyRound, RefreshCw, GitBranch, Server } from 'lucide-react';
 import { api, API_BASE_URL, type PipelineSource, type PipelineSourceInput, type PipelineSourceProvider } from '../services/api';
 import { Modal } from './Modal';
@@ -7,7 +8,7 @@ import { Badge } from './Badge';
 import { Card } from './Card';
 import { Input } from './Input';
 import { Table, type Column } from './Table';
-import { useConfirm } from './ConfirmProvider';
+import { useConfirm } from '../context/ConfirmContext';
 
 const PROVIDER_LABEL: Record<PipelineSourceProvider, string> = {
   GITHUB_ACTIONS: 'GitHub Actions',
@@ -26,7 +27,7 @@ const emptyForm = {
 };
 type FormState = typeof emptyForm;
 
-export const webhookUrlFor = (source: Pick<PipelineSource, 'webhookPath'>): string => {
+const webhookUrlFor = (source: Pick<PipelineSource, 'webhookPath'>): string => {
   let origin = window.location.origin;
   try {
     origin = new URL(API_BASE_URL).origin;
@@ -181,8 +182,8 @@ export const PipelineSources: React.FC<Props> = ({ isAddOpen, onAddClose, onChan
       }
       await load();
       onChanged?.();
-    } catch (err: any) {
-      setSaveError(err?.response?.data?.message || 'Failed to save source');
+    } catch (err) {
+      setSaveError(errorMessage(err, 'Failed to save source'));
     } finally {
       setSaving(false);
     }

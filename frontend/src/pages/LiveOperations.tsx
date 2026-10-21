@@ -1,26 +1,30 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
-import { api, API_BASE_URL, type LogEntry, type Deployment, type NotificationItem } from '../services/api';
+import { api, type LogEntry, type Deployment, type NotificationItem, type PlatformResource, type InfrastructureEvent, type Alert, type Incident } from '../services/api';
 import { Card } from '../components/Card';
 import { Badge } from '../components/Badge';
+import { deploymentStatusVariant } from '../lib/deployments';
 import { Activity, Server, AlertCircle, AlertTriangle, Terminal, Rocket, Bell, Radio } from 'lucide-react';
 
 type ConnectionStatus = 'LIVE' | 'RECONNECTING' | 'OFFLINE';
+
+/** The live feed mixes log lines and infrastructure events; each names its level differently. */
+const levelOf = (item: LogEntry | InfrastructureEvent): string | null | undefined =>
+  'logLevel' in item ? item.logLevel : item.severity;
 
 export const LiveOperations: React.FC = () => {
 
   const [connStatus, setConnStatus] = useState<ConnectionStatus>('RECONNECTING');
 
-  const [resources, setResources] = useState<any[]>([]);
+  const [resources, setResources] = useState<PlatformResource[]>([]);
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
-  const [alerts, setAlerts] = useState<any[]>([]);
-  const [incidents, setIncidents] = useState<any[]>([]);
+  const [events, setEvents] = useState<InfrastructureEvent[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [deployments, setDeployments] = useState<Deployment[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const fetchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   const fetchAllData = useCallback(async () => {
     try {
@@ -46,7 +50,7 @@ export const LiveOperations: React.FC = () => {
       setNotifications(notificationsData);
       
       setConnStatus('LIVE');
-    } catch (error) {
+    } catch {
       setConnStatus('OFFLINE');
     }
   }, []);
@@ -60,51 +64,8 @@ export const LiveOperations: React.FC = () => {
       fetchAllData();
     }, 5000);
 
-    // Setup SSE for live events
-    const setupSSE = () => {
-      try {
-        const token = localStorage.getItem('opspilot_token');
-        const eventSourceUrl = `${API_BASE_URL}/monitoring/live-events/stream${token ? `?token=${token}` : ''}`;
-        
-        eventSourceRef.current = new EventSource(eventSourceUrl);
-        
-        eventSourceRef.current.onopen = () => {
-          setConnStatus('LIVE');
-        };
-
-        eventSourceRef.current.addEventListener('posthog-event', (e) => {
-          try {
-            const newEvent = JSON.parse(e.data);
-            setEvents(prev => [{
-              id: `sse-${Date.now()}-${Math.random()}`,
-              eventType: newEvent.event,
-              message: `Live event: ${newEvent.event}`,
-              timestamp: new Date().toISOString(),
-              severity: 'INFO',
-              provider: 'PostHog'
-            }, ...prev].slice(0, 50));
-          } catch (err) {
-            console.error('Error parsing SSE event', err);
-          }
-        });
-
-        eventSourceRef.current.onerror = () => {
-          setConnStatus('RECONNECTING');
-          eventSourceRef.current?.close();
-          // Attempt to reconnect SSE after 5 seconds
-          setTimeout(setupSSE, 5000);
-        };
-      } catch (err) {
-        console.error('Failed to setup SSE', err);
-        setConnStatus('OFFLINE');
-      }
-    };
-
-    setupSSE();
-
     return () => {
       if (fetchIntervalRef.current) clearInterval(fetchIntervalRef.current);
-      if (eventSourceRef.current) eventSourceRef.current.close();
     };
   }, [fetchAllData]);
 
@@ -185,15 +146,15 @@ export const LiveOperations: React.FC = () => {
                          {new Date(item.timestamp).toLocaleTimeString()}
                        </span>
                        <span className={`shrink-0 font-bold ${
-                         item.logLevel === 'ERROR' || item.severity === 'CRITICAL' ? 'text-red-400' :
-                         item.logLevel === 'WARN' || item.severity === 'WARNING' ? 'text-yellow-400' :
+                         levelOf(item) === 'ERROR' || levelOf(item) === 'CRITICAL' ? 'text-red-400' :
+                         levelOf(item) === 'WARN' || levelOf(item) === 'WARNING' ? 'text-yellow-400' :
                          'text-green-400'
                        }`}>
-                         [{item.logLevel || item.severity || 'INFO'}]
+                         [{levelOf(item) || 'INFO'}]
                        </span>
                        <span className="text-gray-300 break-all">
                          <span className="text-indigo-300 mr-2">
-                           {item.sourceService || item.provider || 'system'}:
+                           {('logLevel' in item ? item.sourceService : item.provider) || 'system'}:
                          </span>
                          {item.message}
                        </span>
@@ -217,7 +178,7 @@ export const LiveOperations: React.FC = () => {
                       <span className="font-bold text-sm text-gray-900 dark:text-white">{d.projectName} - v{d.version}</span>
                       <span className="text-xs text-gray-500">{new Date(d.deployedAt).toLocaleDateString()} • {d.environment}</span>
                     </div>
-                    <Badge variant={d.status.toLowerCase() === 'success' || d.status.toLowerCase() === 'running' ? 'success' : d.status.toLowerCase() === 'failed' ? 'error' : 'warning'}>
+                    <Badge variant={deploymentStatusVariant(d.status)}>
                       {d.status}
                     </Badge>
                   </div>
@@ -241,8 +202,8 @@ export const LiveOperations: React.FC = () => {
               <div className="space-y-3 max-h-[250px] overflow-y-auto">
                 {activeAlerts.map(a => (
                   <div key={a.id} className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/30 rounded-lg">
-                    <p className="font-bold text-sm text-yellow-800 dark:text-yellow-200">{a.ruleName}</p>
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">{a.resourceName} • {a.provider}</p>
+                    <p className="font-bold text-sm text-yellow-800 dark:text-yellow-200">{a.eventType}</p>
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">{a.resource ?? 'No resource'} • {a.severity}</p>
                   </div>
                 ))}
                 {activeAlerts.length === 0 && (
@@ -261,7 +222,7 @@ export const LiveOperations: React.FC = () => {
                 {activeIncidents.map(i => (
                   <div key={i.id} className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/30 rounded-lg">
                     <p className="font-bold text-sm text-red-800 dark:text-red-200">{i.title}</p>
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">Severity: {i.severity} • Started: {new Date(i.startedAt).toLocaleTimeString()}</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">Severity: {i.severity} • Started: {new Date(i.startedAt ?? i.createdAt).toLocaleTimeString()}</p>
                   </div>
                 ))}
                 {activeIncidents.length === 0 && (

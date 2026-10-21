@@ -3,7 +3,8 @@ import { Modal } from '../Modal';
 import { Button } from '../Button';
 import { initialValues, isVisible, toPayload, validate, type FieldDef, type IntegrationTypeDef } from '../../lib/integrationTypes';
 import { errorMessage, projectApi, type ProjectIntegration } from '../../services/projectApi';
-import { AppLogsInstructions, CodeBlock, githubWebhookUrl } from './IngestInstructions';
+import { AppLogsInstructions, CodeBlock } from './IngestInstructions';
+import { githubWebhookUrl } from '../../lib/urls';
 import { StatusPill } from './badges';
 
 interface Props {

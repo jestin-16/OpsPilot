@@ -23,4 +23,7 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
             @Param("eventType") String eventType,
             @Param("status") String status
     );
+
+    // Scoped list for non-privileged users (ProjectScope.visibleProjectIds).
+    List<Alert> findByProjectIdIn(java.util.Collection<Long> projectIds);
 }

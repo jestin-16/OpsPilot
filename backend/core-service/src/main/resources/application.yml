@@ -13,11 +13,16 @@ spring:
     driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.postgresql.Driver}
   flyway:
     enabled: true
+    # Databases created before Flyway was on the classpath were built by Hibernate and have no history
+    # table; they are baselined at 17 and V18 aligns them. Empty databases run every migration from V1.
+    # Concurrent services are serialised by Flyway's PostgreSQL advisory lock.
     baseline-on-migrate: true
+    baseline-version: 17
     locations: classpath:db/migration
   jpa:
     hibernate:
-      ddl-auto: update
+      # Migrations own the schema; Hibernate only checks that it matches the entities.
+      ddl-auto: validate
     show-sql: false
 
 kubernetes:
@@ -49,7 +54,11 @@ management:
         include: health,info,prometheus
   endpoint:
     health:
-      show-details: always
+      # Component details (database, Kubernetes) only for authenticated callers; this endpoint is public.
+      show-details: when-authorized
+      # /actuator/health/readiness backs the container healthcheck
+      probes:
+        enabled: true
     prometheus:
       enabled: true
   metrics:

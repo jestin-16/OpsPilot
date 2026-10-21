@@ -7,6 +7,32 @@ import java.time.LocalDateTime;
 @Table(name = "deployments")
 public class Deployment {
 
+    // Statuses of a real deployment (GitHub deployment states map onto these).
+    public static final String IN_PROGRESS = "In progress";
+    public static final String SUCCEEDED = "Succeeded";
+    public static final String FAILED = "Failed";
+    public static final String INACTIVE = "Inactive";
+
+    // Where the record came from.
+    public static final String SOURCE_MANUAL = "MANUAL";
+    public static final String SOURCE_GITHUB = "GITHUB";
+    /** Reported by a CI pipeline with the project's ingest token. */
+    public static final String SOURCE_CI = "CI";
+
+    /** Accepts common spellings and GitHub's states; no status means the deployment succeeded. */
+    public static String normalizeStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return SUCCEEDED;
+        }
+        return switch (status.trim().toLowerCase(java.util.Locale.ROOT).replace('_', ' ').replace('-', ' ')) {
+            case "succeeded", "success", "successful", "done" -> SUCCEEDED;
+            case "failed", "failure", "error" -> FAILED;
+            case "in progress", "pending", "queued", "started", "running" -> IN_PROGRESS;
+            case "inactive", "rolled back", "superseded" -> INACTIVE;
+            default -> throw new IllegalArgumentException("Status must be one of: In progress, Succeeded, Failed, Inactive");
+        };
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -16,7 +42,8 @@ public class Deployment {
     private Project project;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "deployed_by_id", nullable = false)
+    /** The OpsPilot user who recorded it; null for deployments reported by GitHub (see actor). */
+    @JoinColumn(name = "deployed_by_id")
     private User deployedBy;
 
     @Column(nullable = false)
@@ -26,7 +53,21 @@ public class Deployment {
     private String environment; // Dev, Staging, Production
 
     @Column(nullable = false)
-    private String status; // Draft, Building, Deploying, Running, Failed, RolledBack
+    private String status; // IN_PROGRESS, SUCCEEDED, FAILED, INACTIVE (older simulated rows: Running, ...)
+
+    @Column(nullable = false, length = 30)
+    private String source = SOURCE_MANUAL;
+
+    @Column(name = "external_id")
+    private String externalId;
+
+    @Column(length = 1024)
+    private String url;
+
+    private String actor;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(name = "deployed_at", nullable = false, updatable = false)
     private LocalDateTime deployedAt = LocalDateTime.now();
@@ -97,5 +138,45 @@ public class Deployment {
 
     public void setDeployedAt(LocalDateTime deployedAt) {
         this.deployedAt = deployedAt;
+    }
+
+    public String getSource() {
+        return source;
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getActor() {
+        return actor;
+    }
+
+    public void setActor(String actor) {
+        this.actor = actor;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

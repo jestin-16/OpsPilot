@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type NotificationItem } from '../services/api';
 import { Bell, Check, RefreshCw, AlertCircle, Rocket, ShieldAlert } from 'lucide-react';
+import { errorMessage } from '../services/projectApi';
 
 export const NotificationCenter: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -13,8 +14,8 @@ export const NotificationCenter: React.FC = () => {
     try {
       const data = await api.getNotifications();
       setNotifications(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch notifications');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to fetch notifications'));
     } finally {
       setLoading(false);
     }
@@ -30,8 +31,8 @@ export const NotificationCenter: React.FC = () => {
     try {
       await api.markNotificationRead(id);
       await fetchNotifications();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err, 'Failed to update notifications'));
     }
   };
 
@@ -39,8 +40,8 @@ export const NotificationCenter: React.FC = () => {
     try {
       await api.markAllNotificationsRead();
       await fetchNotifications();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(errorMessage(err, 'Failed to update notifications'));
     }
   };
 

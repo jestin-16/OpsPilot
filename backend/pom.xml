@@ -67,6 +67,10 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <argLine>-Dnet.bytebuddy.experimental=true</argLine>
+                        <!-- Tests never touch real secrets; services refuse to start without a key. -->
+                        <systemPropertyVariables>
+                            <opspilot.encryption.key>unit-tests-only-encryption-key</opspilot.encryption.key>
+                        </systemPropertyVariables>
                     </configuration>
                 </plugin>
             </plugins>

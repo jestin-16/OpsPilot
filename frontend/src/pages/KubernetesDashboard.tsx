@@ -1,66 +1,99 @@
 import React, { useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api } from '../services/api';
+import type {
+  KubernetesClusterOverview,
+  KubernetesNode,
+  KubernetesEnhancedPod,
+  KubernetesServiceItem,
+  KubernetesNamespace,
+  KubernetesPodDetails,
+  KubernetesContainerSpec,
+  KubernetesEvent
+} from '../services/api';
 import { 
   Server, Box, Activity, Network, HardDrive, RefreshCw, AlertCircle, X, Terminal
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Card } from '../components/Card';
+import { errorMessage } from '../services/projectApi';
+
+const TABS = [
+  { id: 'overview', icon: Activity, label: 'Overview' },
+  { id: 'nodes', icon: HardDrive, label: 'Nodes' },
+  { id: 'pods', icon: Box, label: 'Pods' },
+  { id: 'services', icon: Network, label: 'Services' },
+  { id: 'namespaces', icon: Server, label: 'Namespaces' },
+] as const;
+
+type DashboardTab = (typeof TABS)[number]['id'];
+
+const formatDate = (iso?: string | null): string => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+};
+
+const formatDateTime = (iso?: string | null): string => {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleString();
+};
 
 export const KubernetesDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'nodes' | 'pods' | 'services' | 'namespaces'>('overview');
+  const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
   
-  const [overview, setOverview] = useState<any>(null);
-  const [nodes, setNodes] = useState<any[]>([]);
-  const [pods, setPods] = useState<any[]>([]);
-  const [services, setServices] = useState<any[]>([]);
-  const [namespaces, setNamespaces] = useState<any[]>([]);
+  const [overview, setOverview] = useState<KubernetesClusterOverview | null>(null);
+  const [nodes, setNodes] = useState<KubernetesNode[]>([]);
+  const [pods, setPods] = useState<KubernetesEnhancedPod[]>([]);
+  const [services, setServices] = useState<KubernetesServiceItem[]>([]);
+  const [namespaces, setNamespaces] = useState<KubernetesNamespace[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  const [selectedPod, setSelectedPod] = useState<any>(null);
-  const [podDetails, setPodDetails] = useState<any>(null);
+  const [selectedPod, setSelectedPod] = useState<KubernetesEnhancedPod | null>(null);
+  const [podDetails, setPodDetails] = useState<KubernetesPodDetails | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
   const fetchOverview = async () => {
     try {
       const data = await api.getKubernetesOverview();
       setOverview(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load overview');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load overview'));
     }
   };
 
   const fetchNodes = async () => {
     try {
       setNodes(await api.getKubernetesNodes());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load nodes');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load nodes'));
     }
   };
 
   const fetchPods = async () => {
     try {
       setPods(await api.getEnhancedPods());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load pods');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load pods'));
     }
   };
 
   const fetchServices = async () => {
     try {
       setServices(await api.getKubernetesServices());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load services');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load services'));
     }
   };
 
   const fetchNamespaces = async () => {
     try {
       setNamespaces(await api.getKubernetesNamespaces());
-    } catch (err: any) {
-      setError(err.message || 'Failed to load namespaces');
+    } catch (err) {
+      setError(errorMessage(err, 'Failed to load namespaces'));
     }
   };
 
@@ -81,13 +114,13 @@ export const KubernetesDashboard: React.FC = () => {
     loadData(activeTab);
   }, [activeTab]);
 
-  const handlePodSelect = async (pod: any) => {
+  const handlePodSelect = async (pod: KubernetesEnhancedPod) => {
     setSelectedPod(pod);
     setLoadingDetails(true);
     try {
       const details = await api.getKubernetesPodDetails(pod.namespace, pod.name);
       setPodDetails(details);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load pod details', err);
     } finally {
       setLoadingDetails(false);
@@ -136,16 +169,10 @@ export const KubernetesDashboard: React.FC = () => {
 
             {/* Tabs */}
             <div className="flex gap-4 border-b border-op-border">
-              {[
-                { id: 'overview', icon: Activity, label: 'Overview' },
-                { id: 'nodes', icon: HardDrive, label: 'Nodes' },
-                { id: 'pods', icon: Box, label: 'Pods' },
-                { id: 'services', icon: Network, label: 'Services' },
-                { id: 'namespaces', icon: Server, label: 'Namespaces' },
-              ].map(tab => (
+              {TABS.map(tab => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-3 border-b-2 font-bold text-sm transition-colors ${
                     activeTab === tab.id 
                       ? 'border-op-accent text-op-accent' 
@@ -226,7 +253,7 @@ export const KubernetesDashboard: React.FC = () => {
                             </td>
                             <td className="py-3 px-5">{node.role}</td>
                             <td className="py-3 px-5">{node.version}</td>
-                            <td className="py-3 px-5 text-op-muted">{new Date(node.createdAt).toLocaleDateString()}</td>
+                            <td className="py-3 px-5 text-op-muted">{formatDate(node.createdAt)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -244,6 +271,8 @@ export const KubernetesDashboard: React.FC = () => {
                           <th className="py-4 px-5">Namespace</th>
                           <th className="py-4 px-5">Status</th>
                           <th className="py-4 px-5">Restarts</th>
+                          <th className="py-4 px-5">CPU</th>
+                          <th className="py-4 px-5">Memory</th>
                           <th className="py-4 px-5">Node</th>
                         </tr>
                       </thead>
@@ -256,6 +285,8 @@ export const KubernetesDashboard: React.FC = () => {
                               <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(pod.status)}`}>{pod.status}</span>
                             </td>
                             <td className="py-3 px-5">{pod.restartCount}</td>
+                            <td className="py-3 px-5 text-op-muted font-mono">{pod.cpuUsage || '—'}</td>
+                            <td className="py-3 px-5 text-op-muted font-mono">{pod.memoryUsage || '—'}</td>
                             <td className="py-3 px-5 text-op-muted">{pod.node}</td>
                           </tr>
                         ))}
@@ -308,7 +339,7 @@ export const KubernetesDashboard: React.FC = () => {
                             <td className="py-3 px-5">
                               <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(ns.status)}`}>{ns.status}</span>
                             </td>
-                            <td className="py-3 px-5 text-op-muted">{new Date(ns.createdAt).toLocaleDateString()}</td>
+                            <td className="py-3 px-5 text-op-muted">{formatDate(ns.createdAt)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -366,7 +397,15 @@ export const KubernetesDashboard: React.FC = () => {
                         </div>
                         <div className="grid grid-cols-3">
                           <span className="text-op-muted">Start Time</span>
-                          <span className="col-span-2">{podDetails.status?.startTime ? new Date(podDetails.status.startTime).toLocaleString() : '-'}</span>
+                          <span className="col-span-2">{formatDateTime(podDetails.status?.startTime)}</span>
+                        </div>
+                        <div className="grid grid-cols-3">
+                          <span className="text-op-muted">CPU</span>
+                          <span className="col-span-2 font-mono">{podDetails.cpuUsage || selectedPod.cpuUsage || '—'}</span>
+                        </div>
+                        <div className="grid grid-cols-3">
+                          <span className="text-op-muted">Memory</span>
+                          <span className="col-span-2 font-mono">{podDetails.memoryUsage || selectedPod.memoryUsage || '—'}</span>
                         </div>
                       </div>
                     </div>
@@ -374,7 +413,7 @@ export const KubernetesDashboard: React.FC = () => {
                     {/* Containers */}
                     <div>
                       <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3">Containers</h4>
-                      {podDetails.spec?.containers?.map((c: any, i: number) => (
+                      {podDetails.spec?.containers?.map((c: KubernetesContainerSpec, i: number) => (
                         <div key={i} className="bg-black/30 p-4 rounded-xl text-sm border border-white/5 mb-3">
                           <div className="font-bold mb-1">{c.name}</div>
                           <div className="text-xs text-op-muted font-mono break-all">{c.image}</div>
@@ -397,11 +436,11 @@ export const KubernetesDashboard: React.FC = () => {
                       <div>
                         <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3">Recent Events</h4>
                         <div className="space-y-2">
-                          {podDetails.events.map((e: any, i: number) => (
+                          {podDetails.events.map((e: KubernetesEvent, i: number) => (
                             <div key={i} className="bg-black/30 p-3 rounded-xl border border-white/5 text-xs">
                               <div className="flex justify-between mb-1">
                                 <span className={`font-bold ${e.type === 'Warning' ? 'text-rose-400' : 'text-emerald-400'}`}>{e.reason}</span>
-                                <span className="text-op-muted">{new Date(e.lastTimestamp).toLocaleString()}</span>
+                                <span className="text-op-muted">{formatDateTime(e.lastTimestamp || e.eventTime)}</span>
                               </div>
                               <div className="text-slate-400">{e.message}</div>
                             </div>

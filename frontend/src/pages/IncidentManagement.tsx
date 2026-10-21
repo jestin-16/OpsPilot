@@ -1,27 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useProject } from '../context/ProjectContext';
-import { api, type Project } from '../services/api';
+import { api, type Project, type Incident } from '../services/api';
 import { 
   AlertTriangle, ShieldAlert, AlertOctagon, Info,
   Plus, CheckCircle, RefreshCw, X, PlayCircle, Rocket
 } from 'lucide-react';
 
 export const IncidentManagement: React.FC = () => {
-  const [incidents, setIncidents] = useState<any[]>([]);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   
   const { currentProjectId } = useProject();
   const [projectId, setProjectId] = useState<number>(currentProjectId ?? -1);
-  const [selectedIncident, setSelectedIncident] = useState<any>(null);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   
   const [isCreating, setIsCreating] = useState(false);
   const [newIncident, setNewIncident] = useState({
     title: '', description: '', severity: 'MEDIUM', projectId: -1, affectedService: ''
   });
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [incidentsData, projectsData] = await Promise.all([
@@ -29,20 +29,21 @@ export const IncidentManagement: React.FC = () => {
         api.getProjects().catch(() => [])
       ]);
       setIncidents(incidentsData);
-      if (projects.length === 0) {
-        setProjects(projectsData);
-        if (projectsData.length > 0) setNewIncident(prev => ({...prev, projectId: projectsData[0].id}));
+      setProjects((prev) => (prev.length === 0 ? projectsData : prev));
+      // Default the new-incident form to the first project, once.
+      if (projectsData.length > 0) {
+        setNewIncident((prev) => (prev.projectId === -1 ? { ...prev, projectId: projectsData[0].id } : prev));
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Failed to load incidents', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
     loadData();
-  }, [projectId]);
+  }, [loadData]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();

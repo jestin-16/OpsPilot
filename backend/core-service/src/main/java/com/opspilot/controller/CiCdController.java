@@ -4,11 +4,18 @@ import com.opspilot.entity.PipelineRunEntity;
 import com.opspilot.exception.ForbiddenException;
 import com.opspilot.exception.ResourceNotFoundException;
 import com.opspilot.repository.PipelineRunRepository;
+import com.opspilot.entity.User;
+import com.opspilot.security.ProjectScope;
 import com.opspilot.service.CiCdService;
+import com.opspilot.util.WebhookSignature;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,22 +30,31 @@ public class CiCdController {
     @Autowired
     private CiCdService ciCdService;
 
+    @Autowired
+    private ProjectScope projectScope;
+
+    // Shared secrets for the global webhook endpoints; per-source endpoints use their own (SourceWebhookController).
+    @Value("${GITHUB_WEBHOOK_SECRET:}")
+    private String githubWebhookSecret;
+
+    @Value("${JENKINS_WEBHOOK_SECRET:}")
+    private String jenkinsWebhookSecret;
+
     @GetMapping("/runs")
-    public ResponseEntity<List<PipelineRunEntity>> getPipelineRuns() {
-        return ResponseEntity.ok(pipelineRunRepository.findAllByOrderByCreatedAtDesc());
+    public ResponseEntity<List<PipelineRunEntity>> getPipelineRuns(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(projectScope.visibleProjectIds(currentUser)
+                .map(ids -> ids.isEmpty() ? List.<PipelineRunEntity>of() : pipelineRunRepository.findByProject_IdInOrderByCreatedAtDesc(ids))
+                .orElseGet(pipelineRunRepository::findAllByOrderByCreatedAtDesc));
     }
 
     @GetMapping("/runs/{runId}")
-    public ResponseEntity<PipelineRunEntity> getPipelineRun(@PathVariable Long runId) {
-        PipelineRunEntity run = pipelineRunRepository.findById(runId)
-                .orElseThrow(() -> new ResourceNotFoundException("Pipeline run not found with id: " + runId));
-        return ResponseEntity.ok(run);
+    public ResponseEntity<PipelineRunEntity> getPipelineRun(@PathVariable Long runId, @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(findVisibleRun(runId, currentUser));
     }
 
     @GetMapping("/runs/{runId}/logs")
-    public ResponseEntity<Map<String, Object>> getPipelineRunLogs(@PathVariable Long runId) {
-        PipelineRunEntity run = pipelineRunRepository.findById(runId)
-                .orElseThrow(() -> new ResourceNotFoundException("Pipeline run not found with id: " + runId));
+    public ResponseEntity<Map<String, Object>> getPipelineRunLogs(@PathVariable Long runId, @AuthenticationPrincipal User currentUser) {
+        PipelineRunEntity run = findVisibleRun(runId, currentUser);
         Map<String, Object> response = new HashMap<>();
         response.put("runId", run.getRunId());
         response.put("status", run.getStatus());
@@ -48,33 +64,27 @@ public class CiCdController {
         return ResponseEntity.ok(response);
     }
 
+    private PipelineRunEntity findVisibleRun(Long runId, User currentUser) {
+        PipelineRunEntity run = pipelineRunRepository.findById(runId)
+                .orElseThrow(() -> new ResourceNotFoundException("Pipeline run not found with id: " + runId));
+        projectScope.requireAccessToProjectId(run.getProject() != null ? run.getProject().getId() : null, currentUser);
+        return run;
+    }
+
     @PostMapping("/webhooks/github")
     public ResponseEntity<Map<String, Object>> handleGithubWebhook(
             @RequestHeader(value = "X-GitHub-Event", defaultValue = "push") String githubEvent,
             @RequestHeader(value = "X-Hub-Signature-256", required = false) String signature,
             @RequestBody String rawPayload) {
         
-        String secret = System.getenv("GITHUB_WEBHOOK_SECRET");
-        if (secret != null && !secret.isEmpty()) {
-            if (signature == null) {
-                return ResponseEntity.status(401).body(Map.of("message", "Missing signature"));
-            }
-            try {
-                javax.crypto.Mac mac = javax.crypto.Mac.getInstance("HmacSHA256");
-                javax.crypto.spec.SecretKeySpec secretKeySpec = new javax.crypto.spec.SecretKeySpec(secret.getBytes(java.nio.charset.StandardCharsets.UTF_8), "HmacSHA256");
-                mac.init(secretKeySpec);
-                byte[] hmacBytes = mac.doFinal(rawPayload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-                StringBuilder sb = new StringBuilder("sha256=");
-                for (byte b : hmacBytes) {
-                    sb.append(String.format("%02x", b));
-                }
-                String expectedSignature = sb.toString();
-                if (!expectedSignature.equals(signature)) {
-                    return ResponseEntity.status(401).body(Map.of("message", "Invalid signature"));
-                }
-            } catch (Exception e) {
-                return ResponseEntity.status(500).body(Map.of("message", "Error verifying signature"));
-            }
+        // Fail closed: without a configured secret anyone could post fake pipeline runs.
+        String secret = githubWebhookSecret;
+        if (secret == null || secret.isBlank()) {
+            return ResponseEntity.status(503).body(Map.of("message",
+                    "GitHub webhook secret is not configured (set GITHUB_WEBHOOK_SECRET), or use a pipeline source's own webhook URL"));
+        }
+        if (!WebhookSignature.verify(secret, rawPayload.getBytes(StandardCharsets.UTF_8), signature)) {
+            return ResponseEntity.status(401).body(Map.of("message", "Missing or invalid X-Hub-Signature-256"));
         }
         
         Map<String, Object> payload;
@@ -173,11 +183,14 @@ public class CiCdController {
             @RequestHeader(value = "X-Jenkins-Token", required = false) String jenkinsToken,
             @RequestBody Map<String, Object> payload) {
         
-        String secret = System.getenv("JENKINS_WEBHOOK_SECRET");
-        if (secret != null && !secret.isEmpty()) {
-            if (jenkinsToken == null || !secret.equals(jenkinsToken)) {
-                return ResponseEntity.status(401).body(Map.of("message", "Unauthorized Jenkins webhook"));
-            }
+        String secret = jenkinsWebhookSecret;
+        if (secret == null || secret.isBlank()) {
+            return ResponseEntity.status(503).body(Map.of("message",
+                    "Jenkins webhook token is not configured (set JENKINS_WEBHOOK_SECRET), or use a pipeline source's own webhook URL"));
+        }
+        if (jenkinsToken == null || !MessageDigest.isEqual(
+                secret.getBytes(StandardCharsets.UTF_8), jenkinsToken.getBytes(StandardCharsets.UTF_8))) {
+            return ResponseEntity.status(401).body(Map.of("message", "Unauthorized Jenkins webhook"));
         }
         
         Map<String, Object> response = new HashMap<>();

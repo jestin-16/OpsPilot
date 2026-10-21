@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type DockerSource, type Project } from '../services/api';
 import { Box, Plus, Trash2, ArrowLeft, Copy, Eye } from 'lucide-react';
-import { useConfirm } from '../components/ConfirmProvider';
+import { useConfirm } from '../context/ConfirmContext';
+import { errorMessage } from '../services/projectApi';
 
 export const LogSources: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -20,7 +21,7 @@ export const LogSources: React.FC = () => {
   const [environment, setEnvironment] = useState('production');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
-  const fetchSources = async () => {
+  const fetchSources = useCallback(async () => {
     try {
       const data = await api.getDockerSources();
       if (projectId) {
@@ -35,11 +36,11 @@ export const LogSources: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
     fetchSources();
-  }, [projectId]);
+  }, [fetchSources]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +65,7 @@ export const LogSources: React.FC = () => {
       setSelectedConfigSource(newSource);
       setIsConfigModalOpen(true);
     } catch (err) {
-      alert('Failed to create log source');
+      alert(errorMessage(err, 'Failed to create log source'));
     }
   };
 
@@ -74,7 +75,7 @@ export const LogSources: React.FC = () => {
       await api.deleteDockerSource(id);
       fetchSources();
     } catch (err) {
-      alert('Failed to delete log source');
+      alert(errorMessage(err, 'Failed to delete log source'));
     }
   };
 
@@ -84,7 +85,7 @@ export const LogSources: React.FC = () => {
       setSelectedConfigSource(data);
       setIsConfigModalOpen(true);
     } catch (err) {
-      alert('Failed to load agent config');
+      alert(errorMessage(err, 'Failed to load agent config'));
     }
   };
 

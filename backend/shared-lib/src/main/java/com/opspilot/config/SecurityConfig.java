@@ -57,23 +57,18 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/ingest/loki/**", "/api/ingest/loki/**", "/api/v1/ingest/metrics/**", "/api/ingest/metrics/**").hasAuthority(IngestTokenFilter.AUTHORITY)
-                .requestMatchers("/api/ingest/*", "/api/v1/ingest/*").hasAuthority(IngestTokenFilter.AUTHORITY)
+                .requestMatchers("/api/ingest/*", "/api/v1/ingest/*", "/api/ingest/*/deployments", "/api/v1/ingest/*/deployments").hasAuthority(IngestTokenFilter.AUTHORITY)
                 .requestMatchers(
                     "/api/ingest/*/github/*", "/api/v1/ingest/*/github/*",
                     "/api/auth/**", "/api/v1/auth/**",
                     "/api/webhooks/**", "/api/v1/webhooks/**",
                     "/api/cicd/webhooks/**", "/api/v1/cicd/webhooks/**",
-                    "/api/monitoring/probe", "/api/v1/monitoring/probe",
-                    "/api/monitoring/live-events/**", "/api/v1/monitoring/live-events/**",
-                    "/h2-console/**", "/error", "/swagger-ui/**", "/v3/api-docs/**",
+                    "/error", "/swagger-ui/**", "/v3/api-docs/**",
                     "/actuator/**"
                 ).permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             );
-
-        // Allow H2 console frames if accessed
-        http.headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         http.addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(ingestTokenFilter, UsernamePasswordAuthenticationFilter.class);

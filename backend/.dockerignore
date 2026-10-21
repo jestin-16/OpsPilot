@@ -1,0 +1,8 @@
+# Build output and local files never belong in the image build context (target/ alone is ~700 MB).
+**/target/
+**/*.log
+.mvn/timing.properties
+payload.snappy
+run.ps1
+run-microservices.sh
+test-ratelimit.ps1

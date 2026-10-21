@@ -2,7 +2,7 @@ import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse, type In
 import { z } from 'zod';
 import type { ProjectIntegration } from './projectApi';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
 // Axios Instance with Credentials for httpOnly Cookies
 export const axiosInstance = axios.create({

@@ -10,9 +10,12 @@ spring:
         add-to-simple-url-handler-mapping: true
         cors-configurations:
           '[/**]':
-            allowedOrigins:
-              - "http://localhost:5173"
-              - "http://127.0.0.1:5173"
+            allowedOriginPatterns:
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+              - "https://opspilot.jestin16.dev"
+              - "https://*.jestin16.dev"
+              - "*"
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true

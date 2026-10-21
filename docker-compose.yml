@@ -138,6 +138,7 @@ services:
       - LOKI_PASSWORD=${LOKI_PASSWORD:-}
       - OPSPILOT_INGEST_RATE_LIMIT_CAPACITY=2
       - OPSPILOT_INGEST_RATE_LIMIT_REFILL_TOKENS=2
+      - OPSPILOT_PUBLIC_URL=${OPSPILOT_PUBLIC_URL:-https://opspilot.jestin16.dev}
 
   log-watcher-service:
     build:
@@ -180,6 +181,19 @@ services:
         condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+    container_name: opspilot-frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    depends_on:
+      - api-gateway
 
   # Third-party images are pinned so a rebuild can't silently pick up a new major version.
   prometheus:

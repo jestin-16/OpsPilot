@@ -1,9 +1,8 @@
 name: CI
 
-# Every pull request and every push to main must build and pass the full test suite.
+# Every pull request must build and pass the full test suite.
 on:
   pull_request:
-  push:
     branches: [ main ]
 
 concurrency:

@@ -48,14 +48,16 @@ Write-Host "Extracting runner files..." -ForegroundColor Yellow
 Expand-Archive -Path $runnerPkg -DestinationPath $runnerDir -Force
 Remove-Item $runnerPkg -Force
 
-# Configure runner
-Write-Host "Configuring runner against $RepoUrl..." -ForegroundColor Yellow
-& .\config.cmd --url $RepoUrl --token $RunnerToken --name "opspilot-host-laptop" --work "_work" --labels "self-hosted,windows,x64,opspilot-prod" --unattended --replace
+# If an existing runner config exists, remove it first
+if (Test-Path "$runnerDir\.runner") {
+    Write-Host "Existing runner configuration detected. Removing it first..." -ForegroundColor Yellow
+    & .\config.cmd remove --token $RunnerToken
+}
 
-# Install and start Windows service
-Write-Host "Installing and starting Windows Runner Service..." -ForegroundColor Yellow
-& .\svc.cmd install
-& .\svc.cmd start
+# Configure runner with Windows service
+Write-Host "Configuring runner against $RepoUrl with Windows Service..." -ForegroundColor Yellow
+& .\config.cmd --url $RepoUrl --token $RunnerToken --name "opspilot-host-laptop" --work "_work" --labels "self-hosted,windows,x64,opspilot-prod" --unattended --replace --runasservice
+
 
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host " Runner successfully installed and running as a service!  " -ForegroundColor Green

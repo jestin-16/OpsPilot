@@ -110,7 +110,7 @@ import { ConfirmProvider } from './components/ConfirmProvider';
 
 export const App: React.FC = () => {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy_client_id'}>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || '275211051077-gat8a3o8evorpt66b2lana97ktvj8mko.apps.googleusercontent.com'}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <AlertProvider>

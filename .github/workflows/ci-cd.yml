@@ -73,6 +73,7 @@ jobs:
       - name: Production Bundle Build
         env:
           VITE_API_BASE_URL: /api/v1
+          VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID || '275211051077-gat8a3o8evorpt66b2lana97ktvj8mko.apps.googleusercontent.com' }}
         run: npm run build
 
       - name: Upload Frontend Dist

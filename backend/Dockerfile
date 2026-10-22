@@ -1,5 +1,17 @@
 # syntax=docker/dockerfile:1
-# Ultra-fast runtime image definition for OpsPilot backend services
+# One image definition for every backend service:
+#   docker build -f backend/Dockerfile --build-arg SERVICE=core-service --build-arg PORT=8082 backend
+
+FROM maven:3.9-eclipse-temurin-17 AS build
+ARG SERVICE
+WORKDIR /app
+COPY . .
+# The Maven repository is a BuildKit cache mount, so dependencies download once instead of on every
+# source change.
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B --no-transfer-progress package -pl "${SERVICE}" -am -DskipTests \
+ && cp "${SERVICE}"/target/"${SERVICE}"-*.jar /app/app.jar
+
 FROM eclipse-temurin:17-jre-jammy
 ARG SERVICE
 ARG PORT
@@ -11,7 +23,7 @@ RUN groupadd -g 10001 opspilot \
  && chown opspilot:opspilot /home/opspilot/.kube
 
 WORKDIR /app
-COPY --chown=opspilot:opspilot ${SERVICE}/target/${SERVICE}-*.jar app.jar
+COPY --from=build --chown=opspilot:opspilot /app/app.jar app.jar
 USER 10001:10001
 
 ENV SERVER_PORT=${PORT} \

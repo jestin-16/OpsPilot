@@ -36,14 +36,7 @@ jobs:
       - name: Build & Test All Microservices
         working-directory: backend
         run: |
-          ./mvnw -B -T 1C package
-
-      - name: Upload Backend Jars
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-jars
-          path: backend/*/target/*.jar
-          retention-days: 1
+          ./mvnw -B -T 1C test
 
   frontend-ci:
     name: Frontend Build, Lint & Tests
@@ -76,18 +69,12 @@ jobs:
           VITE_GOOGLE_CLIENT_ID: ${{ vars.VITE_GOOGLE_CLIENT_ID || '275211051077-gat8a3o8evorpt66b2lana97ktvj8mko.apps.googleusercontent.com' }}
         run: npm run build
 
-      - name: Upload Frontend Dist
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist
-          retention-days: 1
-
   deploy-to-host:
     name: Deploy to Production Host Machine
     needs: [ backend-ci, frontend-ci ]
     if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
+    timeout-minutes: 15
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -109,37 +96,11 @@ jobs:
           }
           Write-Host ".env configuration confirmed." -ForegroundColor Green
 
-      - name: Download Backend Jars
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-jars
-          path: backend-artifacts
-
-      - name: Distribute Backend Jars
-        shell: powershell
-        run: |
-          Write-Host "Staging backend jars into service target folders..." -ForegroundColor Cyan
-          Get-ChildItem -Path "backend-artifacts" -Recurse -Filter "*.jar" | ForEach-Object {
-            if ($_.Name -match '^([a-z0-9-]+)-\d+\.\d+\.\d+') {
-              $service = $Matches[1]
-              $destDir = "backend\$service\target"
-              if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
-              Copy-Item $_.FullName "$destDir\$($_.Name)" -Force
-              Write-Host "  -> Placed $($_.Name) into $destDir" -ForegroundColor Green
-            }
-          }
-
-      - name: Download Frontend Dist
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist
-
       - name: Rebuild & Start Docker Compose Stack
         shell: powershell
         run: |
-          Write-Host "Deploying Docker services with pre-built artifacts..." -ForegroundColor Cyan
-          docker compose up -d --build
+          Write-Host "Rebuilding and deploying Docker services with managed concurrency..." -ForegroundColor Cyan
+          docker compose --parallel 2 up -d --build
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Docker Compose execution failed!"
             exit 1

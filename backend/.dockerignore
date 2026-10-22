@@ -1,5 +1,4 @@
-**/target/*
-!**/target/*.jar
+**/target/
 **/*.log
 .mvn/timing.properties
 payload.snappy

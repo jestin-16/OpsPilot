@@ -105,18 +105,15 @@ public class PipelineSourceService {
         Map<String, Object> result = new HashMap<>();
         try {
             if (PipelineSource.GITHUB_ACTIONS.equals(s.getProvider())) {
-                if (s.getAccessToken() == null || s.getAccessToken().isBlank()) {
-                    result.put("success", true);
-                    result.put("message", "No access token configured; repository was not verified. Webhooks will still work.");
-                    return result;
-                }
                 HttpHeaders h = new HttpHeaders();
                 h.set("User-Agent", "OpsPilot");
                 h.set("Accept", "application/vnd.github+json");
-                h.setBearerAuth(s.getAccessToken());
+                if (s.getAccessToken() != null && !s.getAccessToken().isBlank()) {
+                    h.setBearerAuth(s.getAccessToken());
+                }
                 restTemplate.exchange("https://api.github.com/repos/" + s.getRepoFullName(), HttpMethod.GET, new HttpEntity<>(h), String.class);
                 result.put("success", true);
-                result.put("message", "Repository " + s.getRepoFullName() + " is reachable.");
+                result.put("message", "Repository " + s.getRepoFullName() + (s.getAccessToken() != null && !s.getAccessToken().isBlank() ? " is reachable." : " (public) is reachable."));
             } else {
                 String base = s.getBaseUrl().replaceAll("/+$", "");
                 String url = base + "/job/" + s.getJobName() + "/api/json";
@@ -129,7 +126,13 @@ public class PipelineSourceService {
             }
         } catch (HttpStatusCodeException e) {
             result.put("success", false);
-            result.put("message", "Remote returned HTTP " + e.getStatusCode().value());
+            if (e.getStatusCode().value() == 401) {
+                result.put("message", "GitHub returned 401 Unauthorized (Invalid Access Token). For public repos, leave token empty.");
+            } else if (e.getStatusCode().value() == 404) {
+                result.put("message", "Repository not found (404). Check owner/repo or token permissions.");
+            } else {
+                result.put("message", "Remote returned HTTP " + e.getStatusCode().value());
+            }
         } catch (Exception e) {
             result.put("success", false);
             result.put("message", "Connection failed: " + e.getClass().getSimpleName());
@@ -151,7 +154,13 @@ public class PipelineSourceService {
             String repo = req.getRepoFullName() == null ? "" : req.getRepoFullName().trim();
             if (!REPO_PATTERN.matcher(repo).matches()) throw new IllegalArgumentException("Repository must be in owner/repo format");
             s.setRepoFullName(repo);
-            if (notBlank(req.getAccessToken())) s.setAccessToken(req.getAccessToken().trim());
+            if (req.getAccessToken() != null) {
+                if ("CLEAR".equalsIgnoreCase(req.getAccessToken().trim()) || req.getAccessToken().trim().isEmpty()) {
+                    s.setAccessToken(null);
+                } else {
+                    s.setAccessToken(req.getAccessToken().trim());
+                }
+            }
         } else {
             String base = req.getBaseUrl() == null ? "" : req.getBaseUrl().trim();
             if (!base.matches("^https?://[^\\s/]+.*$")) throw new IllegalArgumentException("Base URL must start with http:// or https://");

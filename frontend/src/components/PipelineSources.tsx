@@ -363,7 +363,19 @@ export const PipelineSources: React.FC<Props> = ({ isAddOpen, onAddClose, onChan
             {isGithub ? (
               <>
                 <Input label="Repository (owner/repo)" value={form.repoFullName} onChange={(e) => set('repoFullName', e.target.value)} error={errors.repoFullName} placeholder="octocat/hello-world" />
-                <Input label={editing?.hasAccessToken ? 'Access token (leave blank to keep current)' : 'Access token (optional)'} type="password" value={form.accessToken} onChange={(e) => set('accessToken', e.target.value)} placeholder="ghp_…" autoComplete="off" />
+                <Input label={editing?.hasAccessToken ? (form.accessToken === 'CLEAR' ? 'Access token (will be removed)' : 'Access token (leave blank to keep current)') : 'Access token (optional)'} type="password" value={form.accessToken === 'CLEAR' ? '' : form.accessToken} onChange={(e) => set('accessToken', e.target.value)} placeholder={form.accessToken === 'CLEAR' ? 'Token marked for removal' : 'ghp_…'} autoComplete="off" disabled={form.accessToken === 'CLEAR'} />
+                {editing?.hasAccessToken && (
+                  <div className="flex items-center justify-between text-xs text-op-muted -mt-2">
+                    <span>{form.accessToken === 'CLEAR' ? '⚠️ Token will be removed' : 'Saved access token is active.'}</span>
+                    <button
+                      type="button"
+                      onClick={() => set('accessToken', form.accessToken === 'CLEAR' ? '' : 'CLEAR')}
+                      className={`font-semibold transition-colors ${form.accessToken === 'CLEAR' ? 'text-amber-500 hover:text-amber-600' : 'text-rose-500 hover:text-rose-600'}`}
+                    >
+                      {form.accessToken === 'CLEAR' ? 'Keep existing token (Undo)' : 'Remove token (recommended for public repo)'}
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <>

@@ -36,8 +36,8 @@ try {
 }
 
 # 4. Rebuild & start Docker Compose stack
-Write-Host "[4/6] Building and starting all Docker Compose containers..." -ForegroundColor Yellow
-docker compose up -d --build
+Write-Host "[4/6] Building and starting all Docker Compose containers with managed concurrency..." -ForegroundColor Yellow
+docker compose --parallel 2 up -d --build
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Docker Compose execution failed!"
     exit 1
@@ -92,4 +92,8 @@ if ($healthy) {
 
 # Prune old dangling images to preserve disk space
 Write-Host "Cleaning up dangling images..." -ForegroundColor DarkGray
-docker image prune -f | Out-Null
+try {
+    docker image prune -f | Out-Null
+} catch {
+    Write-Warning "Image pruning skipped or encountered warning: $_"
+}

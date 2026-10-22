@@ -99,8 +99,8 @@ jobs:
       - name: Rebuild & Start Docker Compose Stack
         shell: powershell
         run: |
-          Write-Host "Rebuilding and deploying Docker services..." -ForegroundColor Cyan
-          docker compose up -d --build
+          Write-Host "Rebuilding and deploying Docker services with managed concurrency..." -ForegroundColor Cyan
+          docker compose --parallel 2 up -d --build
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Docker Compose execution failed!"
             exit 1
@@ -137,14 +137,19 @@ jobs:
 
       - name: Prune Dangling Docker Images
         shell: powershell
-        if: always()
+        if: success()
         run: |
-          docker image prune -f
+          try {
+            docker image prune -f
+          } catch {
+            Write-Warning "Docker image prune encountered a non-fatal warning: $_"
+          }
 
       - name: Post Deployment Summary
         shell: powershell
         if: always()
         run: |
+          $statusEmoji = if ('${{ job.status }}' -eq 'success') { "Complete ✅" } else { "Failed ❌" }
           $summary = @"
           ### 🚀 OpsPilot Deployment Status
           - **Commit:** `${{ github.sha }}`
@@ -152,6 +157,6 @@ jobs:
           - **Triggered By:** `${{ github.actor }}`
           - **Target Environment:** Host Laptop (`self-hosted`)
           - **Live URL:** [https://opspilot.jestin16.dev](https://opspilot.jestin16.dev)
-          - **Status:** Complete ✅
+          - **Status:** $statusEmoji
           "@
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value $summary

@@ -30,7 +30,7 @@ export const GithubActivity: React.FC = () => {
     setError('');
     try {
       const [commitsData, projectsData, pipelinesData, deploymentsData] = await Promise.all([
-        api.getCommits(projectId),
+        api.getCommits(projectId === -1 ? 'ALL' : projectId),
         api.getProjects().catch(() => []),
         api.getPipelineRuns().catch(() => []),
         api.getAllDeployments().catch(() => [])
@@ -57,7 +57,7 @@ export const GithubActivity: React.FC = () => {
     setSuccessMsg('');
     setError('');
     try {
-      const res = await api.syncCommits(projectId);
+      const res = await api.syncCommits(projectId === -1 ? 'ALL' : projectId);
       if (res.warning) {
         setWarning(`Synced ${res.synced_count} commits with warning: ${res.warning}`);
       } else {

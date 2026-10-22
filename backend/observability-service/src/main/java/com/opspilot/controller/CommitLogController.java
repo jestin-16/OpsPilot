@@ -36,6 +36,9 @@ public class CommitLogController {
 
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<CommitLogEntity>> getProjectCommits(@PathVariable Long projectId, @AuthenticationPrincipal User currentUser) {
+        if (projectId == null || projectId <= 0) {
+            return getAllCommits(currentUser);
+        }
         projectScope.require(projectId, currentUser);
         List<CommitLogEntity> commits = commitLogRepository.findByProject_IdOrderByTimestampDesc(projectId);
         return ResponseEntity.ok(commits);
@@ -57,6 +60,9 @@ public class CommitLogController {
 
     @PostMapping("/project/{projectId}/sync")
     public ResponseEntity<?> syncHistoricalCommits(@PathVariable Long projectId, @AuthenticationPrincipal User currentUser) {
+        if (projectId == null || projectId <= 0) {
+            return syncAllProjects(currentUser);
+        }
         projectScope.require(projectId, currentUser);
         try {
             int count = githubSyncService.syncHistoricalCommits(projectId);

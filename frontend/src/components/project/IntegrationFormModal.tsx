@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Check, Lock, ShieldCheck } from 'lucide-react';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
 import { initialValues, isVisible, toPayload, validate, type FieldDef, type IntegrationTypeDef } from '../../lib/integrationTypes';
@@ -21,37 +22,82 @@ const inputCls = 'w-full bg-op-input text-op-fg text-sm rounded-lg border border
 
 const Field: React.FC<{ field: FieldDef; value: string; stored: boolean; onChange: (v: string) => void }> = ({ field, value, stored, onChange }) => {
   const id = `field-${field.key}`;
-  const placeholder = field.secret && stored ? '•••••••• saved — leave blank to keep' : field.placeholder;
+  const isFilled = (value ?? '').trim().length > 0;
+  const isSecretStored = field.secret && stored;
+  const placeholder = isSecretStored ? '•••••••• (already saved in vault — leave blank to keep)' : field.placeholder;
+
   return (
     <div className="flex flex-col gap-1.5">
       {field.kind === 'checkbox' ? (
-        <label className="flex items-center gap-2 text-sm font-medium text-op-fg">
-          <input type="checkbox" checked={value === 'true'} onChange={(e) => onChange(e.target.checked ? 'true' : '')} className="h-4 w-4 rounded border-op-border-strong" />
-          {field.label}
+        <label className="flex items-center gap-2 text-sm font-medium text-op-fg cursor-pointer">
+          <input type="checkbox" checked={value === 'true'} onChange={(e) => onChange(e.target.checked ? 'true' : '')} className="h-4 w-4 rounded border-op-border-strong text-indigo-600 focus:ring-indigo-500" />
+          <span>{field.label}</span>
+          {value === 'true' && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+              <Check className="h-3 w-3 text-emerald-600" /> Enabled
+            </span>
+          )}
         </label>
       ) : (
         <>
-          <label htmlFor={id} className="text-xs font-semibold text-op-muted tracking-wide">
-            {field.label}{field.required && <span className="text-rose-500"> *</span>}
-          </label>
-          {field.kind === 'textarea' ? (
-            <textarea id={id} rows={4} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className={`${inputCls} font-mono text-xs`} autoComplete="off" spellCheck={false} />
-          ) : field.kind === 'select' ? (
-            <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
-              {field.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          ) : (
-            <input
-              id={id}
-              type={field.kind === 'number' ? 'number' : field.kind === 'password' ? 'password' : 'text'}
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder={placeholder}
-              className={inputCls}
-              autoComplete={field.kind === 'password' ? 'new-password' : 'off'}
-              spellCheck={false}
-            />
-          )}
+          <div className="flex items-center justify-between">
+            <label htmlFor={id} className="text-xs font-semibold text-op-muted tracking-wide flex items-center gap-1.5">
+              <span>{field.label}</span>
+              {field.required && <span className="text-rose-500 font-bold">*</span>}
+            </label>
+            {isSecretStored ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200 shadow-2xs">
+                <Lock className="h-3 w-3 text-emerald-600" /> Stored in Vault
+              </span>
+            ) : isFilled ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-700 border border-sky-200 shadow-2xs">
+                <Check className="h-3 w-3 text-sky-600" /> Configured
+              </span>
+            ) : null}
+          </div>
+
+          <div className="relative flex items-center">
+            {field.kind === 'textarea' ? (
+              <textarea
+                id={id}
+                rows={4}
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={placeholder}
+                className={`${inputCls} font-mono text-xs ${isSecretStored && !isFilled ? 'border-emerald-300 bg-emerald-50/15' : isFilled ? 'border-sky-300' : ''}`}
+                autoComplete="off"
+                spellCheck={false}
+              />
+            ) : field.kind === 'select' ? (
+              <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+                {field.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            ) : (
+              <>
+                <input
+                  id={id}
+                  type={field.kind === 'number' ? 'number' : field.kind === 'password' ? 'password' : 'text'}
+                  value={value}
+                  onChange={(e) => onChange(e.target.value)}
+                  placeholder={placeholder}
+                  className={`${inputCls} ${isSecretStored && !isFilled ? 'border-emerald-300 bg-emerald-50/15 pr-28 font-mono' : isFilled ? 'border-sky-300 pr-10' : ''}`}
+                  autoComplete={field.kind === 'password' ? 'new-password' : 'off'}
+                  spellCheck={false}
+                />
+                {isSecretStored && !isFilled && (
+                  <div className="absolute right-3 flex items-center gap-1.5 pointer-events-none text-emerald-600 text-xs font-semibold select-none">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    <span className="text-[11px]">Saved</span>
+                  </div>
+                )}
+                {isFilled && (
+                  <div className="absolute right-3 flex items-center pointer-events-none text-sky-600 select-none">
+                    <Check className="h-4 w-4" />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </>
       )}
       {field.help && <p className="text-[11px] text-op-subtle">{field.help}</p>}

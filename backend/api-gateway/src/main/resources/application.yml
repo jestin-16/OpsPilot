@@ -41,7 +41,7 @@ spring:
         - id: core-service
           uri: lb://core-service
           predicates:
-            - Path=/api/projects/**, /api/deployments/**, /api/kubernetes/**, /api/cicd/**, /api/users, /api/users/**, /api/admin/**, /api/v1/projects/**, /api/v1/deployments/**, /api/v1/kubernetes/**, /api/v1/cicd/**, /api/v1/users, /api/v1/users/**, /api/v1/admin/**
+            - Path=/api/projects/**, /api/deployments/**, /api/kubernetes/**, /api/cicd/**, /api/users, /api/users/**, /api/admin/**, /api/incidents/**, /api/alerts/**, /api/events/**, /api/integrations/**, /api/v1/projects/**, /api/v1/deployments/**, /api/v1/kubernetes/**, /api/v1/cicd/**, /api/v1/users, /api/v1/users/**, /api/v1/admin/**, /api/v1/incidents/**, /api/v1/alerts/**, /api/v1/events/**, /api/v1/integrations/**
 
 eureka:
   client:

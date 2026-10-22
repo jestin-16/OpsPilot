@@ -837,7 +837,7 @@ export const api = {
   },
 
   getCommits: async (projectId?: number | 'ALL'): Promise<CommitLog[]> => {
-    if (!projectId || projectId === 'ALL') {
+    if (!projectId || projectId === 'ALL' || projectId === -1 || (typeof projectId === 'number' && projectId <= 0)) {
       const res = await axiosInstance.get<CommitLog[]>('/commits');
       return res.data;
     }
@@ -846,7 +846,7 @@ export const api = {
   },
 
   syncCommits: async (projectId?: number | 'ALL'): Promise<{ synced_count: number; warning?: string }> => {
-    if (!projectId || projectId === 'ALL') {
+    if (!projectId || projectId === 'ALL' || projectId === -1 || (typeof projectId === 'number' && projectId <= 0)) {
       const res = await axiosInstance.post<{ synced_count: number; warning?: string }>('/commits/sync');
       return res.data;
     }
@@ -1022,7 +1022,7 @@ export const api = {
   },
 
   getResources: async (projectId?: number): Promise<PlatformResource[]> => {
-    const url = projectId ? `/projects/${projectId}/resources` : '/resources';
+    const url = projectId && projectId !== -1 && projectId > 0 ? `/projects/${projectId}/resources` : '/resources';
     const res = await axiosInstance.get<PlatformResource[]>(url);
     return res.data;
   },

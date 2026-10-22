@@ -35,16 +35,34 @@ try {
     Write-Warning "      Git pull skipped or failed ($($_.Exception.Message)). Continuing with local files."
 }
 
-# 4. Rebuild & start Docker Compose stack
-Write-Host "[4/6] Building and starting all Docker Compose containers..." -ForegroundColor Yellow
+# 4. Package backend microservices (single-pass multi-threaded build)
+Write-Host "[4/7] Packaging backend microservices..." -ForegroundColor Yellow
+& .\backend\mvnw.cmd -B -DskipTests -T 1C package -f backend/pom.xml
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Backend compilation failed!"
+    exit 1
+}
+
+# 5. Build frontend production bundle
+Write-Host "[5/7] Building frontend production bundle..." -ForegroundColor Yellow
+Push-Location frontend
+npm run build
+Pop-Location
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Frontend compilation failed!"
+    exit 1
+}
+
+# 6. Rebuild & start Docker Compose stack
+Write-Host "[6/7] Starting Docker Compose containers with pre-built artifacts..." -ForegroundColor Yellow
 docker compose up -d --build
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Docker Compose build/startup failed!"
     exit 1
 }
 
-# 5. Verify Cloudflare Tunnel Service
-Write-Host "[5/6] Checking Cloudflare Tunnel (Cloudflared) service..." -ForegroundColor Yellow
+# 7. Verify Cloudflare Tunnel Service
+Write-Host "[7/7] Checking Cloudflare Tunnel (Cloudflared) service..." -ForegroundColor Yellow
 try {
     $cfService = Get-Service -Name "Cloudflared" -ErrorAction SilentlyContinue
     if ($cfService) {
@@ -60,17 +78,16 @@ try {
     Write-Warning "      Could not inspect Cloudflared service ($($_.Exception.Message))"
 }
 
-# 6. Verify Health Status
-Write-Host "[6/6] Verifying system readiness..." -ForegroundColor Yellow
+# 8. Verify Health Status
+Write-Host "Verifying system readiness on port 80..." -ForegroundColor Yellow
 $maxAttempts = 15
 $attempt = 0
 $healthy = $false
 
 while ($attempt -lt $maxAttempts) {
     $attempt++
-    Start-Sleep -Seconds 4
     try {
-        $response = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 3
+        $response = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 2
         if ($response.StatusCode -eq 200) {
             $healthy = $true
             break
@@ -78,6 +95,7 @@ while ($attempt -lt $maxAttempts) {
     } catch {
         Write-Host "      [$attempt/$maxAttempts] Waiting for OpsPilot Frontend & Gateway..." -ForegroundColor DarkGray
     }
+    Start-Sleep -Seconds 2
 }
 
 if ($healthy) {

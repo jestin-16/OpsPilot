@@ -1,5 +1,5 @@
-# Build output and local files never belong in the image build context (target/ alone is ~700 MB).
-**/target/
+**/target/*
+!**/target/*.jar
 **/*.log
 .mvn/timing.properties
 payload.snappy

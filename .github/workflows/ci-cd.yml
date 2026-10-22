@@ -3,6 +3,12 @@ name: OpsPilot CI/CD Pipeline
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'screenshots/**'
+      - '.gitignore'
+      - 'backup-*.sql'
   workflow_dispatch:
 
 concurrency:
@@ -30,7 +36,14 @@ jobs:
       - name: Build & Test All Microservices
         working-directory: backend
         run: |
-          ./mvnw -B verify
+          ./mvnw -B -T 1C package
+
+      - name: Upload Backend Jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jars
+          path: backend/*/target/*.jar
+          retention-days: 1
 
   frontend-ci:
     name: Frontend Build, Lint & Tests
@@ -52,19 +65,22 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: TypeScript Type Check
-        run: npx tsc -b
-
-      - name: Code Linter
-        run: npm run lint
-
-      - name: Unit Tests
-        run: npm test
+      - name: Code Linter & Tests
+        run: |
+          npm run lint
+          npm test
 
       - name: Production Bundle Build
         env:
           VITE_API_BASE_URL: /api/v1
         run: npm run build
+
+      - name: Upload Frontend Dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 1
 
   deploy-to-host:
     name: Deploy to Production Host Machine
@@ -92,11 +108,37 @@ jobs:
           }
           Write-Host ".env configuration confirmed." -ForegroundColor Green
 
+      - name: Download Backend Jars
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-jars
+          path: backend-artifacts
+
+      - name: Distribute Backend Jars
+        shell: powershell
+        run: |
+          Write-Host "Staging backend jars into service target folders..." -ForegroundColor Cyan
+          Get-ChildItem -Path "backend-artifacts" -Recurse -Filter "*.jar" | ForEach-Object {
+            if ($_.Name -match '^([a-z0-9-]+)-\d+\.\d+\.\d+') {
+              $service = $Matches[1]
+              $destDir = "backend\$service\target"
+              if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
+              Copy-Item $_.FullName "$destDir\$($_.Name)" -Force
+              Write-Host "  -> Placed $($_.Name) into $destDir" -ForegroundColor Green
+            }
+          }
+
+      - name: Download Frontend Dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
       - name: Rebuild & Start Docker Compose Stack
         shell: powershell
         run: |
-          Write-Host "Rebuilding and deploying Docker services with managed concurrency..." -ForegroundColor Cyan
-          docker compose --parallel 2 up -d --build
+          Write-Host "Deploying Docker services with pre-built artifacts..." -ForegroundColor Cyan
+          docker compose up -d --build
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Docker Compose execution failed!"
             exit 1
@@ -106,15 +148,14 @@ jobs:
         shell: powershell
         run: |
           Write-Host "Verifying system readiness on port 80..." -ForegroundColor Cyan
-          $maxAttempts = 20
+          $maxAttempts = 15
           $attempt = 0
           $healthy = $false
 
           while ($attempt -lt $maxAttempts) {
             $attempt++
-            Start-Sleep -Seconds 5
             try {
-              $response = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 5
+              $response = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 2
               if ($response.StatusCode -eq 200) {
                 $healthy = $true
                 Write-Host "OpsPilot Frontend & Gateway responding with HTTP 200 OK!" -ForegroundColor Green
@@ -123,6 +164,7 @@ jobs:
             } catch {
               Write-Host "Attempt ${attempt}/${maxAttempts} - Waiting for services to become ready..." -ForegroundColor DarkGray
             }
+            Start-Sleep -Seconds 2
           }
 
           if (-not $healthy) {

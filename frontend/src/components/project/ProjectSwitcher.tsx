@@ -7,7 +7,6 @@ import {
   Check,
   Search,
   Layers,
-  Sparkles,
   ArrowUpRight
 } from 'lucide-react';
 import { useProject } from '../../context/ProjectContext';

@@ -42,6 +42,8 @@ if ($LASTEXITCODE -ne 0) {
     Write-Error "Docker Compose execution failed!"
     exit 1
 }
+# Refresh frontend container so Nginx immediately applies any proxy/DNS updates
+docker compose restart frontend | Out-Null
 
 # 5. Verify Cloudflare Tunnel Service
 Write-Host "[5/6] Checking Cloudflare Tunnel (Cloudflared) service..." -ForegroundColor Yellow
@@ -61,16 +63,31 @@ try {
 }
 
 # 6. Verify Health Status
-Write-Host "[6/6] Verifying system readiness on port 80..." -ForegroundColor Yellow
-$maxAttempts = 15
+Write-Host "[6/6] Verifying system readiness on port 80 and API Gateway proxy..." -ForegroundColor Yellow
+$maxAttempts = 20
 $attempt = 0
 $healthy = $false
 
 while ($attempt -lt $maxAttempts) {
     $attempt++
     try {
-        $response = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 2
-        if ($response.StatusCode -eq 200) {
+        $feResponse = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 3
+        
+        $apiProxyOk = $false
+        try {
+            $apiCheck = Invoke-WebRequest -Uri "http://127.0.0.1:80/api/v1/auth/health" -UseBasicParsing -TimeoutSec 3
+            if ($apiCheck.StatusCode -ne 502 -and $apiCheck.StatusCode -ne 503 -and $apiCheck.StatusCode -ne 504) {
+                $apiProxyOk = $true
+            }
+        } catch {
+            $code = $_.Exception.Response.StatusCode.value__
+            # Upstream reached (e.g. 401/404/500 from Spring Boot is acceptable; 502/503/504 Bad Gateway is not)
+            if ($code -and $code -ne 502 -and $code -ne 503 -and $code -ne 504) {
+                $apiProxyOk = $true
+            }
+        }
+
+        if ($feResponse.StatusCode -eq 200 -and $apiProxyOk) {
             $healthy = $true
             break
         }

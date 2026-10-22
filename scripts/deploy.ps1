@@ -37,7 +37,7 @@ try {
 
 # 4. Rebuild & start Docker Compose stack
 Write-Host "[4/6] Building and starting all Docker Compose containers..." -ForegroundColor Yellow
-docker compose --parallel 2 up -d --build
+docker compose up -d --build
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Docker Compose execution failed!"
     exit 1

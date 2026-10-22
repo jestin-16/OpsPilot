@@ -114,7 +114,7 @@ export const PipelineSources: React.FC<Props> = ({ isAddOpen, onAddClose, onChan
     }
   }, [isAddOpen]);
 
-  const modalOpen = isAddOpen || editing !== null;
+  const modalOpen = isAddOpen || editing !== null || created !== null;
   const closeModal = () => {
     setEditing(null);
     setCreated(null);

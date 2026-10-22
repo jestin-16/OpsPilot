@@ -30,10 +30,12 @@ public class KubernetesClientConfig {
         ApiClient client;
         File serviceAccountDir = new File("/var/run/secrets/kubernetes.io/serviceaccount");
 
+        boolean configured = false;
         try {
             if (serviceAccountDir.exists()) {
                 log.info("Detected in-cluster Kubernetes environment: using ServiceAccount credentials from {}", serviceAccountDir.getAbsolutePath());
                 client = ClientBuilder.cluster().build();
+                configured = true;
             } else {
                 String kubeConfigPath = System.getenv("KUBECONFIG");
                 if (kubeConfigPath == null || kubeConfigPath.isBlank()) {
@@ -43,29 +45,29 @@ public class KubernetesClientConfig {
                 if (kubeConfigFile.exists()) {
                     log.info("Detected local Kubernetes environment: using kubeconfig at {}", kubeConfigFile.getAbsolutePath());
                     client = ClientBuilder.kubeconfig(io.kubernetes.client.util.KubeConfig.loadKubeConfig(new java.io.FileReader(kubeConfigFile))).build();
+                    configured = true;
                 } else {
-                    log.warn("Neither in-cluster ServiceAccount nor local kubeconfig found at {}. Using default fallback client.", kubeConfigFile.getAbsolutePath());
-                    client = ClientBuilder.defaultClient();
+                    log.info("Neither in-cluster ServiceAccount nor local kubeconfig found at {}. Using unconfigured fallback client.", kubeConfigFile.getAbsolutePath());
+                    client = new ApiClient();
                 }
             }
         } catch (Exception e) {
-            log.warn("Auto-detection failed ({}), falling back to standard client builder.", e.getMessage());
-            try {
-                client = ClientBuilder.defaultClient();
-            } catch (Exception ex) {
-                client = new ApiClient();
-            }
+            log.warn("Auto-detection failed ({}), using unconfigured fallback client.", e.getMessage());
+            client = new ApiClient();
         }
 
         if (masterUrl != null && !masterUrl.isBlank()) {
             log.info("Overriding Kubernetes master URL with: {}", masterUrl);
             client.setBasePath(masterUrl);
-        } else {
+        } else if (configured) {
             String rewritten = rewriteLoopback(client.getBasePath(), loopbackHost);
             if (!rewritten.equals(client.getBasePath())) {
                 log.info("Kubeconfig points at loopback ({}); using {} from inside the container", client.getBasePath(), rewritten);
                 client.setBasePath(rewritten);
             }
+        } else {
+            log.info("No Kubernetes cluster configured in log-watcher-service.");
+            client.setBasePath("unconfigured://kubernetes");
         }
 
         // Set default timeout and verify configuration

@@ -68,6 +68,10 @@ public class KubernetesPodWatcher {
 
     @EventListener(ApplicationReadyEvent.class)
     public void start() {
+        if (apiClient == null || apiClient.getBasePath() == null || !apiClient.getBasePath().toLowerCase().startsWith("http") || "unconfigured://kubernetes".equals(apiClient.getBasePath()) || "http://localhost:8080".equals(apiClient.getBasePath())) {
+            log.info("Kubernetes is not configured (no kubeconfig, service account, or master URL). Pod watcher will not start.");
+            return;
+        }
         log.info("Starting KubernetesPodWatcher in namespace '{}' (label selector: '{}')...",
                 watchNamespace, watchLabelSelector != null && !watchLabelSelector.isBlank() ? watchLabelSelector : "none");
         watchExecutor.submit(this::watchLoop);

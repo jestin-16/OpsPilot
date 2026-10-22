@@ -6,6 +6,8 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.models.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,18 +18,21 @@ import java.util.*;
 @Service
 public class KubernetesService {
 
+    private static final Logger log = LoggerFactory.getLogger(KubernetesService.class);
+
     @Autowired(required = false)
     private ApiClient apiClient;
 
 
     public Map<String, Object> getClusterOverview() {
         Map<String, Object> overview = new HashMap<>();
+        overview.put("status", "Disconnected");
+        overview.put("nodeCount", 0);
+        overview.put("podCount", 0);
+        overview.put("runningPods", 0);
+        overview.put("failedPods", 0);
+
         if (apiClient == null) {
-            overview.put("status", "Disconnected");
-            overview.put("nodeCount", 0);
-            overview.put("podCount", 0);
-            overview.put("runningPods", 0);
-            overview.put("failedPods", 0);
             return overview;
         }
         try {
@@ -54,7 +59,12 @@ public class KubernetesService {
             overview.put("runningPods", runningPods);
             overview.put("failedPods", failedPods);
         } catch (Exception e) {
-            overview.put("status", "Error: " + e.getMessage());
+            log.warn("Failed to reach Kubernetes cluster for overview: {}", e.getMessage());
+            overview.put("status", "Disconnected");
+            overview.put("nodeCount", 0);
+            overview.put("podCount", 0);
+            overview.put("runningPods", 0);
+            overview.put("failedPods", 0);
         }
         return overview;
     }

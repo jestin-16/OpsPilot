@@ -199,35 +199,55 @@ export const KubernetesDashboard: React.FC = () => {
               <>
                 {/* Overview Tab */}
                 {activeTab === 'overview' && overview && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <Card className="p-6">
-                      <div className="text-sm font-bold text-op-muted uppercase tracking-wider mb-2">Cluster Status</div>
-                      <div className="text-3xl font-bold text-op-fg flex items-center gap-3">
-                        <div className={`w-3 h-3 rounded-full ${overview.status === 'Healthy' ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
-                        {overview.status}
-                      </div>
-                    </Card>
-                    <Card className="p-6">
-                      <div className="text-sm font-bold text-op-muted uppercase tracking-wider mb-2">Nodes</div>
-                      <div className="text-3xl font-bold text-op-fg">{overview.nodeCount}</div>
-                    </Card>
-                    <Card className="p-6">
-                      <div className="text-sm font-bold text-op-muted uppercase tracking-wider mb-2">Total Pods</div>
-                      <div className="text-3xl font-bold text-op-fg">{overview.podCount}</div>
-                    </Card>
-                    <Card className="p-6">
-                      <div className="text-sm font-bold text-op-muted uppercase tracking-wider mb-2">Pod Health</div>
-                      <div className="flex gap-4">
-                        <div className="flex flex-col">
-                          <span className="text-2xl font-bold text-emerald-500">{overview.runningPods}</span>
-                          <span className="text-xs text-op-muted uppercase font-bold">Running</span>
+                  <div className="flex flex-col gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <Card className="p-6">
+                        <div className="text-sm font-bold text-op-muted uppercase tracking-wider mb-2">Cluster Status</div>
+                        <div className="text-3xl font-bold text-op-fg flex items-center gap-3">
+                          <div className={`w-3 h-3 rounded-full shrink-0 ${
+                            overview.status === 'Healthy' 
+                              ? 'bg-emerald-500' 
+                              : overview.status === 'Disconnected' 
+                              ? 'bg-amber-500' 
+                              : 'bg-rose-500'
+                          }`}></div>
+                          <span className="truncate" title={overview.status}>{overview.status}</span>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-2xl font-bold text-rose-500">{overview.failedPods}</span>
-                          <span className="text-xs text-op-muted uppercase font-bold">Failed/Unknown</span>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-sm font-bold text-op-muted uppercase tracking-wider mb-2">Nodes</div>
+                        <div className="text-3xl font-bold text-op-fg">{overview.nodeCount}</div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-sm font-bold text-op-muted uppercase tracking-wider mb-2">Total Pods</div>
+                        <div className="text-3xl font-bold text-op-fg">{overview.podCount}</div>
+                      </Card>
+                      <Card className="p-6">
+                        <div className="text-sm font-bold text-op-muted uppercase tracking-wider mb-2">Pod Health</div>
+                        <div className="flex gap-4">
+                          <div className="flex flex-col">
+                            <span className="text-2xl font-bold text-emerald-500">{overview.runningPods}</span>
+                            <span className="text-xs text-op-muted uppercase font-bold">Running</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-2xl font-bold text-rose-500">{overview.failedPods}</span>
+                            <span className="text-xs text-op-muted uppercase font-bold">Failed/Unknown</span>
+                          </div>
+                        </div>
+                      </Card>
+                    </div>
+
+                    {overview.status === 'Disconnected' && (
+                      <div className="p-5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-400" />
+                        <div>
+                          <div className="font-semibold text-amber-200">Kubernetes Cluster Disconnected</div>
+                          <p className="text-xs text-op-muted mt-1 leading-relaxed">
+                            OpsPilot is currently not connected to an active Kubernetes cluster. To enable cluster monitoring, mount a valid kubeconfig at <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">~/.kube/config</code> or configure the <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">KUBERNETES_MASTER</code> environment variable.
+                          </p>
                         </div>
                       </div>
-                    </Card>
+                    )}
                   </div>
                 )}
 
@@ -245,17 +265,25 @@ export const KubernetesDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-op-border">
-                        {nodes.map((node, i) => (
-                          <tr key={i} className="hover:bg-op-raised/50">
-                            <td className="py-3 px-5 font-bold">{node.name}</td>
-                            <td className="py-3 px-5">
-                              <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(node.status)}`}>{node.status}</span>
+                        {nodes.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-12 text-center text-op-muted">
+                              No nodes found. Cluster is disconnected or unreachable.
                             </td>
-                            <td className="py-3 px-5">{node.role}</td>
-                            <td className="py-3 px-5">{node.version}</td>
-                            <td className="py-3 px-5 text-op-muted">{formatDate(node.createdAt)}</td>
                           </tr>
-                        ))}
+                        ) : (
+                          nodes.map((node, i) => (
+                            <tr key={i} className="hover:bg-op-raised/50">
+                              <td className="py-3 px-5 font-bold">{node.name}</td>
+                              <td className="py-3 px-5">
+                                <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(node.status)}`}>{node.status}</span>
+                              </td>
+                              <td className="py-3 px-5">{node.role}</td>
+                              <td className="py-3 px-5">{node.version}</td>
+                              <td className="py-3 px-5 text-op-muted">{formatDate(node.createdAt)}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -277,19 +305,27 @@ export const KubernetesDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-op-border">
-                        {pods.map((pod, i) => (
-                          <tr key={i} onClick={() => handlePodSelect(pod)} className={`cursor-pointer hover:bg-op-raised/50 ${selectedPod?.name === pod.name ? 'bg-op-raised' : ''}`}>
-                            <td className="py-3 px-5 font-bold">{pod.name}</td>
-                            <td className="py-3 px-5 text-op-muted">{pod.namespace}</td>
-                            <td className="py-3 px-5">
-                              <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(pod.status)}`}>{pod.status}</span>
+                        {pods.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-12 text-center text-op-muted">
+                              No pods found. Cluster is disconnected or unreachable.
                             </td>
-                            <td className="py-3 px-5">{pod.restartCount}</td>
-                            <td className="py-3 px-5 text-op-muted font-mono">{pod.cpuUsage || '—'}</td>
-                            <td className="py-3 px-5 text-op-muted font-mono">{pod.memoryUsage || '—'}</td>
-                            <td className="py-3 px-5 text-op-muted">{pod.node}</td>
                           </tr>
-                        ))}
+                        ) : (
+                          pods.map((pod, i) => (
+                            <tr key={i} onClick={() => handlePodSelect(pod)} className={`cursor-pointer hover:bg-op-raised/50 ${selectedPod?.name === pod.name ? 'bg-op-raised' : ''}`}>
+                              <td className="py-3 px-5 font-bold">{pod.name}</td>
+                              <td className="py-3 px-5 text-op-muted">{pod.namespace}</td>
+                              <td className="py-3 px-5">
+                                <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(pod.status)}`}>{pod.status}</span>
+                              </td>
+                              <td className="py-3 px-5">{pod.restartCount}</td>
+                              <td className="py-3 px-5 text-op-muted font-mono">{pod.cpuUsage || '—'}</td>
+                              <td className="py-3 px-5 text-op-muted font-mono">{pod.memoryUsage || '—'}</td>
+                              <td className="py-3 px-5 text-op-muted">{pod.node}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -308,14 +344,22 @@ export const KubernetesDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-op-border">
-                        {services.map((svc, i) => (
-                          <tr key={i} className="hover:bg-op-raised/50">
-                            <td className="py-3 px-5 font-bold">{svc.name}</td>
-                            <td className="py-3 px-5 text-op-muted">{svc.namespace}</td>
-                            <td className="py-3 px-5">{svc.type}</td>
-                            <td className="py-3 px-5 font-mono">{svc.clusterIP}</td>
+                        {services.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="py-12 text-center text-op-muted">
+                              No services found. Cluster is disconnected or unreachable.
+                            </td>
                           </tr>
-                        ))}
+                        ) : (
+                          services.map((svc, i) => (
+                            <tr key={i} className="hover:bg-op-raised/50">
+                              <td className="py-3 px-5 font-bold">{svc.name}</td>
+                              <td className="py-3 px-5 text-op-muted">{svc.namespace}</td>
+                              <td className="py-3 px-5">{svc.type}</td>
+                              <td className="py-3 px-5 font-mono">{svc.clusterIP}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
@@ -333,15 +377,23 @@ export const KubernetesDashboard: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-op-border">
-                        {namespaces.map((ns, i) => (
-                          <tr key={i} className="hover:bg-op-raised/50">
-                            <td className="py-3 px-5 font-bold">{ns.name}</td>
-                            <td className="py-3 px-5">
-                              <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(ns.status)}`}>{ns.status}</span>
+                        {namespaces.length === 0 ? (
+                          <tr>
+                            <td colSpan={3} className="py-12 text-center text-op-muted">
+                              No namespaces found. Cluster is disconnected or unreachable.
                             </td>
-                            <td className="py-3 px-5 text-op-muted">{formatDate(ns.createdAt)}</td>
                           </tr>
-                        ))}
+                        ) : (
+                          namespaces.map((ns, i) => (
+                            <tr key={i} className="hover:bg-op-raised/50">
+                              <td className="py-3 px-5 font-bold">{ns.name}</td>
+                              <td className="py-3 px-5">
+                                <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(ns.status)}`}>{ns.status}</span>
+                              </td>
+                              <td className="py-3 px-5 text-op-muted">{formatDate(ns.createdAt)}</td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>

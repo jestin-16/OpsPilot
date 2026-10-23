@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { AuthMascot } from '../components/AuthMascot';
-import { HeroParticleCanvas } from '../components/HeroParticleCanvas';
+import { Infrastructure3DCore } from '../components/Infrastructure3DCore';
 import '../styles/landing.css';
 
 const NAV_ITEMS = [
@@ -200,7 +200,7 @@ export const LandingPage: React.FC = () => {
   const [activeHeroState, setActiveHeroState] = useState(0);
   const [mascotHop, setMascotHop] = useState(0);
   const [ctaHover, setCtaHover] = useState(false);
-
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const currentHero = HERO_STATES[activeHeroState];
 
   const go = (path: string) => {
@@ -208,8 +208,18 @@ export const LandingPage: React.FC = () => {
     navigate(path);
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.innerWidth < 1024) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    setMousePos({ x, y });
+  };
+
   return (
-    <div className="landing-root min-h-screen font-sans antialiased text-[#121013] selection:bg-[#181417] selection:text-white">
+    <div
+      className="landing-root min-h-screen font-sans antialiased text-[#1A1A1A] selection:bg-[#FFC107] selection:text-[#1A1A1A]"
+    >
       {/* =========================================================================
           SITE TOP NAVIGATION (CLEAN & INTEGRATED, NOT TRAPPED IN A CARD)
          ========================================================================= */}
@@ -294,41 +304,34 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           HERO SECTION — DIRECT IMMERSIVE PRESENTATION (NO FLOATING CARD WRAPPER)
          ========================================================================= */}
-      <section className="landing-hero-direct">
+      <section
+        className="landing-hero-direct"
+        onMouseMove={handleMouseMove}
+      >
         {/* Subtle noise grain */}
         <div className="landing-film-grain" aria-hidden="true" />
 
-        {/* Ambient warm golden glow radiating seamlessly */}
+        {/* Ambient Amber Platinum Studio Glow */}
         <div className="hero-ambient-glow" aria-hidden="true" />
 
-        {/* Centerpiece Visual Canvas with flowing particles & luminous conduits */}
-        <div className="hero-artwork-canvas" aria-hidden="true">
-          <img
-            src={currentHero.image}
-            alt="Luminous infrastructure pathways"
-            className="hero-artwork-img"
-          />
-          {/* Soft blending vignette gradients to dissolve into background */}
-          <div className="hero-artwork-vignette" />
-          <HeroParticleCanvas activeState={activeHeroState} />
-        </div>
-
-        {/* Hero Content Stage */}
+        {/* Hero Content Stage: Clean 2-Column Responsive Split */}
         <div className="hero-stage-container">
-          {/* Top Left Micro Technical Badge */}
-          <div className="hero-tag-topleft">
-            <span>[ OPS_INDEX // {currentHero.key} ]</span>
-            <span>SYSTEMS CONVERGENCE</span>
-          </div>
+          <div className="hero-split-grid">
+            {/* Left Column: Editorial Headline & Synchronized State Controls */}
+            <div className="hero-editorial-column">
+              {/* Micro Technical Index Badge */}
+              <div className="hero-tag-topleft">
+                <span>[ OPS_INDEX // {currentHero.key} ]</span>
+                <span>SYSTEMS CONVERGENCE</span>
+              </div>
 
-          {/* Hero Content Grid: Left Headline, Right Aside Controls */}
-          <div className="hero-content-grid">
-            {/* Left Headline & Editorial Typography */}
-            <div className="hero-editorial-headline">
+              {/* Kicker */}
               <p className="hero-editorial-kicker">
                 <span className="hero-kicker-dot" />
                 INTERNAL DEVELOPER PLATFORM · {currentHero.name}
               </p>
+
+              {/* Headline */}
               <h1 className="hero-headline-title">
                 <span className="hero-headline-word" style={indexStyle(0)}>
                   {currentHero.titleLine1}
@@ -349,14 +352,14 @@ export const LandingPage: React.FC = () => {
                   {currentHero.titleLine3}
                 </span>
               </h1>
-              <div className="hero-corner-glyph" aria-hidden="true">
-                &lt;:
-              </div>
-            </div>
 
-            {/* Right Side Interactive State Switcher */}
-            <div className="hero-aside-panel">
-              <div className="hero-state-header">
+              {/* Editorial Description */}
+              <p className="hero-editorial-desc">
+                {currentHero.description}
+              </p>
+
+              {/* Interactive State Switcher Tabs */}
+              <div className="hero-state-bar">
                 <div className="hero-state-toggle-group">
                   {HERO_STATES.map((state, i) => (
                     <button
@@ -373,18 +376,33 @@ export const LandingPage: React.FC = () => {
                 <span className="hero-state-index">[ {currentHero.index} ]</span>
               </div>
 
-              <p className="hero-aside-description">
-                {currentHero.description}
-              </p>
+              {/* Action Buttons & Telemetry Indicator */}
+              <div className="hero-action-row">
+                <button
+                  type="button"
+                  onClick={() => go('/dashboard')}
+                  className="hero-primary-cta"
+                >
+                  <span>{currentHero.cta}</span>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
+                <div className="hero-telemetry-badge">
+                  <span className="hero-badge-pulse" />
+                  <span>ALL SYSTEMS SYNCED</span>
+                </div>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => go('/dashboard')}
-                className="hero-aside-button"
-              >
-                <span>{currentHero.cta}</span>
-                <ArrowUpRight className="h-3 w-3" />
-              </button>
+              <div className="hero-corner-glyph" aria-hidden="true">
+                &lt;:
+              </div>
+            </div>
+
+            {/* Right Column: Dedicated Interactive 3D Infrastructure Hologram */}
+            <div className="hero-mesh-stage">
+              <Infrastructure3DCore
+                activeState={activeHeroState}
+                mousePos={mousePos}
+              />
             </div>
           </div>
 
@@ -404,7 +422,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           VERIFIED NATIVE INTEGRATIONS MARQUEE (STUDIO STYLE)
          ========================================================================= */}
-      <div id="integrations" className="border-y border-white/25 bg-black/10 backdrop-blur-md py-9">
+      <div id="integrations" className="landing-trust-strip border-y border-white/25 bg-black/10 backdrop-blur-md py-9">
         <div className="mx-auto max-w-7xl px-6 lg:px-12">
           <p className="mb-6 text-center font-tech-mono text-xs font-semibold uppercase tracking-[0.2em] text-gray-800">
             Engineered to unify your existing infrastructure stack
@@ -438,7 +456,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           KEY OPERATIONAL METRICS COUNTER (STUDIO STYLE)
          ========================================================================= */}
-      <div className="border-b border-white/20 bg-white/30 backdrop-blur-md">
+      <div className="landing-metrics border-b border-white/20 bg-white/30 backdrop-blur-md">
         <div className="mx-auto grid max-w-7xl grid-cols-2 divide-x divide-white/20 sm:grid-cols-4">
           {METRICS.map(([value, label], i) => (
             <Reveal
@@ -461,8 +479,8 @@ export const LandingPage: React.FC = () => {
         {/* =========================================================================
             FOUR EDITORIAL CAPABILITY AREAS (STUDIO GLASS SLATES)
            ========================================================================= */}
-        <section id="platform" className="mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
-          <Reveal className="max-w-3xl">
+        <section id="platform" className="landing-capabilities mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
+          <Reveal className="capabilities-intro max-w-3xl">
             <Eyebrow dot>The OpsPilot Platform Core</Eyebrow>
             <h2 className="mt-5 text-4xl font-black leading-[1.08] tracking-tight text-black sm:text-5xl lg:text-6xl">
               An internal developer platform <br className="hidden sm:inline" />
@@ -529,7 +547,7 @@ export const LandingPage: React.FC = () => {
               <article id="infrastructure" className="editorial-card flex h-full flex-col p-8 sm:p-10">
                 <div className="flex items-center justify-between">
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-black shadow-xs">
-                    <Cpu className="h-5 w-5 text-blue-600" />
+                    <Cpu className="h-5 w-5 text-amber-500" />
                   </span>
                   <span className="editorial-tag-chip">[ 02 // K8S & DOCKER ]</span>
                 </div>
@@ -572,7 +590,7 @@ export const LandingPage: React.FC = () => {
               <article id="observability" className="editorial-card flex h-full flex-col p-8 sm:p-10">
                 <div className="flex items-center justify-between">
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-black shadow-xs">
-                    <Terminal className="h-5 w-5 text-indigo-600" />
+                    <Terminal className="h-5 w-5 text-amber-500" />
                   </span>
                   <span className="editorial-tag-chip">[ 03 // LOKI & PROMETHEUS ]</span>
                 </div>
@@ -585,18 +603,18 @@ export const LandingPage: React.FC = () => {
                 </p>
 
                 {/* Live Log Stream Preview */}
-                <div className="mt-8 rounded-2xl bg-[#161217] p-4.5 font-tech-mono text-[11px] text-gray-300 shadow-lg">
-                  <div className="flex items-center justify-between text-[10px] text-gray-500 mb-2.5 border-b border-gray-800 pb-2">
-                    <span className="flex items-center gap-1.5 text-emerald-400">
-                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="mt-8 rounded-2xl bg-[#1F1F24] border border-[#3A322C] p-4.5 font-tech-mono text-[11px] text-[#D8D8DC] shadow-lg">
+                  <div className="flex items-center justify-between text-[10px] text-[#C8C8CC] mb-2.5 border-b border-[#3A322C] pb-2">
+                    <span className="flex items-center gap-1.5 text-[#FFC107]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#FFC107] animate-pulse" />
                       LIVE BUFFER STREAMING
                     </span>
                     <span>LOKI // DEFAULT</span>
                   </div>
-                  <div className="space-y-1.5 text-gray-400">
-                    <p><span className="text-gray-600">14:02:18</span> <span className="text-emerald-400">INFO</span> [core-service] HTTP 200 GET /api/v1/health (12ms)</p>
-                    <p><span className="text-gray-600">14:02:19</span> <span className="text-emerald-400">INFO</span> [ci-cd] Webhook received from github.com/opspilot</p>
-                    <p><span className="text-gray-600">14:02:21</span> <span className="text-amber-400">WARN</span> [k8s-agent] Memory usage reached 74% limit</p>
+                  <div className="space-y-1.5 text-[#C8C8CC]">
+                    <p><span className="text-[#8E8E98]">14:02:18</span> <span className="text-[#F5D061]">INFO</span> [core-service] HTTP 200 GET /api/v1/health (12ms)</p>
+                    <p><span className="text-[#8E8E98]">14:02:19</span> <span className="text-[#F5D061]">INFO</span> [ci-cd] Webhook received from github.com/opspilot</p>
+                    <p><span className="text-[#8E8E98]">14:02:21</span> <span className="text-[#FFC107] font-bold">WARN</span> [k8s-agent] Memory usage reached 74% limit</p>
                   </div>
                 </div>
               </article>
@@ -607,7 +625,7 @@ export const LandingPage: React.FC = () => {
               <article className="editorial-card flex h-full flex-col p-8 sm:p-10">
                 <div className="flex items-center justify-between">
                   <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/70 bg-white/80 text-black shadow-xs">
-                    <ShieldCheck className="h-5 w-5 text-emerald-600" />
+                    <ShieldCheck className="h-5 w-5 text-amber-600" />
                   </span>
                   <span className="editorial-tag-chip">[ 04 // AUDIT & RBAC ]</span>
                 </div>
@@ -647,20 +665,20 @@ export const LandingPage: React.FC = () => {
           <div className="story-orbit pointer-events-none absolute -right-40 top-1/2 -z-10 h-[42rem] w-[42rem] -translate-y-1/2 rounded-full" aria-hidden="true" />
           <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <Reveal>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-teal-100">
-                <span className="h-1.5 w-1.5 rounded-full bg-teal-300" />
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3.5 py-1.5 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-[#FFC107]">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FFC107]" />
                 One connected platform
               </div>
               <h2 className="mt-6 max-w-xl text-4xl font-black leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-6xl">
-                Clarity from commit <span className="font-editorial-italic font-normal text-teal-200">to runtime.</span>
+                Clarity from commit <span className="font-editorial-italic font-normal text-[#F5D061]">to runtime.</span>
               </h2>
-              <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-200 sm:text-lg">
+              <p className="mt-6 max-w-lg text-base leading-relaxed text-[#D8D8DC] sm:text-lg">
                 OpsPilot brings delivery, infrastructure, and operational signals together, so your team can move from a change to its impact with less guesswork.
               </p>
               <button
                 type="button"
                 onClick={() => go('/signup')}
-                className="mt-8 inline-flex items-center gap-2 rounded-full bg-teal-300 px-6 py-3.5 font-tech-mono text-xs font-bold text-[#102a43] shadow-lg shadow-black/15 transition hover:-translate-y-0.5 hover:bg-teal-200"
+                className="mt-8 inline-flex items-center gap-2 rounded-full bg-[#FFC107] px-6 py-3.5 font-tech-mono text-xs font-bold text-[#1A1A1A] shadow-lg shadow-amber-500/20 transition hover:-translate-y-0.5 hover:bg-[#F5D061] cursor-pointer"
               >
                 Explore the platform <ArrowRight className="h-4 w-4" />
               </button>
@@ -677,10 +695,10 @@ export const LandingPage: React.FC = () => {
                   <article className="story-card h-full rounded-2xl p-6 transition duration-300 sm:p-7">
                     <div className="flex items-center justify-between">
                       <Icon className="story-card-icon h-5 w-5" aria-hidden="true" />
-                      <span className="font-tech-mono text-[10px] font-bold tracking-[0.18em] text-slate-300/60">{number}</span>
+                      <span className="font-tech-mono text-[10px] font-bold tracking-[0.18em] text-[#C8C8CC]">{number}</span>
                     </div>
                     <h3 className="mt-8 text-lg font-bold text-white">{title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-200/80">{detail}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-[#D8D8DC]">{detail}</p>
                   </article>
                 </Reveal>
               ))}
@@ -691,7 +709,7 @@ export const LandingPage: React.FC = () => {
         {/* =========================================================================
             OPERATIONAL WORKFLOW TIMELINE (STUDIO STYLE)
            ========================================================================= */}
-        <section id="workflow" className="border-t border-white/20 py-24 sm:py-32">
+        <section id="workflow" className="landing-workflow border-t border-white/20 py-24 sm:py-32">
           <div className="mx-auto grid max-w-7xl gap-14 px-6 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:px-12">
             <Reveal>
               <Eyebrow>Shorter Path To Resolution</Eyebrow>
@@ -770,17 +788,20 @@ export const LandingPage: React.FC = () => {
         {/* =========================================================================
             CTA BANNER WITH OPSPILOT MASCOT (STUDIO GLASS PANEL)
            ========================================================================= */}
-        <section className="px-6 pb-24 pt-12 sm:px-8 lg:px-12 lg:pb-32">
+        <section className="landing-final-cta px-6 pb-24 pt-12 sm:px-8 lg:px-12 lg:pb-32">
           <Reveal onReveal={() => setMascotHop((n) => n + 1)} className="relative mx-auto max-w-7xl">
             <AuthMascot gaze={null} cover="none" mood={ctaHover ? 'happy' : 'idle'} hopKey={mascotHop} />
             <div className="relative z-10 overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-b from-white/80 to-white/50 backdrop-blur-xl px-8 py-16 text-center shadow-lg transition-all duration-500 hover:shadow-2xl sm:px-16 sm:py-20">
               <div className="pointer-events-none absolute -top-24 left-1/2 h-64 w-[36rem] -translate-x-1/2 rounded-full bg-amber-300/30 blur-3xl" aria-hidden="true" />
               <div className="relative">
-                <Eyebrow dot>Start in Minutes</Eyebrow>
-                <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-black leading-[1.15] tracking-tight text-black sm:text-4xl lg:text-5xl">
-                  Take command of your developer platform today<span className="text-amber-500">.</span>
+                <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/35 bg-amber-400/10 px-3.5 py-1.5 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-[#FFC107]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#FFC107] shadow-[0_0_8px_rgba(255,193,7,0.8)]" />
+                  Start in Minutes
+                </div>
+                <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-black leading-[1.15] tracking-tight text-white sm:text-4xl lg:text-5xl">
+                  Take command of your developer platform today<span className="text-[#FFC107]">.</span>
                 </h2>
-                <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-gray-700">
+                <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#D8D8DC]">
                   Connect your first project and discover what happens when deployments, clusters, and logs share one unified
                   workspace.
                 </p>
@@ -793,7 +814,7 @@ export const LandingPage: React.FC = () => {
                     className="inline-flex items-center gap-2.5 rounded-full bg-black px-8 py-4 font-tech-mono text-xs font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:bg-gray-800 hover:shadow-xl cursor-pointer"
                   >
                     <span>Create Free Workspace</span>
-                    <ArrowRight className="h-4 w-4 text-amber-400" />
+                    <ArrowRight className="h-4 w-4 text-current" />
                   </button>
                   <button
                     type="button"

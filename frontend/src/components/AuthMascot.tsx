@@ -77,7 +77,7 @@ export const AuthMascot: React.FC<AuthMascotProps> = ({ gaze, cover, mood, hopKe
         <svg viewBox="0 0 120 96" width="120" height="96" className="overflow-visible">
           <g className="auth-mascot-head">
             <line x1="60" y1="22" x2="60" y2="11" stroke="#0a0a0a" strokeWidth="3" strokeLinecap="round" />
-            <circle className="auth-mascot-bulb" cx="60" cy="8" r="5" fill="#ef4444" />
+            <circle className="auth-mascot-bulb" cx="60" cy="8" r="5" fill="#FFC107" />
             <rect x="11" y="44" width="9" height="20" rx="4.5" fill="#262626" />
             <rect x="100" y="44" width="9" height="20" rx="4.5" fill="#262626" />
             <rect x="18" y="20" width="84" height="72" rx="28" fill="#0a0a0a" />
@@ -105,8 +105,8 @@ export const AuthMascot: React.FC<AuthMascotProps> = ({ gaze, cover, mood, hopKe
               </g>
             )}
 
-            <circle cx="33" cy="63" r="5" fill="#f87171" opacity="0.6" />
-            <circle cx="87" cy="63" r="5" fill="#f87171" opacity="0.6" />
+            <circle cx="33" cy="63" r="5" fill="#E69A00" opacity="0.45" />
+            <circle cx="87" cy="63" r="5" fill="#E69A00" opacity="0.45" />
             {mood === 'oops' ? (
               <circle cx="60" cy="68" r="3" fill="none" stroke="#fff" strokeWidth="2.5" />
             ) : (

@@ -1,19 +1,4 @@
-"""
-OpsPilot Automated Login Testing Suite
-======================================
-Technology Stack:
-- Python 3.14
-- Selenium WebDriver 4.49
-- Pytest 9.1
-- Google Chrome (Headless / Desktop viewport)
 
-This test suite exclusively tests the login functionality of the OpsPilot application.
-It covers:
-  1. Opening the application landing page and navigating to the login page.
-  2. Successful login with valid credentials (verified by post-auth indicators).
-  3. Rejection of invalid credentials with user error message verification.
-  4. Empty-fields submission and verification of validation layers (HTML5 & JS).
-"""
 
 import os
 from pathlib import Path

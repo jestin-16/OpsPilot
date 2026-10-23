@@ -24,26 +24,35 @@ type FieldName = 'name' | 'email' | 'password' | 'confirm';
 
 const COPY: Record<Mode, {
   badge: string;
-  title: string[][];
+  line1: string;
+  italicWord: string;
+  prefix: string;
+  line2: string;
   blurb: string;
-  features: { title: string; caption: string }[];
+  features: { tag: string; title: string; caption: string }[];
 }> = {
   login: {
     badge: 'Platform Access',
-    title: [['Sign', 'in', 'to', 'your'], ['workspace']],
-    blurb: 'Access your autonomous operations command center and manage your infrastructure effortlessly.',
+    line1: 'SIGN IN',
+    italicWord: 'with',
+    prefix: '// YOUR',
+    line2: 'WORKSPACE',
+    blurb: 'Access your autonomous operations command center and govern your infrastructure effortlessly.',
     features: [
-      { title: 'Single Sign-On', caption: 'Enterprise Ready' },
-      { title: 'Zero Trust', caption: 'Security Model' },
+      { tag: '01', title: 'Single Sign-On', caption: 'Enterprise Ready JWT' },
+      { tag: '02', title: 'Zero Trust', caption: 'RBAC Security Model' },
     ],
   },
   signup: {
     badge: 'Platform Registration',
-    title: [['Create', 'your'], ['account']],
+    line1: 'CREATE',
+    italicWord: 'with',
+    prefix: '// VERIFIED',
+    line2: 'ACCOUNT',
     blurb: 'Deploy, observe, and diagnose with autonomous intelligence. Join the unified operational workspace.',
     features: [
-      { title: 'Instant Setup', caption: 'Ready in seconds' },
-      { title: 'Team Ready', caption: 'Role-Based Access' },
+      { tag: '01', title: 'Instant Setup', caption: 'Ready in seconds' },
+      { tag: '02', title: 'Team Ready', caption: 'Role-Based Access' },
     ],
   },
 };
@@ -54,15 +63,6 @@ const DEMO_ACCOUNTS = [
   { role: 'DevOps', email: 'devops@opspilot.io' },
 ];
 
-const SPARKLES = [
-  { dx: '-46px', dy: '-22px', color: '#ef4444' },
-  { dx: '42px', dy: '-26px', color: '#0a0a0a' },
-  { dx: '-30px', dy: '24px', color: '#f59e0b' },
-  { dx: '36px', dy: '22px', color: '#ef4444' },
-  { dx: '0px', dy: '-32px', color: '#f59e0b' },
-  { dx: '58px', dy: '0px', color: '#0a0a0a' },
-];
-
 const indexStyle = (i: number) => ({ '--i': i }) as React.CSSProperties;
 
 const Field: React.FC<{ icon: React.ReactNode; index: number; children: React.ReactNode }> = ({
@@ -70,30 +70,26 @@ const Field: React.FC<{ icon: React.ReactNode; index: number; children: React.Re
   index,
   children,
 }) => (
-  <div
-    style={indexStyle(index)}
-    className="auth-field relative flex items-center rounded-2xl border border-gray-200/90 bg-[#FAFAFA] p-1 shadow-sm transition-all duration-300 focus-within:border-black focus-within:ring-4 focus-within:ring-gray-100 focus-within:bg-white"
-  >
-    <div className="pl-3.5 text-gray-400">{icon}</div>
+  <div style={indexStyle(index)} className="auth-field">
+    <div className="pl-2 text-gray-500">{icon}</div>
     {children}
   </div>
 );
 
 const inputClass =
-  'w-full bg-transparent px-3 py-2.5 text-sm font-medium text-black placeholder-gray-400 focus:outline-none';
+  'w-full bg-transparent px-3 py-2 text-xs font-tech-mono font-medium text-black placeholder-gray-500 focus:outline-none';
 
 const RevealButton: React.FC<{ shown: boolean; onToggle: () => void }> = ({ shown, onToggle }) => (
   <button
     type="button"
     onClick={onToggle}
     aria-label={shown ? 'Hide password' : 'Show password'}
-    className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 transition-all hover:scale-110 hover:text-black cursor-pointer"
+    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 transition-all hover:scale-110 hover:text-black cursor-pointer"
   >
-    {shown ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+    {shown ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
   </button>
 );
 
-/** Sign in and sign up on one page; /login and /signup both render this and pick the mode. */
 export const AuthPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -101,7 +97,6 @@ export const AuthPage: React.FC = () => {
   const mode: Mode = location.pathname.startsWith('/signup') ? 'signup' : 'login';
   const copy = COPY[mode];
 
-  // Email and password carry over when switching modes.
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -120,18 +115,14 @@ export const AuthPage: React.FC = () => {
   const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState('Developer');
 
-  // Count mode switches (including back/forward) to replay the switch animations.
-  const [switches, setSwitches] = useState(0);
   const prevMode = useRef(mode);
   useEffect(() => {
     if (prevMode.current === mode) return;
     prevMode.current = mode;
-    setSwitches((n) => n + 1);
     setError('');
     setFocused(null);
   }, [mode]);
 
-  // Animate the form area to the active panel's height.
   const loginPanelRef = useRef<HTMLDivElement>(null);
   const signupPanelRef = useRef<HTMLDivElement>(null);
   const [panelHeight, setPanelHeight] = useState<number>();
@@ -145,14 +136,13 @@ export const AuthPage: React.FC = () => {
     return () => observer.disconnect();
   }, [mode]);
 
-  // Errors shake the card and make the mascot wince.
   const cardRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (errorTick === 0) return;
     const card = cardRef.current;
     if (card) {
       card.classList.remove('auth-shake');
-      void card.offsetWidth; // restart the animation
+      void card.offsetWidth;
       card.classList.add('auth-shake');
     }
     setOops(true);
@@ -249,7 +239,6 @@ export const AuthPage: React.FC = () => {
     }
   };
 
-  // What the mascot does: watch the caret, hide its eyes for passwords, react to results.
   const focusedText = focused === 'name' ? name : focused === 'email' ? email : null;
   const gaze = focusedText === null ? null : Math.min(focusedText.length / 30, 1) * 2 - 1;
   let cover: MascotCover = 'none';
@@ -262,426 +251,330 @@ export const AuthPage: React.FC = () => {
     onBlur: () => setFocused((current) => (current === field ? null : current)),
   });
 
-  let wordIndex = 0;
-
   return (
-    <div className="auth-root min-h-screen overflow-x-hidden bg-[#FAFAFA] font-sans text-black selection:bg-black selection:text-white antialiased flex flex-col">
-      {/* Floating Modern Header Matching Landing Page */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-20 items-center justify-between border-b border-gray-100/80 bg-white/80 px-6 backdrop-blur-xl sm:px-10 lg:px-16 transition-all">
-        <button
-          type="button"
-          onClick={() => navigate('/')}
-          className="group flex items-center gap-3 cursor-pointer"
-        >
-          <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-black shadow-sm transition-transform duration-300 group-hover:scale-105">
-            <div className="absolute inset-0 translate-x-4 -skew-x-12 bg-red-500"></div>
-            <span className="relative z-10 text-base font-bold leading-none text-white">O</span>
-          </div>
-          <span className="text-xl font-bold tracking-tight text-black">OpsPilot</span>
-        </button>
+    <div className="auth-root selection:bg-[#181417] selection:text-white">
+      {/* Subtle organic noise grain */}
+      <div className="auth-film-grain" aria-hidden="true" />
 
-        <div className="flex items-center gap-4">
-          <Link
-            to="/"
-            className="hidden items-center gap-1.5 text-xs font-semibold text-gray-500 transition-colors hover:text-black sm:flex"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to Home
-          </Link>
-          <span className="hidden h-4 w-px bg-gray-200 sm:block"></span>
-          <div key={mode} className="auth-swap-in flex items-center gap-2.5">
-            <span className="hidden text-xs text-gray-500 sm:inline">
-              {mode === 'login' ? 'New to OpsPilot?' : 'Have an account?'}
-            </span>
+      {/* Floating Panel Ambient Golden Underglow */}
+      <div className="auth-underglow" aria-hidden="true" />
+
+      <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
+        {/* Centered Floating Slate Panel */}
+        <div ref={cardRef} className="auth-floating-panel">
+          {/* Top Panel Nav */}
+          <header className="auth-panel-nav">
             <button
               type="button"
-              onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-              className="rounded-full bg-black px-4 py-2 text-xs font-bold text-white shadow-sm transition-all duration-300 hover:bg-gray-800 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 text-left bg-none border-none p-0 cursor-pointer"
             >
-              {mode === 'login' ? 'Get Started Free' : 'Sign In'}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative isolate flex flex-1 flex-col items-center justify-center px-6 pt-32 pb-20 lg:px-12">
-        {/* Subtle Ambient Radial Backlight */}
-        <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
-          <div className="h-[520px] w-[820px] rounded-full bg-gradient-to-tr from-gray-200/40 via-gray-100/30 to-transparent blur-3xl animate-pulse-slow" />
-        </div>
-        {/* Little floating confetti shapes */}
-        <div className="pointer-events-none absolute inset-0 -z-10 hidden overflow-hidden sm:block" aria-hidden>
-          <span className="absolute left-[8%] top-[26%] h-3 w-3 rounded-full bg-red-400/70 animate-float" />
-          <span className="absolute left-[46%] top-[16%] h-5 w-5 rounded-full border-2 border-black/15 animate-float-reverse" />
-          <span className="absolute right-[7%] top-[30%] h-4 w-4 rotate-12 rounded-md bg-amber-300/70 animate-float-slow" />
-          <span className="absolute bottom-[14%] left-[16%] h-4 w-4 rotate-45 rounded-sm border-2 border-red-300/80 animate-float-slow" />
-          <span className="absolute bottom-[10%] right-[18%] h-2.5 w-2.5 rounded-full bg-black/20 animate-float" />
-        </div>
-
-        <div className="z-10 flex w-full max-w-5xl flex-col lg:flex-row items-center gap-12 lg:gap-24">
-          {/* Left Side: Typography & Hero Elements (replays on every switch) */}
-          <div key={mode} className="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/90 bg-white px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-gray-700 shadow-sm transition-all duration-300 hover:border-black/20 animate-fade-in-up">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
+              <span className="font-tech-mono text-sm font-bold tracking-tight text-black">
+                ( OPS_PILOT )
               </span>
-              {copy.badge}
+              <span className="font-tech-mono text-[10px] font-semibold text-gray-700 hidden sm:inline">
+                [ v02.4 / AUTH-GATEWAY ]
+              </span>
+            </button>
+
+            <div className="flex items-center gap-3">
+              <Link to="/" className="auth-nav-link">
+                <ArrowLeft className="h-3 w-3" />
+                <span className="hidden sm:inline">Platform</span>
+              </Link>
+              <span className="h-3 w-px bg-black/20" />
+              <button
+                type="button"
+                onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
+                className="auth-mode-pill"
+              >
+                <span>{mode === 'login' ? 'Get Started Free' : 'Sign In'}</span>
+                <span className="text-[10px] opacity-70">↗</span>
+              </button>
             </div>
-            <h1 className="mt-6 text-5xl font-black tracking-tight text-black sm:text-6xl leading-[1.04]">
-              {copy.title.map((line, lineIndex) => (
-                <React.Fragment key={lineIndex}>
-                  {lineIndex > 0 && (
-                    <>
-                      {' '}
-                      <br className="hidden lg:block" />
-                    </>
-                  )}
-                  {line.map((word, i) => (
-                    <React.Fragment key={word}>
-                      {i > 0 && ' '}
-                      <span className="auth-word" style={indexStyle(wordIndex++)}>
-                        {word}
-                      </span>
-                    </React.Fragment>
-                  ))}
-                </React.Fragment>
-              ))}
-              <span className="auth-dot text-red-500" style={indexStyle(wordIndex)}>.</span>
-            </h1>
-            <p className="mt-5 max-w-md text-lg leading-relaxed text-gray-500 font-normal animate-fade-in-up [animation-delay:200ms]">
-              {copy.blurb}
-            </p>
+          </header>
 
-            <div className="mt-10 hidden lg:grid grid-cols-2 gap-8 text-left animate-fade-in-up [animation-delay:300ms]">
-              {copy.features.map((feature) => (
-                <div key={feature.title}>
-                  <p className="text-xl font-black tracking-tight text-black transition-transform duration-300 hover:scale-105">
-                    {feature.title}
-                  </p>
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wider text-gray-400">{feature.caption}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right Side: the card, with the mascot peeking over its top edge */}
-          <div className="relative mt-16 w-full max-w-[440px] animate-fade-in-up [animation-delay:400ms] lg:mt-0">
-            <AuthMascot gaze={gaze} cover={cover} mood={mood} hopKey={switches} />
-
-            <div
-              ref={cardRef}
-              className="relative z-10 rounded-3xl border border-gray-200/80 bg-white p-7 sm:p-9 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] transition-shadow duration-400 hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.06)]"
-            >
-              {/* Sign in / Sign up switch */}
-              <div role="tablist" aria-label="Choose sign in or sign up" className="relative mb-6 grid grid-cols-2 rounded-full bg-gray-100 p-1">
-                <span
-                  aria-hidden
-                  className="auth-toggle-pill absolute inset-y-1 left-1 w-[calc(50%-4px)]"
-                  style={{ transform: mode === 'login' ? 'translateX(0)' : 'translateX(100%)' }}
-                >
-                  <span key={switches} className={`block h-full w-full rounded-full bg-black shadow-md ${switches ? 'auth-toggle-squish' : ''}`} />
-                </span>
-                {(['login', 'signup'] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    role="tab"
-                    aria-selected={mode === tab}
-                    onClick={() => switchMode(tab)}
-                    className={`relative z-10 rounded-full py-2.5 text-xs font-bold transition-colors duration-300 cursor-pointer ${
-                      mode === tab ? 'text-white' : 'text-gray-500 hover:text-black'
-                    }`}
-                  >
-                    {tab === 'login' ? 'Sign In' : 'Sign Up'}
-                  </button>
-                ))}
-                {switches > 0 && (
-                  <span
-                    key={switches}
-                    aria-hidden
-                    className="pointer-events-none absolute inset-y-0 z-20 w-0"
-                    style={{ left: mode === 'login' ? '25%' : '75%' }}
-                  >
-                    {SPARKLES.map((s, i) => (
-                      <span
-                        key={i}
-                        className="auth-sparkle"
-                        style={{ '--dx': s.dx, '--dy': s.dy, background: s.color, animationDelay: `${i * 25}ms` } as React.CSSProperties}
-                      />
-                    ))}
-                  </span>
-                )}
+          {/* Main Content: Split Editorial & Form */}
+          <div className="grid lg:grid-cols-[1.1fr_1.1fr] p-6 sm:p-10 lg:p-12 gap-10 items-center">
+            {/* Left Column: Editorial Brand & Context */}
+            <div className="flex flex-col items-start">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 backdrop-blur-md px-3 py-1 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-gray-800 shadow-2xs">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.7)]" />
+                <span>{copy.badge}</span>
               </div>
 
-              {/* Error Notification */}
-              {error && (
-                <div
-                  role="alert"
-                  className="mb-6 flex items-center gap-3 rounded-2xl border border-red-200/80 bg-red-50/90 p-3.5 text-xs font-semibold text-red-700 shadow-2xs animate-fade-in-up"
-                >
-                  <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
-                  <span className="flex-1 leading-snug">{error}</span>
-                </div>
-              )}
+              <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[0.92] text-black">
+                <span>{copy.line1}</span>
+                <br />
+                <span className="font-editorial-italic font-normal lowercase tracking-normal text-gray-800 pr-2">
+                  {copy.italicWord}
+                </span>
+                <span className="text-amber-600 font-tech-mono">{copy.prefix}</span>
+                <br />
+                <span>{copy.line2}</span>
+              </h1>
 
-              {/* Both forms share one grid cell; the inactive one slides away */}
-              <div
-                className="auth-panels -m-2 grid overflow-hidden p-2"
-                style={panelHeight === undefined ? undefined : { height: panelHeight + 16 }}
-              >
+              <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-700 font-normal">
+                {copy.blurb}
+              </p>
+
+              {/* Technical Feature Badges */}
+              <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-sm">
+                {copy.features.map((f) => (
+                  <div
+                    key={f.title}
+                    className="rounded-xl border border-white/60 bg-white/50 backdrop-blur-md p-3"
+                  >
+                    <span className="font-tech-mono text-[9px] font-bold text-gray-600 block uppercase">
+                      [ {f.tag} // {f.title} ]
+                    </span>
+                    <span className="font-tech-mono text-xs font-bold text-black mt-1 block">
+                      {f.caption}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quick Demo Credentials */}
+              <div className="mt-6 pt-5 border-t border-black/10 w-full max-w-sm">
+                <span className="font-tech-mono text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-2">
+                  Quick Demo Access:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {DEMO_ACCOUNTS.map((acc) => (
+                    <button
+                      key={acc.role}
+                      type="button"
+                      onClick={() => {
+                        setEmail(acc.email);
+                        setPassword('password123');
+                        if (mode === 'signup') setConfirmPassword('password123');
+                      }}
+                      className="auth-demo-pill"
+                    >
+                      <span>●</span> {acc.role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Interactive Form & Mascot */}
+            <div className="relative w-full max-w-md mx-auto">
+              {/* Mascot Peeking Over Form Card */}
+              <AuthMascot
+                gaze={gaze}
+                cover={cover}
+                mood={mood}
+                hopKey={mode === 'login' ? 0 : 1}
+              />
+
+              {/* Form Card */}
+              <div className="rounded-2xl border border-white/80 bg-white/80 backdrop-blur-xl p-6 sm:p-8 shadow-xl">
+                {error && (
+                  <div
+                    role="alert"
+                    className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700"
+                  >
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                    <span>{error}</span>
+                  </div>
+                )}
+
                 <div
-                  ref={loginPanelRef}
-                  className="auth-panel auth-panel--login"
-                  data-active={mode === 'login'}
-                  inert={mode !== 'login'}
+                  className="auth-panels grid"
+                  style={{ height: panelHeight ? `${panelHeight}px` : 'auto' }}
                 >
-                  <div className="auth-field mb-6" style={indexStyle(0)}>
-                    <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-gray-400">Demo Accounts</div>
-                    <div className="flex flex-wrap gap-2">
-                      {DEMO_ACCOUNTS.map((item) => (
-                        <button
-                          key={item.role}
-                          type="button"
-                          onClick={() => {
-                            setEmail(item.email);
-                            setPassword('Password123!');
-                          }}
-                          className={`rounded-full px-3 py-1.5 text-[11px] font-bold transition-all duration-200 cursor-pointer border hover:-translate-y-0.5 active:scale-95 ${
-                            email === item.email
-                              ? 'bg-black text-white border-black shadow-md'
-                              : 'bg-white text-gray-600 border-gray-200/80 hover:border-black/30 hover:bg-gray-50 hover:text-black shadow-2xs'
-                          }`}
-                        >
-                          {item.role}
-                        </button>
-                      ))}
-                    </div>
+                  {/* Login Form */}
+                  <div
+                    ref={loginPanelRef}
+                    data-active={mode === 'login'}
+                    className="auth-panel auth-panel--login"
+                  >
+                    <form onSubmit={handleLogin} className="space-y-3.5">
+                      <Field icon={<Mail className="h-4 w-4" />} index={1}>
+                        <input
+                          type="email"
+                          placeholder="Work Email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          {...focusProps('email')}
+                          className={inputClass}
+                          required
+                        />
+                      </Field>
+
+                      <div className="relative">
+                        <Field icon={<Lock className="h-4 w-4" />} index={2}>
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            {...focusProps('password')}
+                            className={inputClass}
+                            required
+                          />
+                        </Field>
+                        <RevealButton
+                          shown={showPassword}
+                          onToggle={() => setShowPassword(!showPassword)}
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="auth-submit-btn mt-4"
+                      >
+                        <span>{loading ? 'Authenticating...' : 'Sign In'}</span>
+                        <ArrowRight className="h-3.5 w-3.5 text-amber-400" />
+                      </button>
+                    </form>
                   </div>
 
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <Field icon={<Mail className="h-4 w-4" />} index={1}>
-                      <input
-                        type="email"
-                        required
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        {...focusProps('email')}
-                        placeholder="Work Email"
-                        className={inputClass}
-                      />
-                    </Field>
-
-                    <Field icon={<Lock className="h-4 w-4" />} index={2}>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        {...focusProps('password')}
-                        placeholder="Password"
-                        className={`${inputClass} pr-9`}
-                      />
-                      <RevealButton shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />
-                    </Field>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      style={indexStyle(3)}
-                      className="auth-field group mt-2 flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-black px-6 text-sm font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-800 hover:shadow-lg active:translate-y-0 active:scale-[0.98] cursor-pointer disabled:opacity-50"
-                    >
-                      {loading ? (
-                        'Authenticating...'
-                      ) : (
-                        <>
-                          Sign In
-                          <ArrowRight className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-x-1.5" />
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </div>
-
-                <div
-                  ref={signupPanelRef}
-                  className="auth-panel auth-panel--signup"
-                  data-active={mode === 'signup'}
-                  inert={mode !== 'signup'}
-                >
-                  <form onSubmit={handleSignup} className="space-y-4">
-                    <Field icon={<UserIcon className="h-4 w-4" />} index={0}>
-                      <input
-                        type="text"
-                        required
-                        autoComplete="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        {...focusProps('name')}
-                        placeholder="Full Name"
-                        className={inputClass}
-                      />
-                    </Field>
-
-                    <Field icon={<Mail className="h-4 w-4" />} index={1}>
-                      <input
-                        type="email"
-                        required
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        {...focusProps('email')}
-                        placeholder="Work Email"
-                        className={inputClass}
-                      />
-                    </Field>
-
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <Field icon={<Lock className="h-4 w-4" />} index={2}>
+                  {/* Signup Form */}
+                  <div
+                    ref={signupPanelRef}
+                    data-active={mode === 'signup'}
+                    className="auth-panel auth-panel--signup"
+                  >
+                    <form onSubmit={handleSignup} className="space-y-3">
+                      <Field icon={<UserIcon className="h-4 w-4" />} index={1}>
                         <input
-                          type={showPassword ? 'text' : 'password'}
+                          type="text"
+                          placeholder="Full Name"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          {...focusProps('name')}
+                          className={inputClass}
                           required
-                          minLength={8}
-                          autoComplete="new-password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          {...focusProps('password')}
-                          placeholder="Password"
-                          className={`${inputClass} pr-9`}
                         />
-                        <RevealButton shown={showPassword} onToggle={() => setShowPassword((v) => !v)} />
                       </Field>
 
-                      <Field icon={<Lock className="h-4 w-4" />} index={3}>
+                      <Field icon={<Mail className="h-4 w-4" />} index={2}>
                         <input
-                          type={showConfirmPassword ? 'text' : 'password'}
+                          type="email"
+                          placeholder="Work Email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          {...focusProps('email')}
+                          className={inputClass}
                           required
-                          minLength={8}
-                          autoComplete="new-password"
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          {...focusProps('confirm')}
-                          placeholder="Confirm"
-                          className={`${inputClass} pr-9`}
                         />
-                        <RevealButton shown={showConfirmPassword} onToggle={() => setShowConfirmPassword((v) => !v)} />
                       </Field>
-                    </div>
 
-                    {confirmPassword.length > 0 && confirmPassword !== password && (
-                      <p className="pl-1 text-[11px] text-red-600 font-medium animate-fade-in-up">Passwords do not match.</p>
-                    )}
+                      <div className="relative">
+                        <Field icon={<Lock className="h-4 w-4" />} index={3}>
+                          <input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            {...focusProps('password')}
+                            className={inputClass}
+                            required
+                          />
+                        </Field>
+                        <RevealButton
+                          shown={showPassword}
+                          onToggle={() => setShowPassword(!showPassword)}
+                        />
+                      </div>
 
-                    <Field icon={<Shield className="h-4 w-4" />} index={4}>
-                      <select
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                        className={`${inputClass} appearance-none cursor-pointer`}
+                      <div className="relative">
+                        <Field icon={<Lock className="h-4 w-4" />} index={4}>
+                          <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            placeholder="Confirm"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            {...focusProps('confirm')}
+                            className={inputClass}
+                            required
+                          />
+                        </Field>
+                        <RevealButton
+                          shown={showConfirmPassword}
+                          onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+                        />
+                      </div>
+
+                      <div className="auth-field">
+                        <div className="pl-2 text-gray-500">
+                          <Shield className="h-4 w-4" />
+                        </div>
+                        <select
+                          value={role}
+                          onChange={(e) => setRole(e.target.value)}
+                          className={inputClass}
+                        >
+                          <option value="Developer">Role: Developer</option>
+                          <option value="DevOps">Role: DevOps</option>
+                        </select>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="auth-submit-btn mt-3"
                       >
-                        <option value="Developer">Developer (Standard Scoped)</option>
-                        <option value="DevOps">DevOps Engineer (Cluster & CI/CD)</option>
-                      </select>
-                    </Field>
-
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      style={indexStyle(5)}
-                      className="auth-field group mt-4 flex h-12 w-full items-center justify-center gap-2.5 rounded-full bg-black px-6 text-sm font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-gray-800 hover:shadow-lg active:translate-y-0 active:scale-[0.98] cursor-pointer disabled:opacity-50"
-                    >
-                      <span>{loading ? 'Creating account...' : 'Create Account'}</span>
-                      <ArrowRight className="h-4 w-4 text-red-500 transition-transform duration-300 group-hover:translate-x-1.5" />
-                    </button>
-                  </form>
+                        <span>{loading ? 'Creating...' : 'Create Account'}</span>
+                        <ArrowRight className="h-3.5 w-3.5 text-amber-400" />
+                      </button>
+                    </form>
+                  </div>
                 </div>
-              </div>
 
-              <div className="relative my-6 flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-100"></div>
+                {/* Google Sign In Divider */}
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-[10px] uppercase font-tech-mono">
+                    <span className="bg-white px-2 text-gray-500">Or continue with</span>
+                  </div>
                 </div>
-                <div className="relative bg-white px-3 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  Or continue with
-                </div>
-              </div>
 
-              <div className="flex w-full justify-center">
-                <div className="overflow-hidden rounded-full transition-transform hover:scale-[1.02]">
+                <div data-testid="google-login" className="flex justify-center">
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
-                    onError={() => fail('Google Login Failed')}
-                    theme="outline"
-                    size="large"
-                    text="continue_with"
+                    onError={() => fail('Google Authentication failed')}
                     shape="pill"
+                    size="medium"
+                    width="100%"
                   />
                 </div>
               </div>
-
-              <div key={mode} className="auth-swap-in mt-6 text-center text-xs font-medium text-gray-500">
-                {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
-                <button
-                  type="button"
-                  onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-                  className="font-bold text-black transition-colors hover:underline cursor-pointer"
-                >
-                  {mode === 'login' ? 'Register now' : 'Sign in'}
-                </button>
-              </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
 
-      {/* Role Selection Modal */}
+      {/* Role Selection Modal for Google Login */}
       {showRoleSelection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-md animate-fade-in-up">
-          <div className="w-full max-w-sm rounded-3xl border border-gray-200/90 bg-white p-7 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.2)]">
-            <div className="flex items-center gap-2.5">
-              <div className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg bg-black">
-                <div className="absolute inset-0 translate-x-3.5 -skew-x-12 bg-red-500"></div>
-                <span className="relative z-10 text-xs font-bold text-white">O</span>
-              </div>
-              <h3 className="text-xl font-bold tracking-tight text-black">Select Your Role</h3>
-            </div>
-            <p className="mt-2 text-xs text-gray-500">
-              Welcome! Please select your workspace role to finalize your single sign-on profile.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-white/70 bg-white p-6 shadow-2xl">
+            <h3 className="font-tech-mono text-sm font-bold uppercase text-black">
+              Select Your Role
+            </h3>
+            <p className="mt-2 text-xs text-gray-600">
+              Please choose a workspace role to finalize your Google registration.
             </p>
-            <form onSubmit={handleRoleSubmit} className="mt-5 space-y-4">
-              <div>
-                <label className="block pl-0.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">
-                  Platform Role
-                </label>
+            <form onSubmit={handleRoleSubmit} className="mt-4 space-y-4">
+              <div className="auth-field">
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full rounded-2xl border border-gray-200/90 bg-gray-50/60 p-3.5 text-sm font-semibold text-black transition-all hover:border-gray-300 focus:border-black focus:bg-white focus:outline-none focus:ring-4 focus:ring-gray-100"
+                  className={inputClass}
                 >
-                  <option value="Developer">Developer (Standard Scoped Access)</option>
-                  <option value="DevOps">DevOps (Cluster & CI/CD Access)</option>
+                  <option value="Developer">Role: Developer</option>
+                  <option value="DevOps">Role: DevOps</option>
                 </select>
               </div>
-              <div className="flex gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowRoleSelection(false);
-                    setPendingGoogleToken(null);
-                  }}
-                  className="flex-1 rounded-full border border-gray-200 bg-white py-2.5 text-xs font-bold text-black transition hover:bg-gray-50 hover:border-gray-300 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="flex-1 rounded-full bg-black py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
-                >
-                  {loading ? 'Creating...' : 'Continue'}
-                </button>
-              </div>
+              <button type="submit" disabled={loading} className="auth-submit-btn">
+                <span>{loading ? 'Saving...' : 'Complete Sign Up'}</span>
+              </button>
             </form>
           </div>
         </div>

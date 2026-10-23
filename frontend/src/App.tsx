@@ -121,11 +121,7 @@ export const App: React.FC = () => {
             <Routes>
             <Route
               path="/"
-              element={
-                <PublicRoute>
-                  <LandingPage />
-                </PublicRoute>
-              }
+              element={<LandingPage />}
             />
             <Route
               path="/login"

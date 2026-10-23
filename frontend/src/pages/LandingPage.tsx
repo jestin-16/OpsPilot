@@ -198,7 +198,6 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHeroState, setActiveHeroState] = useState(0);
-  const [panelTransform, setPanelTransform] = useState('');
   const [mascotHop, setMascotHop] = useState(0);
   const [ctaHover, setCtaHover] = useState(false);
 
@@ -209,203 +208,184 @@ export const LandingPage: React.FC = () => {
     navigate(path);
   };
 
-  // Subtle 3D perspective tilt on desktop
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.innerWidth < 1024) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    const rotX = -y * 5; // max 2.5 deg
-    const rotY = x * 6;  // max 3 deg
-    setPanelTransform(`perspective(1400px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`);
-  };
-
-  const handleMouseLeave = () => {
-    setPanelTransform('perspective(1400px) rotateX(0deg) rotateY(0deg)');
-  };
-
   return (
     <div className="landing-root min-h-screen font-sans antialiased text-[#121013] selection:bg-[#181417] selection:text-white">
       {/* =========================================================================
-          HERO SECTION — CINEMATIC FULL VIEWPORT FLOATING PANEL WITH WARM GOLDEN UNDERGLOW
+          SITE TOP NAVIGATION (CLEAN & INTEGRATED, NOT TRAPPED IN A CARD)
          ========================================================================= */}
-      <section
-        className="landing-hero-backdrop"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-      >
+      <header className="landing-top-nav">
+        <div className="landing-nav-container">
+          <button
+            type="button"
+            onClick={() => go('/')}
+            className="hero-wordmark-brand group"
+            aria-label="OpsPilot Home"
+          >
+            <span className="hero-wordmark-title">( OPS_PILOT )</span>
+            <span className="hero-wordmark-tag">[ OpsPilot v02.4 / DEV-PLATFORM ]</span>
+          </button>
+
+          <nav className="hero-nav-links" aria-label="Primary navigation">
+            {NAV_ITEMS.map((item) => (
+              <a key={item.label} href={item.href} className="hero-nav-link">
+                <span>{item.label}</span>
+                <span className="text-[0.6rem] opacity-60">↗</span>
+              </a>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => go('/login')}
+              className="hero-nav-link hidden sm:inline-flex cursor-pointer"
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/dashboard')}
+              className="hero-nav-cta hidden sm:inline-flex"
+            >
+              <span>Open Dashboard</span>
+              <ArrowUpRight className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="hero-mobile-toggle md:hidden"
+              aria-label="Toggle navigation"
+              aria-expanded={menuOpen}
+            >
+              {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Drawer Menu */}
+        {menuOpen && (
+          <div className="hero-mobile-drawer md:hidden">
+            {NAV_ITEMS.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+              >
+                {item.label} ↗
+              </a>
+            ))}
+            <button
+              type="button"
+              onClick={() => go('/dashboard')}
+              className="mobile-cta"
+            >
+              Open Dashboard ↗
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/login')}
+            >
+              Sign In
+            </button>
+          </div>
+        )}
+      </header>
+
+      {/* =========================================================================
+          HERO SECTION — DIRECT IMMERSIVE PRESENTATION (NO FLOATING CARD WRAPPER)
+         ========================================================================= */}
+      <section className="landing-hero-direct">
         {/* Subtle noise grain */}
         <div className="landing-film-grain" aria-hidden="true" />
 
-        {/* Floating Panel Ambient Underglow (radiates beneath the floating card!) */}
-        <div className="floating-hero-underglow" aria-hidden="true" />
+        {/* Ambient warm golden glow radiating seamlessly */}
+        <div className="hero-ambient-glow" aria-hidden="true" />
 
-        {/* Floating Rounded Website Panel */}
-        <div
-          className="floating-hero-panel"
-          style={{ transform: panelTransform }}
-        >
-          {/* Top Navigation Inside Floating Panel */}
-          <header className="hero-panel-nav">
-            <button
-              type="button"
-              onClick={() => go('/')}
-              className="hero-wordmark-brand group"
-              aria-label="OpsPilot Home"
-            >
-              <span className="hero-wordmark-title">( OPS_PILOT )</span>
-              <span className="hero-wordmark-tag">[ OpsPilot v02.4 / DEV-PLATFORM ]</span>
-            </button>
+        {/* Centerpiece Visual Canvas with flowing particles & luminous conduits */}
+        <div className="hero-artwork-canvas" aria-hidden="true">
+          <img
+            src={currentHero.image}
+            alt="Luminous infrastructure pathways"
+            className="hero-artwork-img"
+          />
+          {/* Soft blending vignette gradients to dissolve into background */}
+          <div className="hero-artwork-vignette" />
+          <HeroParticleCanvas activeState={activeHeroState} />
+        </div>
 
-            <nav className="hero-nav-links" aria-label="Primary navigation">
-              {NAV_ITEMS.map((item) => (
-                <a key={item.label} href={item.href} className="hero-nav-link">
-                  <span>{item.label}</span>
-                  <span className="text-[0.6rem] opacity-60">↗</span>
-                </a>
-              ))}
-            </nav>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => go('/login')}
-                className="hero-nav-link hidden sm:inline-flex cursor-pointer"
-              >
-                Sign in
-              </button>
-              <button
-                type="button"
-                onClick={() => go('/dashboard')}
-                className="hero-nav-cta hidden sm:inline-flex"
-              >
-                <span>Open Dashboard</span>
-                <ArrowUpRight className="h-3 w-3" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="hero-mobile-toggle md:hidden"
-                aria-label="Toggle navigation"
-                aria-expanded={menuOpen}
-              >
-                {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
-              </button>
-            </div>
-          </header>
-
-          {/* Mobile Drawer Menu */}
-          {menuOpen && (
-            <div className="hero-mobile-drawer md:hidden">
-              {NAV_ITEMS.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  {item.label} ↗
-                </a>
-              ))}
-              <button
-                type="button"
-                onClick={() => go('/dashboard')}
-                className="mobile-cta"
-              >
-                Open Dashboard ↗
-              </button>
-              <button
-                type="button"
-                onClick={() => go('/login')}
-              >
-                Sign In
-              </button>
-            </div>
-          )}
-
-          {/* Centerpiece Visual Canvas with flowing particles & conduits */}
-          <div className="hero-artwork-canvas" aria-hidden="true">
-            {/* Primary Infrastructure Conduits Background Image */}
-            <img
-              src={currentHero.image}
-              alt="Luminous infrastructure pathways"
-              className="hero-artwork-img"
-            />
-            {/* Soft blending vignette gradients */}
-            <div className="hero-artwork-vignette" />
-            {/* Canvas Particle & Telemetry Signal Overlay */}
-            <HeroParticleCanvas activeState={activeHeroState} />
-          </div>
-
+        {/* Hero Content Stage */}
+        <div className="hero-stage-container">
           {/* Top Left Micro Technical Badge */}
           <div className="hero-tag-topleft">
             <span>[ OPS_INDEX // {currentHero.key} ]</span>
             <span>SYSTEMS CONVERGENCE</span>
           </div>
 
-          {/* Bottom Left Glyph */}
-          <div className="hero-corner-glyph" aria-hidden="true">
-            &lt;:
-          </div>
-
-          {/* Hero Headline & Editorial Typography (Bottom Left) */}
-          <div className="hero-editorial-headline">
-            <p className="hero-editorial-kicker">
-              <span className="hero-kicker-dot" />
-              INTERNAL DEVELOPER PLATFORM · {currentHero.name}
-            </p>
-            <h1 className="hero-headline-title">
-              <span className="hero-headline-word" style={indexStyle(0)}>
-                {currentHero.titleLine1}
-              </span>
-              <br />
-              <span className="hero-headline-word" style={indexStyle(1)}>
-                {currentHero.titleLine2}
-              </span>
-              <br />
-              <span className="hero-headline-italic" style={indexStyle(2)}>
-                {currentHero.italicWord}
-              </span>
-              <span className="hero-headline-word" style={indexStyle(3)}>
-                <span className="hero-headline-slash">{currentHero.prefix}</span>
-              </span>
-              <br />
-              <span className="hero-headline-word" style={indexStyle(4)}>
-                {currentHero.titleLine3}
-              </span>
-            </h1>
-          </div>
-
-          {/* Right Side Aside Card & Interactive State Switcher */}
-          <div className="hero-aside-panel">
-            <div className="hero-state-header">
-              <div className="hero-state-toggle-group">
-                {HERO_STATES.map((state, i) => (
-                  <button
-                    key={state.key}
-                    type="button"
-                    onClick={() => setActiveHeroState(i)}
-                    className={`hero-state-tab ${activeHeroState === i ? 'is-active' : ''}`}
-                    aria-label={`Switch to state ${state.key}`}
-                  >
-                    ( {state.key} )
-                  </button>
-                ))}
+          {/* Hero Content Grid: Left Headline, Right Aside Controls */}
+          <div className="hero-content-grid">
+            {/* Left Headline & Editorial Typography */}
+            <div className="hero-editorial-headline">
+              <p className="hero-editorial-kicker">
+                <span className="hero-kicker-dot" />
+                INTERNAL DEVELOPER PLATFORM · {currentHero.name}
+              </p>
+              <h1 className="hero-headline-title">
+                <span className="hero-headline-word" style={indexStyle(0)}>
+                  {currentHero.titleLine1}
+                </span>
+                <br />
+                <span className="hero-headline-word" style={indexStyle(1)}>
+                  {currentHero.titleLine2}
+                </span>
+                <br />
+                <span className="hero-headline-italic" style={indexStyle(2)}>
+                  {currentHero.italicWord}
+                </span>
+                <span className="hero-headline-word" style={indexStyle(3)}>
+                  <span className="hero-headline-slash">{currentHero.prefix}</span>
+                </span>
+                <br />
+                <span className="hero-headline-word" style={indexStyle(4)}>
+                  {currentHero.titleLine3}
+                </span>
+              </h1>
+              <div className="hero-corner-glyph" aria-hidden="true">
+                &lt;:
               </div>
-              <span className="hero-state-index">[ {currentHero.index} ]</span>
             </div>
 
-            <p className="hero-aside-description">
-              {currentHero.description}
-            </p>
+            {/* Right Side Interactive State Switcher */}
+            <div className="hero-aside-panel">
+              <div className="hero-state-header">
+                <div className="hero-state-toggle-group">
+                  {HERO_STATES.map((state, i) => (
+                    <button
+                      key={state.key}
+                      type="button"
+                      onClick={() => setActiveHeroState(i)}
+                      className={`hero-state-tab ${activeHeroState === i ? 'is-active' : ''}`}
+                      aria-label={`Switch to state ${state.key}`}
+                    >
+                      ( {state.key} )
+                    </button>
+                  ))}
+                </div>
+                <span className="hero-state-index">[ {currentHero.index} ]</span>
+              </div>
 
-            <button
-              type="button"
-              onClick={() => go('/dashboard')}
-              className="hero-aside-button"
-            >
-              <span>{currentHero.cta}</span>
-              <ArrowUpRight className="h-3 w-3" />
-            </button>
+              <p className="hero-aside-description">
+                {currentHero.description}
+              </p>
+
+              <button
+                type="button"
+                onClick={() => go('/dashboard')}
+                className="hero-aside-button"
+              >
+                <span>{currentHero.cta}</span>
+                <ArrowUpRight className="h-3 w-3" />
+              </button>
+            </div>
           </div>
 
           {/* Center Bottom Scroll Indicator */}
@@ -514,28 +494,28 @@ export const LandingPage: React.FC = () => {
                 </p>
 
                 {/* Technical Interactive Visual */}
-                <div className="mt-8 rounded-2xl border border-white/50 bg-white/60 backdrop-blur-md p-4">
-                  <div className="flex items-center justify-between font-tech-mono text-[10px] text-gray-700 mb-3">
-                    <span>PIPELINE EXECUTION #8491</span>
-                    <span className="font-bold text-emerald-700 flex items-center gap-1">
+                <div className="mt-8 rounded-2xl bg-black/5 p-4.5 font-tech-mono">
+                  <div className="flex items-center justify-between text-[11px] text-gray-700 mb-3">
+                    <span className="font-semibold tracking-wide">PIPELINE EXECUTION #8491</span>
+                    <span className="font-bold text-emerald-700 flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       CANARY ROLLOUT 100%
                     </span>
                   </div>
-                  <div className="grid grid-cols-4 gap-2 text-center font-tech-mono text-xs">
-                    <div className="rounded-xl border border-white/60 bg-white/80 p-2.5">
+                  <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                    <div className="rounded-lg bg-white/90 p-2.5 shadow-2xs">
                       <span className="text-[9px] uppercase text-gray-500 block">Lint</span>
                       <span className="font-bold text-black">0.4s ✓</span>
                     </div>
-                    <div className="rounded-xl border border-white/60 bg-white/80 p-2.5">
+                    <div className="rounded-lg bg-white/90 p-2.5 shadow-2xs">
                       <span className="text-[9px] uppercase text-gray-500 block">Test</span>
                       <span className="font-bold text-black">1.8s ✓</span>
                     </div>
-                    <div className="rounded-xl border border-white/60 bg-white/80 p-2.5">
+                    <div className="rounded-lg bg-white/90 p-2.5 shadow-2xs">
                       <span className="text-[9px] uppercase text-gray-500 block">Build</span>
                       <span className="font-bold text-black">12.2s ✓</span>
                     </div>
-                    <div className="rounded-xl bg-black text-white p-2.5">
+                    <div className="rounded-lg bg-black text-white p-2.5">
                       <span className="text-[9px] uppercase text-gray-400 block">Deploy</span>
                       <span className="font-bold text-emerald-400">Live 🟢</span>
                     </div>
@@ -562,20 +542,20 @@ export const LandingPage: React.FC = () => {
                 </p>
 
                 {/* Technical Cluster Status Preview */}
-                <div className="mt-8 rounded-2xl border border-white/50 bg-white/60 backdrop-blur-md p-4 font-tech-mono">
-                  <div className="flex items-center justify-between text-[10px] text-gray-700 mb-3">
-                    <span>KUBERNETES TOPOLOGY</span>
-                    <span className="text-black font-semibold">2 NODES · 8 PODS</span>
+                <div className="mt-8 rounded-2xl bg-black/5 p-4.5 font-tech-mono">
+                  <div className="flex items-center justify-between text-[11px] text-gray-700 mb-3">
+                    <span className="font-semibold tracking-wide">KUBERNETES TOPOLOGY</span>
+                    <span className="text-black font-bold">2 NODES · 8 PODS</span>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between rounded-xl border border-white/60 bg-white/80 px-3.5 py-2.5 text-xs">
+                    <div className="flex items-center justify-between rounded-lg bg-white/90 px-3.5 py-2.5 text-xs shadow-2xs">
                       <span className="flex items-center gap-2 font-bold text-black">
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         ip-10-0-1-92.ec2.internal
                       </span>
                       <span className="text-[11px] text-gray-600">Ready · 14% CPU</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-xl border border-white/60 bg-white/80 px-3.5 py-2.5 text-xs">
+                    <div className="flex items-center justify-between rounded-lg bg-white/90 px-3.5 py-2.5 text-xs shadow-2xs">
                       <span className="flex items-center gap-2 font-bold text-black">
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         ip-10-0-2-14.ec2.internal
@@ -605,8 +585,8 @@ export const LandingPage: React.FC = () => {
                 </p>
 
                 {/* Live Log Stream Preview */}
-                <div className="mt-8 rounded-2xl border border-black/40 bg-[#161217] p-4 font-tech-mono text-[11px] text-gray-300 shadow-md">
-                  <div className="flex items-center justify-between text-[10px] text-gray-500 mb-2 border-b border-gray-800 pb-2">
+                <div className="mt-8 rounded-2xl bg-[#161217] p-4.5 font-tech-mono text-[11px] text-gray-300 shadow-lg">
+                  <div className="flex items-center justify-between text-[10px] text-gray-500 mb-2.5 border-b border-gray-800 pb-2">
                     <span className="flex items-center gap-1.5 text-emerald-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       LIVE BUFFER STREAMING
@@ -640,12 +620,12 @@ export const LandingPage: React.FC = () => {
                 </p>
 
                 {/* Audit Event Preview */}
-                <div className="mt-8 rounded-2xl border border-white/50 bg-white/60 backdrop-blur-md p-4 font-tech-mono">
-                  <div className="flex items-center justify-between text-[10px] text-gray-700 mb-3">
-                    <span>SECURITY &amp; AUDIT LOG</span>
-                    <span className="text-black font-semibold">ROLE: ADMIN</span>
+                <div className="mt-8 rounded-2xl bg-black/5 p-4.5 font-tech-mono">
+                  <div className="flex items-center justify-between text-[11px] text-gray-700 mb-3">
+                    <span className="font-semibold tracking-wide">SECURITY &amp; AUDIT LOG</span>
+                    <span className="text-black font-bold">ROLE: ADMIN</span>
                   </div>
-                  <div className="rounded-xl border border-white/60 bg-white/80 p-3 text-xs">
+                  <div className="rounded-lg bg-white/90 p-3.5 text-xs shadow-2xs">
                     <div className="flex items-center justify-between font-bold text-black mb-1">
                       <span>USER_LOGIN // SUCCESS</span>
                       <span className="text-[10px] text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full">VERIFIED JWT</span>
@@ -661,93 +641,50 @@ export const LandingPage: React.FC = () => {
         </section>
 
         {/* =========================================================================
-            SHOW THE ACTUAL PRODUCT (GENUINE OPSPILOT DASHBOARD IN CINEMATIC CONSOLE)
+            PLATFORM OVERVIEW (EDITORIAL STORY, NO DASHBOARD SCREENSHOT)
            ========================================================================= */}
-        <section id="product-preview" className="border-t border-white/20 bg-black/15 backdrop-blur-md py-24 sm:py-32">
-          <div className="mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
-            <Reveal className="text-center max-w-3xl mx-auto">
-              <Eyebrow dot>The Running Application</Eyebrow>
-              <h2 className="mt-5 text-4xl font-black leading-[1.1] tracking-tight text-black sm:text-5xl">
-                The actual command center, <br />
-                <span className="text-gray-700 font-editorial-italic font-normal">ready for your platform team.</span>
+        <section id="product-preview" className="landing-product-story relative isolate overflow-hidden px-6 py-24 sm:px-8 sm:py-32 lg:px-12">
+          <div className="story-orbit pointer-events-none absolute -right-40 top-1/2 -z-10 h-[42rem] w-[42rem] -translate-y-1/2 rounded-full" aria-hidden="true" />
+          <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <Reveal>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-teal-100">
+                <span className="h-1.5 w-1.5 rounded-full bg-teal-300" />
+                One connected platform
+              </div>
+              <h2 className="mt-6 max-w-xl text-4xl font-black leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                Clarity from commit <span className="font-editorial-italic font-normal text-teal-200">to runtime.</span>
               </h2>
-              <p className="mt-4 text-base leading-relaxed text-gray-800">
-                No mockups or fabricated metrics. This is the real OpsPilot dashboard running live, connecting project
-                inventories, audit histories, and infrastructure telemetry.
+              <p className="mt-6 max-w-lg text-base leading-relaxed text-slate-200 sm:text-lg">
+                OpsPilot brings delivery, infrastructure, and operational signals together, so your team can move from a change to its impact with less guesswork.
               </p>
+              <button
+                type="button"
+                onClick={() => go('/signup')}
+                className="mt-8 inline-flex items-center gap-2 rounded-full bg-teal-300 px-6 py-3.5 font-tech-mono text-xs font-bold text-[#102a43] shadow-lg shadow-black/15 transition hover:-translate-y-0.5 hover:bg-teal-200"
+              >
+                Explore the platform <ArrowRight className="h-4 w-4" />
+              </button>
             </Reveal>
 
-            {/* Dashboard Browser Frame */}
-            <Reveal index={1} className="mt-14 relative">
-              <div className="dashboard-studio-frame">
-                {/* Browser Top Window Chrome */}
-                <div className="dashboard-browser-chrome">
-                  <div className="browser-traffic-dots">
-                    <span className="browser-traffic-dot dot-close" />
-                    <span className="browser-traffic-dot dot-min" />
-                    <span className="browser-traffic-dot dot-max" />
-                  </div>
-                  <div className="browser-address-bar">
-                    <span className="text-gray-500">https://</span>
-                    <span className="text-white font-semibold">opspilot.jestin16.dev</span>
-                    <span className="text-gray-500">/dashboard</span>
-                  </div>
-                  <div className="browser-status-chip">
-                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>PRODUCTION CONNECTED</span>
-                  </div>
-                </div>
-
-                {/* Dashboard Image */}
-                <div className="relative overflow-hidden bg-slate-900">
-                  <img
-                    src="/dashboard-preview.png"
-                    alt="OpsPilot Live Dashboard Interface"
-                    className="w-full h-auto object-cover"
-                  />
-
-                  {/* Hotspot annotations on real product features */}
-                  <div
-                    className="dashboard-hotspot hidden lg:flex top-[24%] left-[23%]"
-                    title="Real-time Platform Inventory"
-                  >
-                    <span>●</span> 10 Active Projects
-                  </div>
-                  <div
-                    className="dashboard-hotspot hidden lg:flex top-[24%] right-[18%]"
-                    title="Audit trail tracking operator actions"
-                  >
-                    <span>●</span> 76 Audit Events
-                  </div>
-                  <div
-                    className="dashboard-hotspot hidden lg:flex bottom-[28%] left-[34%]"
-                    title="Recent audit events and user access tracking"
-                  >
-                    <span>●</span> Live Audit Activity
-                  </div>
-                </div>
-              </div>
-
-              {/* Callout highlights below preview */}
-              <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center font-tech-mono text-xs">
-                <div className="rounded-xl border border-white/50 bg-white/60 backdrop-blur-md p-3.5">
-                  <span className="text-gray-600 block text-[10px] uppercase font-bold">Project Hub</span>
-                  <span className="font-bold text-black mt-1 block">Unified Repositories</span>
-                </div>
-                <div className="rounded-xl border border-white/50 bg-white/60 backdrop-blur-md p-3.5">
-                  <span className="text-gray-600 block text-[10px] uppercase font-bold">Delivery</span>
-                  <span className="font-bold text-black mt-1 block">Pipelines &amp; Rollbacks</span>
-                </div>
-                <div className="rounded-xl border border-white/50 bg-white/60 backdrop-blur-md p-3.5">
-                  <span className="text-gray-600 block text-[10px] uppercase font-bold">Observability</span>
-                  <span className="font-bold text-black mt-1 block">Loki Logs &amp; Prometheus</span>
-                </div>
-                <div className="rounded-xl border border-white/50 bg-white/60 backdrop-blur-md p-3.5">
-                  <span className="text-gray-600 block text-[10px] uppercase font-bold">Security</span>
-                  <span className="font-bold text-black mt-1 block">JWT &amp; RBAC Policies</span>
-                </div>
-              </div>
-            </Reveal>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                { icon: GitBranch, number: '01', title: 'Ship with context', detail: 'Keep every release tied to its repository, commit, owner, and rollout.' },
+                { icon: Cpu, number: '02', title: 'See what is running', detail: 'Understand clusters, containers, and services without changing tools.' },
+                { icon: Activity, number: '03', title: 'Follow every signal', detail: 'Connect logs, metrics, and incidents to the change that caused them.' },
+                { icon: ShieldCheck, number: '04', title: 'Operate with confidence', detail: 'Give each team clear access and keep an accountable audit trail.' },
+              ].map(({ icon: Icon, number, title, detail }, index) => (
+                <Reveal key={number} index={index + 1}>
+                  <article className="story-card h-full rounded-2xl p-6 transition duration-300 sm:p-7">
+                    <div className="flex items-center justify-between">
+                      <Icon className="story-card-icon h-5 w-5" aria-hidden="true" />
+                      <span className="font-tech-mono text-[10px] font-bold tracking-[0.18em] text-slate-300/60">{number}</span>
+                    </div>
+                    <h3 className="mt-8 text-lg font-bold text-white">{title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-200/80">{detail}</p>
+                  </article>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </section>
 

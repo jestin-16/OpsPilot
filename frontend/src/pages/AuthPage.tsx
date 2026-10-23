@@ -256,111 +256,114 @@ export const AuthPage: React.FC = () => {
       {/* Subtle organic noise grain */}
       <div className="auth-film-grain" aria-hidden="true" />
 
-      {/* Floating Panel Ambient Golden Underglow */}
+      {/* Ambient Golden Underglow */}
       <div className="auth-underglow" aria-hidden="true" />
 
-      <div className="flex flex-1 items-center justify-center p-4 sm:p-8">
-        {/* Centered Floating Slate Panel */}
-        <div ref={cardRef} className="auth-floating-panel">
-          {/* Top Panel Nav */}
-          <header className="auth-panel-nav">
+      {/* Top Header Navigation (Direct Page Header, Not Enclosed in a Card) */}
+      <header className="auth-top-nav">
+        <div className="auth-nav-container">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-left bg-none border-none p-0 cursor-pointer"
+          >
+            <span className="font-tech-mono text-sm font-bold tracking-tight text-black">
+              ( OPS_PILOT )
+            </span>
+            <span className="font-tech-mono text-[10px] font-semibold text-gray-700 hidden sm:inline">
+              [ v02.4 / AUTH-GATEWAY ]
+            </span>
+          </button>
+
+          <div className="flex items-center gap-3">
+            <Link to="/" className="auth-nav-link">
+              <ArrowLeft className="h-3 w-3" />
+              <span className="hidden sm:inline">Platform</span>
+            </Link>
+            <span className="h-3 w-px bg-black/20" />
             <button
               type="button"
-              onClick={() => navigate('/')}
-              className="flex items-center gap-2 text-left bg-none border-none p-0 cursor-pointer"
+              onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
+              className="auth-mode-pill"
             >
-              <span className="font-tech-mono text-sm font-bold tracking-tight text-black">
-                ( OPS_PILOT )
-              </span>
-              <span className="font-tech-mono text-[10px] font-semibold text-gray-700 hidden sm:inline">
-                [ v02.4 / AUTH-GATEWAY ]
-              </span>
+              <span>{mode === 'login' ? 'Get Started Free' : 'Sign In'}</span>
+              <span className="text-[10px] opacity-70">↗</span>
             </button>
+          </div>
+        </div>
+      </header>
 
-            <div className="flex items-center gap-3">
-              <Link to="/" className="auth-nav-link">
-                <ArrowLeft className="h-3 w-3" />
-                <span className="hidden sm:inline">Platform</span>
-              </Link>
-              <span className="h-3 w-px bg-black/20" />
-              <button
-                type="button"
-                onClick={() => switchMode(mode === 'login' ? 'signup' : 'login')}
-                className="auth-mode-pill"
-              >
-                <span>{mode === 'login' ? 'Get Started Free' : 'Sign In'}</span>
-                <span className="text-[10px] opacity-70">↗</span>
-              </button>
+      {/* Main Authentication Stage */}
+      <main className="auth-stage">
+        <div className="auth-stage-container">
+          {/* Left Column: Editorial Brand & Context */}
+          <div className="auth-brand-col">
+            <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 backdrop-blur-md px-3.5 py-1 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-gray-800 shadow-2xs">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.7)]" />
+              <span>{copy.badge}</span>
             </div>
-          </header>
 
-          {/* Main Content: Split Editorial & Form */}
-          <div className="grid lg:grid-cols-[1.1fr_1.1fr] p-6 sm:p-10 lg:p-12 gap-10 items-center">
-            {/* Left Column: Editorial Brand & Context */}
-            <div className="flex flex-col items-start">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/70 backdrop-blur-md px-3 py-1 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-gray-800 shadow-2xs">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.7)]" />
-                <span>{copy.badge}</span>
-              </div>
+            <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[0.92] text-black">
+              <span>{copy.line1}</span>
+              <br />
+              <span className="font-editorial-italic font-normal lowercase tracking-normal text-gray-800 pr-2">
+                {copy.italicWord}
+              </span>
+              <span className="text-amber-600 font-tech-mono">{copy.prefix}</span>
+              <br />
+              <span>{copy.line2}</span>
+            </h1>
 
-              <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[0.92] text-black">
-                <span>{copy.line1}</span>
-                <br />
-                <span className="font-editorial-italic font-normal lowercase tracking-normal text-gray-800 pr-2">
-                  {copy.italicWord}
-                </span>
-                <span className="text-amber-600 font-tech-mono">{copy.prefix}</span>
-                <br />
-                <span>{copy.line2}</span>
-              </h1>
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-gray-700 font-normal">
+              {copy.blurb}
+            </p>
 
-              <p className="mt-4 max-w-sm text-sm leading-relaxed text-gray-700 font-normal">
-                {copy.blurb}
-              </p>
-
-              {/* Technical Feature Badges */}
-              <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-sm">
-                {copy.features.map((f) => (
-                  <div
-                    key={f.title}
-                    className="rounded-xl border border-white/60 bg-white/50 backdrop-blur-md p-3"
-                  >
-                    <span className="font-tech-mono text-[9px] font-bold text-gray-600 block uppercase">
-                      [ {f.tag} // {f.title} ]
+            {/* Platform Feature Context */}
+            <div className="mt-8 flex flex-col sm:flex-row gap-6 w-full max-w-md">
+              {copy.features.map((f) => (
+                <div key={f.title} className="flex items-start gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-black/5 font-tech-mono text-[10px] font-bold text-gray-700">
+                    {f.tag}
+                  </span>
+                  <div>
+                    <span className="font-tech-mono text-xs font-bold text-black block">
+                      {f.title}
                     </span>
-                    <span className="font-tech-mono text-xs font-bold text-black mt-1 block">
+                    <span className="font-tech-mono text-[11px] text-gray-500">
                       {f.caption}
                     </span>
                   </div>
-                ))}
-              </div>
-
-              {/* Quick Demo Credentials */}
-              <div className="mt-6 pt-5 border-t border-black/10 w-full max-w-sm">
-                <span className="font-tech-mono text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-2">
-                  Quick Demo Access:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {DEMO_ACCOUNTS.map((acc) => (
-                    <button
-                      key={acc.role}
-                      type="button"
-                      onClick={() => {
-                        setEmail(acc.email);
-                        setPassword('password123');
-                        if (mode === 'signup') setConfirmPassword('password123');
-                      }}
-                      className="auth-demo-pill"
-                    >
-                      <span>●</span> {acc.role}
-                    </button>
-                  ))}
                 </div>
-              </div>
+              ))}
             </div>
 
-            {/* Right Column: Interactive Form & Mascot */}
-            <div className="relative w-full max-w-md mx-auto">
+            {/* Quick Demo Credentials */}
+            <div className="mt-8 pt-5 border-t border-black/10 w-full max-w-md">
+              <span className="font-tech-mono text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-2.5">
+                Quick Demo Access:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {DEMO_ACCOUNTS.map((acc) => (
+                  <button
+                    key={acc.role}
+                    type="button"
+                    onClick={() => {
+                      setEmail(acc.email);
+                      setPassword('password123');
+                      if (mode === 'signup') setConfirmPassword('password123');
+                    }}
+                    className="auth-demo-pill"
+                  >
+                    <span>●</span> {acc.role}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: The Single Interactive Form Card & Mascot */}
+          <div className="auth-form-col">
+            <div ref={cardRef} className="auth-form-card-wrapper">
               {/* Mascot Peeking Over Form Card */}
               <AuthMascot
                 gaze={gaze}
@@ -370,7 +373,7 @@ export const AuthPage: React.FC = () => {
               />
 
               {/* Form Card */}
-              <div className="rounded-2xl border border-white/80 bg-white/80 backdrop-blur-xl p-6 sm:p-8 shadow-xl">
+              <div className="auth-form-card">
                 {error && (
                   <div
                     role="alert"
@@ -549,7 +552,7 @@ export const AuthPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Role Selection Modal for Google Login */}
       {showRoleSelection && (

@@ -64,37 +64,44 @@ try {
 
 # 6. Verify Health Status
 Write-Host "[6/6] Verifying system readiness on port 80 and API Gateway proxy..." -ForegroundColor Yellow
-$maxAttempts = 20
+$maxAttempts = 45
 $attempt = 0
 $healthy = $false
 
 while ($attempt -lt $maxAttempts) {
     $attempt++
+    $feOk = $false
+    $apiProxyOk = $false
+
     try {
         $feResponse = Invoke-WebRequest -Uri "http://127.0.0.1:80" -UseBasicParsing -TimeoutSec 3
-        
-        $apiProxyOk = $false
-        try {
-            $apiCheck = Invoke-WebRequest -Uri "http://127.0.0.1:80/api/v1/auth/health" -UseBasicParsing -TimeoutSec 3
-            if ($apiCheck.StatusCode -ne 502 -and $apiCheck.StatusCode -ne 503 -and $apiCheck.StatusCode -ne 504) {
-                $apiProxyOk = $true
-            }
-        } catch {
-            $code = $_.Exception.Response.StatusCode.value__
-            # Upstream reached (e.g. 401/404/500 from Spring Boot is acceptable; 502/503/504 Bad Gateway is not)
+        if ($feResponse.StatusCode -eq 200) { $feOk = $true }
+    } catch {
+        $feOk = $false
+    }
+
+    try {
+        $apiCheck = Invoke-WebRequest -Uri "http://127.0.0.1:80/api/v1/auth/health" -UseBasicParsing -TimeoutSec 3
+        if ($apiCheck.StatusCode -eq 200 -or ($apiCheck.StatusCode -ne 502 -and $apiCheck.StatusCode -ne 503 -and $apiCheck.StatusCode -ne 504)) {
+            $apiProxyOk = $true
+        }
+    } catch {
+        if ($_.Exception.Response) {
+            $code = [int]$_.Exception.Response.StatusCode
+            # Upstream reached (e.g. 200/401/404/500 from Spring Boot is acceptable; 502/503/504 Bad Gateway is not)
             if ($code -and $code -ne 502 -and $code -ne 503 -and $code -ne 504) {
                 $apiProxyOk = $true
             }
         }
-
-        if ($feResponse.StatusCode -eq 200 -and $apiProxyOk) {
-            $healthy = $true
-            break
-        }
-    } catch {
-        Write-Host "      [$attempt/$maxAttempts] Waiting for OpsPilot Frontend & Gateway..." -ForegroundColor DarkGray
     }
-    Start-Sleep -Seconds 2
+
+    if ($feOk -and $apiProxyOk) {
+        $healthy = $true
+        break
+    }
+
+    Write-Host "      [$attempt/$maxAttempts] Waiting for services (Frontend: $(if ($feOk) {'Ready'} else {'Waiting'}), Gateway: $(if ($apiProxyOk) {'Ready'} else {'Waiting'}))..." -ForegroundColor DarkGray
+    Start-Sleep -Seconds 3
 }
 
 if ($healthy) {

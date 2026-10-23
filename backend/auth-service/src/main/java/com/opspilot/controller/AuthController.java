@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Map;
 
 @RestController
 @RequestMapping({"/api/v1/auth", "/api/auth"})
@@ -33,6 +34,12 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @GetMapping("/health")
+    @Operation(summary = "Health check endpoint for smoke verification and gateway readiness")
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok(Map.of("status", "UP"));
+    }
 
     @Value("${app.jwt.refresh-expiration-ms:604800000}")
     private long jwtRefreshExpirationMs;

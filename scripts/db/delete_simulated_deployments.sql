@@ -1,9 +1,8 @@
--- Removes everything the old deployment simulator made up: deployments labelled SIMULATED by migration
--- V19, the containers and pods it invented for them, and its status-change log lines. Real logs and
--- incidents that point at those deployments are kept, with the link cleared.
+-- Removes everything the old deployment simulator and demo seeders made up: deployments labelled
+-- SIMULATED by migration V19, the containers and pods invented for them, the demo fixture projects
+-- ("Demo Project 1" / "Demo Project 2"), and mock audit users.
+-- Real logs and incidents that point at those deployments are kept, with the link cleared.
 -- Review, then run:  docker exec -i opspilot-postgres psql -U opspilot -d opspilot < scripts/db/delete_simulated_deployments.sql
--- The demo projects the old seeder created ("Demo Project 1" / "Demo Project 2") are not touched; delete
--- them from the Projects page if you don't want them.
 
 BEGIN;
 
@@ -30,4 +29,25 @@ UPDATE incidents SET deployment_id = NULL WHERE deployment_id IN (SELECT id FROM
 
 DELETE FROM deployments WHERE id IN (SELECT id FROM simulated);
 
+-- Purge demo fixture projects ("Demo Project 1" / "Demo Project 2") and their references
+DELETE FROM pipeline_runs WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+DELETE FROM commit_logs WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+DELETE FROM log_sources WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+DELETE FROM pipeline_sources WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+DELETE FROM integrations WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+DELETE FROM incidents WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+DELETE FROM alert_rules WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+DELETE FROM alerts WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+DELETE FROM infrastructure_events WHERE project_id IN (SELECT id FROM projects WHERE slug IN ('demo-project-1', 'demo-project-2') OR project_name IN ('Demo Project 1', 'Demo Project 2'));
+
+DELETE FROM projects 
+WHERE slug IN ('demo-project-1', 'demo-project-2') 
+   OR project_name IN ('Demo Project 1', 'Demo Project 2')
+   OR repository_url IN ('https://github.com/demo/1', 'https://github.com/demo/2');
+
+-- Purge mock audit user
+DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE email = 'opspilot-audit-other@example.com');
+DELETE FROM users WHERE email = 'opspilot-audit-other@example.com';
+
 COMMIT;
+

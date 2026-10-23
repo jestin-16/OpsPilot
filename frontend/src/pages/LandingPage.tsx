@@ -254,7 +254,7 @@ export const LandingPage: React.FC = () => {
               aria-label="OpsPilot Home"
             >
               <span className="hero-wordmark-title">( OPS_PILOT )</span>
-              <span className="hero-wordmark-tag">[ v02.4 / DEV-PLATFORM ]</span>
+              <span className="hero-wordmark-tag">[ OpsPilot v02.4 / DEV-PLATFORM ]</span>
             </button>
 
             <nav className="hero-nav-links" aria-label="Primary navigation">
@@ -272,7 +272,7 @@ export const LandingPage: React.FC = () => {
                 onClick={() => go('/login')}
                 className="hero-nav-link hidden sm:inline-flex cursor-pointer"
               >
-                Sign In
+                Sign in
               </button>
               <button
                 type="button"

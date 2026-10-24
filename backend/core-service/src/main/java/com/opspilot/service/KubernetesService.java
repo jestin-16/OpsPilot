@@ -163,7 +163,7 @@ public class KubernetesService {
     public List<Map<String, Object>> getEnhancedPods() {
         List<Map<String, Object>> pods = new ArrayList<>();
         if (apiClient == null) {
-            // No cluster connected: there are no pods to show (getClusterOverview reports "Disconnected").
+            // No cluster connected: there are no pods to show (getClusterOverview reports "Disabled").
             return pods;
         }
         try {

@@ -1,6 +1,7 @@
 package com.opspilot.service;
 
 import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.ApiClient;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -23,11 +24,22 @@ public class KubernetesServiceTest {
     }
 
     @Test
-    void testDisconnectedClusterReturnsEmpty() {
+    void testDisabledClusterReturnsEmpty() {
         KubernetesService service = new KubernetesService();
         assertTrue(service.getAllPods().isEmpty());
         assertTrue(service.getEnhancedPods().isEmpty());
-        assertEquals("Disconnected", service.getClusterOverview().get("status"));
+        assertEquals("Disabled", service.getClusterOverview().get("status"));
+    }
+
+    @Test
+    void testDisconnectedClusterWhenApiThrowsException() {
+        KubernetesService service = new KubernetesService();
+        ApiClient mockClient = org.mockito.Mockito.mock(ApiClient.class);
+        org.springframework.test.util.ReflectionTestUtils.setField(service, "apiClient", mockClient);
+
+        Map<String, Object> overview = service.getClusterOverview();
+        assertEquals("Disconnected", overview.get("status"));
+        assertTrue(String.valueOf(overview.get("message")).startsWith("Kubernetes API is unreachable:"));
     }
 
     @Test

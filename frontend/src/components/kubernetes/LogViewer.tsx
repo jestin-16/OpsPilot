@@ -35,6 +35,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
 }) => {
   // Pod and Container selection
   const [pods, setPods] = useState<WatcherPodSummary[]>([]);
+  const [watcherMessage, setWatcherMessage] = useState('');
   const [selectedNamespace, setSelectedNamespace] = useState<string>(initialNamespace);
   const [selectedPod, setSelectedPod] = useState<string>(initialPod || '');
   const [selectedContainer, setSelectedContainer] = useState<string>(initialContainer);
@@ -65,8 +66,10 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   // 1. Fetch available pods for selector
   const fetchPods = useCallback(async () => {
     try {
-      const data = await api.getWatcherPods();
+      const [data, watcherStatus] = await Promise.all([api.getWatcherPods(), api.getWatcherStatus()]);
       setPods(data);
+      const isDis = watcherStatus.enabled === false || watcherStatus.message?.toLowerCase().includes('disabled');
+      setWatcherMessage(watcherStatus.connected || isDis ? '' : watcherStatus.message);
       if (data.length > 0 && !selectedPod) {
         setSelectedPod(data[0].name);
         setSelectedNamespace(data[0].namespace);
@@ -74,6 +77,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
       }
     } catch (err) {
       console.error('Failed to load pods for LogViewer:', err);
+      setWatcherMessage('Could not reach the Pod Log service. Check that log-watcher-service is running.');
     }
   }, [selectedPod]);
 
@@ -366,6 +370,11 @@ export const LogViewer: React.FC<LogViewerProps> = ({
               </button>
             )}
           </div>
+          {watcherMessage && (
+            <span role="status" className="max-w-[340px] text-[11px] text-amber-300" title={watcherMessage}>
+              {watcherMessage}
+            </span>
+          )}
         </div>
 
         {/* Right: Actions */}

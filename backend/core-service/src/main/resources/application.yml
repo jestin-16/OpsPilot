@@ -26,6 +26,7 @@ spring:
     show-sql: false
 
 kubernetes:
+  enabled: ${KUBERNETES_ENABLED:true}
   master-url: ${KUBERNETES_MASTER:}
   loopback-host: ${KUBERNETES_LOOPBACK_HOST:}
 

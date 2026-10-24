@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   api,
   type WatcherPodSummary,
-  type ClusterHealthSummary
+  type ClusterHealthSummary,
+  type WatcherStatus
 } from '../../services/api';
 import {
   Server,
@@ -28,6 +29,7 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
 }) => {
   const [pods, setPods] = useState<WatcherPodSummary[]>([]);
   const [healthSummary, setHealthSummary] = useState<ClusterHealthSummary | null>(null);
+  const [watcherStatus, setWatcherStatus] = useState<WatcherStatus | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
@@ -36,12 +38,14 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
 
   const fetchData = useCallback(async () => {
     try {
-      const [podsData, healthData] = await Promise.all([
+      const [podsData, healthData, statusData] = await Promise.all([
         api.getWatcherPods(),
-        api.getClusterHealthSummary(15)
+        api.getClusterHealthSummary(15),
+        api.getWatcherStatus(),
       ]);
       setPods(podsData);
       setHealthSummary(healthData);
+      setWatcherStatus(statusData);
       setError('');
       setLastRefreshed(new Date());
     } catch (err) {
@@ -119,6 +123,26 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
+      )}
+
+      {watcherStatus && !watcherStatus.connected && (
+        watcherStatus.enabled === false || watcherStatus.message?.toLowerCase().includes('disabled') ? (
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3 text-xs text-slate-300">
+            <Layers className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" />
+            <div>
+              <p className="font-semibold text-slate-200">Kubernetes integration is disabled</p>
+              <p className="mt-1 text-slate-400">Kubernetes monitoring is disabled. Set <code className="text-op-accent">KUBERNETES_ENABLED=true</code> in your environment and provide a reachable cluster endpoint to monitor pods and live logs.</p>
+            </div>
+          </div>
+        ) : (
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <p className="font-semibold">Kubernetes cluster is unreachable</p>
+              <p className="mt-1">{watcherStatus.message} Check that KUBERNETES_MASTER points to an endpoint reachable from the log-watcher container.</p>
+            </div>
+          </div>
+        )
       )}
 
       {/* Cluster Health Metrics Bar */}
@@ -257,7 +281,11 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
           ) : pods.length === 0 ? (
             <div className="py-16 text-center text-slate-500 text-sm">
               <Server className="w-8 h-8 mx-auto mb-2 opacity-30 text-cyan-400" />
-              No pods found in the watched namespace.
+              {watcherStatus?.enabled === false || watcherStatus?.message?.toLowerCase().includes('disabled')
+                ? 'Kubernetes monitoring is disabled. Set KUBERNETES_ENABLED=true in .env to view cluster pods.'
+                : watcherStatus?.connected
+                ? 'No pods found in the watched namespace.'
+                : 'Pod data will appear after the Kubernetes cluster connection is restored.'}
             </div>
           ) : (
             <table className="w-full text-left text-xs whitespace-nowrap">

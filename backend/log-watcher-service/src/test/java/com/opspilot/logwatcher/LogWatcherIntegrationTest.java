@@ -34,7 +34,8 @@ import static org.mockito.Mockito.when;
 @TestPropertySource(properties = {
         "app.auth.enabled=false",
         "eureka.client.enabled=false",
-        "kubernetes.watch-namespace=default"
+        "kubernetes.watch-namespace=default",
+        "kubernetes.enabled=true"
 })
 class LogWatcherIntegrationTest {
 

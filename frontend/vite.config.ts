@@ -20,5 +20,21 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'three-vendor',
+              test: /node_modules[\\/]three[\\/]/,
+              priority: 10,
+              maxSize: 350 * 1024,
+            },
+          ],
+        },
+      },
+    },
+  },
 });
 

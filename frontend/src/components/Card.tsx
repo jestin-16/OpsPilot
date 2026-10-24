@@ -9,8 +9,8 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({ children, className = '', hoverEffect = false }) => {
   return (
     <div
-      className={`bg-op-surface border border-op-border rounded-xl p-6 shadow-md ${
-        hoverEffect ? 'hover:bg-op-raised hover:border-op-border-strong transition-all duration-200' : ''
+      className={`bg-op-surface border border-op-border rounded-2xl p-5 shadow-none ${
+        hoverEffect ? 'hover:bg-op-raised hover:border-op-border-strong transition-colors duration-200' : ''
       } ${className}`}
     >
       {children}

@@ -22,7 +22,7 @@ export function Table<T>({ data, columns, keyExtractor, onRowClick, className = 
         <thead>
           <tr className="bg-op-raised border-b border-op-border">
             {columns.map((col) => (
-              <th key={col.key} className="px-6 py-4 text-sm font-semibold text-op-fg whitespace-nowrap">
+            <th key={col.key} className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-op-muted whitespace-nowrap">
                 {col.header}
               </th>
             ))}
@@ -40,10 +40,10 @@ export function Table<T>({ data, columns, keyExtractor, onRowClick, className = 
               <tr
                 key={keyExtractor(item)}
                 onClick={() => onRowClick?.(item)}
-                className={`transition-colors ${onRowClick ? 'cursor-pointer hover:bg-op-raised/50' : ''}`}
+                className={`transition-colors ${onRowClick ? 'cursor-pointer hover:bg-op-raised' : ''}`}
               >
                 {columns.map((col) => (
-                  <td key={col.key} className="px-6 py-4 text-sm text-op-fg whitespace-nowrap">
+                  <td key={col.key} className="px-5 py-3.5 text-sm text-op-fg whitespace-nowrap">
                     {col.render ? col.render(item) : ((item as Record<string, unknown>)[col.key] as React.ReactNode)}
                   </td>
                 ))}

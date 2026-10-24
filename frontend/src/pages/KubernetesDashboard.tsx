@@ -145,10 +145,10 @@ export const KubernetesDashboard: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight text-op-fg flex items-center gap-3">
-                  <Server className="w-6 h-6 text-op-accent" /> Kubernetes Management
+                  <Server className="w-6 h-6 text-op-accent" /> Kubernetes Cluster
                 </h1>
                 <p className="text-sm font-medium text-op-muted mt-1">
-                  Cluster monitoring, workloads, and operational insights.
+                  Inspect cluster health, nodes, pods, services, and namespaces.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export const KubernetesDashboard: React.FC = () => {
                   to="/kubernetes/logs"
                   className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
                 >
-                  <Terminal className="w-4 h-4" /> Live Pod Logs & Watcher
+                  <Terminal className="w-4 h-4" /> Open live pod logs
                 </Link>
                 <button
                   onClick={() => loadData(activeTab)}
@@ -209,6 +209,8 @@ export const KubernetesDashboard: React.FC = () => {
                               ? 'bg-emerald-500' 
                               : overview.status === 'Disconnected' 
                               ? 'bg-amber-500' 
+                              : overview.status === 'Disabled'
+                              ? 'bg-slate-500'
                               : 'bg-rose-500'
                           }`}></div>
                           <span className="truncate" title={overview.status}>{overview.status}</span>
@@ -237,13 +239,25 @@ export const KubernetesDashboard: React.FC = () => {
                       </Card>
                     </div>
 
+                    {overview.status === 'Disabled' && (
+                      <div className="p-5 rounded-xl border border-white/10 bg-white/5 text-slate-300 text-sm flex items-start gap-3">
+                        <Server className="w-5 h-5 shrink-0 mt-0.5 text-slate-400" />
+                        <div>
+                          <div className="font-semibold text-slate-200">Kubernetes Integration Disabled</div>
+                          <p className="text-xs text-op-muted mt-1 leading-relaxed">
+                            {overview.message ?? 'Kubernetes monitoring is disabled.'} To enable Kubernetes monitoring, set <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">KUBERNETES_ENABLED=true</code> in your <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">.env</code> file.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {overview.status === 'Disconnected' && (
                       <div className="p-5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-400" />
                         <div>
                           <div className="font-semibold text-amber-200">Kubernetes Cluster Disconnected</div>
                           <p className="text-xs text-op-muted mt-1 leading-relaxed">
-                            OpsPilot is currently not connected to an active Kubernetes cluster. To enable cluster monitoring, mount a valid kubeconfig at <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">~/.kube/config</code> or configure the <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">KUBERNETES_MASTER</code> environment variable.
+                            {overview.message ?? 'OpsPilot cannot reach the Kubernetes API.'} Configure a kubeconfig or set <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">KUBERNETES_MASTER</code> to an endpoint reachable from the core-service container.
                           </p>
                         </div>
                       </div>
@@ -268,7 +282,7 @@ export const KubernetesDashboard: React.FC = () => {
                         {nodes.length === 0 ? (
                           <tr>
                             <td colSpan={5} className="py-12 text-center text-op-muted">
-                              No nodes found. Cluster is disconnected or unreachable.
+                              {overview?.status === 'Disconnected' ? 'Cluster is disconnected. Start Kubernetes or configure a reachable API endpoint.' : 'No nodes are registered in this cluster.'}
                             </td>
                           </tr>
                         ) : (
@@ -308,7 +322,7 @@ export const KubernetesDashboard: React.FC = () => {
                         {pods.length === 0 ? (
                           <tr>
                             <td colSpan={7} className="py-12 text-center text-op-muted">
-                              No pods found. Cluster is disconnected or unreachable.
+                              {overview?.status === 'Disconnected' ? 'Cluster is disconnected. Start Kubernetes or configure a reachable API endpoint.' : 'No pods were found in this cluster.'}
                             </td>
                           </tr>
                         ) : (
@@ -347,7 +361,7 @@ export const KubernetesDashboard: React.FC = () => {
                         {services.length === 0 ? (
                           <tr>
                             <td colSpan={4} className="py-12 text-center text-op-muted">
-                              No services found. Cluster is disconnected or unreachable.
+                              {overview?.status === 'Disconnected' ? 'Cluster is disconnected. Start Kubernetes or configure a reachable API endpoint.' : 'No services were found in this cluster.'}
                             </td>
                           </tr>
                         ) : (
@@ -380,7 +394,7 @@ export const KubernetesDashboard: React.FC = () => {
                         {namespaces.length === 0 ? (
                           <tr>
                             <td colSpan={3} className="py-12 text-center text-op-muted">
-                              No namespaces found. Cluster is disconnected or unreachable.
+                              {overview?.status === 'Disconnected' ? 'Cluster is disconnected. Start Kubernetes or configure a reachable API endpoint.' : 'No namespaces were found in this cluster.'}
                             </td>
                           </tr>
                         ) : (

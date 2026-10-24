@@ -12,14 +12,15 @@ import {
   GitBranch,
   Menu,
   MessageSquare,
-  Rocket,
   ShieldCheck,
-  Terminal,
   X,
 } from 'lucide-react';
 import { AuthMascot } from '../components/AuthMascot';
-import { Infrastructure3DCore } from '../components/Infrastructure3DCore';
 import '../styles/landing.css';
+
+const Infrastructure3DCore = React.lazy(() =>
+  import('../components/Infrastructure3DCore').then((module) => ({ default: module.Infrastructure3DCore })),
+);
 
 const NAV_ITEMS = [
   { label: 'Platform', href: '#platform' },
@@ -27,65 +28,6 @@ const NAV_ITEMS = [
   { label: 'Infrastructure', href: '#infrastructure' },
   { label: 'Deployments', href: '#deployments' },
   { label: 'Product', href: '#product-preview' },
-];
-
-const HERO_STATES = [
-  {
-    key: 'A',
-    index: '001 / 004',
-    name: 'INFRASTRUCTURE PATHWAYS',
-    titleLine1: 'WHERE CODE',
-    titleLine2: 'MERGES',
-    italicWord: 'with',
-    prefix: '// YOUR',
-    titleLine3: 'INFRASTRUCTURE',
-    description:
-      'Your infrastructure. Your deployments. Your operational visibility — unified into a single high-velocity command plane.',
-    cta: 'EXPLORE PLATFORM',
-    image: '/ops-infrastructure-conduits.jpg',
-  },
-  {
-    key: 'B',
-    index: '002 / 004',
-    name: 'TELEMETRY APERTURE',
-    titleLine1: 'BUILD. OBSERVE.',
-    titleLine2: 'CONVERGE',
-    italicWord: 'into',
-    prefix: '// REALTIME',
-    titleLine3: 'OPERATIONS',
-    description:
-      'From deployment anomalies to live container logs, trace every signal directly to owner and commit context in milliseconds.',
-    cta: 'VIEW OBSERVABILITY',
-    image: '/ops-core-aperture.jpg',
-  },
-  {
-    key: 'C',
-    index: '003 / 004',
-    name: 'DELIVERY MESH',
-    titleLine1: 'SHIP WITH',
-    titleLine2: 'ABSOLUTE',
-    italicWord: 'proven',
-    prefix: '// VERIFIED',
-    titleLine3: 'CONFIDENCE',
-    description:
-      'Automated canary releases, rollback triggers, and multi-cloud Kubernetes deployments with accountable governance.',
-    cta: 'INSPECT RUNTIMES',
-    image: '/ops-infrastructure-conduits.jpg',
-  },
-  {
-    key: 'D',
-    index: '004 / 004',
-    name: 'ZERO-TRUST CONTROL',
-    titleLine1: 'OPERATE AT',
-    titleLine2: 'ENTERPRISE',
-    italicWord: 'without',
-    prefix: '// UNIFIED',
-    titleLine3: 'FRICTION',
-    description:
-      'Role-based access control, cryptographic JWT session boundaries, and audit-ready event logging across all clusters.',
-    cta: 'OPEN DASHBOARD',
-    image: '/ops-core-aperture.jpg',
-  },
 ];
 
 const INTEGRATIONS = [
@@ -102,6 +44,65 @@ const METRICS = [
   ['24/7', 'Realtime Telemetry'],
   ['100%', 'Commit & Owner Context'],
   ['< 1s', 'Live Log Streaming'],
+];
+
+const CAPABILITIES = [
+  {
+    id: 'deployments',
+    number: '01',
+    category: 'DELIVERY / CI-CD',
+    title: 'Ship with context',
+    description: 'Track every release from commit to rollout, with clear ownership and fast rollback paths.',
+    panelTitle: 'PIPELINE EXECUTION',
+    panelMeta: '#8491 · PRODUCTION',
+    rows: [
+      ['SOURCE', 'main · 8f3a2c1'],
+      ['BUILD', 'Passed · 12.2s'],
+      ['ROLLOUT', 'Canary · 100%'],
+    ],
+  },
+  {
+    id: 'infrastructure',
+    number: '02',
+    category: 'RUNTIME / KUBERNETES',
+    title: 'See what is running',
+    description: 'Understand cluster, node, and container health without switching between tools.',
+    panelTitle: 'CLUSTER TOPOLOGY',
+    panelMeta: '2 NODES · 8 PODS',
+    rows: [
+      ['NODE / US-EAST-1A', 'Ready · 14% CPU'],
+      ['NODE / US-EAST-1B', 'Ready · 22% CPU'],
+      ['WORKLOADS', '8 healthy · 0 pending'],
+    ],
+  },
+  {
+    id: 'observability',
+    number: '03',
+    category: 'SIGNALS / LOKI + PROMETHEUS',
+    title: 'Follow every signal',
+    description: 'Connect live logs, metrics, and incidents to the change and service behind them.',
+    panelTitle: 'LIVE SIGNAL STREAM',
+    panelMeta: 'LOKI / DEFAULT',
+    rows: [
+      ['14:02:18 · INFO', 'GET /api/health · 12ms'],
+      ['14:02:19 · INFO', 'Webhook received'],
+      ['14:02:21 · WARN', 'Memory usage at 74%'],
+    ],
+  },
+  {
+    id: 'governance',
+    number: '04',
+    category: 'GOVERNANCE / RBAC',
+    title: 'Operate with confidence',
+    description: 'Keep access clear and operator actions accountable with roles and audit history.',
+    panelTitle: 'AUDIT EVENT',
+    panelMeta: 'VERIFIED SESSION',
+    rows: [
+      ['ACTION', 'USER_LOGIN · SUCCESS'],
+      ['ACTOR', 'admin@opspilot.io'],
+      ['ACCESS', 'ADMIN · JWT verified'],
+    ],
+  },
 ];
 
 const indexStyle = (i: number) => ({ '--i': i }) as React.CSSProperties;
@@ -196,17 +197,21 @@ const Eyebrow: React.FC<{ children: React.ReactNode; dot?: boolean }> = ({ child
 );
 
 export const LandingPage: React.FC = () => {
+  const [activeCapability, setActiveCapability] = useState(0);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeHeroState, setActiveHeroState] = useState(0);
   const [mascotHop, setMascotHop] = useState(0);
   const [ctaHover, setCtaHover] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const currentHero = HERO_STATES[activeHeroState];
+  const mousePosRef = useRef({ x: 0, y: 0 });
 
   const go = (path: string) => {
     setMenuOpen(false);
     navigate(path);
+  };
+
+  const activateNavTarget = (href: string) => {
+    const capabilityIndex = CAPABILITIES.findIndex(({ id }) => href === `#${id}`);
+    if (capabilityIndex >= 0) setActiveCapability(capabilityIndex);
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
@@ -214,7 +219,7 @@ export const LandingPage: React.FC = () => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
-    setMousePos({ x, y });
+    mousePosRef.current = { x, y };
   };
 
   return (
@@ -232,31 +237,36 @@ export const LandingPage: React.FC = () => {
             className="hero-wordmark-brand group"
             aria-label="OpsPilot Home"
           >
-            <span className="hero-wordmark-title">( OPS_PILOT )</span>
-            <span className="hero-wordmark-tag">[ OpsPilot v02.4 / DEV-PLATFORM ]</span>
+            <span className="hero-wordmark-title">OPS<span className="hero-wordmark-divider">/</span>PILOT</span>
+            <span className="hero-wordmark-tag">DEVELOPER PLATFORM</span>
           </button>
 
           <nav className="hero-nav-links" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => (
-              <a key={item.label} href={item.href} className="hero-nav-link">
+              <a
+                key={item.label}
+                href={item.href}
+                className="hero-nav-link"
+                onClick={() => activateNavTarget(item.href)}
+              >
                 <span>{item.label}</span>
-                <span className="text-[0.6rem] opacity-60">↗</span>
+                <ArrowUpRight className="h-3 w-3 opacity-50" aria-hidden="true" />
               </a>
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="hero-nav-actions">
             <button
               type="button"
               onClick={() => go('/login')}
-              className="hero-nav-link hidden sm:inline-flex cursor-pointer"
+              className="hero-nav-link hero-nav-sign-in"
             >
               Sign in
             </button>
             <button
               type="button"
               onClick={() => go('/dashboard')}
-              className="hero-nav-cta hidden sm:inline-flex"
+              className="hero-nav-cta hero-nav-dashboard"
             >
               <span>Open Dashboard</span>
               <ArrowUpRight className="h-3 w-3" />
@@ -264,9 +274,10 @@ export const LandingPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="hero-mobile-toggle md:hidden"
+              className="hero-mobile-toggle"
               aria-label="Toggle navigation"
               aria-expanded={menuOpen}
+              aria-controls="landing-mobile-menu"
             >
               {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
@@ -275,14 +286,17 @@ export const LandingPage: React.FC = () => {
 
         {/* Mobile Drawer Menu */}
         {menuOpen && (
-          <div className="hero-mobile-drawer md:hidden">
+          <div id="landing-mobile-menu" className="hero-mobile-drawer">
             {NAV_ITEMS.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                onClick={() => setMenuOpen(false)}
+                onClick={() => {
+                  activateNavTarget(item.href);
+                  setMenuOpen(false);
+                }}
               >
-                {item.label} ↗
+                {item.label}
               </a>
             ))}
             <button
@@ -290,7 +304,7 @@ export const LandingPage: React.FC = () => {
               onClick={() => go('/dashboard')}
               className="mobile-cta"
             >
-              Open Dashboard ↗
+              Open Dashboard
             </button>
             <button
               type="button"
@@ -318,88 +332,26 @@ export const LandingPage: React.FC = () => {
         {/* Hero Content Stage: Clean 2-Column Responsive Split */}
         <div className="hero-stage-container">
           <div className="hero-split-grid">
-            {/* Left Column: Editorial Headline & Synchronized State Controls */}
+            {/* Single clear platform message */}
             <div className="hero-editorial-column">
-              {/* Micro Technical Index Badge */}
-              <div className="hero-tag-topleft">
-                <span>[ OPS_INDEX // {currentHero.key} ]</span>
-                <span>SYSTEMS CONVERGENCE</span>
-              </div>
-
-              {/* Kicker */}
-              <p className="hero-editorial-kicker">
-                <span className="hero-kicker-dot" />
-                INTERNAL DEVELOPER PLATFORM · {currentHero.name}
-              </p>
-
-              {/* Headline */}
-              <h1 className="hero-headline-title">
-                <span className="hero-headline-word" style={indexStyle(0)}>
-                  {currentHero.titleLine1}
-                </span>
-                <br />
-                <span className="hero-headline-word" style={indexStyle(1)}>
-                  {currentHero.titleLine2}
-                </span>
-                <br />
-                <span className="hero-headline-italic" style={indexStyle(2)}>
-                  {currentHero.italicWord}
-                </span>
-                <span className="hero-headline-word" style={indexStyle(3)}>
-                  <span className="hero-headline-slash">{currentHero.prefix}</span>
-                </span>
-                <br />
-                <span className="hero-headline-word" style={indexStyle(4)}>
-                  {currentHero.titleLine3}
-                </span>
+              <h1 className="hero-single-headline">
+                <span>OpsPilot connects</span>
+                <span>code, deployments,</span>
+                <span className="hero-single-headline-accent">and runtime signals.</span>
               </h1>
-
-              {/* Editorial Description */}
-              <p className="hero-editorial-desc">
-                {currentHero.description}
+              <p className="hero-support-copy">
+                See the infrastructure health, logs, and metrics behind every release.
               </p>
-
-              {/* Interactive State Switcher Tabs */}
-              <div className="hero-state-bar">
-                <div className="hero-state-toggle-group">
-                  {HERO_STATES.map((state, i) => (
-                    <button
-                      key={state.key}
-                      type="button"
-                      onClick={() => setActiveHeroState(i)}
-                      className={`hero-state-tab ${activeHeroState === i ? 'is-active' : ''}`}
-                      aria-label={`Switch to state ${state.key}`}
-                    >
-                      ( {state.key} )
-                    </button>
-                  ))}
-                </div>
-                <span className="hero-state-index">[ {currentHero.index} ]</span>
-              </div>
-
-              {/* Action Buttons & Telemetry Indicator */}
-              <div className="hero-action-row">
-                <button
-                  type="button"
-                  onClick={() => go('/dashboard')}
-                  className="hero-primary-cta"
-                >
-                  <span>{currentHero.cta}</span>
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </button>
-                <div className="hero-telemetry-badge">
-                  <span className="hero-badge-pulse" />
-                  <span>ALL SYSTEMS SYNCED</span>
-                </div>
-              </div>
+              <a href="#platform" className="hero-primary-cta">
+                <span>Explore platform</span>
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </a>
             </div>
-
             {/* Right Column: Dedicated Interactive 3D Infrastructure Hologram */}
             <div className="hero-mesh-stage">
-              <Infrastructure3DCore
-                activeState={activeHeroState}
-                mousePos={mousePos}
-              />
+              <React.Suspense fallback={<div className="hero-orb-loading" aria-hidden="true" />}>
+                <Infrastructure3DCore activeState={0} mousePosRef={mousePosRef} />
+              </React.Suspense>
             </div>
           </div>
 
@@ -474,7 +426,7 @@ export const LandingPage: React.FC = () => {
 
       <main className="studio-section bg-white text-black">
         {/* =========================================================================
-            FOUR EDITORIAL CAPABILITY AREAS (STUDIO GLASS SLATES)
+            CONNECTED PLATFORM CAPABILITY MAP
            ========================================================================= */}
         <section id="platform" className="landing-capabilities mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
           <Reveal className="capabilities-intro max-w-3xl">
@@ -489,168 +441,59 @@ export const LandingPage: React.FC = () => {
             </p>
           </Reveal>
 
-          {/* 4 Feature Areas Layout */}
-          <div className="mt-16 grid gap-8 md:grid-cols-2">
-            {/* 1. Deployment Management */}
-            <Reveal index={1}>
-              <article id="deployments" className="editorial-card flex h-full flex-col p-8 sm:p-10 bg-white border border-black/10 text-black">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-black/15 bg-white text-black shadow-xs">
-                    <Rocket className="h-5 w-5 text-black" />
-                  </span>
-                  <span className="editorial-tag-chip">[ 01 // CI/CD ]</span>
-                </div>
-                <h3 className="mt-6 text-2xl font-bold tracking-tight text-black">
-                  Deployment Management
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-black">
-                  Trigger, monitor, and govern releases from GitHub repositories to production clusters. Trace exact commit
-                  hashes, version tags, build duration, and trigger one-click instant rollbacks when health indicators degrade.
-                </p>
-
-                {/* Technical Interactive Visual */}
-                <div className="mt-8 landing-preview-panel rounded-2xl p-4.5 font-tech-mono bg-white border border-black/10">
-                  <div className="flex items-center justify-between text-[11px] text-black mb-3">
-                    <span className="font-semibold tracking-wide">PIPELINE EXECUTION #8491</span>
-                    <span className="font-bold text-black flex items-center gap-1.5">
-                      <span className="h-1.5 w-1.5 rounded-full bg-black animate-pulse" />
-                      CANARY ROLLOUT 100%
+          <div className="capability-map mt-16 grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
+            <Reveal index={1} className="capability-list-wrap">
+              <div className="capability-list" role="group" aria-label="Platform capabilities">
+                {CAPABILITIES.map((capability, index) => (
+                  <button
+                    key={capability.number}
+                    id={capability.id}
+                    type="button"
+                    aria-pressed={activeCapability === index}
+                    aria-controls="capability-preview"
+                    className={`capability-item${activeCapability === index ? ' is-active' : ''}`}
+                    onClick={() => setActiveCapability(index)}
+                  >
+                    <span className="capability-number">{capability.number}</span>
+                    <span className="capability-copy">
+                      <span className="capability-category">{capability.category}</span>
+                      <span className="capability-title">{capability.title}</span>
+                      <span className="capability-description">{capability.description}</span>
                     </span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                    <div className="rounded-lg bg-white border border-black/10 p-2.5 shadow-2xs">
-                      <span className="text-[9px] uppercase text-black block font-semibold">Lint</span>
-                      <span className="font-bold text-black">0.4s ✓</span>
-                    </div>
-                    <div className="rounded-lg bg-white border border-black/10 p-2.5 shadow-2xs">
-                      <span className="text-[9px] uppercase text-black block font-semibold">Test</span>
-                      <span className="font-bold text-black">1.8s ✓</span>
-                    </div>
-                    <div className="rounded-lg bg-white border border-black/10 p-2.5 shadow-2xs">
-                      <span className="text-[9px] uppercase text-black block font-semibold">Build</span>
-                      <span className="font-bold text-black">12.2s ✓</span>
-                    </div>
-                    <div className="rounded-lg border border-black bg-black text-white p-2.5">
-                      <span className="text-[9px] uppercase text-white/80 block font-semibold">Deploy</span>
-                      <span className="font-bold text-white">Live ●</span>
-                    </div>
-                  </div>
-                </div>
-              </article>
+                    <ArrowUpRight className="capability-arrow" aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
             </Reveal>
 
-            {/* 2. Infrastructure Visibility */}
             <Reveal index={2}>
-              <article id="infrastructure" className="editorial-card flex h-full flex-col p-8 sm:p-10 bg-white border border-black/10 text-black">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-black/15 bg-white text-black shadow-xs">
-                    <Cpu className="h-5 w-5 text-black" />
-                  </span>
-                  <span className="editorial-tag-chip">[ 02 // K8S & DOCKER ]</span>
+              <div id="capability-preview" className="capability-preview" role="region" aria-live="polite" aria-labelledby={CAPABILITIES[activeCapability].id}>
+                <div className="capability-preview-topline">
+                  <span className="capability-preview-brand"><span className="capability-live-dot" /> OPSPILOT / CONTROL PLANE</span>
+                  <span className="capability-preview-index">{CAPABILITIES[activeCapability].number} / 04</span>
                 </div>
-                <h3 className="mt-6 text-2xl font-bold tracking-tight text-black">
-                  Infrastructure Visibility
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-black">
-                  Inspect Kubernetes clusters, worker nodes, namespaces, and Docker daemon state in real-time. Verify container
-                  uptime, CPU/memory limits, restarting pods, and ingress routing without switching context.
-                </p>
-
-                {/* Technical Cluster Status Preview */}
-                <div className="mt-8 landing-preview-panel rounded-2xl p-4.5 font-tech-mono bg-white border border-black/10">
-                  <div className="flex items-center justify-between text-[11px] text-black mb-3">
-                    <span className="font-semibold tracking-wide">KUBERNETES TOPOLOGY</span>
-                    <span className="text-black font-bold">2 NODES · 8 PODS</span>
+                <div className="capability-preview-heading">
+                  <div>
+                    <span className="capability-preview-label">{CAPABILITIES[activeCapability].category}</span>
+                    <h3>{CAPABILITIES[activeCapability].panelTitle}</h3>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between rounded-lg bg-white border border-black/10 px-3.5 py-2.5 text-xs shadow-2xs">
-                      <span className="flex items-center gap-2 font-bold text-black">
-                        <span className="h-2 w-2 rounded-full bg-black" />
-                        ip-10-0-1-92.ec2.internal
-                      </span>
-                      <span className="text-[11px] text-black font-semibold">Ready · 14% CPU</span>
+                  <span className="capability-preview-meta">{CAPABILITIES[activeCapability].panelMeta}</span>
+                </div>
+                <div className="capability-preview-rows">
+                  {CAPABILITIES[activeCapability].rows.map(([label, value], index) => (
+                    <div className="capability-preview-row" key={label}>
+                      <span className="capability-row-index">0{index + 1}</span>
+                      <span className="capability-row-label">{label}</span>
+                      <span className="capability-row-value">{value}</span>
+                      <span className="capability-row-status" aria-label="Healthy">OK</span>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg bg-white border border-black/10 px-3.5 py-2.5 text-xs shadow-2xs">
-                      <span className="flex items-center gap-2 font-bold text-black">
-                        <span className="h-2 w-2 rounded-full bg-black" />
-                        ip-10-0-2-14.ec2.internal
-                      </span>
-                      <span className="text-[11px] text-black font-semibold">Ready · 22% CPU</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              </article>
-            </Reveal>
-
-            {/* 3. Logs and Monitoring */}
-            <Reveal index={3}>
-              <article id="observability" className="editorial-card flex h-full flex-col p-8 sm:p-10 bg-white border border-black/10 text-black">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-black/15 bg-white text-black shadow-xs">
-                    <Terminal className="h-5 w-5 text-black" />
-                  </span>
-                  <span className="editorial-tag-chip">[ 03 // LOKI & PROMETHEUS ]</span>
+                <div className="capability-preview-footer">
+                  <span>PROJECT / CHECKOUT-SERVICE</span>
+                  <span>ALL SYSTEMS NOMINAL <span className="capability-live-dot" /></span>
                 </div>
-                <h3 className="mt-6 text-2xl font-bold tracking-tight text-black">
-                  Logs &amp; Monitoring
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-black">
-                  Stream high-frequency stdout and stderr logs via Loki with sub-second latency. Search across projects with level
-                  filters, inspect Prometheus uptime probes, and correlate spike trends during active incidents.
-                </p>
-
-                {/* Live Log Stream Preview */}
-                <div className="mt-8 rounded-2xl border border-black/10 bg-white p-4.5 font-tech-mono text-[11px] text-black shadow-sm">
-                  <div className="mb-2.5 flex items-center justify-between border-b border-black/10 pb-2 text-[10px] text-black">
-                    <span className="flex items-center gap-1.5 text-black font-bold">
-                      <span className="h-1.5 w-1.5 rounded-full bg-black animate-pulse" />
-                      LIVE BUFFER STREAMING
-                    </span>
-                    <span className="text-black font-semibold">LOKI // DEFAULT</span>
-                  </div>
-                  <div className="space-y-1.5 text-black">
-                    <p><span className="text-black/60">14:02:18</span> <span className="font-bold text-black">INFO</span> [core-service] HTTP 200 GET /api/v1/health (12ms)</p>
-                    <p><span className="text-black/60">14:02:19</span> <span className="font-bold text-black">INFO</span> [ci-cd] Webhook received from github.com/opspilot</p>
-                    <p><span className="text-black/60">14:02:21</span> <span className="font-bold text-black">WARN</span> [k8s-agent] Memory usage reached 74% limit</p>
-                  </div>
-                </div>
-              </article>
-            </Reveal>
-
-            {/* 4. Operational Insights & Governance */}
-            <Reveal index={4}>
-              <article className="editorial-card flex h-full flex-col p-8 sm:p-10 bg-white border border-black/10 text-black">
-                <div className="flex items-center justify-between">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl border border-black/15 bg-white text-black shadow-xs">
-                    <ShieldCheck className="h-5 w-5 text-black" />
-                  </span>
-                  <span className="editorial-tag-chip">[ 04 // AUDIT & RBAC ]</span>
-                </div>
-                <h3 className="mt-6 text-2xl font-bold tracking-tight text-black">
-                  Operational Insights
-                </h3>
-                <p className="mt-3 text-sm leading-relaxed text-black">
-                  Maintain complete auditability with tracked operator actions, login sessions, project deletions, and RBAC role
-                  enforcements (DEVELOPER, DEVOPS, ADMIN). Surface actionable diagnosis without hallucinated metrics.
-                </p>
-
-                {/* Audit Event Preview */}
-                <div className="mt-8 landing-preview-panel rounded-2xl p-4.5 font-tech-mono bg-white border border-black/10">
-                  <div className="flex items-center justify-between text-[11px] text-black mb-3">
-                    <span className="font-semibold tracking-wide">SECURITY &amp; AUDIT LOG</span>
-                    <span className="text-black font-bold">ROLE: ADMIN</span>
-                  </div>
-                  <div className="rounded-lg bg-white border border-black/10 p-3.5 text-xs shadow-2xs">
-                    <div className="flex items-center justify-between font-bold text-black mb-1">
-                      <span>USER_LOGIN // SUCCESS</span>
-                      <span className="text-[10px] text-black bg-black/5 border border-black/15 px-2 py-0.5 rounded-full font-bold">VERIFIED JWT</span>
-                    </div>
-                    <p className="text-[11px] text-black leading-normal">
-                      admin@opspilot.io authenticated with multi-role permissions. Audit event recorded to database log.
-                    </p>
-                  </div>
-                </div>
-              </article>
+              </div>
             </Reveal>
           </div>
         </section>

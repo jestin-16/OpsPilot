@@ -18,6 +18,9 @@ public class KubernetesClientConfig {
 
     private static final Logger log = LoggerFactory.getLogger(KubernetesClientConfig.class);
 
+    @Value("${kubernetes.enabled:false}")
+    private boolean enabled;
+
     @Value("${kubernetes.master-url:}")
     private String masterUrl;
 
@@ -27,6 +30,14 @@ public class KubernetesClientConfig {
     @Bean
     @ConditionalOnMissingBean
     public ApiClient kubernetesApiClient() {
+        if (!enabled) {
+            log.info("Kubernetes integration is disabled in log-watcher-service.");
+            ApiClient client = new ApiClient();
+            client.setBasePath("unconfigured://kubernetes");
+            Configuration.setDefaultApiClient(client);
+            return client;
+        }
+
         ApiClient client;
         File serviceAccountDir = new File("/var/run/secrets/kubernetes.io/serviceaccount");
 

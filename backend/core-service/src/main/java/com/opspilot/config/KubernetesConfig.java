@@ -15,6 +15,9 @@ public class KubernetesConfig {
 
     private static final Logger log = LoggerFactory.getLogger(KubernetesConfig.class);
 
+    @Value("${kubernetes.enabled:true}")
+    private boolean enabled;
+
     @Value("${kubernetes.master-url:}")
     private String masterUrl;
 
@@ -23,6 +26,11 @@ public class KubernetesConfig {
 
     @Bean
     public ApiClient kubernetesApiClient() {
+        if (!enabled) {
+            log.info("Kubernetes integration is disabled via configuration.");
+            return null;
+        }
+
         ApiClient client = null;
         File serviceAccountDir = new File("/var/run/secrets/kubernetes.io/serviceaccount");
 

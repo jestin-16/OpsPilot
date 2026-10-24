@@ -78,6 +78,7 @@ public class JwtTokenProvider {
                     .parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            org.slf4j.LoggerFactory.getLogger(JwtTokenProvider.class).error("validateToken failed: " + e.getMessage(), e);
             return false;
         }
     }

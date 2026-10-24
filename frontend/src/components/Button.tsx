@@ -18,11 +18,11 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-semibold rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-op-accent focus:ring-offset-2 focus:ring-offset-op-bg disabled:opacity-50 disabled:cursor-not-allowed py-2.5 px-4 cursor-pointer';
+    'inline-flex items-center justify-center font-semibold rounded-full text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-op-accent focus-visible:ring-offset-2 focus-visible:ring-offset-op-bg disabled:opacity-50 disabled:cursor-not-allowed py-2.5 px-4 cursor-pointer';
 
   const variants = {
     primary:
-      'bg-op-accent text-op-accent-fg font-bold hover:bg-op-accent-hover active:bg-op-accent-active border border-transparent shadow-md',
+      'bg-op-accent text-op-accent-fg font-semibold hover:bg-op-accent-hover active:bg-op-accent-active border border-transparent shadow-none',
     secondary:
       'bg-op-surface text-op-fg border border-op-border hover:bg-op-raised hover:border-op-accent/50 active:bg-op-surface',
     ghost:

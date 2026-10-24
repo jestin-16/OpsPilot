@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Eye,
   EyeOff,
+  ArrowUpRight,
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { AuthMascot, type MascotCover, type MascotMood } from '../components/AuthMascot';
@@ -24,35 +25,26 @@ type FieldName = 'name' | 'email' | 'password' | 'confirm';
 
 const COPY: Record<Mode, {
   badge: string;
-  line1: string;
-  italicWord: string;
-  prefix: string;
-  line2: string;
+  titleLines: [string, string, string];
   blurb: string;
   features: { tag: string; title: string; caption: string }[];
 }> = {
   login: {
     badge: 'Platform Access',
-    line1: 'SIGN IN',
-    italicWord: 'with',
-    prefix: '// YOUR',
-    line2: 'WORKSPACE',
-    blurb: 'Access your autonomous operations command center and govern your infrastructure effortlessly.',
+    titleLines: ['Welcome back', 'to your', 'workspace.'],
+    blurb: 'Sign in to manage deployments, infrastructure, and service health in your workspace.',
     features: [
-      { tag: '01', title: 'Single Sign-On', caption: 'Enterprise Ready JWT' },
-      { tag: '02', title: 'Zero Trust', caption: 'RBAC Security Model' },
+      { tag: '01', title: 'Deployment context', caption: 'Every release tied to its service' },
+      { tag: '02', title: 'Operational visibility', caption: 'Logs, metrics, and service health' },
     ],
   },
   signup: {
     badge: 'Platform Registration',
-    line1: 'CREATE',
-    italicWord: 'with',
-    prefix: '// VERIFIED',
-    line2: 'ACCOUNT',
-    blurb: 'Deploy, observe, and diagnose with autonomous intelligence. Join the unified operational workspace.',
+    titleLines: ['Bring your team', 'into one', 'workspace.'],
+    blurb: 'Create an OpsPilot workspace for deployments, infrastructure, and shared operational visibility.',
     features: [
-      { tag: '01', title: 'Instant Setup', caption: 'Ready in seconds' },
-      { tag: '02', title: 'Team Ready', caption: 'Role-Based Access' },
+      { tag: '01', title: 'One shared view', caption: 'Projects, releases, and runtime' },
+      { tag: '02', title: 'Clear access', caption: 'Choose a role for your workspace' },
     ],
   },
 };
@@ -65,19 +57,24 @@ const DEMO_ACCOUNTS = [
 
 const indexStyle = (i: number) => ({ '--i': i }) as React.CSSProperties;
 
-const Field: React.FC<{ icon: React.ReactNode; index: number; children: React.ReactNode }> = ({
+const Field: React.FC<{ icon: React.ReactNode; index: number; children: React.ReactNode; error?: string; errorId: string }> = ({
   icon,
   index,
   children,
+  error,
+  errorId,
 }) => (
-  <div style={indexStyle(index)} className="auth-field">
-    <div className="pl-2 text-gray-500">{icon}</div>
-    {children}
+  <div className="auth-field-group">
+    <div style={indexStyle(index)} className={`auth-field${error ? ' auth-field--invalid' : ''}`}>
+      <div className="pl-2 text-gray-500">{icon}</div>
+      {children}
+    </div>
+    {error && <p id={errorId} className="auth-field-error" role="status" aria-live="polite">{error}</p>}
   </div>
 );
 
 const inputClass =
-  'w-full bg-transparent px-3 py-2 text-xs font-tech-mono font-medium text-black placeholder-gray-500 focus:outline-none';
+  'w-full bg-transparent px-3 py-2.5 text-sm font-medium text-black placeholder-gray-500 focus:outline-none';
 
 const RevealButton: React.FC<{ shown: boolean; onToggle: () => void }> = ({ shown, onToggle }) => (
   <button
@@ -109,6 +106,7 @@ export const AuthPage: React.FC = () => {
   const [oops, setOops] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState<FieldName | null>(null);
+  const [editedFields, setEditedFields] = useState<Partial<Record<FieldName, boolean>>>({});
 
   // Google Login State
   const [showRoleSelection, setShowRoleSelection] = useState(false);
@@ -121,6 +119,7 @@ export const AuthPage: React.FC = () => {
     prevMode.current = mode;
     setError('');
     setFocused(null);
+    setEditedFields({});
   }, [mode]);
 
   const loginPanelRef = useRef<HTMLDivElement>(null);
@@ -155,6 +154,11 @@ export const AuthPage: React.FC = () => {
     setErrorTick((n) => n + 1);
   };
 
+  const markFieldEdited = (field: FieldName) => {
+    setEditedFields((current) => ({ ...current, [field]: true }));
+    setError('');
+  };
+
   const switchMode = (next: Mode) => {
     if (next !== mode) navigate(next === 'login' ? '/login' : '/signup');
   };
@@ -165,7 +169,8 @@ export const AuthPage: React.FC = () => {
 
     const validation = LoginSchema.safeParse({ email, password });
     if (!validation.success) {
-      fail(validation.error.issues[0]?.message ?? 'Please check your email and password');
+      setEditedFields({ email: true, password: true });
+      setError('');
       return;
     }
 
@@ -187,7 +192,8 @@ export const AuthPage: React.FC = () => {
 
     const validation = SignupSchema.safeParse({ name, email, password, confirmPassword, role });
     if (!validation.success) {
-      fail(validation.error.issues[0]?.message ?? 'Please check the form and try again');
+      setEditedFields({ name: true, email: true, password: true, confirm: true });
+      setError('');
       return;
     }
 
@@ -248,11 +254,47 @@ export const AuthPage: React.FC = () => {
 
   const focusProps = (field: FieldName) => ({
     onFocus: () => setFocused(field),
-    onBlur: () => setFocused((current) => (current === field ? null : current)),
+    onBlur: () => {
+      setFocused((current) => (current === field ? null : current));
+      markFieldEdited(field);
+    },
   });
 
+  const getFieldError = (field: FieldName): string | undefined => {
+    if (!editedFields[field]) return undefined;
+    if (field === 'confirm') {
+      if (!confirmPassword) return 'Please confirm your password';
+      return confirmPassword !== password ? 'Passwords do not match' : undefined;
+    }
+
+    if (mode === 'login') {
+      const validation = LoginSchema.safeParse({
+        email: field === 'email' ? email : 'validation@opspilot.io',
+        password: field === 'password' ? password : 'ValidPass123!',
+      });
+      return validation.success ? undefined : validation.error.issues[0]?.message;
+    }
+
+    const candidatePassword = field === 'password' ? password : 'ValidPass123!';
+    const validation = SignupSchema.safeParse({
+      name: field === 'name' ? name : 'OpsPilot User',
+      email: field === 'email' ? email : 'validation@opspilot.io',
+      password: candidatePassword,
+      confirmPassword: candidatePassword,
+      role,
+    });
+    return validation.success ? undefined : validation.error.issues[0]?.message;
+  };
+
+  const fieldErrors = {
+    name: mode === 'signup' ? getFieldError('name') : undefined,
+    email: getFieldError('email'),
+    password: getFieldError('password'),
+    confirm: mode === 'signup' ? getFieldError('confirm') : undefined,
+  };
+
   return (
-    <div className="auth-root selection:bg-[#181417] selection:text-white">
+    <div className="auth-root selection:bg-black selection:text-white">
       {/* Subtle organic noise grain */}
       <div className="auth-film-grain" aria-hidden="true" />
 
@@ -265,14 +307,11 @@ export const AuthPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-left bg-none border-none p-0 cursor-pointer"
+            className="auth-brand-home"
+            aria-label="OpsPilot home"
           >
-            <span className="font-tech-mono text-sm font-bold tracking-tight text-black">
-              ( OPS_PILOT )
-            </span>
-            <span className="font-tech-mono text-[10px] font-semibold text-gray-700 hidden sm:inline">
-              [ v02.4 / AUTH-GATEWAY ]
-            </span>
+            <span className="auth-wordmark">OPS<span>/</span>PILOT</span>
+            <span className="auth-wordmark-tag">DEVELOPER PLATFORM</span>
           </button>
 
           <div className="flex items-center gap-3">
@@ -287,7 +326,7 @@ export const AuthPage: React.FC = () => {
               className="auth-mode-pill"
             >
               <span>{mode === 'login' ? 'Get Started Free' : 'Sign In'}</span>
-              <span className="text-[10px] opacity-70">↗</span>
+              <ArrowUpRight className="h-3 w-3" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -299,19 +338,14 @@ export const AuthPage: React.FC = () => {
           {/* Left Column: Editorial Brand & Context */}
           <div className="auth-brand-col">
             <div className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/80 backdrop-blur-md px-3.5 py-1 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-gray-800 shadow-2xs">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.7)]" />
+              <span className="auth-badge-dot" />
               <span>{copy.badge}</span>
             </div>
 
-            <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-tight leading-[0.92] text-black">
-              <span>{copy.line1}</span>
-              <br />
-              <span className="font-editorial-italic font-normal lowercase tracking-normal text-gray-800 pr-2">
-                {copy.italicWord}
-              </span>
-              <span className="text-amber-600 font-tech-mono">{copy.prefix}</span>
-              <br />
-              <span>{copy.line2}</span>
+            <h1 className="auth-brand-title">
+              <span>{copy.titleLines[0]}</span>
+              <span className="auth-brand-title-accent">{copy.titleLines[1]}</span>
+              <span>{copy.titleLines[2]}</span>
             </h1>
 
             <p className="mt-5 max-w-md text-sm leading-relaxed text-gray-700 font-normal">
@@ -395,27 +429,33 @@ export const AuthPage: React.FC = () => {
                     className="auth-panel auth-panel--login"
                   >
                     <form onSubmit={handleLogin} className="space-y-3.5">
-                      <Field icon={<Mail className="h-4 w-4" />} index={1}>
+                      <Field icon={<Mail className="h-4 w-4" />} index={1} error={mode === 'login' ? fieldErrors.email : undefined} errorId="email-login-error">
                         <input
+                          id="email-login"
                           type="email"
                           placeholder="Work Email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => { setEmail(e.target.value); markFieldEdited('email'); }}
                           {...focusProps('email')}
                           className={inputClass}
+                          aria-invalid={Boolean(mode === 'login' && fieldErrors.email)}
+                          aria-describedby={mode === 'login' && fieldErrors.email ? 'email-login-error' : undefined}
                           required
                         />
                       </Field>
 
                       <div className="relative">
-                        <Field icon={<Lock className="h-4 w-4" />} index={2}>
+                        <Field icon={<Lock className="h-4 w-4" />} index={2} error={mode === 'login' ? fieldErrors.password : undefined} errorId="password-login-error">
                           <input
+                            id="password-login"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => { setPassword(e.target.value); markFieldEdited('password'); }}
                             {...focusProps('password')}
                             className={inputClass}
+                            aria-invalid={Boolean(mode === 'login' && fieldErrors.password)}
+                            aria-describedby={mode === 'login' && fieldErrors.password ? 'password-login-error' : undefined}
                             required
                           />
                         </Field>
@@ -431,8 +471,11 @@ export const AuthPage: React.FC = () => {
                         className="auth-submit-btn mt-4"
                       >
                         <span>{loading ? 'Authenticating...' : 'Sign In'}</span>
-                        <ArrowRight className="h-3.5 w-3.5 text-amber-400" />
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </button>
+                      <p className="auth-inline-switch">
+                        New to OpsPilot? <Link to="/signup">Register</Link>
+                      </p>
                     </form>
                   </div>
 
@@ -443,39 +486,48 @@ export const AuthPage: React.FC = () => {
                     className="auth-panel auth-panel--signup"
                   >
                     <form onSubmit={handleSignup} className="space-y-3">
-                      <Field icon={<UserIcon className="h-4 w-4" />} index={1}>
+                      <Field icon={<UserIcon className="h-4 w-4" />} index={1} error={fieldErrors.name} errorId="signup-name-error">
                         <input
+                          id="signup-name"
                           type="text"
                           placeholder="Full Name"
                           value={name}
-                          onChange={(e) => setName(e.target.value)}
+                          onChange={(e) => { setName(e.target.value); markFieldEdited('name'); }}
                           {...focusProps('name')}
                           className={inputClass}
+                          aria-invalid={Boolean(fieldErrors.name)}
+                          aria-describedby={fieldErrors.name ? 'signup-name-error' : undefined}
                           required
                         />
                       </Field>
 
-                      <Field icon={<Mail className="h-4 w-4" />} index={2}>
+                      <Field icon={<Mail className="h-4 w-4" />} index={2} error={mode === 'signup' ? fieldErrors.email : undefined} errorId="email-signup-error">
                         <input
+                          id="email-signup"
                           type="email"
                           placeholder="Work Email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => { setEmail(e.target.value); markFieldEdited('email'); }}
                           {...focusProps('email')}
                           className={inputClass}
+                          aria-invalid={Boolean(mode === 'signup' && fieldErrors.email)}
+                          aria-describedby={mode === 'signup' && fieldErrors.email ? 'email-signup-error' : undefined}
                           required
                         />
                       </Field>
 
                       <div className="relative">
-                        <Field icon={<Lock className="h-4 w-4" />} index={3}>
+                        <Field icon={<Lock className="h-4 w-4" />} index={3} error={mode === 'signup' ? fieldErrors.password : undefined} errorId="password-signup-error">
                           <input
+                            id="password-signup"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={(e) => { setPassword(e.target.value); markFieldEdited('password'); }}
                             {...focusProps('password')}
                             className={inputClass}
+                            aria-invalid={Boolean(mode === 'signup' && fieldErrors.password)}
+                            aria-describedby={mode === 'signup' && fieldErrors.password ? 'password-signup-error' : undefined}
                             required
                           />
                         </Field>
@@ -486,14 +538,18 @@ export const AuthPage: React.FC = () => {
                       </div>
 
                       <div className="relative">
-                        <Field icon={<Lock className="h-4 w-4" />} index={4}>
+                        <Field icon={<Lock className="h-4 w-4" />} index={4} error={fieldErrors.confirm} errorId="signup-confirm-error">
                           <input
+                            id="signup-confirm"
                             type={showConfirmPassword ? 'text' : 'password'}
                             placeholder="Confirm"
+                            aria-label="Confirm password"
                             value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            onChange={(e) => { setConfirmPassword(e.target.value); markFieldEdited('confirm'); }}
                             {...focusProps('confirm')}
                             className={inputClass}
+                            aria-invalid={Boolean(fieldErrors.confirm)}
+                            aria-describedby={fieldErrors.confirm ? 'signup-confirm-error' : undefined}
                             required
                           />
                         </Field>
@@ -523,8 +579,11 @@ export const AuthPage: React.FC = () => {
                         className="auth-submit-btn mt-3"
                       >
                         <span>{loading ? 'Creating...' : 'Create Account'}</span>
-                        <ArrowRight className="h-3.5 w-3.5 text-amber-400" />
+                        <ArrowRight className="h-3.5 w-3.5" />
                       </button>
+                      <p className="auth-inline-switch">
+                        Already registered? <Link to="/login">Sign in</Link>
+                      </p>
                     </form>
                   </div>
                 </div>

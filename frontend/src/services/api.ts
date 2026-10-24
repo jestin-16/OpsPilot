@@ -310,6 +310,7 @@ export interface KubernetesSummaryResponse {
 
 export interface KubernetesClusterOverview {
   status: 'Healthy' | 'Disconnected' | string;
+  message?: string;
   nodeCount: number;
   podCount: number;
   runningPods: number;
@@ -1064,6 +1065,11 @@ export const api = {
     return res.data;
   },
 
+  getWatcherStatus: async (): Promise<WatcherStatus> => {
+    const res = await axiosInstance.get<WatcherStatus>('/health/watcher');
+    return res.data;
+  },
+
   getWatcherStreamUrl: (namespace: string, pod: string, container?: string, tail: number = 100): string => {
     const token = localStorage.getItem('opspilot_token') || '';
     const base = API_BASE_URL.endsWith('/api/v1') 
@@ -1119,6 +1125,14 @@ export interface ClusterHealthSummary {
   oomKilledPods: CrashLoopPod[];
   windowMinutes: number;
   totalLogLinesAnalyzed: number;
+}
+
+export interface WatcherStatus {
+  connected: boolean;
+  message: string;
+  lastConnectedAt: string | null;
+  namespace: string;
+  enabled?: boolean;
 }
 
 export interface ParsedWatcherLogLine {

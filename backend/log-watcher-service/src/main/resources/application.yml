@@ -8,6 +8,7 @@ spring:
     name: log-watcher-service
 
 kubernetes:
+  enabled: ${KUBERNETES_ENABLED:true}
   watch-namespace: ${WATCH_NAMESPACE:default}
   watch-label-selector: ${WATCH_LABEL_SELECTOR:}
   master-url: ${KUBERNETES_MASTER:}

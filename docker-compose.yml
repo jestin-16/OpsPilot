@@ -30,7 +30,7 @@ services:
       args: { SERVICE: service-registry, PORT: "8761" }
     container_name: opspilot-service-registry
     environment:
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
     ports:
       - "127.0.0.1:8761:8761"
     healthcheck:
@@ -57,7 +57,7 @@ services:
       service-registry:
         condition: service_healthy
     environment:
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
@@ -95,7 +95,7 @@ services:
     extra_hosts:
       - "kubernetes:host-gateway"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
       - KUBERNETES_LOOPBACK_HOST=${KUBERNETES_LOOPBACK_HOST:-kubernetes}
       - KUBERNETES_MASTER=${KUBERNETES_MASTER:-}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
@@ -131,10 +131,14 @@ services:
         condition: service_healthy
       loki:
         condition: service_started
+    volumes:
+      - ~/.kube:/home/opspilot/.kube:ro
     extra_hosts:
       - "kubernetes:host-gateway"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
+      - KUBERNETES_LOOPBACK_HOST=${KUBERNETES_LOOPBACK_HOST:-kubernetes}
+      - KUBERNETES_MASTER=${KUBERNETES_MASTER:-}
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
       - SPRING_DATASOURCE_USERNAME=opspilot
       - SPRING_DATASOURCE_PASSWORD=opspilot
@@ -142,6 +146,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
+      - KUBERNETES_ENABLED=${KUBERNETES_ENABLED:-true}
       - PROMETHEUS_URL=http://prometheus:9090
       - LOKI_ENABLED=${LOKI_ENABLED:-true}
       - LOKI_URL=${LOKI_URL:-http://loki:3100}
@@ -167,6 +172,8 @@ services:
     extra_hosts:
       - "kubernetes:host-gateway"
     environment:
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Djava.net.preferIPv4Stack=true
+      - KUBERNETES_ENABLED=${KUBERNETES_ENABLED:-true}
       - KUBERNETES_LOOPBACK_HOST=${KUBERNETES_LOOPBACK_HOST:-kubernetes}
       - KUBERNETES_MASTER=${KUBERNETES_MASTER:-}
       - SERVER_PORT=8084
@@ -177,7 +184,6 @@ services:
       - LOG_MASKING_ENABLED=${LOG_MASKING_ENABLED:-true}
       - AUTH_ENABLED=${AUTH_ENABLED:-true}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
-      - JAVA_OPTS=-Xms64m -Xmx192m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError
 
   api-gateway:
     build:
@@ -185,7 +191,7 @@ services:
       args: { SERVICE: api-gateway, PORT: "8080" }
     container_name: opspilot-api-gateway
     environment:
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC
+      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
     ports:
       - "8080:8080"

@@ -31,8 +31,11 @@ public class KubernetesService {
         overview.put("podCount", 0);
         overview.put("runningPods", 0);
         overview.put("failedPods", 0);
+        overview.put("message", "Kubernetes cluster is not connected.");
 
         if (apiClient == null) {
+            overview.put("status", "Disabled");
+            overview.put("message", "Kubernetes integration is disabled. Set KUBERNETES_ENABLED=true in .env to connect to a cluster.");
             return overview;
         }
         try {
@@ -58,9 +61,11 @@ public class KubernetesService {
             overview.put("podCount", podCount);
             overview.put("runningPods", runningPods);
             overview.put("failedPods", failedPods);
+            overview.put("message", "Kubernetes cluster is connected and healthy.");
         } catch (Exception e) {
             log.warn("Failed to reach Kubernetes cluster for overview: {}", e.getMessage());
             overview.put("status", "Disconnected");
+            overview.put("message", "Kubernetes API is unreachable: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
             overview.put("nodeCount", 0);
             overview.put("podCount", 0);
             overview.put("runningPods", 0);

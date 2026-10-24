@@ -17,7 +17,9 @@ import {
   AlertTriangle,
   Settings,
   GitBranch,
-  Layers
+  Layers,
+  Menu,
+  X,
 } from 'lucide-react';
 import { canAccessRole } from '../utils/roles';
 import { useProject } from '../context/ProjectContext';
@@ -48,6 +50,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
   const location = useLocation();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { currentProject, currentProjectId, selectProject } = useProject();
   const { data: projectIntegrations = [] } = useProjectIntegrations(currentProjectId, false);
   const pid = currentProjectId;
@@ -61,6 +64,10 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       // The badge is best-effort; the notifications page shows errors.
     }
   };
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     fetchUnreadCount();
@@ -112,11 +119,16 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       ]
     },
     {
-      title: 'INFRASTRUCTURE',
+      title: 'KUBERNETES',
       items: [
-        { name: 'Kubernetes', path: '/kubernetes', icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-        { name: 'Docker Containers', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-        { name: 'Pod Logs', path: '/kubernetes/logs', icon: Activity, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+        { name: 'Cluster & Workloads', path: '/kubernetes', icon: Server, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Live Pod Logs', path: '/kubernetes/logs', icon: Activity, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+      ]
+    },
+    {
+      title: 'CONTAINERS',
+      items: [
+        { name: 'Docker Containers', path: '/docker', icon: Terminal, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
       ]
     },
     {
@@ -152,9 +164,9 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
   ];
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-800 font-sans bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed overflow-hidden">
-      {/* Sleek Modern Glassmorphic Sidebar */}
-      <aside className="w-[264px] glass-panel border border-white/60 flex flex-col justify-between shrink-0 shadow-xl shadow-slate-200/50 relative z-10 m-2.5 rounded-2xl overflow-hidden backdrop-blur-2xl">
+    <div className="flex h-screen overflow-hidden bg-white font-sans text-[#111111]">
+      {mobileNavOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-30 bg-black/25 md:hidden" />}
+      <aside className={`fixed inset-y-3 left-3 z-40 flex w-[min(84vw,252px)] flex-col justify-between overflow-hidden rounded-2xl border border-black/10 bg-white transition-transform duration-200 md:relative md:inset-auto md:z-10 md:m-3 md:w-[252px] md:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)] md:translate-x-0'}`}>
         {/* Scrollable Nav Area with Smooth Hidden/Thin Scrollbar */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:thin] [scrollbar-color:#e2e8f0_transparent] hover:[scrollbar-color:#cbd5e1_transparent]">
           {/* Logo Brand Header */}
@@ -164,15 +176,18 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-[18px] tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-800">
+                <span className="font-extrabold text-[18px] tracking-tight text-black">
                   OpsPilot
                 </span>
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="System operational" />
               </div>
-              <span className="text-[10px] font-bold tracking-wider block text-indigo-500 uppercase">
-                Enterprise Cloud Hub
+              <span className="text-[9px] font-semibold tracking-[0.15em] block text-neutral-500 uppercase">
+                Operations Platform
               </span>
             </div>
+            <button type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 md:hidden">
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
           {/* Interactive Project Switcher (Dropdown with Search & Actions) */}
@@ -188,11 +203,11 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
               return (
                 <div key={group.title} className="space-y-1">
                   <div className="flex items-center justify-between px-2 mb-1.5">
-                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest truncate">
+                    <span className="text-[9px] font-semibold text-neutral-500 uppercase tracking-[0.14em] truncate">
                       {group.title}
                     </span>
                     {group.badge && (
-                      <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600 border border-indigo-200/60 uppercase">
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-black/10 uppercase">
                         {group.badge}
                       </span>
                     )}
@@ -208,14 +223,14 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                           to={item.path}
                           className={`group flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
                             isActive
-                              ? 'bg-gradient-to-r from-indigo-50/90 to-purple-50/50 text-indigo-700 shadow-xs border border-indigo-100 font-bold'
-                              : 'text-slate-600 hover:bg-white/80 hover:text-slate-900 hover:translate-x-1'
+                              ? 'bg-neutral-100 text-black border border-black/10 font-bold'
+                              : 'text-neutral-600 hover:bg-neutral-50 hover:text-black'
                           }`}
                         >
                           <Icon className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
                             isActive
-                              ? 'text-indigo-600 scale-105'
-                              : 'text-slate-400 group-hover:text-indigo-500'
+                              ? 'text-black'
+                              : 'text-neutral-400 group-hover:text-black'
                           }`} />
                           <span className="truncate flex-1">{item.name}</span>
 
@@ -223,14 +238,14 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                             <span className={`shrink-0 flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full shadow-xs ${
                               item.badgeColor === 'rose'
                                 ? 'bg-rose-500 text-white animate-pulse'
-                                : 'bg-indigo-100 text-indigo-700'
+                                : 'bg-neutral-100 text-neutral-700'
                             }`}>
                               {item.badge}
                             </span>
                           )}
 
                           {isActive && !item.badge && (
-                            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
+                            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-black" />
                           )}
                         </Link>
                       );
@@ -243,10 +258,10 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
         </div>
 
         {/* User Card Profile Footer */}
-        <div className="p-3 border-t border-slate-200/60 bg-white/50 backdrop-blur-md">
+        <div className="p-3 border-t border-black/10 bg-white">
           <div className="flex items-center justify-between p-1.5 rounded-xl hover:bg-white/80 transition-colors">
             <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shrink-0 text-xs font-bold shadow-xs">
+              <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white shrink-0 text-xs font-semibold">
                 {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
               </div>
               <div className="truncate min-w-0">
@@ -273,17 +288,18 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto relative z-0 animate-fade-in-up">
-        {/* Decorative background ambient glows */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-200/25 blur-[120px] animate-pulse-slow" />
-          <div className="absolute bottom-[-10%] right-[-5%] w-[30%] h-[50%] rounded-full bg-purple-200/25 blur-[140px] animate-pulse-slow" style={{ animationDelay: '2s' }} />
-        </div>
-        <div className="h-full w-full max-w-[1600px] mx-auto p-2">
+      <main className="relative z-0 flex-1 overflow-y-auto">
+        <div className="mx-auto min-h-full w-full max-w-[1600px] px-5 py-6 sm:px-7 lg:px-10 lg:py-8">
+          <div className="mb-5 flex items-center gap-3 md:hidden">
+            <button type="button" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)} className="rounded-full border border-black/10 bg-white p-2.5 text-black hover:bg-neutral-50">
+              <Menu className="h-4 w-4" />
+            </button>
+            <span className="font-mono text-xs font-bold tracking-[0.12em] text-black">OPS/PILOT</span>
+          </div>
           {pid != null && SCOPED_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`)) && (
-            <div role="status" className="mx-6 mt-4 flex items-center justify-between gap-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-2 text-xs font-semibold text-indigo-800 sm:mx-8 shadow-xs">
+            <div role="status" className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 text-xs font-medium text-neutral-700">
               <span>Showing data for <strong>{currentProject?.name ?? currentProject?.projectName ?? 'the selected project'}</strong>.</span>
-              <button onClick={() => selectProject(null)} className="rounded-md border border-indigo-200 bg-white px-2.5 py-1 font-bold text-indigo-700 hover:bg-indigo-100 transition-colors">
+              <button onClick={() => selectProject(null)} className="rounded-full border border-black/15 bg-white px-3 py-1.5 font-semibold text-black hover:bg-neutral-100 transition-colors">
                 Show all projects
               </button>
             </div>

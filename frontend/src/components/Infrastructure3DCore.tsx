@@ -27,6 +27,8 @@ interface Node3DDef {
 const ORBIT_RX = 1.95;
 const ORBIT_RY = 1.7;
 
+const readPointerPosition = (ref: React.RefObject<{ x: number; y: number }>) => ref.current;
+
 const NODES_BASE: Node3DDef[] = [
   { id: 'canary', name: 'Canary Engine', subtitle: 'Automated Rollout', icon: Rocket, metric: 'Rollout 100%', color: '#8A5700', angle: 96, depth: -0.35, highlightStates: [0, 2] },
   { id: 'cicd', name: 'GitHub CI/CD', subtitle: 'Pipeline #8491', icon: GitBranch, metric: '100% Pass', color: '#975B00', angle: 150, depth: 0.4, highlightStates: [0, 2] },
@@ -151,10 +153,9 @@ const createSweepTexture = () => {
 
 export const Infrastructure3DCore: React.FC<{
   activeState?: number;
-  mousePos?: { x: number; y: number };
-}> = ({ activeState = 0, mousePos = { x: 0, y: 0 } }) => {
+  mousePosRef: React.RefObject<{ x: number; y: number }>;
+}> = ({ activeState = 0, mousePosRef }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
-  const mousePosRef = useRef(mousePos);
   const activeStateRef = useRef(activeState);
   const badgeRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const coreLabelRef = useRef<HTMLDivElement | null>(null);
@@ -166,10 +167,6 @@ export const Infrastructure3DCore: React.FC<{
   useEffect(() => {
     hoveredNodeIdRef.current = hoveredNodeId;
   }, [hoveredNodeId]);
-
-  useEffect(() => {
-    mousePosRef.current = mousePos;
-  }, [mousePos]);
 
   useEffect(() => {
     activeStateRef.current = activeState;
@@ -192,7 +189,7 @@ export const Infrastructure3DCore: React.FC<{
       return;
     }
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 600 ? 1.25 : 1.5));
     renderer.setClearColor(0x000000, 0);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
@@ -744,7 +741,7 @@ export const Infrastructure3DCore: React.FC<{
     // 10. Loop: frame-rate independent motion, overlay projection, pause when offscreen
     const timer = new THREE.Timer();
     timer.connect(document);
-    const timeScale = reducedMotion ? 0.25 : 1;
+    const timeScale = reducedMotion ? 0 : 1;
     const projected = new THREE.Vector3();
     const labelAnchor = new THREE.Vector3(0, -2.2, 0);
     let animId = 0;
@@ -761,7 +758,7 @@ export const Infrastructure3DCore: React.FC<{
         animId = 0;
         return;
       }
-      animId = requestAnimationFrame(animate);
+      if (!reducedMotion) animId = requestAnimationFrame(animate);
       // performance.now() keeps the clock monotonic; a negative delta would make the damped easing diverge
       timer.update();
       const delta = THREE.MathUtils.clamp(timer.getDelta(), 0, 0.1) * timeScale;
@@ -770,8 +767,9 @@ export const Infrastructure3DCore: React.FC<{
       const ease = 1 - Math.exp(-delta * 3.5);
 
       // Mascot pilot animation & interactive cursor tracking
-      const targetHeadRotY = (mousePosRef.current.x || 0) * 0.42;
-      const targetHeadRotX = -(mousePosRef.current.y || 0) * 0.28;
+      const pointerPosition = readPointerPosition(mousePosRef);
+      const targetHeadRotY = (pointerPosition.x || 0) * 0.42;
+      const targetHeadRotX = -(pointerPosition.y || 0) * 0.28;
       headGroup.rotation.y += (targetHeadRotY - headGroup.rotation.y) * ease;
       headGroup.rotation.x += (targetHeadRotX - headGroup.rotation.x) * ease;
 
@@ -780,8 +778,8 @@ export const Infrastructure3DCore: React.FC<{
       bodyGroup.rotation.x += (targetHeadRotX * 0.2 - bodyGroup.rotation.x) * (ease * 0.7);
 
       // Eye gaze shift on visor
-      eyesGroup.position.x += ((mousePosRef.current.x || 0) * 0.02 - eyesGroup.position.x) * ease;
-      eyesGroup.position.y += (-(mousePosRef.current.y || 0) * 0.015 - eyesGroup.position.y) * ease;
+      eyesGroup.position.x += ((pointerPosition.x || 0) * 0.02 - eyesGroup.position.x) * ease;
+      eyesGroup.position.y += (-(pointerPosition.y || 0) * 0.015 - eyesGroup.position.y) * ease;
 
       // Eye blink cycle: every ~4 seconds, eyes briefly blink
       const blinkCycle = t % 4.2;
@@ -821,8 +819,8 @@ export const Infrastructure3DCore: React.FC<{
       shadow.material.opacity = 0.95 - lift * 0.25;
 
       // Damped parallax toward the pointer
-      parallaxGroup.rotation.x += ((mousePosRef.current.y || 0) * 0.28 - parallaxGroup.rotation.x) * ease;
-      parallaxGroup.rotation.y += ((mousePosRef.current.x || 0) * 0.42 - parallaxGroup.rotation.y) * ease;
+      parallaxGroup.rotation.x += ((pointerPosition.y || 0) * 0.28 - parallaxGroup.rotation.x) * ease;
+      parallaxGroup.rotation.y += ((pointerPosition.x || 0) * 0.42 - parallaxGroup.rotation.y) * ease;
 
       // HUD: radar sweeps, the dashed ring counter-rotates, the heading bezel hunts around its bearing
       radarSweep.rotation.z -= delta * 0.9;
@@ -890,6 +888,7 @@ export const Infrastructure3DCore: React.FC<{
         const [x, y] = toScreen(labelAnchor);
         coreLabelRef.current.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
       }
+      if (reducedMotion) animId = 0;
     };
 
     const resizeObserver = new ResizeObserver(() => {
@@ -897,6 +896,7 @@ export const Infrastructure3DCore: React.FC<{
       height = container.clientHeight || height;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 600 ? 1.25 : 1.5));
       renderer.setSize(width, height);
       setCompact(width < 600);
     });
@@ -932,7 +932,7 @@ export const Infrastructure3DCore: React.FC<{
       renderer.dispose();
       scene.clear();
     };
-  }, []);
+  }, [mousePosRef]);
 
   return (
     <div className="relative w-full h-full min-h-[380px] sm:min-h-[540px] select-none">

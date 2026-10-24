@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-op-bg: #f7f9fc;
+  --color-op-bg: #ffffff;
   --color-op-surface: #ffffff;
-  --color-op-raised: #f1f5f9;
+  --color-op-raised: #f6f6f5;
   --color-op-input: #ffffff;
-  --color-op-border: #edf2f7;
-  --color-op-border-strong: #e2e8f0;
-  --color-op-fg: #17233b;
-  --color-op-muted: #64748b;
-  --color-op-subtle: #94a3b8;
-  --color-op-accent: #6366f1;
-  --color-op-accent-hover: #4f46e5;
-  --color-op-accent-active: #4338ca;
+  --color-op-border: #e9e9e7;
+  --color-op-border-strong: #d8d8d5;
+  --color-op-fg: #111111;
+  --color-op-muted: #626262;
+  --color-op-subtle: #858585;
+  --color-op-accent: #111111;
+  --color-op-accent-hover: #303030;
+  --color-op-accent-active: #000000;
   --color-op-accent-fg: #ffffff;
 }
 @layer base {
@@ -25,7 +25,7 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)];
+    @apply bg-white border border-black/10;
   }
   
   .glass-panel-dark {
@@ -33,7 +33,7 @@
   }
 
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-cyan-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-black to-neutral-500;
   }
 }
 

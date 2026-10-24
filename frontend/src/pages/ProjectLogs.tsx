@@ -3,7 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { ProjectHeader } from '../components/project/ProjectHeader';
 import { LogViewer } from '../components/logs/LogViewer';
-import { DEFAULT_FILTERS, LogFilterBar, toQueryFilters, type LogFilterState } from '../components/logs/LogFilterBar';
+import { LogFilterBar } from '../components/logs/LogFilterBar';
+import { DEFAULT_FILTERS, toQueryFilters, type LogFilterState } from '../components/logs/logUtils';
 import { useProjectLogs } from '../hooks/useProjectLogs';
 import { useProjectIntegrations } from '../hooks/useProjectIntegrations';
 

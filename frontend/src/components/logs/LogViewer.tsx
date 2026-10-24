@@ -1,18 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Play, Pause, Trash2, ArrowDown, Download, AlertTriangle, Loader2 } from 'lucide-react';
 import type { UseProjectLogs } from '../../hooks/useProjectLogs';
-
-export function formatTime(iso: string): string {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    return isNaN(d.getTime())
-      ? iso
-      : d.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  } catch {
-    return iso;
-  }
-}
+import { formatTime } from './logUtils';
 
 interface LogViewerProps {
   logs: UseProjectLogs;

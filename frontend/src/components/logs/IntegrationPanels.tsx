@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GitCommit, Play, RefreshCw, X, Box, Terminal, Layers, Copy, Check } from 'lucide-react';
 import type { ProjectIntegration, ProjectLogEntry } from '../../services/projectApi';
-import { formatTime } from './LogViewer';
+import { formatTime } from './logUtils';
 
 export interface DockerPanelProps {
   integration: ProjectIntegration;

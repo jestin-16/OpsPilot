@@ -1,33 +1,7 @@
 import React from 'react';
 import { Search, Filter, Clock } from 'lucide-react';
-import type { LogQueryFilters, ProjectIntegration } from '../../services/projectApi';
-
-export interface LogFilterState {
-  level: string;
-  q: string;
-  rangeMs: number | null;
-  integrationId?: number;
-}
-
-export const DEFAULT_FILTERS: LogFilterState = {
-  level: 'ALL',
-  q: '',
-  rangeMs: 15 * 60 * 1000,
-  integrationId: undefined,
-};
-
-export function toQueryFilters(
-  state: LogFilterState,
-  extra?: { container?: string; pod?: string }
-): LogQueryFilters {
-  return {
-    integrationId: state.integrationId,
-    level: state.level === 'ALL' ? undefined : state.level,
-    q: state.q.trim() || undefined,
-    container: extra?.container,
-    pod: extra?.pod,
-  };
-}
+import type { ProjectIntegration } from '../../services/projectApi';
+import type { LogFilterState } from './logUtils';
 
 interface LogFilterBarProps {
   value: LogFilterState;

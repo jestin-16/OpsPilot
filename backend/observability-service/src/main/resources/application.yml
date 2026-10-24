@@ -34,6 +34,10 @@ app:
     expiration-ms: 900000
     refresh-expiration-ms: 604800000
 
+kubernetes:
+  master-url: ${KUBERNETES_MASTER:}
+  loopback-host: ${KUBERNETES_LOOPBACK_HOST:}
+
 monitoring:
   kubernetes:
     enabled: ${KUBERNETES_ENABLED:true}

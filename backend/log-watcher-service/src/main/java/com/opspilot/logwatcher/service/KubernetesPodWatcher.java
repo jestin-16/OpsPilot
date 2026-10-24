@@ -2,6 +2,7 @@ package com.opspilot.logwatcher.service;
 
 import com.google.gson.reflect.TypeToken;
 import com.opspilot.logwatcher.model.PodSummaryDto;
+import com.opspilot.logwatcher.model.WatcherStatusDto;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.*;
@@ -20,6 +21,7 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.time.Instant;
 
 @Service
 public class KubernetesPodWatcher {
@@ -31,6 +33,7 @@ public class KubernetesPodWatcher {
     private final KubernetesLogStreamer logStreamer;
     private final MetricsService metricsService;
 
+    private final boolean enabled;
     private final String watchNamespace;
     private final String watchLabelSelector;
     private final ExponentialBackoff watchBackoff;
@@ -43,6 +46,9 @@ public class KubernetesPodWatcher {
 
     private Watch<V1Pod> activeWatch;
     private final AtomicBoolean running = new AtomicBoolean(true);
+    private volatile boolean connected;
+    private volatile String connectionMessage = "Waiting for the first Kubernetes API connection.";
+    private volatile Instant lastConnectedAt;
     private final ExecutorService watchExecutor = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "k8s-pod-watch-loop");
         t.setDaemon(true);
@@ -53,6 +59,7 @@ public class KubernetesPodWatcher {
                                 CoreV1Api coreV1Api,
                                 KubernetesLogStreamer logStreamer,
                                 MetricsService metricsService,
+                                @Value("${kubernetes.enabled:false}") boolean enabled,
                                 @Value("${kubernetes.watch-namespace:default}") String watchNamespace,
                                 @Value("${kubernetes.watch-label-selector:}") String watchLabelSelector,
                                 @Value("${log-watcher.reconnect.initial-backoff-ms:1000}") long initialBackoffMs,
@@ -61,6 +68,7 @@ public class KubernetesPodWatcher {
         this.coreV1Api = coreV1Api;
         this.logStreamer = logStreamer;
         this.metricsService = metricsService;
+        this.enabled = enabled;
         this.watchNamespace = watchNamespace;
         this.watchLabelSelector = watchLabelSelector;
         this.watchBackoff = new ExponentialBackoff(initialBackoffMs, maxBackoffMs, 2.0, true);
@@ -68,7 +76,13 @@ public class KubernetesPodWatcher {
 
     @EventListener(ApplicationReadyEvent.class)
     public void start() {
+        if (!enabled) {
+            connectionMessage = "Kubernetes integration is disabled.";
+            log.info("Kubernetes is disabled via configuration. Pod watcher will not start.");
+            return;
+        }
         if (apiClient == null || apiClient.getBasePath() == null || !apiClient.getBasePath().toLowerCase().startsWith("http") || "unconfigured://kubernetes".equals(apiClient.getBasePath()) || "http://localhost:8080".equals(apiClient.getBasePath())) {
+            connectionMessage = "No Kubernetes API endpoint is configured. Provide a kubeconfig or set KUBERNETES_MASTER.";
             log.info("Kubernetes is not configured (no kubeconfig, service account, or master URL). Pod watcher will not start.");
             return;
         }
@@ -95,6 +109,9 @@ public class KubernetesPodWatcher {
                 );
 
                 watchBackoff.reset(); // Successfully connected
+                connected = true;
+                connectionMessage = "Connected to the Kubernetes API.";
+                lastConnectedAt = Instant.now();
                 log.info("Kubernetes pod watch established on namespace '{}'", watchNamespace);
 
                 for (Watch.Response<V1Pod> item : activeWatch) {
@@ -110,6 +127,8 @@ public class KubernetesPodWatcher {
                     break;
                 }
                 metricsService.incrementReconnect();
+                connected = false;
+                connectionMessage = "Kubernetes API is unreachable: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
                 long backoffMs = watchBackoff.nextBackoffMillis();
                 log.warn("Kubernetes pod watch disconnected ({}). Reconnecting in {}ms (attempt {})",
                         e.getMessage(), backoffMs, watchBackoff.getAttempt());
@@ -291,7 +310,14 @@ public class KubernetesPodWatcher {
     }
 
     public List<PodSummaryDto> getAllPods() {
+        if (!enabled) {
+            return Collections.emptyList();
+        }
         return new ArrayList<>(podCache.values());
+    }
+
+    public WatcherStatusDto getConnectionStatus() {
+        return new WatcherStatusDto(connected, connectionMessage, lastConnectedAt, watchNamespace, enabled);
     }
 
     public Optional<PodSummaryDto> getPod(String namespace, String name) {

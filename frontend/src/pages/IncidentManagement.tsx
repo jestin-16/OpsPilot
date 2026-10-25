@@ -6,6 +6,7 @@ import {
   AlertTriangle, ShieldAlert, AlertOctagon, Info,
   Plus, CheckCircle, RefreshCw, X, PlayCircle, Rocket
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 export const IncidentManagement: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -292,12 +293,18 @@ export const IncidentManagement: React.FC = () => {
       </div>
 
       {/* Create Modal */}
-      {isCreating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-op-surface border border-op-border rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+      {isCreating && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="report-incident-title">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setIsCreating(false)} aria-hidden="true" />
+          <div className="relative z-10 bg-op-surface border border-op-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in-up">
             <div className="flex justify-between items-center p-6 border-b border-op-border bg-op-raised/50">
-              <h2 className="text-xl font-bold text-op-fg">Report Incident</h2>
-              <button onClick={() => setIsCreating(false)} className="text-op-muted hover:text-op-fg transition-colors">
+              <h2 id="report-incident-title" className="text-xl font-bold text-op-fg">Report Incident</h2>
+              <button
+                type="button"
+                onClick={() => setIsCreating(false)}
+                aria-label="Close dialog"
+                className="text-op-muted hover:text-op-fg transition-colors p-1.5 rounded-lg hover:bg-op-raised cursor-pointer"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -369,20 +376,21 @@ export const IncidentManagement: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => setIsCreating(false)}
-                  className="px-5 py-2.5 text-sm font-bold text-op-muted hover:text-op-fg transition-colors"
+                  className="px-5 py-2.5 text-sm font-bold text-op-muted hover:text-op-fg transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-rose-500/20"
+                  className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-rose-500/20 cursor-pointer"
                 >
                   <AlertTriangle className="w-4 h-4" /> Report Incident
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </SidebarLayout>

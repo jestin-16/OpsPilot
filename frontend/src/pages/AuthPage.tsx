@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { errorMessage } from '../services/projectApi';
 import { isAxiosError } from 'axios';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
@@ -614,10 +615,11 @@ export const AuthPage: React.FC = () => {
       </main>
 
       {/* Role Selection Modal for Google Login */}
-      {showRoleSelection && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-white/70 bg-white p-6 shadow-2xl">
-            <h3 className="font-tech-mono text-sm font-bold uppercase text-black">
+      {showRoleSelection && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="role-selection-title">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" aria-hidden="true" />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/70 bg-white p-6 shadow-2xl animate-fade-in-up">
+            <h3 id="role-selection-title" className="font-tech-mono text-sm font-bold uppercase text-black">
               Select Your Role
             </h3>
             <p className="mt-2 text-xs text-gray-600">
@@ -634,12 +636,13 @@ export const AuthPage: React.FC = () => {
                   <option value="DevOps">Role: DevOps</option>
                 </select>
               </div>
-              <button type="submit" disabled={loading} className="auth-submit-btn">
+              <button type="submit" disabled={loading} className="auth-submit-btn cursor-pointer">
                 <span>{loading ? 'Saving...' : 'Complete Sign Up'}</span>
               </button>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

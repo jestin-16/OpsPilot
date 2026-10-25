@@ -169,18 +169,28 @@ export const Projects: React.FC = () => {
                       </span>
                     </span>
                   </div>
-                  <p className="text-sm text-slate-500 mb-5 font-medium line-clamp-2 leading-relaxed">{project.description}</p>
+                  <p className="text-sm text-slate-500 mb-5 font-medium line-clamp-2 leading-relaxed min-h-[2.75rem]">{project.description || 'No description provided'}</p>
                   
-                  <div className="text-[11px] font-bold text-slate-500 space-y-2 mb-6 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
-                    <div className="truncate flex items-center gap-2">
+                  <div className="text-[11px] font-bold text-slate-500 flex flex-col gap-2.5 mb-6 bg-slate-50/60 p-4 rounded-xl border border-slate-100 overflow-hidden">
+                    <div className="flex items-center gap-2 min-w-0">
                       <ExternalLink className="w-3.5 h-3.5 text-op-accent shrink-0" />
-                      <a href={project.repositoryUrl} target="_blank" rel="noreferrer" className="hover:text-op-accent hover:underline transition-colors">
+                      <a
+                        href={project.repositoryUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={project.repositoryUrl}
+                        className="hover:text-op-accent hover:underline transition-colors truncate block flex-1 min-w-0"
+                      >
                         {project.repositoryUrl}
                       </a>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-op-accent/80 to-indigo-400 flex items-center justify-center text-white text-[8px]">{project.ownerName.charAt(0)}</div>
-                      <span>Owner: {project.ownerName} ({project.ownerEmail})</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-op-accent/80 to-indigo-400 flex items-center justify-center text-white text-[8px] shrink-0">
+                        {(project.ownerName || 'U').charAt(0)}
+                      </div>
+                      <span className="truncate min-w-0" title={`Owner: ${project.ownerName} (${project.ownerEmail})`}>
+                        Owner: {project.ownerName} ({project.ownerEmail})
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -289,12 +299,13 @@ export const Projects: React.FC = () => {
         )}
 
         {/* Deployments dialog */}
-        {selectedProject && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in-up">
-            <div className="glass-panel rounded-3xl max-w-2xl w-full p-8 shadow-2xl space-y-6">
+        {selectedProject && createPortal(
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="deployments-dialog-title">
+            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setSelectedProject(null)} aria-hidden="true" />
+            <div className="relative z-10 glass-panel rounded-3xl max-w-2xl w-full p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto animate-fade-in-up">
               <div className="flex justify-between items-center border-b border-slate-100 pb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-slate-800">
+                  <h3 id="deployments-dialog-title" className="text-xl font-bold text-slate-800">
                     Deployments of <span className="text-op-accent">{selectedProject.projectName}</span>
                   </h3>
                   <span className="text-sm font-medium text-slate-500 mt-1 block">
@@ -303,7 +314,12 @@ export const Projects: React.FC = () => {
                     integration's ingest token: POST /api/v1/ingest/{selectedProject.id}/deployments. Or record one here.
                   </span>
                 </div>
-                <button onClick={() => setSelectedProject(null)} className="text-slate-400 hover:text-slate-800 transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setSelectedProject(null)}
+                  aria-label="Close dialog"
+                  className="text-slate-400 hover:text-slate-800 transition-colors cursor-pointer p-1 rounded-lg hover:bg-slate-100"
+                >
                   <XCircle className="w-6 h-6" />
                 </button>
               </div>
@@ -410,7 +426,8 @@ export const Projects: React.FC = () => {
                 )}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
       <CreateProjectModal isOpen={creating} onClose={() => setCreating(false)} />

@@ -5,8 +5,9 @@ import { useAlert } from '../context/AlertContext';
 import { api, type Project } from '../services/api';
 import { ProviderType, IntegrationCategory } from '../lib/legacyProviders';
 import {
-  FolderGit2, CheckCircle2, ChevronRight, ChevronLeft, Loader2, Server, Cloud, Cpu, Code, Plus, ShieldCheck, Activity, Bell, Boxes, TerminalSquare, Search
+  FolderGit2, CheckCircle2, ChevronRight, ChevronLeft, Loader2, Server, Cloud, Cpu, Code, Plus, ShieldCheck, Activity, Bell, Boxes, TerminalSquare, Search, X
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { errorMessage, type ProjectIntegration } from '../services/projectApi';
 
 interface ProviderOption {
@@ -517,16 +518,26 @@ export const ProjectWizard: React.FC = () => {
       </div>
 
       {/* Integration Connection Modal */}
-      {wizardOpen && selectedProvider && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 sm:p-0">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setWizardOpen(false)}></div>
+      {wizardOpen && selectedProvider && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="connect-provider-title">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setWizardOpen(false)} aria-hidden="true" />
           
-          <div className="relative w-full max-w-lg transform animate-fade-in-up overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-2xl transition-all md:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
-                {React.createElement(selectedProvider.icon, { className: 'w-5 h-5' })}
+          <div className="relative z-10 w-full max-w-lg animate-fade-in-up overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-2xl transition-all md:p-8">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                  {React.createElement(selectedProvider.icon, { className: 'w-5 h-5' })}
+                </div>
+                <h3 id="connect-provider-title" className="text-xl font-black text-slate-900">Connect {selectedProvider.name}</h3>
               </div>
-              <h3 className="text-xl font-black text-slate-900">Connect {selectedProvider.name}</h3>
+              <button
+                type="button"
+                onClick={() => setWizardOpen(false)}
+                aria-label="Close dialog"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             
             <div className="space-y-5">
@@ -541,13 +552,14 @@ export const ProjectWizard: React.FC = () => {
             </div>
             
             <div className="mt-8 flex justify-end gap-3 border-t border-slate-100 pt-6">
-              <button onClick={() => setWizardOpen(false)} className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50">Cancel</button>
-              <button onClick={connectProvider} disabled={isConnecting} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-70">
+              <button type="button" onClick={() => setWizardOpen(false)} className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 cursor-pointer">Cancel</button>
+              <button type="button" onClick={connectProvider} disabled={isConnecting} className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-70 cursor-pointer">
                 {isConnecting ? <Loader2 className="h-4 w-4 animate-spin"/> : null} Authorize & Connect
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </SidebarLayout>
   );

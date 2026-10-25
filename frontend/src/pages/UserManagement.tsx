@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { isAxiosError } from 'axios';
 import { AlertCircle, CheckCircle2, Edit3, Mail, Power, RefreshCw, Search, ShieldCheck, Trash2, TriangleAlert, UserPlus, UsersRound, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { axiosInstance } from '../services/api';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { errorMessage } from '../services/projectApi';
@@ -168,17 +169,149 @@ export const UserManagement: React.FC = () => {
         </section>
       </div>
 
-      {editingUser && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="edit-user-title"><form onSubmit={handleSave} className="w-full max-w-xl overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
-        <div className="relative overflow-hidden bg-gradient-to-br from-op-accent via-op-accent to-op-accent-hover px-6 pb-14 pt-6 text-white"><div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-white/15 blur-2xl" /><div className="relative flex items-start justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-op-accent-fg">Identity record</p><h2 id="edit-user-title" className="mt-2 text-2xl font-black tracking-tight">Edit user</h2><p className="mt-1 text-sm text-op-accent-fg">Update workspace access details.</p></div><button type="button" onClick={closeEditor} aria-label="Close edit dialog" className="rounded-xl border border-white/15 bg-white/10 p-2 text-white/80 transition hover:bg-white/20 hover:text-white"><X className="h-5 w-5" /></button></div></div>
-        <div className="relative -mt-8 px-6 pb-6"><div className="mb-6 flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-lg shadow-slate-900/5"><div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-op-accent/20 to-op-accent/30 text-sm font-black text-op-accent-hover">{editingUser.name.slice(0, 2).toUpperCase()}</div><div className="min-w-0"><p className="truncate text-sm font-black text-slate-800">{editingUser.name}</p><p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-slate-500"><Mail className="h-3.5 w-3.5 text-op-accent" />{editingUser.email}</p></div></div>
-          <div className="grid gap-4"><label className="grid gap-2 text-xs font-black text-slate-600">Full name<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-op-accent/80 focus:bg-white focus:ring-4 focus:ring-op-accent/10" /></label><label className="grid gap-2 text-xs font-black text-slate-600">Email address<input required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-op-accent/80 focus:bg-white focus:ring-4 focus:ring-op-accent/10" /></label><label className="grid gap-2 text-xs font-black text-slate-600">Platform role<select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-op-accent/80 focus:bg-white focus:ring-4 focus:ring-op-accent/10"><option value="ADMIN">Administrator</option><option value="DEVELOPER">Developer</option><option value="DEVOPS">DevOps Engineer</option></select></label></div>
-        </div>
-        <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-5 sm:flex-row sm:justify-end"><button type="button" onClick={closeEditor} disabled={saving} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60">Cancel</button><button type="submit" disabled={saving} className="rounded-xl bg-gradient-to-r from-op-accent to-op-accent-hover px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-op-accent/30 transition hover:-translate-y-0.5 hover:shadow-op-accent/40 disabled:cursor-not-allowed disabled:opacity-60">{saving ? 'Saving changes...' : 'Save changes'}</button></div>
-      </form></div>}
+      {editingUser && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={closeEditor} aria-hidden="true" />
+          <form onSubmit={handleSave} className="relative z-10 w-full max-w-xl overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)] animate-fade-in-up">
+            <div className="relative overflow-hidden bg-gradient-to-br from-op-accent via-op-accent to-op-accent-hover px-6 pb-14 pt-6 text-white">
+              <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-white/15 blur-2xl" />
+              <div className="relative flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-op-accent-fg">Identity record</p>
+                  <h2 id="edit-user-title" className="mt-2 text-2xl font-black tracking-tight">Edit user</h2>
+                  <p className="mt-1 text-sm text-op-accent-fg">Update workspace access details.</p>
+                </div>
+                <button type="button" onClick={closeEditor} aria-label="Close edit dialog" className="rounded-xl border border-white/15 bg-white/10 p-2 text-white/80 transition hover:bg-white/20 hover:text-white cursor-pointer">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="relative -mt-8 px-6 pb-6">
+              <div className="mb-6 flex items-center gap-3 rounded-2xl border border-slate-100 bg-white p-3 shadow-lg shadow-slate-900/5">
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-op-accent/20 to-op-accent/30 text-sm font-black text-op-accent-hover">
+                  {editingUser.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-black text-slate-800">{editingUser.name}</p>
+                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-slate-500">
+                    <Mail className="h-3.5 w-3.5 text-op-accent" />{editingUser.email}
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-4">
+                <label className="grid gap-2 text-xs font-black text-slate-600">
+                  Full name
+                  <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-op-accent/80 focus:bg-white focus:ring-4 focus:ring-op-accent/10" />
+                </label>
+                <label className="grid gap-2 text-xs font-black text-slate-600">
+                  Email address
+                  <input required type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-op-accent/80 focus:bg-white focus:ring-4 focus:ring-op-accent/10" />
+                </label>
+                <label className="grid gap-2 text-xs font-black text-slate-600">
+                  Platform role
+                  <select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold text-slate-800 outline-none transition focus:border-op-accent/80 focus:bg-white focus:ring-4 focus:ring-op-accent/10">
+                    <option value="ADMIN">Administrator</option>
+                    <option value="DEVELOPER">Developer</option>
+                    <option value="DEVOPS">DevOps Engineer</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-100 bg-slate-50/70 px-6 py-5 sm:flex-row sm:justify-end">
+              <button type="button" onClick={closeEditor} disabled={saving} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 cursor-pointer">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving} className="rounded-xl bg-gradient-to-r from-op-accent to-op-accent-hover px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-op-accent/30 transition hover:-translate-y-0.5 hover:shadow-op-accent/40 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                {saving ? 'Saving changes...' : 'Save changes'}
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
 
-      {creatingUser && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="create-user-title"><form onSubmit={createUser} className="w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl"><div className="bg-gradient-to-r from-op-accent to-op-accent-hover px-6 py-5 text-white"><div className="flex items-start justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-op-accent-fg">Workspace access</p><h2 id="create-user-title" className="mt-1 text-xl font-black">Add a user</h2></div><button type="button" onClick={() => setCreatingUser(false)} className="rounded-xl bg-white/10 p-2 hover:bg-white/20"><X className="h-5 w-5" /></button></div></div><div className="grid gap-4 p-6"><label className="grid gap-2 text-xs font-black text-slate-600">Full name<input required value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-op-accent/80 focus:ring-4 focus:ring-op-accent/10" /></label><label className="grid gap-2 text-xs font-black text-slate-600">Email address<input required type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-op-accent/80 focus:ring-4 focus:ring-op-accent/10" /></label><label className="grid gap-2 text-xs font-black text-slate-600">Temporary password<input required minLength={8} type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-op-accent/80 focus:ring-4 focus:ring-op-accent/10" /></label><label className="grid gap-2 text-xs font-black text-slate-600">Role<select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none"><option value="DEVELOPER">Developer</option><option value="DEVOPS">DevOps Engineer</option><option value="ADMIN">Administrator</option></select></label></div><div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4"><button type="button" onClick={() => setCreatingUser(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600">Cancel</button><button disabled={saving} className="rounded-xl bg-op-accent-hover px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60">{saving ? 'Adding...' : 'Add user'}</button></div></form></div>}
+      {creatingUser && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setCreatingUser(false)} aria-hidden="true" />
+          <form onSubmit={createUser} className="relative z-10 w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl animate-fade-in-up">
+            <div className="bg-gradient-to-r from-op-accent to-op-accent-hover px-6 py-5 text-white">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-op-accent-fg">Workspace access</p>
+                  <h2 id="create-user-title" className="mt-1 text-xl font-black">Add a user</h2>
+                </div>
+                <button type="button" onClick={() => setCreatingUser(false)} aria-label="Close dialog" className="rounded-xl bg-white/10 p-2 hover:bg-white/20 cursor-pointer">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-4 p-6">
+              <label className="grid gap-2 text-xs font-black text-slate-600">
+                Full name
+                <input required value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-op-accent/80 focus:ring-4 focus:ring-op-accent/10" />
+              </label>
+              <label className="grid gap-2 text-xs font-black text-slate-600">
+                Email address
+                <input required type="email" value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-op-accent/80 focus:ring-4 focus:ring-op-accent/10" />
+              </label>
+              <label className="grid gap-2 text-xs font-black text-slate-600">
+                Temporary password
+                <input required minLength={8} type="password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-op-accent/80 focus:ring-4 focus:ring-op-accent/10" />
+              </label>
+              <label className="grid gap-2 text-xs font-black text-slate-600">
+                Role
+                <select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold outline-none">
+                  <option value="DEVELOPER">Developer</option>
+                  <option value="DEVOPS">DevOps Engineer</option>
+                  <option value="ADMIN">Administrator</option>
+                </select>
+              </label>
+            </div>
+            <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 px-6 py-4">
+              <button type="button" onClick={() => setCreatingUser(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 cursor-pointer">
+                Cancel
+              </button>
+              <button disabled={saving} className="rounded-xl bg-op-accent-hover px-4 py-2.5 text-sm font-bold text-white disabled:opacity-60 cursor-pointer">
+                {saving ? 'Adding...' : 'Add user'}
+              </button>
+            </div>
+          </form>
+        </div>,
+        document.body
+      )}
 
-      {userToDelete && <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-md" role="alertdialog" aria-modal="true" aria-labelledby="delete-user-title"><div className="w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)]"><div className="h-1.5 bg-gradient-to-r from-rose-500 via-rose-500 to-orange-400" /><div className="p-6"><div className="flex items-start gap-4"><div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-rose-100 text-rose-600"><TriangleAlert className="h-6 w-6" /></div><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-500">Permanent action</p><h2 id="delete-user-title" className="mt-1 text-xl font-black text-slate-900">Remove {userToDelete.name}?</h2><p className="mt-2 text-sm leading-6 text-slate-500">This removes their platform access and cannot be undone. You can cancel if this was selected by mistake.</p></div></div><div className="mt-6 rounded-xl border border-rose-100 bg-rose-50/70 px-3.5 py-3 text-xs font-semibold text-rose-700">All permissions and directory access for this identity will be revoked.</div><div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" onClick={() => setUserToDelete(null)} disabled={deleting} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60">Keep user</button><button type="button" onClick={confirmDelete} disabled={deleting} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">{deleting ? 'Removing...' : 'Remove user'}</button></div></div></div></div>}
+      {userToDelete && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="alertdialog" aria-modal="true" aria-labelledby="delete-user-title">
+          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setUserToDelete(null)} aria-hidden="true" />
+          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)] animate-fade-in-up">
+            <div className="h-1.5 bg-gradient-to-r from-rose-500 via-rose-500 to-orange-400" />
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-rose-100 text-rose-600">
+                  <TriangleAlert className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-500">Permanent action</p>
+                  <h2 id="delete-user-title" className="mt-1 text-xl font-black text-slate-900">Remove {userToDelete.name}?</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">This removes their platform access and cannot be undone. You can cancel if this was selected by mistake.</p>
+                </div>
+              </div>
+              <div className="mt-6 rounded-xl border border-rose-100 bg-rose-50/70 px-3.5 py-3 text-xs font-semibold text-rose-700">
+                All permissions and directory access for this identity will be revoked.
+              </div>
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setUserToDelete(null)} disabled={deleting} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60 cursor-pointer">
+                  Keep user
+                </button>
+                <button type="button" onClick={confirmDelete} disabled={deleting} className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer">
+                  {deleting ? 'Removing...' : 'Remove user'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </SidebarLayout>
   );
 };

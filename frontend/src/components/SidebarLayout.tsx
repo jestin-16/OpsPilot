@@ -288,7 +288,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       </aside>
 
       {/* Main Content Area */}
-      <main className="relative z-0 flex-1 overflow-y-auto">
+      <main className="relative flex-1 overflow-y-auto">
         <div className="mx-auto min-h-full w-full max-w-[1600px] px-5 py-6 sm:px-7 lg:px-10 lg:py-8">
           <div className="mb-5 flex items-center gap-3 md:hidden">
             <button type="button" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)} className="rounded-full border border-black/10 bg-white p-2.5 text-black hover:bg-neutral-50">

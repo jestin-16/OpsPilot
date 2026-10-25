@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type DockerSource, type Project } from '../services/api';
-import { Box, Plus, Trash2, ArrowLeft, Copy, Eye } from 'lucide-react';
+import { Box, Plus, Trash2, ArrowLeft, Copy, Eye, X } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useConfirm } from '../context/ConfirmContext';
 import { errorMessage } from '../services/projectApi';
 
@@ -177,10 +178,21 @@ export const LogSources: React.FC = () => {
         )}
 
         {/* Create Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="glass-panel rounded-3xl w-full max-w-md p-8 shadow-2xl">
-              <h2 className="text-xl font-bold text-slate-800 mb-6">Register Docker Host</h2>
+        {isModalOpen && createPortal(
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="register-docker-host-title">
+            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setIsModalOpen(false)} aria-hidden="true" />
+            <div className="relative z-10 glass-panel rounded-3xl w-full max-w-md p-8 shadow-2xl animate-fade-in-up">
+              <div className="flex justify-between items-center mb-6">
+                <h2 id="register-docker-host-title" className="text-xl font-bold text-slate-800">Register Docker Host</h2>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  aria-label="Close dialog"
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               <form onSubmit={handleSave} className="space-y-5">
                 {!projectId && (
                   <div>
@@ -207,23 +219,35 @@ export const LogSources: React.FC = () => {
                   <input type="text" required value={environment} onChange={e => setEnvironment(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-op-accent outline-none" />
                 </div>
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
                     Cancel
                   </button>
-                  <button type="submit" className="px-5 py-2.5 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover transition-colors">
+                  <button type="submit" className="px-5 py-2.5 bg-op-accent text-white font-bold text-sm rounded-xl hover:bg-op-accent-hover transition-colors cursor-pointer">
                     Register
                   </button>
                 </div>
               </form>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Config Modal */}
-        {isConfigModalOpen && selectedConfigSource && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="glass-panel rounded-3xl w-full max-w-3xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-xl font-bold text-slate-800 mb-2">Agent Configuration</h2>
+        {isConfigModalOpen && selectedConfigSource && createPortal(
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="agent-config-title">
+            <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setIsConfigModalOpen(false)} aria-hidden="true" />
+            <div className="relative z-10 glass-panel rounded-3xl w-full max-w-3xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up">
+              <div className="flex justify-between items-center mb-3">
+                <h2 id="agent-config-title" className="text-xl font-bold text-slate-800">Agent Configuration</h2>
+                <button
+                  type="button"
+                  onClick={() => setIsConfigModalOpen(false)}
+                  aria-label="Close configuration"
+                  className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
               {selectedConfigSource.token && (
                 <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
                   <strong className="block mb-1">Important!</strong>
@@ -235,7 +259,7 @@ export const LogSources: React.FC = () => {
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="text-sm font-bold text-slate-700">1. Create config.alloy</h3>
-                    <button onClick={() => copyToClipboard(selectedConfigSource.agentConfig || '')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                    <button onClick={() => copyToClipboard(selectedConfigSource.agentConfig || '')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer">
                       <Copy className="w-3 h-3" /> Copy
                     </button>
                   </div>
@@ -247,7 +271,7 @@ export const LogSources: React.FC = () => {
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="text-sm font-bold text-slate-700">2. Run with docker-compose.yml</h3>
-                    <button onClick={() => copyToClipboard(selectedConfigSource.dockerComposeSnippet || '')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                    <button onClick={() => copyToClipboard(selectedConfigSource.dockerComposeSnippet || '')} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer">
                       <Copy className="w-3 h-3" /> Copy
                     </button>
                   </div>
@@ -258,12 +282,13 @@ export const LogSources: React.FC = () => {
               </div>
 
               <div className="flex justify-end pt-6">
-                <button onClick={() => setIsConfigModalOpen(false)} className="px-5 py-2.5 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-900 transition-colors">
+                <button onClick={() => setIsConfigModalOpen(false)} className="px-5 py-2.5 bg-slate-800 text-white font-bold text-sm rounded-xl hover:bg-slate-900 transition-colors cursor-pointer">
                   Close
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     </SidebarLayout>

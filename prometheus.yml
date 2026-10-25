@@ -17,6 +17,7 @@ scrape_configs:
       - targets:
         - https://flipkart.com
         - https://google.com
+        - https://attendance-backend-c0495.containers.snapdeploy.app
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

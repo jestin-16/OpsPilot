@@ -21,28 +21,35 @@ public class NotificationController {
     @Autowired
     private UserRepository userRepository;
 
+    private User resolveUser(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        if (authentication.getPrincipal() instanceof User user) {
+            return user;
+        }
+        String name = authentication.getName();
+        if (name != null) {
+            return userRepository.findByEmail(name).orElse(null);
+        }
+        return null;
+    }
+
     @GetMapping
     public ResponseEntity<List<NotificationEntity>> getNotifications(Authentication authentication) {
-        User currentUser = null;
-        if (authentication != null && authentication.getName() != null) {
-            currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
-        }
+        User currentUser = resolveUser(authentication);
         return ResponseEntity.ok(notificationService.getUserNotifications(currentUser));
     }
 
     @PutMapping("/{id}/read")
     public ResponseEntity<NotificationEntity> markAsRead(@PathVariable Long id, Authentication authentication) {
-        User currentUser = authentication == null ? null
-                : userRepository.findByEmail(authentication.getName()).orElse(null);
+        User currentUser = resolveUser(authentication);
         return ResponseEntity.ok(notificationService.markAsRead(id, currentUser));
     }
 
     @PutMapping("/read-all")
     public ResponseEntity<Void> markAllAsRead(Authentication authentication) {
-        User currentUser = null;
-        if (authentication != null && authentication.getName() != null) {
-            currentUser = userRepository.findByEmail(authentication.getName()).orElse(null);
-        }
+        User currentUser = resolveUser(authentication);
         notificationService.markAllAsRead(currentUser);
         return ResponseEntity.ok().build();
     }

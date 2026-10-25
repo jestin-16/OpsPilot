@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
@@ -22,6 +22,10 @@ import {
   X,
   FolderGit2,
   BookOpen,
+  Radio,
+  Gauge,
+  KeyRound,
+  Eye,
 } from 'lucide-react';
 import { canAccessRole } from '../utils/roles';
 import { useProject } from '../context/ProjectContext';
@@ -47,6 +51,17 @@ interface NavGroup {
 /** Global pages that follow the project chosen in the switcher. */
 const SCOPED_PATHS = ['/pipelines', '/deployments', '/incidents', '/github'];
 
+/** Roots that require exact matching so they don't incorrectly stay active on sibling sub-routes */
+const EXACT_MATCH_ROOTS = ['/dashboard', '/', '/projects', '/admin', '/kubernetes', '/monitoring'];
+
+const isItemActive = (itemPath: string, currentPath: string): boolean => {
+  if (currentPath === itemPath) return true;
+  if (EXACT_MATCH_ROOTS.includes(itemPath)) {
+    return false;
+  }
+  return currentPath.startsWith(`${itemPath}/`);
+};
+
 export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -57,37 +72,44 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
   const { data: projectIntegrations = [] } = useProjectIntegrations(currentProjectId, false);
   const pid = currentProjectId;
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
+    if (!user) return;
     try {
       const data = await api.getNotifications();
-      const unread = data.filter(n => !n.read).length;
-      setUnreadCount(unread);
+      if (Array.isArray(data)) {
+        const unread = data.filter(
+          (n) => !n.read && !(n as unknown as { isRead?: boolean }).isRead
+        ).length;
+        setUnreadCount(unread);
+      }
     } catch {
-      // The badge is best-effort; the notifications page shows errors.
+      // The badge is best-effort
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     setMobileNavOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
+    if (!user) return;
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 20000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user, fetchUnreadCount]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const navGroups: NavGroup[] = [
+  const navGroups: NavGroup[] = useMemo(() => [
     {
       title: 'PLATFORM',
       items: [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-        { name: 'Projects', path: '/projects', icon: Layers, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+        { name: 'Projects', path: '/projects', icon: Layers, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: '3D Operations', path: '/operations', icon: Radio, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
       ]
     },
     ...(pid != null ? [{
@@ -138,7 +160,9 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       title: 'OBSERVABILITY',
       items: [
         { name: 'Live Monitoring', path: '/monitoring', icon: Activity, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-        { name: 'System Logs', path: pid != null ? `/projects/${pid}/logs` : '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Whitebox Metrics', path: '/whitebox', icon: Gauge, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Blackbox Probes', path: '/blackbox', icon: Eye, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'System Logs', path: '/logs', icon: FileText, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
         { name: 'Incidents', path: '/incidents', icon: AlertTriangle, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
       ]
     },
@@ -168,11 +192,11 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
           badgeColor: 'rose'
         },
         { name: 'Platform Guide', path: '/guide', icon: BookOpen, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
-        { name: 'Security & Auth', path: '/settings/security', icon: ShieldCheck, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Security & Auth', path: '/settings/security', icon: KeyRound, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
         { name: 'Preferences', path: '/profile', icon: Settings, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
       ]
     }
-  ];
+  ], [pid, currentProject, projectIntegrations, unreadCount]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-op-canvas text-op-fg dark:bg-slate-950 dark:text-slate-100 font-sans">
@@ -181,7 +205,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
           type="button" 
           aria-label="Close navigation" 
           onClick={() => setMobileNavOpen(false)} 
-          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-xs md:hidden" 
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm md:hidden" 
         />
       )}
       
@@ -242,11 +266,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                   <div className="space-y-0.5">
                     {groupItems.map((item) => {
                       const Icon = item.icon;
-                      const isActive = location.pathname === item.path || (
-                        item.path !== '/dashboard' && 
-                        item.path !== '/' && 
-                        location.pathname.startsWith(`${item.path}/`)
-                      );
+                      const isActive = isItemActive(item.path, location.pathname);
 
                       return (
                         <Link

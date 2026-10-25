@@ -2,6 +2,7 @@
 
 @theme {
   --color-op-bg: #ffffff;
+  --color-op-canvas: #f8fafc;
   --color-op-surface: #ffffff;
   --color-op-raised: #f6f6f5;
   --color-op-input: #ffffff;

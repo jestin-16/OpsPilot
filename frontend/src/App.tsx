@@ -155,7 +155,7 @@ export const App: React.FC = () => {
               path="/projects"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><Projects /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><Projects /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -203,7 +203,7 @@ export const App: React.FC = () => {
               path="/projects/new"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER']}><ProjectWizard /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><ProjectWizard /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -211,7 +211,7 @@ export const App: React.FC = () => {
               path="/projects/new/:projectId"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER']}><ProjectWizard /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><ProjectWizard /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -227,7 +227,7 @@ export const App: React.FC = () => {
               path="/projects/:projectId/log-sources"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER']}><LogSources /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><LogSources /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -235,7 +235,7 @@ export const App: React.FC = () => {
               path="/monitoring"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><LiveProjectDashboard /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><LiveProjectDashboard /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -243,7 +243,7 @@ export const App: React.FC = () => {
               path="/whitebox"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVOPS']}><WhiteboxMonitoring /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><WhiteboxMonitoring /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -251,7 +251,7 @@ export const App: React.FC = () => {
               path="/blackbox"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVOPS']}><BlackboxMonitoring /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><BlackboxMonitoring /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -259,7 +259,7 @@ export const App: React.FC = () => {
               path="/logs"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><LogsEntry /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><LogsEntry /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -327,7 +327,7 @@ export const App: React.FC = () => {
               path="/pipelines"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><Pipelines /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><Pipelines /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -335,7 +335,7 @@ export const App: React.FC = () => {
               path="/pipelines/:id"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><PipelineDetail /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><PipelineDetail /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -343,7 +343,7 @@ export const App: React.FC = () => {
               path="/deployments"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><DeploymentsPage /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><DeploymentsPage /></RoleRoute>
                 </ProtectedRoute>
               }
             />
@@ -351,7 +351,7 @@ export const App: React.FC = () => {
               path="/deployments/:id"
               element={
                 <ProtectedRoute>
-                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS']}><DeploymentDetail /></RoleRoute>
+                  <RoleRoute allowedRoles={['DEVELOPER', 'DEVOPS', 'ADMIN']}><DeploymentDetail /></RoleRoute>
                 </ProtectedRoute>
               }
             />

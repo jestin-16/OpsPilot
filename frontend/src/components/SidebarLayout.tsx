@@ -20,6 +20,8 @@ import {
   Layers,
   Menu,
   X,
+  FolderGit2,
+  BookOpen,
 } from 'lucide-react';
 import { canAccessRole } from '../utils/roles';
 import { useProject } from '../context/ProjectContext';
@@ -71,7 +73,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 5000);
+    const interval = setInterval(fetchUnreadCount, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -84,7 +86,8 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     {
       title: 'PLATFORM',
       items: [
-        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
+        { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
+        { name: 'Projects', path: '/projects', icon: Layers, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
       ]
     },
     ...(pid != null ? [{
@@ -146,6 +149,14 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       ]
     },
     {
+      title: 'ADMINISTRATION',
+      items: [
+        { name: 'Platform Governance', path: '/admin', icon: ShieldCheck, roles: ['ADMIN'] as const },
+        { name: 'Project Oversight', path: '/admin/projects', icon: FolderGit2, roles: ['ADMIN'] as const },
+        { name: 'Users & Access', path: '/users', icon: UserIcon, roles: ['ADMIN'] as const },
+      ]
+    },
+    {
       title: 'SYSTEM & SETTINGS',
       items: [
         {
@@ -156,7 +167,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
           badge: unreadCount > 0 ? `${unreadCount}` : undefined,
           badgeColor: 'rose'
         },
-        { name: 'Users & Access', path: '/users', icon: UserIcon, roles: ['ADMIN'] as const },
+        { name: 'Platform Guide', path: '/guide', icon: BookOpen, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
         { name: 'Security & Auth', path: '/settings/security', icon: ShieldCheck, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const },
         { name: 'Preferences', path: '/profile', icon: Settings, roles: ['DEVELOPER', 'DEVOPS', 'ADMIN'] as const }
       ]
@@ -164,37 +175,53 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
   ];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white font-sans text-[#111111]">
-      {mobileNavOpen && <button type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} className="fixed inset-0 z-30 bg-black/25 md:hidden" />}
-      <aside className={`fixed inset-y-3 left-3 z-40 flex w-[min(84vw,252px)] flex-col justify-between overflow-hidden rounded-2xl border border-black/10 bg-white transition-transform duration-200 md:relative md:inset-auto md:z-10 md:m-3 md:w-[252px] md:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)] md:translate-x-0'}`}>
-        {/* Scrollable Nav Area with Smooth Hidden/Thin Scrollbar */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden [scrollbar-width:thin] [scrollbar-color:#e2e8f0_transparent] hover:[scrollbar-color:#cbd5e1_transparent]">
+    <div className="flex h-screen overflow-hidden bg-op-canvas text-op-fg dark:bg-slate-950 dark:text-slate-100 font-sans">
+      {mobileNavOpen && (
+        <button 
+          type="button" 
+          aria-label="Close navigation" 
+          onClick={() => setMobileNavOpen(false)} 
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-xs md:hidden" 
+        />
+      )}
+      
+      <aside className={`fixed inset-y-3 left-3 z-40 flex w-[min(84vw,256px)] flex-col justify-between overflow-hidden rounded-2xl border border-op-border bg-op-surface dark:bg-slate-900/95 dark:border-slate-800 shadow-xl backdrop-blur-2xl transition-transform duration-200 md:relative md:inset-auto md:z-10 md:m-3 md:w-[256px] md:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)] md:translate-x-0'}`}>
+        
+        {/* Top Header Deck (Logo & Switcher) */}
+        <div className="shrink-0 z-20 bg-op-surface dark:bg-slate-900 border-b border-op-border dark:border-slate-800/80">
           {/* Logo Brand Header */}
-          <div className="h-18 flex items-center px-4 gap-3 pt-3 pb-2">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-slate-100 overflow-hidden shrink-0 transform transition-transform hover:scale-105">
+          <div className="flex items-center px-4 py-3 gap-3">
+            <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-xs border border-slate-200/80 overflow-hidden shrink-0 transform transition-transform hover:scale-105">
               <img src="/opspilot-logo.png" alt="OpsPilot Logo" className="w-full h-full object-cover scale-[1.2]" />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-[18px] tracking-tight text-black">
+                <span className="font-extrabold text-[17px] tracking-tight text-op-fg dark:text-white">
                   OpsPilot
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="System operational" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="System operational" />
               </div>
-              <span className="text-[9px] font-semibold tracking-[0.15em] block text-neutral-500 uppercase">
+              <span className="text-[9px] font-bold tracking-[0.16em] block text-op-muted uppercase">
                 Operations Platform
               </span>
             </div>
-            <button type="button" aria-label="Close navigation" onClick={() => setMobileNavOpen(false)} className="rounded-full p-2 text-neutral-500 hover:bg-neutral-100 md:hidden">
+            <button 
+              type="button" 
+              aria-label="Close navigation" 
+              onClick={() => setMobileNavOpen(false)} 
+              className="rounded-lg p-1.5 text-op-muted hover:bg-op-raised hover:text-op-fg md:hidden transition-colors"
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Interactive Project Switcher (Dropdown with Search & Actions) */}
+          {/* Interactive Project Switcher */}
           <ProjectSwitcher />
+        </div>
 
-          {/* Navigation Links */}
-          <nav className="px-3 pb-4 space-y-5">
+        {/* Scrollable Navigation Items */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-5 [scrollbar-width:thin] [scrollbar-color:#e2e8f0_transparent] dark:[scrollbar-color:#334155_transparent]">
+          <nav className="space-y-5">
             {navGroups.map((group) => {
               const groupItems = group.items.filter((item) => canAccessRole(user?.roles, [...item.roles]));
 
@@ -203,11 +230,11 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
               return (
                 <div key={group.title} className="space-y-1">
                   <div className="flex items-center justify-between px-2 mb-1.5">
-                    <span className="text-[9px] font-semibold text-neutral-500 uppercase tracking-[0.14em] truncate">
+                    <span className="text-[9px] font-extrabold text-op-muted uppercase tracking-[0.16em] truncate">
                       {group.title}
                     </span>
                     {group.badge && (
-                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-black/10 uppercase">
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-op-accent/10 text-op-accent border border-op-accent/20 uppercase tracking-wide">
                         {group.badge}
                       </span>
                     )}
@@ -215,22 +242,26 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                   <div className="space-y-0.5">
                     {groupItems.map((item) => {
                       const Icon = item.icon;
-                      const isActive = location.pathname + location.search === item.path || location.pathname === item.path;
+                      const isActive = location.pathname === item.path || (
+                        item.path !== '/dashboard' && 
+                        item.path !== '/' && 
+                        location.pathname.startsWith(`${item.path}/`)
+                      );
 
                       return (
                         <Link
                           key={item.name}
                           to={item.path}
-                          className={`group flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                          className={`group flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
                             isActive
-                              ? 'bg-neutral-100 text-black border border-black/10 font-bold'
-                              : 'text-neutral-600 hover:bg-neutral-50 hover:text-black'
+                              ? 'bg-op-accent/10 text-op-accent border border-op-accent/25 font-bold shadow-xs dark:bg-op-accent/15 dark:text-op-accent'
+                              : 'text-op-muted hover:bg-op-raised hover:text-op-fg dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60'
                           }`}
                         >
-                          <Icon className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
+                          <Icon className={`w-4 h-4 shrink-0 transition-transform duration-150 ${
                             isActive
-                              ? 'text-black'
-                              : 'text-neutral-400 group-hover:text-black'
+                              ? 'text-op-accent'
+                              : 'text-op-muted group-hover:text-op-fg group-hover:scale-105'
                           }`} />
                           <span className="truncate flex-1">{item.name}</span>
 
@@ -238,14 +269,14 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                             <span className={`shrink-0 flex items-center justify-center px-1.5 py-0.5 text-[10px] font-bold rounded-full shadow-xs ${
                               item.badgeColor === 'rose'
                                 ? 'bg-rose-500 text-white animate-pulse'
-                                : 'bg-neutral-100 text-neutral-700'
+                                : 'bg-op-raised text-op-fg border border-op-border'
                             }`}>
                               {item.badge}
                             </span>
                           )}
 
                           {isActive && !item.badge && (
-                            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-black" />
+                            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-op-accent" />
                           )}
                         </Link>
                       );
@@ -257,28 +288,28 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
           </nav>
         </div>
 
-        {/* User Card Profile Footer */}
-        <div className="p-3 border-t border-black/10 bg-white">
-          <div className="flex items-center justify-between p-1.5 rounded-xl hover:bg-white/80 transition-colors">
+        {/* User Profile Footer */}
+        <div className="p-3 border-t border-op-border dark:border-slate-800/80 bg-op-surface dark:bg-slate-900 shrink-0">
+          <div className="flex items-center justify-between p-2 rounded-xl bg-op-raised/50 border border-op-border dark:border-slate-800 hover:bg-op-raised transition-colors">
             <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
-              <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-white shrink-0 text-xs font-semibold">
+              <div className="w-8 h-8 rounded-full bg-op-accent text-white flex items-center justify-center shrink-0 text-xs font-bold shadow-xs">
                 {(user?.name || user?.email || 'U').charAt(0).toUpperCase()}
               </div>
               <div className="truncate min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-bold text-slate-800 truncate">{user?.name || 'User'}</span>
+                  <span className="text-xs font-bold text-op-fg dark:text-white truncate">{user?.name || 'User'}</span>
                   {user?.roles?.[0] && (
-                    <span className="text-[9px] font-extrabold px-1 py-0.2 rounded bg-slate-100 text-slate-600 uppercase border border-slate-200">
+                    <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-op-accent/10 text-op-accent uppercase border border-op-accent/20">
                       {user.roles[0]}
                     </span>
                   )}
                 </div>
-                <div className="text-[10px] font-medium text-slate-400 truncate">{user?.email}</div>
+                <div className="text-[10px] font-medium text-op-muted truncate">{user?.email}</div>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors shrink-0"
+              className="p-1.5 rounded-lg text-op-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors shrink-0 ml-1"
               title="Log out"
             >
               <LogOut className="w-4 h-4" />
@@ -287,23 +318,44 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
         </div>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Content Viewport */}
       <main className="relative flex-1 overflow-y-auto">
-        <div className="mx-auto min-h-full w-full max-w-[1600px] px-5 py-6 sm:px-7 lg:px-10 lg:py-8">
-          <div className="mb-5 flex items-center gap-3 md:hidden">
-            <button type="button" aria-label="Open navigation" onClick={() => setMobileNavOpen(true)} className="rounded-full border border-black/10 bg-white p-2.5 text-black hover:bg-neutral-50">
-              <Menu className="h-4 w-4" />
-            </button>
-            <span className="font-mono text-xs font-bold tracking-[0.12em] text-black">OPS/PILOT</span>
+        <div className="mx-auto min-h-full w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+          {/* Mobile Top Bar */}
+          <div className="mb-4 flex items-center justify-between gap-3 md:hidden rounded-2xl border border-op-border bg-op-surface p-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <button 
+                type="button" 
+                aria-label="Open navigation" 
+                onClick={() => setMobileNavOpen(true)} 
+                className="rounded-xl border border-op-border bg-op-raised p-2 text-op-fg hover:bg-op-surface transition-colors"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+              <span className="font-extrabold text-sm tracking-tight text-op-fg">OPSPILOT</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-semibold text-op-muted">Online</span>
+            </div>
           </div>
+
+          {/* Active Scoped Project Notice */}
           {pid != null && SCOPED_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`)) && (
-            <div role="status" className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-black/10 bg-neutral-50 px-4 py-3 text-xs font-medium text-neutral-700">
-              <span>Showing data for <strong>{currentProject?.name ?? currentProject?.projectName ?? 'the selected project'}</strong>.</span>
-              <button onClick={() => selectProject(null)} className="rounded-full border border-black/15 bg-white px-3 py-1.5 font-semibold text-black hover:bg-neutral-100 transition-colors">
+            <div role="status" className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-op-border bg-op-surface p-3.5 text-xs font-medium text-op-fg shadow-xs">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-op-accent" />
+                <span>Showing data scoped to <strong>{currentProject?.name ?? currentProject?.projectName ?? 'Active Project'}</strong>.</span>
+              </div>
+              <button 
+                onClick={() => selectProject(null)} 
+                className="rounded-xl border border-op-border bg-op-raised px-3 py-1.5 font-bold text-xs text-op-fg hover:bg-op-surface hover:border-op-accent/40 transition-colors shadow-xs"
+              >
                 Show all projects
               </button>
             </div>
           )}
+
           {children}
         </div>
       </main>

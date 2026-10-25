@@ -40,21 +40,28 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <SidebarLayout>
-      <div className="p-8 max-w-[1500px] mx-auto space-y-8 animate-fade-in-up">
+      <div className="space-y-6 pb-12">
         {/* Header */}
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
-              <LayoutDashboard className="w-7 h-7 text-indigo-600 dark:text-indigo-400" /> Welcome Back, {user?.name || 'Administrator'}
-            </h1>
-            <p className="text-sm font-medium mt-2 text-gray-500 dark:text-gray-400">
-              Here is the latest overview of the OpsPilot platform.
-            </p>
+        <div className="relative overflow-hidden rounded-3xl border border-op-border bg-gradient-to-br from-op-surface via-op-surface to-op-raised p-6 lg:p-8 shadow-xs">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-op-accent/20 bg-op-accent/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-op-accent">
+                  Admin Platform
+                </span>
+              </div>
+              <h1 className="text-3xl font-black tracking-tight text-op-fg flex items-center gap-3">
+                <LayoutDashboard className="w-7 h-7 text-op-accent" /> Welcome Back, {user?.name || 'Administrator'}
+              </h1>
+              <p className="text-sm font-medium mt-1 text-op-muted">
+                Platform administration, governance, and audit telemetry.
+              </p>
+            </div>
           </div>
-        </header>
+        </div>
 
         {/* Highlights Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <HighlightCard icon={Users} label="Total Users" value={overview?.userCount.toString() || '...'} loading={loading} />
           <HighlightCard icon={UserCheck} label="Active Users" value={overview?.activeUserCount.toString() || '...'} loading={loading} />
           <HighlightCard icon={FolderGit2} label="Projects" value={overview?.projectCount.toString() || '...'} loading={loading} />

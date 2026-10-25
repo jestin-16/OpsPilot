@@ -111,21 +111,21 @@ export const ProjectSwitcher: React.FC = () => {
         disabled={projectsLoading}
         className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left transition-all duration-200 border ${
           isOpen
-            ? 'bg-white border-black/40 ring-2 ring-black/5'
-            : 'bg-white hover:bg-neutral-50 border-black/10 hover:border-black/25'
+            ? 'bg-op-surface dark:bg-slate-900 border-op-accent ring-2 ring-op-accent/20'
+            : 'bg-op-surface dark:bg-slate-900/80 hover:bg-op-raised border-op-border dark:border-slate-800'
         }`}
       >
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 shadow-xs transition-transform ${
           currentProject
-            ? 'bg-black text-white'
-            : 'bg-neutral-100 text-neutral-700'
+            ? 'bg-op-accent text-white'
+            : 'bg-op-raised text-op-muted border border-op-border'
         }`}>
           {currentProject ? <FolderGit2 className="w-3.5 h-3.5" /> : <Layers className="w-3.5 h-3.5" />}
         </div>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-slate-800 truncate block">
+            <span className="text-xs font-bold text-op-fg dark:text-white truncate block">
               {projectsLoading
                 ? 'Loading projects...'
                 : projectsError
@@ -136,27 +136,27 @@ export const ProjectSwitcher: React.FC = () => {
             </span>
             {currentProject && getEnvBadge(currentProject.environment)}
           </div>
-          <span className="text-[10px] font-medium text-slate-400 block truncate">
+          <span className="text-[10px] font-medium text-op-muted block truncate">
             {currentProject ? 'Active workspace' : 'Global system scope'}
           </span>
         </div>
 
-        <ChevronsUpDown className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-black' : ''}`} />
+        <ChevronsUpDown className={`w-3.5 h-3.5 text-op-muted shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-op-accent' : ''}`} />
       </button>
 
       {/* Dropdown Popover */}
       {isOpen && (
-        <div className="absolute left-3 right-3 top-[calc(100%-4px)] z-50 bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-xl shadow-slate-900/10 p-2 animate-fade-in-up">
+        <div className="absolute left-3 right-3 top-[calc(100%-4px)] z-50 bg-op-surface/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-op-border dark:border-slate-800 rounded-2xl shadow-2xl shadow-black/15 p-2 animate-in fade-in zoom-in-95 duration-150">
           {/* Search Bar */}
           <div className="relative mb-2">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-op-muted absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               ref={searchInputRef}
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search projects..."
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-medium text-slate-800 placeholder-slate-400 outline-none focus:border-black focus:bg-white focus:ring-2 focus:ring-black/5 transition-all"
+              className="w-full bg-op-raised border border-op-border dark:border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs font-medium text-op-fg placeholder-op-muted outline-none focus:border-op-accent focus:bg-op-surface focus:ring-2 focus:ring-op-accent/20 transition-all"
             />
           </div>
 
@@ -168,27 +168,27 @@ export const ProjectSwitcher: React.FC = () => {
               onClick={() => handleSelectProject(null)}
               className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
                 currentProject === null
-                  ? 'bg-neutral-100 text-black'
-                  : 'text-slate-700 hover:bg-slate-100/80'
+                  ? 'bg-op-accent/10 text-op-accent border border-op-accent/20'
+                  : 'text-op-fg hover:bg-op-raised'
               }`}
             >
               <div className="flex items-center gap-2 truncate">
-                <div className="w-5 h-5 rounded-md bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                <div className="w-5 h-5 rounded-md bg-op-raised border border-op-border flex items-center justify-center text-op-muted shrink-0">
                   <Layers className="w-3 h-3" />
                 </div>
                 <div className="text-left">
                   <span className="block text-xs font-bold">All Projects</span>
-                  <span className="block text-[9.5px] font-normal text-slate-400">View across all systems</span>
+                  <span className="block text-[9.5px] font-normal text-op-muted">View across all systems</span>
                 </div>
               </div>
-              {currentProject === null && <Check className="w-3.5 h-3.5 text-black shrink-0" />}
+              {currentProject === null && <Check className="w-3.5 h-3.5 text-op-accent shrink-0" />}
             </button>
 
-            <div className="h-px bg-slate-100 my-1" />
+            <div className="h-px bg-op-border dark:bg-slate-800 my-1" />
 
             {/* Individual Projects */}
             {filteredProjects.length === 0 ? (
-              <div className="py-4 text-center text-xs text-slate-400">
+              <div className="py-4 text-center text-xs text-op-muted">
                 {search ? `No project matching "${search}"` : 'No projects found'}
               </div>
             ) : (
@@ -202,20 +202,20 @@ export const ProjectSwitcher: React.FC = () => {
                     onClick={() => handleSelectProject(p.id)}
                     className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
                       isSelected
-                        ? 'bg-neutral-100 text-black'
-                        : 'text-slate-700 hover:bg-slate-100/80'
+                        ? 'bg-op-accent/10 text-op-accent border border-op-accent/20'
+                        : 'text-op-fg hover:bg-op-raised'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate min-w-0">
                       <div className={`w-5 h-5 rounded-md flex items-center justify-center text-white shrink-0 text-[10px] font-bold ${
-                        isSelected ? 'bg-black' : 'bg-slate-400'
+                        isSelected ? 'bg-op-accent' : 'bg-op-muted'
                       }`}>
                         {pName.charAt(0).toUpperCase()}
                       </div>
                       <div className="text-left truncate">
                         <span className="block text-xs font-bold truncate">{pName}</span>
                         {p.environment && (
-                          <span className="block text-[9.5px] font-normal text-slate-400 uppercase tracking-tight">
+                          <span className="block text-[9.5px] font-normal text-op-muted uppercase tracking-tight">
                             {p.environment}
                           </span>
                         )}
@@ -223,7 +223,7 @@ export const ProjectSwitcher: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 ml-2">
                       {getEnvBadge(p.environment)}
-                      {isSelected && <Check className="w-3.5 h-3.5 text-black" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 text-op-accent" />}
                     </div>
                   </button>
                 );
@@ -232,14 +232,14 @@ export const ProjectSwitcher: React.FC = () => {
           </div>
 
           {/* Action Footer */}
-          <div className="pt-2 mt-1 border-t border-slate-100 flex items-center gap-1">
+          <div className="pt-2 mt-1 border-t border-op-border dark:border-slate-800 flex items-center gap-1.5">
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
                 navigate('/projects');
               }}
-              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-semibold text-slate-600 hover:text-black hover:bg-slate-100 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-op-muted hover:text-op-fg hover:bg-op-raised transition-colors"
             >
               <ArrowUpRight className="w-3 h-3" />
               <span>All Projects</span>
@@ -250,10 +250,10 @@ export const ProjectSwitcher: React.FC = () => {
                 setIsOpen(false);
                 setCreating(true);
               }}
-              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-[11px] font-semibold text-white bg-black hover:bg-neutral-800 transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-semibold text-white bg-op-accent hover:opacity-90 transition-opacity shadow-xs"
             >
               <Plus className="w-3 h-3" />
-              <span>New Project</span>
+              <span>New</span>
             </button>
           </div>
         </div>

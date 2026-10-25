@@ -41,10 +41,10 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, trigger, align = 'rig
 
       {isOpen && (
         <div
-          className={`absolute z-50 mt-2 min-w-[220px] rounded-2xl bg-white border border-black/10 shadow-lg shadow-black/5 overflow-hidden ${align === 'right' ? 'right-0' : 'left-0'}`}
+          className={`absolute z-50 mt-2 min-w-[220px] rounded-2xl bg-op-surface dark:bg-slate-900 border border-op-border dark:border-slate-800 shadow-2xl shadow-black/10 dark:shadow-black/40 backdrop-blur-xl overflow-hidden transition-all duration-150 animate-in fade-in zoom-in-95 ${align === 'right' ? 'right-0' : 'left-0'}`}
           role="menu"
         >
-          <div className="p-2 flex flex-col gap-1 max-h-80 overflow-y-auto">
+          <div className="p-1.5 flex flex-col gap-0.5 max-h-80 overflow-y-auto">
             {items.map((item) => (
               <button
                 key={item.key}
@@ -52,14 +52,14 @@ export const Dropdown: React.FC<DropdownProps> = ({ items, trigger, align = 'rig
                   item.onClick();
                   setIsOpen(false);
                 }}
-                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 transition-all duration-200 group ${
+                className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-3 transition-colors duration-150 group ${
                   item.danger 
-                    ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10' 
-                    : 'text-neutral-700 hover:text-black hover:bg-neutral-100'
+                    ? 'text-rose-600 dark:text-rose-400 hover:bg-rose-500/10' 
+                    : 'text-op-fg hover:bg-op-raised hover:text-op-accent'
                 }`}
                 role="menuitem"
               >
-                {item.icon && <span className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 group-hover:scale-110 ${item.danger ? 'text-rose-500' : 'text-neutral-500'}`}>{item.icon}</span>}
+                {item.icon && <span className={`w-4 h-4 flex-shrink-0 transition-transform duration-150 group-hover:scale-110 ${item.danger ? 'text-rose-500' : 'text-op-muted group-hover:text-op-accent'}`}>{item.icon}</span>}
                 <span className="truncate">{item.label}</span>
               </button>
             ))}

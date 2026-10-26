@@ -178,7 +178,7 @@ describe('Projects - Deployments Dialog', () => {
     });
 
     // Find and click close button
-    const closeBtn = screen.getByRole('button', { name: '' });
+    const closeBtn = screen.getByRole('button', { name: /Close dialog/i });
     await user.click(closeBtn);
 
     await waitFor(() => {

@@ -3,9 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type DockerSource, type Project } from '../services/api';
 import { 
-  Box, Plus, Trash2, ArrowLeft, Copy, Eye, X, Check, Server, 
-  Terminal, Key, AlertCircle, ChevronDown, CheckCircle2, 
-  Activity, Radio, Shield, Sparkles, Layers
+  Plus, Trash2, ArrowLeft, Copy, Eye, X, Check, Server, 
+  Terminal, Key, AlertCircle, ChevronDown, Activity
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useConfirm } from '../context/ConfirmContext';

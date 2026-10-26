@@ -5,6 +5,7 @@ import { isAxiosError } from 'axios';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, LoginSchema, SignupSchema } from '../services/api';
+import { PASSWORD_REQUIREMENTS, SignupRoleSchema } from '../lib/authValidation';
 import {
   Lock,
   Mail,
@@ -17,13 +18,20 @@ import {
   EyeOff,
   ArrowUpRight,
   LoaderCircle,
+  Check,
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { AuthMascot, type MascotCover, type MascotMood } from '../components/AuthMascot';
 import '../styles/auth.css';
 
 type Mode = 'login' | 'signup';
-type FieldName = 'name' | 'email' | 'password' | 'confirm';
+type FieldName = 'name' | 'email' | 'password' | 'confirm' | 'role';
+type FieldErrors = Partial<Record<FieldName, string>>;
+
+const fieldFromPath = (path: PropertyKey | undefined): FieldName | undefined => {
+  if (path === 'confirmPassword') return 'confirm';
+  return ['name', 'email', 'password', 'role'].includes(String(path)) ? path as FieldName : undefined;
+};
 
 const COPY: Record<Mode, {
   badge: string;
@@ -113,6 +121,7 @@ export const AuthPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState<FieldName | null>(null);
   const [editedFields, setEditedFields] = useState<Partial<Record<FieldName, boolean>>>({});
+  const [serverFieldErrors, setServerFieldErrors] = useState<FieldErrors>({});
 
   // Google Login State
   const [showRoleSelection, setShowRoleSelection] = useState(false);
@@ -141,6 +150,7 @@ export const AuthPage: React.FC = () => {
     setError('');
     setFocused(null);
     setEditedFields({});
+    setServerFieldErrors({});
     setShowPassword(false);
     setShowConfirmPassword(false);
     setLoading(false);
@@ -182,10 +192,16 @@ export const AuthPage: React.FC = () => {
     setEditedFields((current) => ({ ...current, [field]: true }));
   };
 
+  const clearFieldError = (field: FieldName) => {
+    setError('');
+    setServerFieldErrors(current => ({ ...current, [field]: undefined, ...(field === 'password' ? { confirm: undefined } : {}) }));
+  };
+
   const startRequest = () => {
     if (pendingRef.current) return null;
     pendingRef.current = true;
     setError('');
+    setServerFieldErrors({});
     setLoading(true);
     return ++requestRef.current;
   };
@@ -199,6 +215,39 @@ export const AuthPage: React.FC = () => {
   const focusInvalid = (form: HTMLFormElement, field: PropertyKey | undefined) => {
     const input = form.elements.namedItem(String(field));
     if (input instanceof HTMLElement) input.focus();
+  };
+
+  const failRequest = (err: unknown, fallback: string) => {
+    const message = errorMessage(err, fallback);
+    const fields: FieldErrors = {};
+    if (isAxiosError<{ fieldErrors?: Record<string, unknown> }>(err)) {
+      const backendFields = err.response?.data?.fieldErrors;
+      if (backendFields && typeof backendFields === 'object') {
+        for (const [path, detail] of Object.entries(backendFields)) {
+          const field = fieldFromPath(path);
+          if (field && (mode === 'signup' || field === 'email' || field === 'password') && typeof detail === 'string') fields[field] = detail;
+        }
+      }
+      if (err.response?.status === 429) {
+        fail('Too many attempts. Please wait a moment and try again.');
+        return;
+      }
+      if (!err.response) {
+        fail('Unable to reach the server. Check your connection and try again.');
+        return;
+      }
+    }
+    if (mode === 'signup' && /email address is already in use/i.test(message)) fields.email = 'An account with this email already exists. Sign in instead.';
+    if (Object.keys(fields).length) {
+      setServerFieldErrors(fields);
+      setEditedFields(current => ({ ...current, ...Object.fromEntries(Object.keys(fields).map(field => [field, true])) }));
+      fail('Please check the highlighted fields.');
+      const form = (mode === 'login' ? loginPanelRef : signupPanelRef).current?.querySelector('form');
+      const field = (['name', 'email', 'password', 'confirm', 'role'] as const).find(key => fields[key]);
+      if (form) focusInvalid(form, field === 'confirm' ? 'confirmPassword' : field);
+      return;
+    }
+    fail(message);
   };
 
   const closeRoleSelection = () => {
@@ -235,7 +284,7 @@ export const AuthPage: React.FC = () => {
       login(res);
       navigate('/monitoring');
     } catch (err) {
-      if (request === requestRef.current) fail(errorMessage(err, 'Invalid credentials'));
+      if (request === requestRef.current) failRequest(err, 'Invalid email or password');
     } finally {
       finishRequest(request);
     }
@@ -248,7 +297,7 @@ export const AuthPage: React.FC = () => {
 
     const validation = SignupSchema.safeParse({ name: name.trim(), email: email.trim(), password, confirmPassword, role });
     if (!validation.success) {
-      setEditedFields({ name: true, email: true, password: true, confirm: true });
+      setEditedFields({ name: true, email: true, password: true, confirm: true, role: true });
       focusInvalid(e.currentTarget, validation.error.issues[0]?.path[0]);
       setError('');
       return;
@@ -262,7 +311,7 @@ export const AuthPage: React.FC = () => {
       if (request !== requestRef.current) return;
       navigate(`/verify-email?email=${encodeURIComponent(res.email)}`);
     } catch (err) {
-      if (request === requestRef.current) fail(errorMessage(err, 'Registration failed'));
+      if (request === requestRef.current) failRequest(err, 'Registration failed');
     } finally {
       finishRequest(request);
     }
@@ -294,10 +343,12 @@ export const AuthPage: React.FC = () => {
   const handleRoleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pendingGoogleToken) return;
+    const validation = SignupRoleSchema.safeParse(selectedRole);
+    if (!validation.success) { fail(validation.error.issues[0].message); return; }
     const request = startRequest();
     if (request === null) return;
     try {
-      const res = await api.googleLogin({ idToken: pendingGoogleToken, role: selectedRole });
+      const res = await api.googleLogin({ idToken: pendingGoogleToken, role: validation.data });
       if (request !== requestRef.current) return;
       login(res);
       navigate('/monitoring');
@@ -323,38 +374,16 @@ export const AuthPage: React.FC = () => {
     },
   });
 
-  const getFieldError = (field: FieldName): string | undefined => {
-    if (!editedFields[field]) return undefined;
-    if (field === 'confirm') {
-      if (!confirmPassword) return 'Please confirm your password';
-      return confirmPassword !== password ? 'Passwords do not match' : undefined;
+  const validation = mode === 'login'
+    ? LoginSchema.safeParse({ email, password })
+    : SignupSchema.safeParse({ name, email, password, confirmPassword, role });
+  const fieldErrors: FieldErrors = { ...serverFieldErrors };
+  if (!validation.success) {
+    for (const issue of validation.error.issues) {
+      const field = fieldFromPath(issue.path[0]);
+      if (field && editedFields[field] && !fieldErrors[field]) fieldErrors[field] = issue.message;
     }
-
-    if (mode === 'login') {
-      const validation = LoginSchema.safeParse({
-        email: field === 'email' ? email.trim() : 'validation@opspilot.io',
-        password: field === 'password' ? password : 'ValidPass123!',
-      });
-      return validation.success ? undefined : validation.error.issues[0]?.message;
-    }
-
-    const candidatePassword = field === 'password' ? password : 'ValidPass123!';
-    const validation = SignupSchema.safeParse({
-      name: field === 'name' ? name.trim() : 'OpsPilot User',
-      email: field === 'email' ? email.trim() : 'validation@opspilot.io',
-      password: candidatePassword,
-      confirmPassword: candidatePassword,
-      role,
-    });
-    return validation.success ? undefined : validation.error.issues[0]?.message;
-  };
-
-  const fieldErrors = {
-    name: mode === 'signup' ? getFieldError('name') : undefined,
-    email: getFieldError('email'),
-    password: getFieldError('password'),
-    confirm: mode === 'signup' ? getFieldError('confirm') : undefined,
-  };
+  }
 
   return (
     <div className="auth-root selection:bg-black selection:text-white">
@@ -450,6 +479,7 @@ export const AuthPage: React.FC = () => {
                       setPassword('password123');
                       setError('');
                       setEditedFields({});
+                      setServerFieldErrors({});
                       loginPanelRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus();
                     }}
                     className="auth-demo-pill"
@@ -510,7 +540,7 @@ export const AuthPage: React.FC = () => {
                           type="email"
                           placeholder="Work Email"
                           value={email}
-                          onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                          onChange={(e) => { setEmail(e.target.value); clearFieldError('email'); }}
                           {...focusProps('email')}
                           className={inputClass}
                           aria-invalid={Boolean(mode === 'login' && fieldErrors.email)}
@@ -528,7 +558,7 @@ export const AuthPage: React.FC = () => {
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                            onChange={(e) => { setPassword(e.target.value); clearFieldError('password'); }}
                             {...focusProps('password')}
                             className={inputClass}
                             aria-invalid={Boolean(mode === 'login' && fieldErrors.password)}
@@ -575,7 +605,7 @@ export const AuthPage: React.FC = () => {
                           type="text"
                           placeholder="Full Name"
                           value={name}
-                          onChange={(e) => { setName(e.target.value); setError(''); }}
+                          onChange={(e) => { setName(e.target.value); clearFieldError('name'); }}
                           {...focusProps('name')}
                           className={inputClass}
                           aria-invalid={Boolean(fieldErrors.name)}
@@ -595,7 +625,7 @@ export const AuthPage: React.FC = () => {
                           type="email"
                           placeholder="Work Email"
                           value={email}
-                          onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                          onChange={(e) => { setEmail(e.target.value); clearFieldError('email'); }}
                           {...focusProps('email')}
                           className={inputClass}
                           aria-invalid={Boolean(mode === 'signup' && fieldErrors.email)}
@@ -613,7 +643,7 @@ export const AuthPage: React.FC = () => {
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                            onChange={(e) => { setPassword(e.target.value); clearFieldError('password'); }}
                             {...focusProps('password')}
                             className={inputClass}
                             aria-invalid={Boolean(mode === 'signup' && fieldErrors.password)}
@@ -628,7 +658,12 @@ export const AuthPage: React.FC = () => {
                       </div>
 
                       <div className="relative">
-                        <p id="signup-password-hint" className="auth-field-hint">Use 8+ characters with an uppercase letter, a lowercase letter, and a number.</p>
+                        <ul id="signup-password-hint" className="auth-password-requirements" aria-label="Password requirements">
+                          {PASSWORD_REQUIREMENTS.map(({ label, test }) => {
+                            const met = test(password);
+                            return <li key={label} data-met={met}><Check className="h-3.5 w-3.5" aria-hidden="true" /><span className="sr-only">{met ? 'Met: ' : 'Needed: '}</span>{label}</li>;
+                          })}
+                        </ul>
                         <Field icon={<Lock className="h-4 w-4" />} index={4} error={fieldErrors.confirm} inputId="signup-confirm" label="Confirm password" errorId="signup-confirm-error">
                           <input
                             id="signup-confirm"
@@ -638,7 +673,7 @@ export const AuthPage: React.FC = () => {
                             placeholder="Confirm"
                             aria-label="Confirm password"
                             value={confirmPassword}
-                            onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
+                            onChange={(e) => { setConfirmPassword(e.target.value); clearFieldError('confirm'); }}
                             {...focusProps('confirm')}
                             className={inputClass}
                             aria-invalid={Boolean(fieldErrors.confirm)}
@@ -652,22 +687,22 @@ export const AuthPage: React.FC = () => {
                         </Field>
                       </div>
 
-                      <div className="auth-field">
-                        <div className="pl-2 text-gray-500">
-                          <Shield className="h-4 w-4" />
-                        </div>
+                      <Field icon={<Shield className="h-4 w-4" />} index={5} inputId="signup-role" label="Workspace role" error={fieldErrors.role} errorId="signup-role-error">
                         <select
                           id="signup-role"
                           name="role"
                           aria-label="Workspace role"
                           value={role}
-                          onChange={(e) => setRole(e.target.value)}
+                          onChange={(e) => { setRole(e.target.value); clearFieldError('role'); }}
+                          {...focusProps('role')}
+                          aria-invalid={Boolean(fieldErrors.role)}
+                          aria-describedby={fieldErrors.role ? 'signup-role-error' : undefined}
                           className={inputClass}
                         >
                           <option value="Developer">Role: Developer</option>
                           <option value="DevOps">Role: DevOps</option>
                         </select>
-                      </div>
+                      </Field>
 
                       <button
                         type="submit"

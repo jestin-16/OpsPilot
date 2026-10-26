@@ -1,6 +1,7 @@
 import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { z } from 'zod';
 import type { ProjectIntegration } from './projectApi';
+import { LoginSchema, RegisterSchema } from '../lib/authValidation';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1';
 
@@ -90,28 +91,7 @@ axiosInstance.interceptors.response.use(
 );
 
 // Zod Validation Schemas (Item 5.2)
-export const RegisterSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email address format'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters long')
-    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/, 'Password must contain at least 1 uppercase letter, 1 lowercase letter, and 1 digit'),
-  // Administrator access is granted by an existing admin, never chosen at sign-up.
-  role: z.enum(['Developer', 'DevOps'], { message: 'Choose Developer or DevOps' }),
-});
-
-export const SignupSchema = RegisterSchema.extend({
-  confirmPassword: z.string().min(1, 'Please confirm your password'),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Passwords do not match',
-  path: ['confirmPassword'],
-});
-
-export const LoginSchema = z.object({
-  email: z.string().email('Invalid email address format'),
-  password: z.string().min(1, 'Password is required'),
-});
+export { LoginSchema, RegisterSchema, SignupSchema } from '../lib/authValidation';
 
 export const ProjectSchema = z.object({
   projectName: z.string().trim().min(1, 'Project name is required').max(100, 'Project name must be 100 characters or fewer'),
@@ -640,8 +620,8 @@ export interface LogQueryResult {
 export const api = {
   // Auth
   register: async (data: z.infer<typeof RegisterSchema>): Promise<RegistrationResponse> => {
-    RegisterSchema.parse(data);
-    const res = await axiosInstance.post<RegistrationResponse>('/auth/register', data);
+    const validated = RegisterSchema.parse(data);
+    const res = await axiosInstance.post<RegistrationResponse>('/auth/register', validated);
     return res.data;
   },
 
@@ -656,8 +636,8 @@ export const api = {
   },
 
   login: async (data: z.infer<typeof LoginSchema>): Promise<AuthResponse> => {
-    LoginSchema.parse(data);
-    const res = await axiosInstance.post<AuthResponse>('/auth/login', data);
+    const validated = LoginSchema.parse(data);
+    const res = await axiosInstance.post<AuthResponse>('/auth/login', validated);
     return res.data;
   },
 

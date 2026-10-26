@@ -259,4 +259,57 @@ describe('AuthPage', () => {
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
+
+  it('shows all required signup errors and focuses the first invalid field', async () => {
+    const user = userEvent.setup();
+    renderWithRouter('/signup');
+    await user.click(screen.getByRole('button', { name: 'Create Account' }));
+    for (const message of ['Name is required', 'Email is required', 'Password is required', 'Please confirm your password']) {
+      expect(screen.getByText(message)).toBeInTheDocument();
+    }
+    expect(screen.getByLabelText('Full name')).toHaveFocus();
+    expect(api.register).not.toHaveBeenCalled();
+  });
+
+  it('updates password requirements and confirmation errors when the original password changes', async () => {
+    const user = userEvent.setup();
+    renderWithRouter('/signup');
+    const password = screen.getByLabelText('Password', { exact: true, selector: '#password-signup' });
+    const confirm = screen.getByLabelText('Confirm password', { selector: '#signup-confirm' });
+    await user.type(password, 'Password123!');
+    expect(screen.getByRole('list', { name: 'Password requirements' }).querySelectorAll('[data-met=true]')).toHaveLength(4);
+    await user.type(confirm, 'Password123!');
+    await user.tab();
+    expect(confirm).toHaveAttribute('aria-invalid', 'false');
+    await user.type(password, 'changed');
+    expect(screen.getByText('Passwords do not match')).toBeInTheDocument();
+    expect(confirm).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('places backend field errors beside inputs and clears only the edited field', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.login).mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, data: { fieldErrors: { email: 'This email is not permitted', password: 'Please use a different password' } } } });
+    renderWithRouter();
+    const email = screen.getByRole('textbox', { name: 'Work email' });
+    await user.type(email, 'alice@example.com');
+    await user.type(screen.getByLabelText('Password', { exact: true, selector: '#password-login' }), 'Password123!');
+    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    expect(await screen.findByText('This email is not permitted')).toBeInTheDocument();
+    expect(email).toHaveFocus();
+    expect(email).toHaveAttribute('aria-describedby', 'email-login-error');
+    await user.type(email, '.au');
+    expect(screen.queryByText('This email is not permitted')).not.toBeInTheDocument();
+    expect(screen.getByText('Please use a different password')).toBeInTheDocument();
+  });
+
+  it('explains rate limiting and restores the submit button after failure', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.login).mockRejectedValueOnce({ isAxiosError: true, response: { status: 429, data: {} } });
+    renderWithRouter();
+    await user.type(screen.getByRole('textbox', { name: 'Work email' }), 'alice@example.com');
+    await user.type(screen.getByLabelText('Password', { exact: true, selector: '#password-login' }), 'Password123!');
+    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Too many attempts. Please wait a moment and try again.');
+    expect(screen.getByRole('button', { name: 'Sign In' })).toBeEnabled();
+  });
 });

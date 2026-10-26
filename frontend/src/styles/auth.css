@@ -264,6 +264,11 @@ html:has(.auth-root) {
 .auth-form-description { margin: 0.45rem 0 1.5rem; color: #666666; font-size: 0.875rem; line-height: 1.5; }
 .auth-field-label { padding-inline: 0.2rem; color: #333333; font-size: 0.78rem; font-weight: 600; }
 .auth-field-hint { margin-bottom: 0.8rem; color: #666666; font-size: 0.75rem; line-height: 1.5; }
+.auth-password-requirements { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem 0.75rem; margin-bottom: 0.85rem; color: #737373; font-size: 0.72rem; line-height: 1.4; }
+.auth-password-requirements li { display: flex; align-items: center; gap: 0.35rem; }
+.auth-password-requirements svg { flex-shrink: 0; opacity: 0.35; }
+.auth-password-requirements [data-met='true'] { color: #167044; }
+.auth-password-requirements [data-met='true'] svg { opacity: 1; }
 
 .auth-password-toggle {
   display: grid;

@@ -25,6 +25,7 @@ services:
     restart: unless-stopped
 
   service-registry:
+    image: opspilot-service-registry:latest
     build:
       <<: *backend-build
       args: { SERVICE: service-registry, PORT: "8761" }
@@ -42,6 +43,7 @@ services:
     restart: unless-stopped
 
   auth-service:
+    image: opspilot-auth-service:latest
     build:
       <<: *backend-build
       args: { SERVICE: auth-service, PORT: "8081" }
@@ -78,6 +80,7 @@ services:
       - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}
 
   core-service:
+    image: opspilot-core-service:latest
     build:
       <<: *backend-build
       args: { SERVICE: core-service, PORT: "8082" }
@@ -117,6 +120,7 @@ services:
       - LOKI_PASSWORD=${LOKI_PASSWORD:-}
 
   observability-service:
+    image: opspilot-observability-service:latest
     build:
       <<: *backend-build
       args: { SERVICE: observability-service, PORT: "8083" }
@@ -157,6 +161,7 @@ services:
       - OPSPILOT_PUBLIC_URL=${OPSPILOT_PUBLIC_URL:-https://opspilot.jestin16.dev}
 
   log-watcher-service:
+    image: opspilot-log-watcher-service:latest
     build:
       <<: *backend-build
       args: { SERVICE: log-watcher-service, PORT: "8084" }
@@ -186,6 +191,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
 
   api-gateway:
+    image: opspilot-api-gateway:latest
     build:
       <<: *backend-build
       args: { SERVICE: api-gateway, PORT: "8080" }
@@ -201,6 +207,7 @@ services:
         condition: service_healthy
 
   frontend:
+    image: opspilot-frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile

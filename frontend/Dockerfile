@@ -1,10 +1,11 @@
+# syntax=docker/dockerfile:1
 # Stage 1: Build the React application
 FROM node:20-alpine AS build
 WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 # Copy source code and build
 COPY . .

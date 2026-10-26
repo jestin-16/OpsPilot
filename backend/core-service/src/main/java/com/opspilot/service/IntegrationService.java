@@ -57,7 +57,7 @@ public class IntegrationService {
         Integration integration = new Integration();
         integration.setProject(project);
         integration.setProvider(request.getProvider());
-        integration.setName(request.getName());
+        integration.setName(com.opspilot.validation.FormChecks.resourceName(request.getName(), "Integration name"));
         integration.setCategory(request.getCategory());
         applyConfig(integration, request, false);
         integration.setMetadata(request.getMetadata());
@@ -81,7 +81,7 @@ public class IntegrationService {
     public IntegrationResponse updateIntegration(Long projectId, Long integrationId, IntegrationRequest request, User currentUser) {
         Integration integration = loadAuthorized(projectId, integrationId, currentUser, "update");
         if (request.getName() != null && !request.getName().isBlank()) {
-            integration.setName(request.getName().trim());
+            integration.setName(com.opspilot.validation.FormChecks.resourceName(request.getName(), "Integration name"));
         }
         if (request.getMetadata() != null) {
             integration.setMetadata(request.getMetadata());
@@ -157,6 +157,21 @@ public class IntegrationService {
         if (merge) {
             settings.putAll(safeParse(integration.getConfiguration()));
             safeParse(integration.getCredentialReference()).forEach((k, v) -> secrets.put(k, String.valueOf(v)));
+        }
+        com.opspilot.validation.FormChecks.jsonObject(request.getConfiguration(), "Configuration");
+        com.opspilot.validation.FormChecks.jsonObject(request.getCredentials(), "Credentials");
+        com.opspilot.validation.FormChecks.jsonObject(request.getMetadata(), "Metadata");
+        Map<String, Object> submitted = new HashMap<>(ConnectorConfig.parseObject(request.getConfiguration()));
+        if (request.getConfig() != null) submitted.putAll(request.getConfig());
+        for (String key : List.of("host", "apiServer", "baseUrl", "apiBaseUrl")) {
+            Object value = submitted.get(key);
+            if (value != null) com.opspilot.validation.FormChecks.endpoint(String.valueOf(value).trim(), key, key.equals("host"));
+        }
+        if (submitted.containsKey("pollSeconds")) {
+            String interval = String.valueOf(submitted.get("pollSeconds"));
+            if (!interval.matches("[0-9]{1,5}") || Integer.parseInt(interval) < 5 || Integer.parseInt(interval) > 86400) {
+                throw new IllegalArgumentException("Poll interval must be a whole number between 5 and 86400 seconds");
+            }
         }
         boolean hasNew = request.getConfig() != null || request.getSecrets() != null;
         if (hasNew) {

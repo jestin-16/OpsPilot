@@ -32,6 +32,11 @@ public class AdminGovernanceService {
     public List<AuditLogResponse> auditLogs() { return auditLogs.findTop100ByOrderByTimestampDesc().stream().map(this::mapAudit).toList(); }
     public List<PlatformIntegration> integrations() { return integrations.findAll(); }
     @Transactional public PlatformIntegration saveIntegration(PlatformIntegration value, User actor) {
+        value.setName(com.opspilot.validation.FormChecks.resourceName(value.getName(), "Integration name"));
+        if (!java.util.Set.of("GITHUB", "LOG_SOURCE", "SLACK").contains(value.getProviderType() == null ? "" : value.getProviderType())) {
+            throw new IllegalArgumentException("Choose a valid integration provider");
+        }
+        com.opspilot.validation.FormChecks.jsonObject(value.getConfigJson(), "Configuration");
         PlatformIntegration target = value.getId() == null ? new PlatformIntegration() : integrations.findById(value.getId()).orElseThrow(() -> new IllegalArgumentException("Integration not found"));
         target.setName(value.getName()); target.setProviderType(value.getProviderType()); target.setConfigJson(value.getConfigJson()); target.setActive(value.getActive() == null || value.getActive());
         PlatformIntegration saved = integrations.save(target); audit(actor, "INTEGRATION_SAVE", "INTEGRATION", saved.getId().toString(), "Saved integration: " + saved.getName()); return saved;

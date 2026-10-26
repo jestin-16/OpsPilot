@@ -117,10 +117,7 @@ public class DockerLogSourceService {
     }
 
     static String validName(String name) {
-        if (name == null || name.isBlank()) throw new IllegalArgumentException("Name is required");
-        String n = name.trim();
-        if (n.length() > 100) throw new IllegalArgumentException("Name must be at most 100 characters");
-        return n;
+        return com.opspilot.validation.FormChecks.resourceName(name, "Name");
     }
 
     static String validEnvironment(String env) {

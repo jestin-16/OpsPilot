@@ -1,9 +1,18 @@
 package com.opspilot.dto;
 
 import java.util.Set;
+import jakarta.validation.constraints.*;
+import com.opspilot.validation.ValidationRules;
 
 public class UpdateUserRequest {
+    @NotBlank(message = "Name is required")
+    @Size(max = 255)
+    @Pattern(regexp = ValidationRules.PERSON_NAME, message = "Name contains invalid characters")
     private String name;
+    @NotBlank(message = "Email is required")
+    @Size(max = 255)
+    @Email
+    @Pattern(regexp = ValidationRules.EMAIL, message = "Enter a valid email address")
     private String email;
     private Set<String> roles;
 

@@ -54,7 +54,7 @@ public class IncidentController {
     public ResponseEntity<Incident> createIncident(@RequestBody Map<String, Object> payload,
                                                    @AuthenticationPrincipal User currentUser) {
         Long projectId = payload.get("projectId") != null ? Long.valueOf(payload.get("projectId").toString()) : null;
-        if (projectId == null) {
+        if (projectId == null || projectId <= 0) {
             throw new IllegalArgumentException("projectId is required");
         }
         projectScope.require(projectId, currentUser);
@@ -62,6 +62,14 @@ public class IncidentController {
         String description = (String) payload.get("description");
         String severity = (String) payload.get("severity");
         String affectedService = (String) payload.get("affectedService");
+        if (title == null || title.isBlank()) throw new IllegalArgumentException("Incident title is required");
+        com.opspilot.validation.FormChecks.text(title, "Incident title", 255);
+        com.opspilot.validation.FormChecks.text(description, "Description", 5000);
+        com.opspilot.validation.FormChecks.text(affectedService, "Affected service", 255);
+        if (affectedService != null && affectedService.matches("(?s).*[\\r\\n\\t].*")) throw new IllegalArgumentException("Affected service must be a single line");
+        if (severity == null || !java.util.Set.of("LOW", "MEDIUM", "HIGH", "CRITICAL").contains(severity)) {
+            throw new IllegalArgumentException("Choose a valid severity");
+        }
         
         Long deploymentId = payload.get("deploymentId") != null ? Long.valueOf(payload.get("deploymentId").toString()) : null;
         Long pipelineRunId = payload.get("pipelineRunId") != null ? Long.valueOf(payload.get("pipelineRunId").toString()) : null;

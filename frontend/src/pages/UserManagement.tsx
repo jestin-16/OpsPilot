@@ -5,6 +5,10 @@ import { createPortal } from 'react-dom';
 import { axiosInstance } from '../services/api';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { errorMessage } from '../services/projectApi';
+import { UserFormSchema, validationMessage } from '../lib/formValidation';
+import { RegisterSchema } from '../lib/authValidation';
+
+const CreateUserSchema = UserFormSchema.extend({ password: RegisterSchema.shape.password });
 
 interface User {
   id: number;
@@ -78,11 +82,13 @@ export const UserManagement: React.FC = () => {
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!editingUser) return;
+    if (!editingUser || saving) return;
+    const result = UserFormSchema.safeParse(form);
+    if (!result.success) { setError(validationMessage(result.error)); return; }
     setSaving(true);
     setError('');
     try {
-      await axiosInstance.put(`/users/${editingUser.id}`, { name: form.name, email: form.email, roles: [form.role] });
+      await axiosInstance.put(`/users/${editingUser.id}`, { name: result.data.name, email: result.data.email, roles: [result.data.role] });
       setNotice(`${form.name} was updated successfully.`);
       setEditingUser(null);
       setForm(emptyForm);
@@ -114,8 +120,12 @@ export const UserManagement: React.FC = () => {
   };
 
   const createUser = async (event: React.FormEvent) => {
-    event.preventDefault(); setSaving(true); setError('');
-    try { await axiosInstance.post('/users', { ...newUser, roles: [newUser.role] }); setNotice(`${newUser.name} was added to the workspace.`); setCreatingUser(false); setNewUser({ name: '', email: '', password: '', role: 'DEVELOPER' }); await fetchUsers(); }
+    event.preventDefault();
+    if (saving) return;
+    const result = CreateUserSchema.safeParse(newUser);
+    if (!result.success) { setError(validationMessage(result.error)); return; }
+    setSaving(true); setError('');
+    try { await axiosInstance.post('/users', { ...result.data, roles: [result.data.role] }); setNotice(`${newUser.name} was added to the workspace.`); setCreatingUser(false); setNewUser({ name: '', email: '', password: '', role: 'DEVELOPER' }); await fetchUsers(); }
     catch (requestError) { setError(errorMessage(requestError, 'Unable to create user.')); }
     finally { setSaving(false); }
   };
@@ -172,7 +182,7 @@ export const UserManagement: React.FC = () => {
       {editingUser && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={closeEditor} aria-hidden="true" />
-          <form onSubmit={handleSave} className="relative z-10 w-full max-w-xl overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)] animate-fade-in-up">
+          <form onSubmit={handleSave} noValidate className="relative z-10 w-full max-w-xl overflow-hidden rounded-3xl border border-white/70 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.28)] animate-fade-in-up">
             <div className="relative overflow-hidden bg-gradient-to-br from-op-accent via-op-accent to-op-accent-hover px-6 pb-14 pt-6 text-white">
               <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-white/15 blur-2xl" />
               <div className="relative flex items-start justify-between">
@@ -199,6 +209,7 @@ export const UserManagement: React.FC = () => {
                 </div>
               </div>
               <div className="grid gap-4">
+                {error && <p role="alert" className="text-sm font-semibold text-rose-600">{error}</p>}
                 <label className="grid gap-2 text-xs font-black text-slate-600">
                   Full name
                   <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-op-accent/80 focus:bg-white focus:ring-4 focus:ring-op-accent/10" />
@@ -233,7 +244,7 @@ export const UserManagement: React.FC = () => {
       {creatingUser && createPortal(
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="create-user-title">
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={() => setCreatingUser(false)} aria-hidden="true" />
-          <form onSubmit={createUser} className="relative z-10 w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl animate-fade-in-up">
+          <form onSubmit={createUser} noValidate className="relative z-10 w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl animate-fade-in-up">
             <div className="bg-gradient-to-r from-op-accent to-op-accent-hover px-6 py-5 text-white">
               <div className="flex items-start justify-between">
                 <div>
@@ -246,6 +257,7 @@ export const UserManagement: React.FC = () => {
               </div>
             </div>
             <div className="grid gap-4 p-6">
+              {error && <p role="alert" className="text-sm font-semibold text-rose-600">{error}</p>}
               <label className="grid gap-2 text-xs font-black text-slate-600">
                 Full name
                 <input required value={newUser.name} onChange={(e) => setNewUser({ ...newUser, name: e.target.value })} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:border-op-accent/80 focus:ring-4 focus:ring-op-accent/10" />

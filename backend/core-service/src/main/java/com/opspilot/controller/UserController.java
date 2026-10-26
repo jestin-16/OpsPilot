@@ -14,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping({"/api/users", "/api/v1/users"})
@@ -35,14 +36,14 @@ public class UserController {
 
     @PutMapping("/me")
     public ResponseEntity<UserResponse> updateCurrentUser(
-            @RequestBody UpdateUserRequest request,
+            @Valid @RequestBody UpdateUserRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(userService.updateCurrentUser(request, currentUser));
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponse> createUser(@RequestBody CreateUserRequest request, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<UserResponse> createUser(@Valid @RequestBody CreateUserRequest request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.status(201).body(userService.createUser(request, currentUser));
     }
 
@@ -65,7 +66,7 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> updateUser(
             @PathVariable Long id,
-            @RequestBody UpdateUserRequest request, @AuthenticationPrincipal User currentUser) {
+            @Valid @RequestBody UpdateUserRequest request, @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(userService.updateUser(id, request, currentUser));
     }
 

@@ -2,23 +2,18 @@ const fs = require('fs');
 
 let sql = `BEGIN;
 
--- 1. Ensure themacrongamer@gmail.com has DEVOPS role
+-- 1. Set themacrongamer@gmail.com as DEVOPS and jestinshajik@gmail.com as DEVELOPER
 UPDATE users
-SET name = 'Macron Gamer', is_active = true, email_verified = true
-WHERE email = 'themacrongamer@gmail.com';
+SET is_active = true, email_verified = true
+WHERE email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com');
 
-DELETE FROM user_roles WHERE user_id = (SELECT id FROM users WHERE email = 'themacrongamer@gmail.com');
+DELETE FROM user_roles WHERE user_id = (SELECT id FROM users WHERE email = 'jestinshajik@gmail.com');
 INSERT INTO user_roles (user_id, role_id)
-SELECT id, 2 FROM users WHERE email = 'themacrongamer@gmail.com';
+SELECT id, 1 FROM users WHERE email = 'jestinshajik@gmail.com';
 
--- 2. Ensure macrongamer@gmail.com also exists as a verified active DEVOPS user
-INSERT INTO users (created_at, email, email_verified, is_active, name, password_hash)
-SELECT NOW() - INTERVAL '3 days', 'macrongamer@gmail.com', true, true, 'Macron Gamer', '$2a$10$wT0lq7x5zV3a3f5g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z'
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'macrongamer@gmail.com');
-
-DELETE FROM user_roles WHERE user_id = (SELECT id FROM users WHERE email = 'macrongamer@gmail.com');
+DELETE FROM user_roles WHERE user_id IN (SELECT id FROM users WHERE email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com'));
 INSERT INTO user_roles (user_id, role_id)
-SELECT id, 2 FROM users WHERE email = 'macrongamer@gmail.com';
+SELECT id, 2 FROM users WHERE email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com');
 
 -- 3. Alert Rules (DevOps Workbench)
 DELETE FROM alert_rules;
@@ -183,48 +178,48 @@ INSERT INTO infrastructure_events (id, event_type, project_id, integration_id, m
 -- 6. Notifications for Macron Gamer (user themacrongamer@gmail.com and macrongamer@gmail.com)
 INSERT INTO notifications (user_id, type, message, is_read, created_at, deployment_id)
 SELECT u.id, 'DEPLOYMENT_SUCCESS', 'Production deployment v3.1.3 of E-Commerce Platform successfully completed by DevOps.', false, NOW() - INTERVAL '45 minutes', (SELECT id FROM deployments WHERE project_id = 7 ORDER BY id DESC LIMIT 1)
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id = u.id AND n.message LIKE '%v3.1.3 of E-Commerce%');
 
 INSERT INTO notifications (user_id, type, message, is_read, created_at)
 SELECT u.id, 'ALERT_RESOLVED', 'Alert Auto-Resolved: High memory pressure on notesapp-redis normalized to 54%.', false, NOW() - INTERVAL '1 hour 20 minutes'
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id = u.id AND n.message LIKE '%notesapp-redis normalized%');
 
 INSERT INTO notifications (user_id, type, message, is_read, created_at)
 SELECT u.id, 'PIPELINE_SUCCESS', 'CI/CD Pipeline #4108273911 for Employee Service passed all 16 integration tests and security scans.', false, NOW() - INTERVAL '2 hours'
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id = u.id AND n.message LIKE '%#4108273911 for Employee Service%');
 
 INSERT INTO notifications (user_id, type, message, is_read, created_at)
 SELECT u.id, 'SECURITY_AUDIT', 'OpsPilot Security: Periodic credential rotation and container CVE scan passed with 0 critical issues.', false, NOW() - INTERVAL '4 hours'
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id = u.id AND n.message LIKE '%Periodic credential rotation%');
 
 INSERT INTO notifications (user_id, type, message, is_read, created_at)
 SELECT u.id, 'KUBERNETES_HEALTH', 'Kubernetes Cluster Status: All 8 production workloads reporting HEALTHY with 100% readiness.', false, NOW() - INTERVAL '6 hours'
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM notifications n WHERE n.user_id = u.id AND n.message LIKE '%All 8 production workloads reporting%');
 
 -- 7. Audit Logs for Macron Gamer
 INSERT INTO audit_logs (action, details, resource_id, resource_type, timestamp, user_id)
 SELECT 'DEPLOYMENT_TRIGGER', 'Triggered automated rolling deployment for ecommerce-gateway:v3.1.3 (commit a1b2c3d4)', '7', 'DEPLOYMENT', NOW() - INTERVAL '50 minutes', u.id
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM audit_logs a WHERE a.user_id = u.id AND a.action = 'DEPLOYMENT_TRIGGER');
 
 INSERT INTO audit_logs (action, details, resource_id, resource_type, timestamp, user_id)
 SELECT 'CONFIG_SYNC', 'Applied updated Kubernetes resource requests and limits in production namespace', 'k8s-production', 'KUBERNETES', NOW() - INTERVAL '2 hours', u.id
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM audit_logs a WHERE a.user_id = u.id AND a.action = 'CONFIG_SYNC');
 
 INSERT INTO audit_logs (action, details, resource_id, resource_type, timestamp, user_id)
 SELECT 'CONNECTOR_HEALTH_CHECK', 'Executed manual health check across all 7 project integrations: All 35 connections verified', 'integrations-batch', 'INTEGRATION', NOW() - INTERVAL '3 hours 15 minutes', u.id
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM audit_logs a WHERE a.user_id = u.id AND a.action = 'CONNECTOR_HEALTH_CHECK');
 
 INSERT INTO audit_logs (action, details, resource_id, resource_type, timestamp, user_id)
 SELECT 'USER_LOGIN_GOOGLE', 'User authenticated via Google OAuth with elevated DEVOPS privileges: ' || u.email, u.id::text, 'USER', NOW() - INTERVAL '10 minutes', u.id
-FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com')
+FROM users u WHERE u.email IN ('themacrongamer@gmail.com', 'macrongamer@gmail.com', 'jestinshajik@gmail.com')
 AND NOT EXISTS (SELECT 1 FROM audit_logs a WHERE a.user_id = u.id AND a.action = 'USER_LOGIN_GOOGLE' AND a.timestamp > NOW() - INTERVAL '30 minutes');
 
 -- 8. Add recent deployment record deployed by DevOps

@@ -107,11 +107,23 @@ public class IntegrationServiceTest {
     @Test
     void createIntegration_AdminCanCreate() {
         IntegrationRequest req = new IntegrationRequest();
+        req.setProvider(ProviderType.DOCKER);
+        req.setName("Admin Docker");
         when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
         when(integrationRepository.save(any())).thenReturn(integration);
         
         IntegrationResponse res = integrationService.createIntegration(10L, req, admin);
         assertNotNull(res);
+    }
+
+    @Test
+    void createIntegration_RejectsInvalidNameBeforeSaving() {
+        IntegrationRequest req = new IntegrationRequest();
+        req.setProvider(ProviderType.DOCKER);
+        req.setName("<Docker>");
+        when(projectRepository.findById(10L)).thenReturn(Optional.of(project));
+        assertThrows(IllegalArgumentException.class, () -> integrationService.createIntegration(10L, req, owner));
+        verify(integrationRepository, never()).save(any());
     }
 
     @Test

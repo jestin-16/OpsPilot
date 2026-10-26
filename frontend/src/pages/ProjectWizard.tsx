@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { errorMessage, type ProjectIntegration } from '../services/projectApi';
+import { JsonObjectSchema, ProjectFieldsSchema, validationMessage } from '../lib/formValidation';
 
 interface ProviderOption {
   provider: ProviderType;
@@ -41,7 +42,7 @@ export const ProjectWizard: React.FC = () => {
   const [projectName, setProjectName] = useState('');
   const [description, setDescription] = useState('');
   const [repositoryUrl, setRepositoryUrl] = useState('');
-  const [environment, setEnvironment] = useState('PRODUCTION');
+  const [environment, setEnvironment] = useState('prod');
   const [submitting1, setSubmitting1] = useState(false);
 
   // Step 2 State
@@ -74,6 +75,7 @@ export const ProjectWizard: React.FC = () => {
         setProjectName(p.projectName);
         setDescription(p.description || '');
         setRepositoryUrl(p.repositoryUrl || '');
+        setEnvironment(p.environment || 'prod');
         fetchIntegrations(p.id);
         setStep((current) => (current === 1 ? 2 : current));
       }).catch(err => setError("Failed to load project: " + err.message));
@@ -91,14 +93,17 @@ export const ProjectWizard: React.FC = () => {
 
   const handleStep1Submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting1) return;
+    const result = ProjectFieldsSchema.safeParse({ projectName, description, repositoryUrl, environment });
+    if (!result.success) { setError(validationMessage(result.error)); return; }
     setSubmitting1(true);
     setError('');
     try {
       if (project) {
-        await api.updateProject(project.id, { projectName, description, repositoryUrl });
+        await api.updateProject(project.id, result.data);
         setStep(2);
       } else {
-        const newProject = await api.createProject({ projectName, description, repositoryUrl });
+        const newProject = await api.createProject(result.data);
         setProject(newProject);
         navigate(`/projects/new/${newProject.id}`, { replace: true });
         setStep(2);
@@ -119,6 +124,11 @@ export const ProjectWizard: React.FC = () => {
 
   const connectProvider = async () => {
     if (!selectedProvider || !project) return;
+    if (isConnecting) return;
+    for (const [label, value] of [['Configuration', configJson], ['Credentials', secretsJson]]) {
+      const result = JsonObjectSchema.safeParse(value);
+      if (!result.success) { showAlert(`${label}: ${validationMessage(result.error)}`, 'error'); return; }
+    }
     setIsConnecting(true);
     try {
       await api.post(`/projects/${project.id}/integrations`, {
@@ -223,7 +233,7 @@ export const ProjectWizard: React.FC = () => {
                 </div>
               </div>
 
-              <form onSubmit={handleStep1Submit} className="max-w-3xl space-y-6">
+              <form onSubmit={handleStep1Submit} noValidate className="max-w-3xl space-y-6">
                 <div className="space-y-5">
                   <div>
                     <label className="mb-2 block text-sm font-bold text-slate-700">Project Name <span className="text-rose-500">*</span></label>
@@ -241,9 +251,9 @@ export const ProjectWizard: React.FC = () => {
                     <label className="mb-2 block text-sm font-bold text-slate-700">Target Environment</label>
                     <div className="relative">
                       <select value={environment} onChange={e => setEnvironment(e.target.value)} className="block w-full appearance-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-4 focus:ring-indigo-100">
-                        <option value="PRODUCTION">Production - Live workloads</option>
-                        <option value="STAGING">Staging - Pre-release validation</option>
-                        <option value="DEVELOPMENT">Development - Internal testing</option>
+                        <option value="prod">Production - Live workloads</option>
+                        <option value="staging">Staging - Pre-release validation</option>
+                        <option value="dev">Development - Internal testing</option>
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-slate-400">
                         <ChevronRight className="h-4 w-4 rotate-90" />

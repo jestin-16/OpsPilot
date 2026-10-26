@@ -37,6 +37,8 @@ export const Input: React.FC<InputProps> = ({
         <input
           id={inputId}
           type={inputType}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${inputId}-error` : undefined}
           className={`w-full bg-op-input text-op-fg text-sm rounded-lg border ${
             error ? 'border-op-danger focus:border-op-danger' : 'border-op-border-strong focus:border-op-accent'
           } ${
@@ -58,7 +60,7 @@ export const Input: React.FC<InputProps> = ({
         )}
       </div>
       {error && (
-        <p className="text-xs text-op-danger font-medium mt-0.5">{error}</p>
+        <p id={`${inputId}-error`} role="alert" className="text-xs text-op-danger font-medium mt-0.5">{error}</p>
       )}
     </div>
   );

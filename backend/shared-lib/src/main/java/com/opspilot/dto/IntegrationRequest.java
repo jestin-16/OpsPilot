@@ -4,6 +4,9 @@ import com.opspilot.enums.IntegrationCategory;
 import com.opspilot.enums.ProviderType;
 
 import java.util.Map;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import com.opspilot.validation.ValidationRules;
 
 /**
  * Create / update payload. Settings can be sent as a JSON object in {@code config}; keys that hold secrets (token,
@@ -12,6 +15,8 @@ import java.util.Map;
  */
 public class IntegrationRequest {
     private ProviderType provider;
+    @Size(min = 1, max = 100, message = "Integration name must be between 1 and 100 characters")
+    @Pattern(regexp = ValidationRules.RESOURCE_NAME, message = "Integration name contains invalid characters")
     private String name;
     private IntegrationCategory category;
     private String configuration;

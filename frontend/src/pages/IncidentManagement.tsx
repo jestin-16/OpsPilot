@@ -7,6 +7,8 @@ import {
   Plus, CheckCircle, RefreshCw, X, PlayCircle, Rocket
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { errorMessage } from '../services/projectApi';
+import { IncidentFormSchema, validationMessage } from '../lib/formValidation';
 
 export const IncidentManagement: React.FC = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -18,6 +20,8 @@ export const IncidentManagement: React.FC = () => {
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   
   const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [creating, setCreating] = useState(false);
   const [newIncident, setNewIncident] = useState({
     title: '', description: '', severity: 'MEDIUM', projectId: -1, affectedService: ''
   });
@@ -48,14 +52,21 @@ export const IncidentManagement: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newIncident.projectId === -1) return;
+    if (creating) return;
+    const result = IncidentFormSchema.safeParse(newIncident);
+    if (!result.success) { setCreateError(validationMessage(result.error)); return; }
+    if (!projects.some(project => project.id === result.data.projectId)) { setCreateError('Select an available project'); return; }
+    setCreateError('');
+    setCreating(true);
     try {
-      await api.createIncident(newIncident);
+      await api.createIncident(result.data);
       setIsCreating(false);
       setNewIncident({ title: '', description: '', severity: 'MEDIUM', projectId: projects[0]?.id || -1, affectedService: '' });
       loadData();
     } catch (err) {
-      console.error(err);
+      setCreateError(errorMessage(err, 'Failed to report incident'));
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -309,7 +320,8 @@ export const IncidentManagement: React.FC = () => {
               </button>
             </div>
             
-            <form onSubmit={handleCreate} className="p-6 space-y-5">
+            <form onSubmit={handleCreate} noValidate className="p-6 space-y-5">
+              {createError && <p role="alert" className="text-sm font-semibold text-rose-600">{createError}</p>}
               <div>
                 <label className="block text-sm font-medium text-op-muted mb-1">Project</label>
                 <select 
@@ -382,6 +394,7 @@ export const IncidentManagement: React.FC = () => {
                 </button>
                 <button 
                   type="submit"
+                  disabled={creating}
                   className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-rose-500/20 cursor-pointer"
                 >
                   <AlertTriangle className="w-4 h-4" /> Report Incident

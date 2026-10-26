@@ -5,6 +5,7 @@ import { Button } from '../Button';
 import { Input } from '../Input';
 import { useProject } from '../../context/ProjectContext';
 import { errorMessage, projectApi, type Environment } from '../../services/projectApi';
+import { ProjectFieldsSchema, fieldErrors } from '../../lib/formValidation';
 
 const ENVIRONMENTS: Array<{ value: Environment; label: string }> = [
   { value: 'dev', label: 'Development' },
@@ -26,6 +27,7 @@ export const CreateProjectModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [repositoryUrl, setRepositoryUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const reset = () => {
     setName('');
@@ -33,6 +35,7 @@ export const CreateProjectModal: React.FC<Props> = ({ isOpen, onClose }) => {
     setEnvironment('dev');
     setRepositoryUrl('');
     setError(null);
+    setErrors({});
   };
 
   const close = () => {
@@ -43,18 +46,21 @@ export const CreateProjectModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
-      setError('Project name is required');
+    if (submitting) return;
+    const result = ProjectFieldsSchema.safeParse({ projectName: name, description, environment, repositoryUrl });
+    if (!result.success) {
+      setErrors(fieldErrors(result.error));
       return;
     }
+    setErrors({});
     setSubmitting(true);
     setError(null);
     try {
       const project = await projectApi.createProject({
-        name: name.trim(),
-        description: description.trim() || undefined,
+        name: result.data.projectName,
+        description: result.data.description || undefined,
         environment,
-        repositoryUrl: repositoryUrl.trim() || undefined,
+        repositoryUrl: result.data.repositoryUrl || undefined,
       });
       await refreshProjects();
       selectProject(project.id);
@@ -80,8 +86,8 @@ export const CreateProjectModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </>
       }
     >
-      <form id="create-project-form" onSubmit={submit} className="space-y-4">
-        <Input label="Project name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Shop API" maxLength={100} autoFocus required />
+      <form id="create-project-form" onSubmit={submit} noValidate className="space-y-4">
+        <Input label="Project name" error={errors.projectName} value={name} onChange={(e) => { setName(e.target.value); setErrors(current => ({ ...current, projectName: '' })); }} placeholder="Shop API" maxLength={100} autoFocus required />
         <div className="flex flex-col gap-1.5">
           <label htmlFor="project-environment" className="text-xs font-semibold text-op-muted tracking-wide">Environment</label>
           <select
@@ -92,6 +98,7 @@ export const CreateProjectModal: React.FC<Props> = ({ isOpen, onClose }) => {
           >
             {ENVIRONMENTS.map((env) => <option key={env.value} value={env.value}>{env.label}</option>)}
           </select>
+          {errors.environment && <p role="alert" className="text-xs text-op-danger">{errors.environment}</p>}
         </div>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="project-description" className="text-xs font-semibold text-op-muted tracking-wide">Description</label>
@@ -103,8 +110,9 @@ export const CreateProjectModal: React.FC<Props> = ({ isOpen, onClose }) => {
             maxLength={1000}
             className="w-full bg-op-input text-op-fg text-sm rounded-lg border border-op-border-strong focus:border-op-accent px-3 py-2.5 outline-none focus:ring-2 focus:ring-op-accent/40 font-medium"
           />
+          {errors.description && <p role="alert" className="text-xs text-op-danger">{errors.description}</p>}
         </div>
-        <Input label="Repository URL (optional)" value={repositoryUrl} onChange={(e) => setRepositoryUrl(e.target.value)} placeholder="https://github.com/acme/shop" />
+        <Input label="Repository URL (optional)" error={errors.repositoryUrl} value={repositoryUrl} onChange={(e) => { setRepositoryUrl(e.target.value); setErrors(current => ({ ...current, repositoryUrl: '' })); }} placeholder="https://github.com/acme/shop" maxLength={2048} />
         {error && <p role="alert" className="text-sm font-medium text-rose-600">{error}</p>}
         <p className="text-xs text-op-subtle">You will connect Docker, Kubernetes, Git, CI/CD and app logs next.</p>
       </form>

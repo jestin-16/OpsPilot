@@ -4,6 +4,7 @@ import { api, type AdminOverview, type AuditLog, type IntegrationSettings, type 
 import { SidebarLayout } from '../components/SidebarLayout';
 import { useConfirm } from '../context/ConfirmContext';
 import { errorMessage } from '../services/projectApi';
+import { AdminIntegrationSchema, validationMessage } from '../lib/formValidation';
 
 export const AdminGovernance: React.FC = () => {
   const [overview, setOverview] = useState<AdminOverview | null>(null);
@@ -24,7 +25,16 @@ export const AdminGovernance: React.FC = () => {
     } catch (err) { setError(errorMessage(err, 'Unable to load governance data.')); } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
-  const saveIntegration = async (event: React.FormEvent) => { event.preventDefault(); setSaving(true); try { await api.saveAdminIntegration(newIntegration); setNewIntegration({ name: '', providerType: 'GITHUB', configJson: '', active: true }); await load(); } catch (err) { setError(errorMessage(err, 'Unable to save integration.')); } finally { setSaving(false); } };
+  const saveIntegration = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (saving) return;
+    const result = AdminIntegrationSchema.safeParse(newIntegration);
+    if (!result.success) { setError(validationMessage(result.error)); return; }
+    setSaving(true); setError('');
+    try { await api.saveAdminIntegration(result.data); setNewIntegration({ name: '', providerType: 'GITHUB', configJson: '', active: true }); await load(); }
+    catch (err) { setError(errorMessage(err, 'Unable to save integration.')); }
+    finally { setSaving(false); }
+  };
   const saveSetting = async (key: string, value: string) => { try { await api.savePlatformSetting(key, value); await load(); } catch (err) { setError(errorMessage(err, 'Unable to save platform setting.')); } };
   const removeIntegration = async (id: number) => { if (!await confirm('Remove this integration?', { isDestructive: true })) return; try { await api.deleteAdminIntegration(id); await load(); } catch (err) { setError(errorMessage(err, 'Unable to remove integration.')); } };
 

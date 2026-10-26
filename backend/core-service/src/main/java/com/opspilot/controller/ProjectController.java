@@ -58,7 +58,7 @@ public class ProjectController {
     @Operation(summary = "Update an existing microservice project")
     public ResponseEntity<ProjectResponse> updateProject(
             @PathVariable Long id,
-            @RequestBody ProjectRequest request,
+            @Valid @RequestBody ProjectRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(projectService.updateProject(id, request, currentUser));
     }

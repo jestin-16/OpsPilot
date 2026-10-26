@@ -1,5 +1,6 @@
 import { Cpu, FileText, GitBranch, Server, Workflow, type LucideIcon } from 'lucide-react';
 import type { IntegrationType } from '../services/projectApi';
+import { DNS_LABEL_PATTERN, DNS_SUBDOMAIN_PATTERN, REPOSITORY_PATTERN, isEndpointUrl } from './formValidation';
 
 export type FieldKind = 'text' | 'password' | 'textarea' | 'checkbox' | 'select' | 'number';
 
@@ -146,18 +147,37 @@ export function toPayload(def: IntegrationTypeDef, values: Record<string, string
 }
 
 /** Returns the first problem with the form, or null. In edit mode a stored secret counts as present. */
-export function validate(def: IntegrationTypeDef, values: Record<string, string>, storedSecrets: string[] = []): string | null {
+export function validateFields(def: IntegrationTypeDef, values: Record<string, string>, storedSecrets: string[] = []): Record<string, string> {
+  const errors: Record<string, string> = {};
   for (const f of def.fields) {
-    if (!f.required || !isVisible(f, values)) continue;
-    const has = (values[f.key] ?? '').trim() !== '' || (f.secret && storedSecrets.includes(f.key));
-    if (!has) return `${f.label} is required`;
+    if (!isVisible(f, values)) continue;
+    const value = (values[f.key] ?? '').trim();
+    const has = value !== '' || (f.secret && storedSecrets.includes(f.key));
+    if (f.required && !has) { errors[f.key] = `${f.label} is required`; continue; }
+    if (!value) continue;
+    const max = f.secret ? 65536 : 2048;
+    if (value.length > max) { errors[f.key] = `${f.label} must be ${max} characters or fewer`; continue; }
+    const singleLine = f.kind === 'textarea' ? value.replace(/[\r\n\t]/g, '') : value;
+    if (/[\p{Cc}]/u.test(singleLine)) { errors[f.key] = `${f.label} must not contain control characters`; continue; }
+    if (f.kind === 'select' && !f.options?.some(option => option.value === value)) errors[f.key] = `Choose a valid ${f.label.toLowerCase()}`;
+    if (f.kind === 'checkbox' && value !== 'true' && value !== 'false') errors[f.key] = `${f.label} must be a checkbox value`;
+    if (f.kind === 'number' && (!/^\d+$/.test(value) || !Number.isSafeInteger(Number(value)) || Number(value) < 5 || Number(value) > 86400)) errors[f.key] = `${f.label} must be a whole number between 5 and 86400`;
+    if (['host', 'apiServer', 'baseUrl', 'apiBaseUrl'].includes(f.key)) {
+      const protocols = f.key === 'host' ? ['http:', 'https:', 'tcp:'] : ['http:', 'https:'];
+      if (!isEndpointUrl(value, protocols)) errors[f.key] = `${f.label} must be a valid ${f.key === 'host' ? 'http://, https:// or tcp://' : 'http:// or https://'} URL`;
+    }
+    if (f.key === 'repo' && (!REPOSITORY_PATTERN.test(value) || value.split('/')[0].length > 39 || value.split('/')[1].length > 100)) errors[f.key] = 'Repository must look like owner/name';
+    if (['namespace', 'container'].includes(f.key) && (value.length > 63 || !DNS_LABEL_PATTERN.test(value))) errors[f.key] = `${f.label} must use lowercase letters, numbers or hyphens, start and end with a letter or number, and be 63 characters or fewer`;
+    if (f.key === 'podName' && value.split(',').some(pod => pod.trim().length > 253 || !DNS_SUBDOMAIN_PATTERN.test(pod.trim()) || pod.trim().split('.').some(label => !DNS_LABEL_PATTERN.test(label) || label.length > 63))) errors[f.key] = 'Use comma-separated valid pod names';
+    if (f.key === 'containers' && value.split(',').some(container => !/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(container.trim()))) errors[f.key] = 'Use comma-separated container names or IDs';
+    if (f.key === 'caCert' && !/^(?:-----BEGIN CERTIFICATE-----\s+[A-Za-z0-9+/=\r\n]+\s+-----END CERTIFICATE-----\s*)+$/.test(value)) errors[f.key] = `${f.label} must contain a PEM certificate`;
   }
-  if (def.type === 'GITHUB' || (def.type === 'CICD' && values.provider === 'GITHUB_ACTIONS')) {
-    if (!/^[\w.-]+\/[\w.-]+$/.test((values.repo ?? '').trim())) return 'Repository must look like owner/name';
-  }
-  const host = values.host ?? values.apiServer ?? values.baseUrl;
-  if (host && !/^(https?|tcp):\/\//i.test(host.trim())) return 'URLs must start with http:// or https://';
-  return null;
+  return errors;
+}
+
+/** First error for callers that use a form-level message. */
+export function validate(def: IntegrationTypeDef, values: Record<string, string>, storedSecrets: string[] = []): string | null {
+  return Object.values(validateFields(def, values, storedSecrets))[0] ?? null;
 }
 
 export function initialValues(def: IntegrationTypeDef, config: Record<string, unknown> = {}): Record<string, string> {

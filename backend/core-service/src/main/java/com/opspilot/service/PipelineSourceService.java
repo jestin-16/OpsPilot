@@ -148,7 +148,7 @@ public class PipelineSourceService {
 
     private void apply(PipelineSource s, PipelineSourceRequest req, boolean creating) {
         if (!notBlank(req.getName())) throw new IllegalArgumentException("Name is required");
-        s.setName(req.getName().trim());
+        s.setName(com.opspilot.validation.FormChecks.resourceName(req.getName(), "Name"));
 
         if (PipelineSource.GITHUB_ACTIONS.equals(s.getProvider())) {
             String repo = req.getRepoFullName() == null ? "" : req.getRepoFullName().trim();
@@ -163,8 +163,11 @@ public class PipelineSourceService {
             }
         } else {
             String base = req.getBaseUrl() == null ? "" : req.getBaseUrl().trim();
-            if (!base.matches("^https?://[^\\s/]+.*$")) throw new IllegalArgumentException("Base URL must start with http:// or https://");
+            if (base.isBlank()) throw new IllegalArgumentException("Base URL is required");
+            com.opspilot.validation.FormChecks.endpoint(base, "Base URL", false);
             if (!notBlank(req.getJobName())) throw new IllegalArgumentException("Job name is required");
+            com.opspilot.validation.FormChecks.text(req.getJobName(), "Job name", 255);
+            if (req.getJobName().matches("(?s).*[\\r\\n\\t].*")) throw new IllegalArgumentException("Job name must be a single line");
             if (creating && !notBlank(req.getUsername())) throw new IllegalArgumentException("Username is required");
             if (creating && !notBlank(req.getApiToken())) throw new IllegalArgumentException("API token is required");
             s.setBaseUrl(base);

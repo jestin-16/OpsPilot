@@ -1,10 +1,5 @@
 import { z } from 'zod';
-
-const EmailSchema = z.string()
-  .trim()
-  .min(1, 'Email is required')
-  .max(255, 'Email must be 255 characters or fewer')
-  .email('Enter a valid email address');
+import { EmailSchema, NameSchema } from './formValidation';
 
 export const SignupRoleSchema = z.enum(['Developer', 'DevOps'], { message: 'Choose Developer or DevOps' });
 
@@ -16,11 +11,7 @@ export const PASSWORD_REQUIREMENTS = [
 ];
 
 export const RegisterSchema = z.object({
-  name: z.string().trim()
-    .min(1, 'Name is required')
-    .max(255, 'Name must be 255 characters or fewer')
-    .refine(value => !value || /\p{L}/u.test(value), 'Enter a name containing at least one letter')
-    .refine(value => !/[\p{Cc}]/u.test(value), 'Name must not contain control characters'),
+  name: NameSchema,
   email: EmailSchema,
   password: z.string()
     .min(1, 'Password is required')
@@ -41,5 +32,6 @@ export const SignupSchema = RegisterSchema.extend({
 export const LoginSchema = z.object({
   email: EmailSchema,
   // Existing accounts may use passwords that predate the signup rules.
-  password: z.string().refine(value => value.trim().length > 0, 'Password is required'),
+  password: z.string().refine(value => value.trim().length > 0, 'Password is required')
+    .refine(value => new TextEncoder().encode(value).length <= 72, 'Password is too long. Use fewer characters.'),
 });

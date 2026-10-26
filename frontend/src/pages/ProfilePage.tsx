@@ -3,6 +3,7 @@ import { UserRound, Save, Loader2 } from 'lucide-react';
 import { SidebarLayout } from '../components/SidebarLayout';
 import { api, type User } from '../services/api';
 import { errorMessage } from '../services/projectApi';
+import { ProfileSchema, validationMessage } from '../lib/formValidation';
 
 export const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<User | null>(null);
@@ -26,11 +27,14 @@ export const ProfilePage: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (saving) return;
+    const result = ProfileSchema.safeParse({ name, email });
+    if (!result.success) { setError(validationMessage(result.error)); setMessage(''); return; }
     setSaving(true);
     setMessage('');
     setError('');
     try {
-      const updated = await api.updateCurrentUser({ name, email });
+      const updated = await api.updateCurrentUser(result.data);
       setProfile(updated);
       localStorage.setItem('opspilot_user', JSON.stringify(updated));
       setMessage('Profile updated.');
@@ -58,7 +62,7 @@ export const ProfilePage: React.FC = () => {
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" /> Loading profile...</div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} noValidate className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Full Name</label>
                 <input value={name} onChange={(event) => setName(event.target.value)} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:border-op-accent" />
@@ -75,7 +79,7 @@ export const ProfilePage: React.FC = () => {
                 </button>
               </div>
               {message && <p className="text-sm font-semibold text-emerald-600">{message}</p>}
-              {error && <p className="text-sm font-semibold text-rose-600">{error}</p>}
+              {error && <p role="alert" className="text-sm font-semibold text-rose-600">{error}</p>}
             </form>
           )}
         </div>

@@ -9,6 +9,7 @@ import { DEPLOYMENT_SOURCE_LABEL, deployedBy, deploymentStatusVariant } from '..
 import { Badge } from '../components/Badge';
 import { FolderGit2, Plus, Rocket, Trash2, ExternalLink, AlertCircle, Play, Globe, FileText, XCircle, Activity, TriangleAlert } from 'lucide-react';
 import { errorMessage } from '../services/projectApi';
+import { DeploymentFormSchema, validationMessage } from '../lib/formValidation';
 
 export const Projects: React.FC = () => {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ export const Projects: React.FC = () => {
   const [environment, setEnvironment] = useState('Production');
   const [deploymentStatus, setDeploymentStatus] = useState<DeploymentStatus>('Succeeded');
   const [triggering, setTriggering] = useState(false);
+  const [deploymentError, setDeploymentError] = useState('');
   const [projectPendingDeletion, setProjectPendingDeletion] = useState<Project | null>(null);
   const [deletingProject, setDeletingProject] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -68,6 +70,7 @@ export const Projects: React.FC = () => {
   };
 
   const openDeployModal = async (project: Project) => {
+    setDeploymentError('');
     setSelectedProject(project);
     try {
       const history = await api.getDeployments(project.id);
@@ -79,14 +82,17 @@ export const Projects: React.FC = () => {
 
   const handleTriggerDeployment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProject) return;
+    if (!selectedProject || triggering) return;
+    const result = DeploymentFormSchema.safeParse({ version, environment, status: deploymentStatus });
+    if (!result.success) { setDeploymentError(validationMessage(result.error)); return; }
+    setDeploymentError('');
     setTriggering(true);
     try {
-      await api.recordDeployment(selectedProject.id, { version, environment, status: deploymentStatus });
+      await api.recordDeployment(selectedProject.id, result.data);
       const updatedHistory = await api.getDeployments(selectedProject.id);
       setDeployments(updatedHistory);
     } catch (err) {
-      alert(errorMessage(err, 'Failed to record deployment'));
+      setDeploymentError(errorMessage(err, 'Failed to record deployment'));
     } finally {
       setTriggering(false);
     }
@@ -325,7 +331,8 @@ export const Projects: React.FC = () => {
               </div>
 
               {/* Trigger Form */}
-              <form onSubmit={handleTriggerDeployment} className="grid grid-cols-1 sm:grid-cols-4 gap-6 items-end bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
+              <form onSubmit={handleTriggerDeployment} noValidate className="grid grid-cols-1 sm:grid-cols-4 gap-6 items-end bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner">
+                {deploymentError && <p role="alert" className="sm:col-span-4 text-sm font-semibold text-rose-600">{deploymentError}</p>}
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                     Environment

@@ -2,7 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Check, Lock, ShieldCheck } from 'lucide-react';
 import { Modal } from '../Modal';
 import { Button } from '../Button';
-import { initialValues, isVisible, toPayload, validate, type FieldDef, type IntegrationTypeDef } from '../../lib/integrationTypes';
+import { initialValues, isVisible, toPayload, validateFields, type FieldDef, type IntegrationTypeDef } from '../../lib/integrationTypes';
+import { resourceName } from '../../lib/formValidation';
 import { errorMessage, projectApi, type ProjectIntegration } from '../../services/projectApi';
 import { AppLogsInstructions, CodeBlock } from './IngestInstructions';
 import { githubWebhookUrl } from '../../lib/urls';
@@ -20,7 +21,7 @@ interface Props {
 
 const inputCls = 'w-full bg-op-input text-op-fg text-sm rounded-lg border border-op-border-strong focus:border-op-accent px-3 py-2.5 outline-none focus:ring-2 focus:ring-op-accent/40 font-medium';
 
-const Field: React.FC<{ field: FieldDef; value: string; stored: boolean; onChange: (v: string) => void }> = ({ field, value, stored, onChange }) => {
+const Field: React.FC<{ field: FieldDef; value: string; stored: boolean; error?: string; onChange: (v: string) => void }> = ({ field, value, stored, error, onChange }) => {
   const id = `field-${field.key}`;
   const isFilled = (value ?? '').trim().length > 0;
   const isSecretStored = field.secret && stored;
@@ -60,6 +61,8 @@ const Field: React.FC<{ field: FieldDef; value: string; stored: boolean; onChang
             {field.kind === 'textarea' ? (
               <textarea
                 id={id}
+                aria-invalid={!!error}
+                aria-describedby={error ? `${id}-error` : undefined}
                 rows={4}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -69,13 +72,15 @@ const Field: React.FC<{ field: FieldDef; value: string; stored: boolean; onChang
                 spellCheck={false}
               />
             ) : field.kind === 'select' ? (
-              <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+              <select id={id} aria-invalid={!!error} aria-describedby={error ? `${id}-error` : undefined} value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
                 {field.options?.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             ) : (
               <>
                 <input
                   id={id}
+                  aria-invalid={!!error}
+                  aria-describedby={error ? `${id}-error` : undefined}
                   type={field.kind === 'number' ? 'number' : field.kind === 'password' ? 'password' : 'text'}
                   value={value}
                   onChange={(e) => onChange(e.target.value)}
@@ -101,6 +106,7 @@ const Field: React.FC<{ field: FieldDef; value: string; stored: boolean; onChang
         </>
       )}
       {field.help && <p className="text-[11px] text-op-subtle">{field.help}</p>}
+      {error && <p id={`${id}-error`} role="alert" className="text-xs text-rose-600">{error}</p>}
     </div>
   );
 };
@@ -110,12 +116,14 @@ export const IntegrationFormModal: React.FC<Props> = ({ projectId, def, existing
   const [values, setValues] = useState<Record<string, string>>(() => initialValues(def, existing?.config));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<ProjectIntegration | null>(null);
 
   useEffect(() => {
     setName(existing?.name ?? `${def.label} integration`);
     setValues(initialValues(def, existing?.config));
     setError(null);
+    setErrors({});
     setCreated(null);
   }, [def, existing]);
 
@@ -124,9 +132,12 @@ export const IntegrationFormModal: React.FC<Props> = ({ projectId, def, existing
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return setError('Name is required');
-    const problem = validate(def, values, stored);
-    if (problem) return setError(problem);
+    if (busy) return;
+    const problems = validateFields(def, values, stored);
+    const validName = resourceName('Integration name').safeParse(name);
+    if (!validName.success) problems.name = validName.error.issues[0].message;
+    setErrors(problems);
+    if (Object.keys(problems).length) return;
     setBusy(true);
     setError(null);
     try {
@@ -194,14 +205,15 @@ export const IntegrationFormModal: React.FC<Props> = ({ projectId, def, existing
         </>
       }
     >
-      <form id="integration-form" onSubmit={submit} className="space-y-4">
+      <form id="integration-form" onSubmit={submit} noValidate className="space-y-4">
         <p className="text-sm text-op-subtle">{def.description}</p>
         <div className="flex flex-col gap-1.5">
           <label htmlFor="integration-name" className="text-xs font-semibold text-op-muted tracking-wide">Name <span className="text-rose-500">*</span></label>
-          <input id="integration-name" value={name} onChange={(e) => setName(e.target.value)} className={inputCls} maxLength={100} />
+          <input id="integration-name" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'integration-name-error' : undefined} value={name} onChange={(e) => { setName(e.target.value); setErrors(current => ({ ...current, name: '' })); }} className={inputCls} maxLength={100} />
+          {errors.name && <p id="integration-name-error" role="alert" className="text-xs text-rose-600">{errors.name}</p>}
         </div>
         {visible.map((f) => (
-          <Field key={f.key} field={f} value={values[f.key] ?? ''} stored={stored.includes(f.key)} onChange={(v) => setValues((cur) => ({ ...cur, [f.key]: v }))} />
+          <Field key={f.key} field={f} value={values[f.key] ?? ''} stored={stored.includes(f.key)} error={errors[f.key]} onChange={(v) => { setValues((cur) => ({ ...cur, [f.key]: v })); setErrors(current => ({ ...current, [f.key]: '' })); }} />
         ))}
         {error && <p role="alert" className="text-sm font-medium text-rose-600">{error}</p>}
         <p className="text-[11px] text-op-subtle">Secrets are encrypted at rest and never shown again.</p>

@@ -67,6 +67,28 @@ describe('validate', () => {
   it('APP_LOGS needs nothing but a name', () => {
     expect(validate(def('APP_LOGS'), initialValues(def('APP_LOGS')))).toBeNull();
   });
+
+  it.each(['http://', 'http://:2375', 'https://host:99999', 'http://user:pass@host'])('rejects malformed integration endpoints %j', host => {
+    expect(validate(def('DOCKER'), { host })).toMatch(/URL/);
+  });
+
+  it.each(['-1', '0', '1.5', '1e2', 'abc', '86401'])('rejects invalid polling intervals %j', pollSeconds => {
+    expect(validate(def('GITHUB'), { repo: 'acme/shop', pollSeconds })).toMatch(/whole number/);
+  });
+
+  it('validates optional URLs and provider choices', () => {
+    expect(validate(def('GITHUB'), { repo: 'acme/shop', apiBaseUrl: 'invalid' })).toMatch(/URL/);
+    expect(validate(def('CICD'), { provider: 'OTHER' })).toMatch(/provider/);
+    expect(validate(def('CICD'), { provider: 'GITHUB_ACTIONS', repo: 'acme/shop', baseUrl: 'invalid' })).toBeNull();
+  });
+
+  it('checks Kubernetes identifiers and PEM certificates', () => {
+    const base = { ...initialValues(def('KUBERNETES')), apiServer: 'https://k:6443', token: 'token' };
+    expect(validate(def('KUBERNETES'), { ...base, namespace: 'Invalid Namespace' })).toMatch(/Namespace/);
+    expect(validate(def('KUBERNETES'), { ...base, podName: 'api-123, worker-1' })).toBeNull();
+    expect(validate(def('KUBERNETES'), { ...base, podName: 'api-123, bad pod' })).toMatch(/pod names/);
+    expect(validate(def('KUBERNETES'), { ...base, caCert: 'not a certificate' })).toMatch(/PEM/);
+  });
 });
 
 describe('initialValues', () => {

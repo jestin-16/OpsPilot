@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping({"/api/v1", "/api"})
@@ -24,7 +25,7 @@ public class IntegrationController {
     @PostMapping("/projects/{projectId}/integrations")
     public ResponseEntity<IntegrationResponse> createIntegration(
             @PathVariable Long projectId,
-            @RequestBody IntegrationRequest request,
+            @Valid @RequestBody IntegrationRequest request,
             @AuthenticationPrincipal User currentUser) {
         if (request.getProvider() == null) {
             throw new IllegalArgumentException("provider is required");
@@ -58,7 +59,7 @@ public class IntegrationController {
     public ResponseEntity<IntegrationResponse> updateIntegration(
             @PathVariable Long projectId,
             @PathVariable Long integrationId,
-            @RequestBody IntegrationRequest request,
+            @Valid @RequestBody IntegrationRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(integrationService.updateIntegration(projectId, integrationId, request, currentUser));
     }

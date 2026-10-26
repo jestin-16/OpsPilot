@@ -9,6 +9,7 @@ import {
 import { createPortal } from 'react-dom';
 import { useConfirm } from '../context/ConfirmContext';
 import { errorMessage } from '../services/projectApi';
+import { DockerSourceFormSchema, fieldErrors } from '../lib/formValidation';
 
 const ENV_PRESETS = [
   { value: 'production', label: 'Production', activeClass: 'bg-emerald-500 text-white shadow-emerald-500/20' },
@@ -31,7 +32,7 @@ export const LogSources: React.FC = () => {
   const [environment, setEnvironment] = useState('production');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formErrors, setFormErrors] = useState<{ project?: string; name?: string }>({});
+  const [formErrors, setFormErrors] = useState<{ project?: string; name?: string; environment?: string }>({});
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   // Keyboard navigation & body scroll locking for modals
@@ -87,18 +88,12 @@ export const LogSources: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     const finalProjectId = projectId || selectedProjectId;
-    const errors: { project?: string; name?: string } = {};
-
-    if (!finalProjectId) {
-      errors.project = 'Please select a project to connect this host.';
-    }
-    if (!sourceName.trim()) {
-      errors.name = 'Please enter a name for this host (e.g. prod-db-server).';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setFormErrors(errors);
+    const result = DockerSourceFormSchema.safeParse({ projectId: Number(finalProjectId), name: sourceName, environment });
+    if (!result.success) {
+      const errors = fieldErrors(result.error);
+      setFormErrors({ ...errors, project: errors.projectId });
       return;
     }
 
@@ -106,11 +101,7 @@ export const LogSources: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      const newSource = await api.createDockerSource({
-        projectId: Number(finalProjectId),
-        name: sourceName.trim(),
-        environment
-      });
+      const newSource = await api.createDockerSource(result.data);
       setIsModalOpen(false);
       setSourceName('');
       setEnvironment('production');
@@ -385,6 +376,7 @@ export const LogSources: React.FC = () => {
 
               {/* Form with non-native custom validation */}
               <form onSubmit={handleSave} noValidate className="p-7 space-y-6">
+                {formErrors.environment && <p role="alert" className="text-sm text-rose-600">{formErrors.environment}</p>}
                 {/* Project Selector (if not scoped) */}
                 {!projectId && (
                   <div className="space-y-2">

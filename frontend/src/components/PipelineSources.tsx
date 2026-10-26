@@ -9,6 +9,7 @@ import { Card } from './Card';
 import { Input } from './Input';
 import { Table, type Column } from './Table';
 import { useConfirm } from '../context/ConfirmContext';
+import { REPOSITORY_PATTERN, isEndpointUrl, resourceName, textField } from '../lib/formValidation';
 
 const PROVIDER_LABEL: Record<PipelineSourceProvider, string> = {
   GITHUB_ACTIONS: 'GitHub Actions',
@@ -128,14 +129,20 @@ export const PipelineSources: React.FC<Props> = ({ isAddOpen, onAddClose, onChan
 
   const validate = (): boolean => {
     const e: Partial<Record<keyof FormState, string>> = {};
-    if (!form.name.trim()) e.name = 'Name is required';
+    const name = resourceName('Name').safeParse(form.name);
+    if (!name.success) e.name = name.error.issues[0].message;
+    if (!['GITHUB_ACTIONS', 'JENKINS'].includes(form.provider)) e.provider = 'Choose a valid provider';
     if (form.provider === 'GITHUB_ACTIONS') {
-      if (!/^[\w.-]+\/[\w.-]+$/.test(form.repoFullName.trim())) e.repoFullName = 'Use owner/repo format';
+      if (!REPOSITORY_PATTERN.test(form.repoFullName.trim()) || form.repoFullName.trim().length > 140) e.repoFullName = 'Use owner/repo format';
     } else {
-      if (!/^https?:\/\/\S+$/.test(form.baseUrl.trim())) e.baseUrl = 'Must start with http:// or https://';
-      if (!form.jobName.trim()) e.jobName = 'Job name is required';
+      if (!isEndpointUrl(form.baseUrl.trim())) e.baseUrl = 'Enter a valid http:// or https:// URL';
+      const job = textField('Job name', 255).min(1, 'Job name is required').refine(value => !/[\r\n\t]/.test(value), 'Job name must be a single line').safeParse(form.jobName);
+      if (!job.success) e.jobName = job.error.issues[0].message;
       if (!editing && !form.username.trim()) e.username = 'Username is required';
       if (!editing && !form.apiToken.trim()) e.apiToken = 'API token is required';
+    }
+    for (const key of (form.provider === 'GITHUB_ACTIONS' ? ['accessToken'] : ['username', 'apiToken']) as Array<keyof FormState>) {
+      if (form[key].length > 65536 || /[\p{Cc}]/u.test(form[key])) e[key] = 'Use a single-line credential of 65536 characters or fewer';
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -159,7 +166,7 @@ export const PipelineSources: React.FC<Props> = ({ isAddOpen, onAddClose, onChan
   };
 
   const submit = async () => {
-    if (!validate()) return;
+    if (saving || !validate()) return;
     setSaving(true);
     setSaveError(null);
     const input: PipelineSourceInput = { name: form.name.trim(), provider: form.provider };

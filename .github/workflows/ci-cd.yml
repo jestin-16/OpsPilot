@@ -74,38 +74,56 @@ jobs:
     needs: [ backend-ci, frontend-ci ]
     if: github.ref == 'refs/heads/main'
     runs-on: self-hosted
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Verify Environment Configuration
         shell: powershell
         run: |
-          if (-not (Test-Path ".env")) {
-            if (Test-Path "c:\Users\jesvi\OpsPilot\.env") {
-              Write-Host "Copying configured host .env file..." -ForegroundColor Green
-              Copy-Item "c:\Users\jesvi\OpsPilot\.env" ".env" -Force
-            } elseif (Test-Path ".env.example") {
-              Write-Host "Creating .env from .env.example..." -ForegroundColor Yellow
-              Copy-Item ".env.example" ".env"
-            } else {
-              Write-Error ".env file is missing on runner host!"
-              exit 1
-            }
+          if (Test-Path "c:\Users\jesvi\OpsPilot\.env") {
+            Write-Host "Syncing configured host .env file..." -ForegroundColor Green
+            Copy-Item "c:\Users\jesvi\OpsPilot\.env" ".env" -Force
+          } elseif (-not (Test-Path ".env") -and (Test-Path ".env.example")) {
+            Write-Host "Creating .env from .env.example..." -ForegroundColor Yellow
+            Copy-Item ".env.example" ".env"
           }
           Write-Host ".env configuration confirmed." -ForegroundColor Green
 
       - name: Rebuild & Start Docker Compose Stack
         shell: powershell
         run: |
-          Write-Host "Rebuilding and deploying Docker services with managed concurrency..." -ForegroundColor Cyan
-          docker compose --parallel 2 up -d --build
+          Write-Host "Inspecting changed files in commit ${{ github.sha }}..." -ForegroundColor Cyan
+          $changedFiles = git diff-tree --no-commit-id --name-only -r ${{ github.sha }}
+          Write-Host "Changed files:"
+          $changedFiles | ForEach-Object { Write-Host " - $_" -ForegroundColor DarkGray }
+
+          $frontendChanged = [bool]($changedFiles -match "^frontend/") -or [bool]($changedFiles -match "docker-compose\.yml")
+          $backendChanged = [bool]($changedFiles -match "^backend/") -or [bool]($changedFiles -match "docker-compose\.yml")
+
+          if ($frontendChanged) {
+            Write-Host "Rebuilding frontend image..." -ForegroundColor Cyan
+            docker compose build frontend
+          }
+
+          if ($backendChanged) {
+            Write-Host "Rebuilding backend services with managed concurrency..." -ForegroundColor Cyan
+            docker compose --parallel 2 build
+          }
+
+          if (-not $frontendChanged -and -not $backendChanged) {
+            Write-Host "No service source changes detected; deploying existing stack images..." -ForegroundColor Green
+          }
+
+          Write-Host "Deploying stack via Docker Compose..." -ForegroundColor Cyan
+          docker compose up -d
           if ($LASTEXITCODE -ne 0) {
             Write-Error "Docker Compose execution failed!"
             exit 1
           }
-          # Refresh frontend container so Nginx immediately applies any proxy/DNS updates
           docker compose restart frontend | Out-Null
 
       - name: Health Check & Smoke Verification

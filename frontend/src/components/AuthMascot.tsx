@@ -40,33 +40,55 @@ export const AuthMascot: React.FC<AuthMascotProps> = ({ gaze, cover, mood, hopKe
   // Follow the field caret while typing, otherwise the pointer.
   useEffect(() => {
     gazeRef.current = gaze;
-    if (gaze !== null && pupilsRef.current) {
+    if (gaze !== null && pupilsRef.current && !prefersReducedMotion()) {
       pupilsRef.current.style.transform = `translate(${(gaze * PUPIL_RANGE).toFixed(2)}px, 3px)`;
     }
     // The pupils remount when the mood returns to idle, so re-apply the gaze then too.
   }, [gaze, mood]);
 
   useEffect(() => {
-    const onMove = (e: PointerEvent) => {
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let frame = 0;
+    let pointer = { x: 0, y: 0 };
+    const updateGaze = () => {
+      frame = 0;
       const head = headLayerRef.current;
       const pupils = pupilsRef.current;
-      if (!head || !pupils || gazeRef.current !== null) return;
+      if (!head || !pupils || gazeRef.current !== null || motionPreference.matches) return;
       const rect = head.getBoundingClientRect();
-      const dx = e.clientX - (rect.left + rect.width / 2);
-      const dy = e.clientY - (rect.top + rect.height / 2);
+      if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+      const dx = pointer.x - (rect.left + rect.width / 2);
+      const dy = pointer.y - (rect.top + rect.height / 2);
       const dist = Math.hypot(dx, dy) || 1;
       const reach = Math.min(dist / 220, 1) * PUPIL_RANGE;
       pupils.style.transform = `translate(${((dx / dist) * reach).toFixed(2)}px, ${((dy / dist) * reach).toFixed(2)}px)`;
     };
-    window.addEventListener('pointermove', onMove);
-    return () => window.removeEventListener('pointermove', onMove);
+    const onMove = (event: PointerEvent) => {
+      if (event.pointerType === 'touch' || motionPreference.matches || gazeRef.current !== null) return;
+      pointer = { x: event.clientX, y: event.clientY };
+      if (!frame) frame = requestAnimationFrame(updateGaze);
+    };
+    const resetMotion = () => {
+      if (motionPreference.matches && pupilsRef.current) pupilsRef.current.style.transform = '';
+    };
+    window.addEventListener('pointermove', onMove, { passive: true });
+    motionPreference.addEventListener('change', resetMotion);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('pointermove', onMove);
+      motionPreference.removeEventListener('change', resetMotion);
+    };
   }, []);
 
   useEffect(() => {
     if (hopKey === 0 || prefersReducedMotion()) return;
-    const timing: KeyframeAnimationOptions = { duration: 700, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' };
-    headLayerRef.current?.animate(HOP_FRAMES, timing);
-    pawLayerRef.current?.animate(HOP_FRAMES, { ...timing, delay: 40 });
+    const timing: KeyframeAnimationOptions = { duration: 500, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' };
+    const head = headLayerRef.current?.animate(HOP_FRAMES, timing);
+    const paws = pawLayerRef.current?.animate(HOP_FRAMES, { ...timing, delay: 30 });
+    const cancel = () => { head?.cancel(); paws?.cancel(); };
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    motionPreference.addEventListener('change', cancel);
+    return () => { cancel(); motionPreference.removeEventListener('change', cancel); };
   }, [hopKey]);
 
   const layerClass = 'pointer-events-none absolute bottom-[calc(100%-18px)] left-1/2 h-24 w-[120px] -translate-x-1/2';

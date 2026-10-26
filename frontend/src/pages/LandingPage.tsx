@@ -120,8 +120,9 @@ function useInView<T extends Element>(onEnter?: () => void) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (!('IntersectionObserver' in window)) {
+    if (!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setInView(true);
+      onEnterRef.current?.();
       return;
     }
     const observer = new IntersectionObserver(
@@ -131,7 +132,7 @@ function useInView<T extends Element>(onEnter?: () => void) {
         onEnterRef.current?.();
         observer.disconnect();
       },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' },
+      { threshold: 0, rootMargin: '0px 0px 48px 0px' },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -156,7 +157,7 @@ const Reveal: React.FC<{
 
 const CountUp: React.FC<{ value: string }> = ({ value }) => {
   // Only count up plain figures like "6+" or "100%"; ratios such as "24/7" render as-is.
-  const match = /^(\D*)(\d+)(\D*)$/.exec(value);
+  const match = /^(\s*)(\d+)([+%]?)$/.exec(value);
   const hasNumber = match !== null;
   const target = match ? Number(match[2]) : 0;
   const [shown, setShown] = useState(0);
@@ -171,7 +172,7 @@ const CountUp: React.FC<{ value: string }> = ({ value }) => {
     let frame = 0;
     const start = performance.now();
     const tick = (now: number) => {
-      const progress = Math.min((now - start) / 1200, 1);
+      const progress = Math.min((now - start) / 800, 1);
       setShown(Math.round(target * (1 - Math.pow(1 - progress, 3))));
       if (progress < 1) frame = requestAnimationFrame(tick);
     };
@@ -181,10 +182,10 @@ const CountUp: React.FC<{ value: string }> = ({ value }) => {
 
   if (!match) return <span>{value}</span>;
   return (
-    <span ref={ref} className="font-tech-mono tabular-nums">
-      {match[1]}
-      {shown}
-      {match[3]}
+    <span ref={ref} className="landing-count font-tech-mono tabular-nums">
+      <span className="sr-only">{value}</span>
+      <span className="landing-count-reserve" aria-hidden="true">{value}</span>
+      <span className="landing-count-value" aria-hidden="true">{match[1]}{shown}{match[3]}</span>
     </span>
   );
 };
@@ -203,6 +204,32 @@ export const LandingPage: React.FC = () => {
   const [mascotHop, setMascotHop] = useState(0);
   const [ctaHover, setCtaHover] = useState(false);
   const mousePosRef = useRef({ x: 0, y: 0 });
+  const navRef = useRef<HTMLElement>(null);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setMenuOpen(false);
+      menuToggleRef.current?.focus();
+    };
+    const closeOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !navRef.current?.contains(event.target)) setMenuOpen(false);
+    };
+    const desktop = window.matchMedia('(min-width: 1161px)');
+    const closeOnDesktop = () => {
+      if (desktop.matches) setMenuOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    document.addEventListener('pointerdown', closeOutside);
+    desktop.addEventListener('change', closeOnDesktop);
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.removeEventListener('pointerdown', closeOutside);
+      desktop.removeEventListener('change', closeOnDesktop);
+    };
+  }, [menuOpen]);
 
   const go = (path: string) => {
     setMenuOpen(false);
@@ -229,7 +256,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           SITE TOP NAVIGATION (CLEAN & INTEGRATED, NOT TRAPPED IN A CARD)
          ========================================================================= */}
-      <header className="landing-top-nav">
+      <header ref={navRef} className="landing-top-nav">
         <div className="landing-nav-container">
           <button
             type="button"
@@ -273,7 +300,8 @@ export const LandingPage: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={() => setMenuOpen(!menuOpen)}
+              ref={menuToggleRef}
+              onClick={() => setMenuOpen((open) => !open)}
               className="hero-mobile-toggle"
               aria-label="Toggle navigation"
               aria-expanded={menuOpen}
@@ -285,35 +313,33 @@ export const LandingPage: React.FC = () => {
         </div>
 
         {/* Mobile Drawer Menu */}
-        {menuOpen && (
-          <div id="landing-mobile-menu" className="hero-mobile-drawer">
-            {NAV_ITEMS.map((item) => (
-              <a
-                key={item.label}
-                href={item.href}
-                onClick={() => {
-                  activateNavTarget(item.href);
-                  setMenuOpen(false);
-                }}
-              >
-                {item.label}
-              </a>
-            ))}
-            <button
-              type="button"
-              onClick={() => go('/dashboard')}
-              className="mobile-cta"
+        <nav id="landing-mobile-menu" aria-label="Mobile navigation" className={`hero-mobile-drawer${menuOpen ? ' is-open' : ''}`} inert={!menuOpen}>
+          {NAV_ITEMS.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              onClick={() => {
+                activateNavTarget(item.href);
+                setMenuOpen(false);
+              }}
             >
-              Open Dashboard
-            </button>
-            <button
-              type="button"
-              onClick={() => go('/login')}
-            >
-              Sign In
-            </button>
-          </div>
-        )}
+              {item.label}
+            </a>
+          ))}
+          <button
+            type="button"
+            onClick={() => go('/dashboard')}
+            className="mobile-cta"
+          >
+            Open Dashboard
+          </button>
+          <button
+            type="button"
+            onClick={() => go('/login')}
+          >
+            Sign In
+          </button>
+        </nav>
       </header>
 
       {/* =========================================================================
@@ -322,6 +348,7 @@ export const LandingPage: React.FC = () => {
       <section
         className="landing-hero-direct"
         onMouseMove={handleMouseMove}
+        onMouseLeave={() => { mousePosRef.current = { x: 0, y: 0 }; }}
       >
         {/* Subtle noise grain */}
         <div className="landing-film-grain" aria-hidden="true" />
@@ -472,22 +499,24 @@ export const LandingPage: React.FC = () => {
                   <span className="capability-preview-brand"><span className="capability-live-dot" /> OPSPILOT / CONTROL PLANE</span>
                   <span className="capability-preview-index">{CAPABILITIES[activeCapability].number} / 04</span>
                 </div>
-                <div className="capability-preview-heading">
-                  <div>
-                    <span className="capability-preview-label">{CAPABILITIES[activeCapability].category}</span>
-                    <h3>{CAPABILITIES[activeCapability].panelTitle}</h3>
-                  </div>
-                  <span className="capability-preview-meta">{CAPABILITIES[activeCapability].panelMeta}</span>
-                </div>
-                <div className="capability-preview-rows">
-                  {CAPABILITIES[activeCapability].rows.map(([label, value], index) => (
-                    <div className="capability-preview-row" key={label}>
-                      <span className="capability-row-index">0{index + 1}</span>
-                      <span className="capability-row-label">{label}</span>
-                      <span className="capability-row-value">{value}</span>
-                      <span className="capability-row-status" aria-label="Healthy">OK</span>
+                <div key={activeCapability} className="capability-preview-content">
+                  <div className="capability-preview-heading">
+                    <div>
+                      <span className="capability-preview-label">{CAPABILITIES[activeCapability].category}</span>
+                      <h3>{CAPABILITIES[activeCapability].panelTitle}</h3>
                     </div>
-                  ))}
+                    <span className="capability-preview-meta">{CAPABILITIES[activeCapability].panelMeta}</span>
+                  </div>
+                  <div className="capability-preview-rows">
+                    {CAPABILITIES[activeCapability].rows.map(([label, value], index) => (
+                      <div className="capability-preview-row" key={label}>
+                        <span className="capability-row-index">0{index + 1}</span>
+                        <span className="capability-row-label">{label}</span>
+                        <span className="capability-row-value">{value}</span>
+                        <span className="capability-row-status" aria-label="Healthy">OK</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="capability-preview-footer">
                   <span>PROJECT / CHECKOUT-SERVICE</span>

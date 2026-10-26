@@ -16,6 +16,7 @@ import {
   Eye,
   EyeOff,
   ArrowUpRight,
+  LoaderCircle,
 } from 'lucide-react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { AuthMascot, type MascotCover, type MascotMood } from '../components/AuthMascot';
@@ -58,14 +59,17 @@ const DEMO_ACCOUNTS = [
 
 const indexStyle = (i: number) => ({ '--i': i }) as React.CSSProperties;
 
-const Field: React.FC<{ icon: React.ReactNode; index: number; children: React.ReactNode; error?: string; errorId: string }> = ({
+const Field: React.FC<{ icon: React.ReactNode; index: number; children: React.ReactNode; error?: string; errorId: string; inputId: string; label: string }> = ({
   icon,
   index,
   children,
   error,
   errorId,
+  inputId,
+  label,
 }) => (
   <div className="auth-field-group">
+    <label htmlFor={inputId} className="auth-field-label">{label}</label>
     <div style={indexStyle(index)} className={`auth-field${error ? ' auth-field--invalid' : ''}`}>
       <div className="pl-2 text-gray-500">{icon}</div>
       {children}
@@ -82,7 +86,8 @@ const RevealButton: React.FC<{ shown: boolean; onToggle: () => void }> = ({ show
     type="button"
     onClick={onToggle}
     aria-label={shown ? 'Hide password' : 'Show password'}
-    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 transition-all hover:scale-110 hover:text-black cursor-pointer"
+    aria-pressed={shown}
+    className="auth-password-toggle"
   >
     {shown ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
   </button>
@@ -113,6 +118,21 @@ export const AuthPage: React.FC = () => {
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [pendingGoogleToken, setPendingGoogleToken] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState('Developer');
+  const roleDialogRef = useRef<HTMLDialogElement>(null);
+  const requestRef = useRef(0);
+  const pendingRef = useRef(false);
+
+  // A response from a previous mode or an unmounted page must not redirect the user.
+  useEffect(() => () => {
+    requestRef.current += 1;
+    pendingRef.current = false;
+  }, [mode]);
+
+  useEffect(() => {
+    const dialog = roleDialogRef.current;
+    if (showRoleSelection) dialog?.showModal();
+    else dialog?.close();
+  }, [showRoleSelection]);
 
   const prevMode = useRef(mode);
   useEffect(() => {
@@ -121,6 +141,11 @@ export const AuthPage: React.FC = () => {
     setError('');
     setFocused(null);
     setEditedFields({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
+    setLoading(false);
+    setShowRoleSelection(false);
+    setPendingGoogleToken(null);
   }, [mode]);
 
   const loginPanelRef = useRef<HTMLDivElement>(null);
@@ -129,7 +154,7 @@ export const AuthPage: React.FC = () => {
   useLayoutEffect(() => {
     const el = (mode === 'login' ? loginPanelRef : signupPanelRef).current;
     if (!el) return;
-    const update = () => setPanelHeight(el.offsetHeight);
+    const update = () => setPanelHeight(el.getBoundingClientRect().height);
     update();
     const observer = new ResizeObserver(update);
     observer.observe(el);
@@ -140,14 +165,12 @@ export const AuthPage: React.FC = () => {
   useEffect(() => {
     if (errorTick === 0) return;
     const card = cardRef.current;
-    if (card) {
-      card.classList.remove('auth-shake');
-      void card.offsetWidth;
-      card.classList.add('auth-shake');
-    }
+    const animation = card && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? card.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-3px)' }, { transform: 'translateX(3px)' }, { transform: 'translateX(0)' }], { duration: 240, easing: 'ease-out' })
+      : null;
     setOops(true);
     const timer = window.setTimeout(() => setOops(false), 1400);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(timer); animation?.cancel(); };
   }, [errorTick]);
 
   const fail = (message: string) => {
@@ -157,6 +180,33 @@ export const AuthPage: React.FC = () => {
 
   const markFieldEdited = (field: FieldName) => {
     setEditedFields((current) => ({ ...current, [field]: true }));
+  };
+
+  const startRequest = () => {
+    if (pendingRef.current) return null;
+    pendingRef.current = true;
+    setError('');
+    setLoading(true);
+    return ++requestRef.current;
+  };
+
+  const finishRequest = (request: number) => {
+    if (request !== requestRef.current) return;
+    pendingRef.current = false;
+    setLoading(false);
+  };
+
+  const focusInvalid = (form: HTMLFormElement, field: PropertyKey | undefined) => {
+    const input = form.elements.namedItem(String(field));
+    if (input instanceof HTMLElement) input.focus();
+  };
+
+  const closeRoleSelection = () => {
+    requestRef.current += 1;
+    pendingRef.current = false;
+    setLoading(false);
+    setShowRoleSelection(false);
+    setPendingGoogleToken(null);
     setError('');
   };
 
@@ -164,60 +214,71 @@ export const AuthPage: React.FC = () => {
     if (next !== mode) navigate(next === 'login' ? '/login' : '/signup');
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (pendingRef.current) return;
     setError('');
 
-    const validation = LoginSchema.safeParse({ email, password });
+    const validation = LoginSchema.safeParse({ email: email.trim(), password });
     if (!validation.success) {
       setEditedFields({ email: true, password: true });
+      focusInvalid(e.currentTarget, validation.error.issues[0]?.path[0]);
       setError('');
       return;
     }
 
-    setLoading(true);
+    const request = startRequest();
+    if (request === null) return;
     try {
-      const res = await api.login({ email, password });
+      const res = await api.login(validation.data);
+      if (request !== requestRef.current) return;
       login(res);
       navigate('/monitoring');
     } catch (err) {
-      fail(errorMessage(err, 'Invalid credentials'));
+      if (request === requestRef.current) fail(errorMessage(err, 'Invalid credentials'));
     } finally {
-      setLoading(false);
+      finishRequest(request);
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (pendingRef.current) return;
     setError('');
 
-    const validation = SignupSchema.safeParse({ name, email, password, confirmPassword, role });
+    const validation = SignupSchema.safeParse({ name: name.trim(), email: email.trim(), password, confirmPassword, role });
     if (!validation.success) {
       setEditedFields({ name: true, email: true, password: true, confirm: true });
+      focusInvalid(e.currentTarget, validation.error.issues[0]?.path[0]);
       setError('');
       return;
     }
 
-    setLoading(true);
+    const request = startRequest();
+    if (request === null) return;
     try {
-      const res = await api.register({ name, email, password, role: validation.data.role });
+      const { name: validName, email: validEmail, role: validRole } = validation.data;
+      const res = await api.register({ name: validName, email: validEmail, password, role: validRole });
+      if (request !== requestRef.current) return;
       navigate(`/verify-email?email=${encodeURIComponent(res.email)}`);
     } catch (err) {
-      fail(errorMessage(err, 'Registration failed'));
+      if (request === requestRef.current) fail(errorMessage(err, 'Registration failed'));
     } finally {
-      setLoading(false);
+      finishRequest(request);
     }
   };
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) return;
-    setError('');
-    setLoading(true);
+    const request = startRequest();
+    if (request === null) return;
     try {
       const res = await api.googleLogin({ idToken: credentialResponse.credential });
+      if (request !== requestRef.current) return;
       login(res);
       navigate('/monitoring');
     } catch (err) {
+      if (request !== requestRef.current) return;
       const status = isAxiosError(err) ? err.response?.status : undefined;
       if (status === 428 || errorMessage(err, '').includes('Role is required')) {
         setPendingGoogleToken(credentialResponse.credential);
@@ -226,23 +287,24 @@ export const AuthPage: React.FC = () => {
         fail(errorMessage(err, 'Google login failed'));
       }
     } finally {
-      setLoading(false);
+      finishRequest(request);
     }
   };
 
   const handleRoleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pendingGoogleToken) return;
-    setError('');
-    setLoading(true);
+    const request = startRequest();
+    if (request === null) return;
     try {
       const res = await api.googleLogin({ idToken: pendingGoogleToken, role: selectedRole });
+      if (request !== requestRef.current) return;
       login(res);
       navigate('/monitoring');
     } catch (err) {
-      fail(errorMessage(err, 'Registration failed'));
+      if (request === requestRef.current) fail(errorMessage(err, 'Registration failed'));
     } finally {
-      setLoading(false);
+      finishRequest(request);
     }
   };
 
@@ -270,7 +332,7 @@ export const AuthPage: React.FC = () => {
 
     if (mode === 'login') {
       const validation = LoginSchema.safeParse({
-        email: field === 'email' ? email : 'validation@opspilot.io',
+        email: field === 'email' ? email.trim() : 'validation@opspilot.io',
         password: field === 'password' ? password : 'ValidPass123!',
       });
       return validation.success ? undefined : validation.error.issues[0]?.message;
@@ -278,8 +340,8 @@ export const AuthPage: React.FC = () => {
 
     const candidatePassword = field === 'password' ? password : 'ValidPass123!';
     const validation = SignupSchema.safeParse({
-      name: field === 'name' ? name : 'OpsPilot User',
-      email: field === 'email' ? email : 'validation@opspilot.io',
+      name: field === 'name' ? name.trim() : 'OpsPilot User',
+      email: field === 'email' ? email.trim() : 'validation@opspilot.io',
       password: candidatePassword,
       confirmPassword: candidatePassword,
       role,
@@ -316,7 +378,7 @@ export const AuthPage: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-3">
-            <Link to="/" className="auth-nav-link">
+            <Link to="/" className="auth-nav-link" aria-label="Back to platform">
               <ArrowLeft className="h-3 w-3" />
               <span className="hidden sm:inline">Platform</span>
             </Link>
@@ -373,7 +435,7 @@ export const AuthPage: React.FC = () => {
             </div>
 
             {/* Quick Demo Credentials */}
-            <div className="mt-8 pt-5 border-t border-black/10 w-full max-w-md">
+            {mode === 'login' && <div className="auth-demo-access mt-8 pt-5 border-t border-black/10 w-full max-w-md">
               <span className="font-tech-mono text-[10px] font-bold uppercase tracking-wider text-gray-600 block mb-2.5">
                 Quick Demo Access:
               </span>
@@ -382,10 +444,13 @@ export const AuthPage: React.FC = () => {
                   <button
                     key={acc.role}
                     type="button"
+                    disabled={loading}
                     onClick={() => {
                       setEmail(acc.email);
                       setPassword('password123');
-                      if (mode === 'signup') setConfirmPassword('password123');
+                      setError('');
+                      setEditedFields({});
+                      loginPanelRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus();
                     }}
                     className="auth-demo-pill"
                   >
@@ -393,7 +458,7 @@ export const AuthPage: React.FC = () => {
                   </button>
                 ))}
               </div>
-            </div>
+            </div>}
           </div>
 
           {/* Right Column: The Single Interactive Form Card & Mascot */}
@@ -409,7 +474,7 @@ export const AuthPage: React.FC = () => {
 
               {/* Form Card */}
               <div className="auth-form-card">
-                {error && (
+                {error && !showRoleSelection && (
                   <div
                     role="alert"
                     className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-medium text-red-700"
@@ -427,16 +492,25 @@ export const AuthPage: React.FC = () => {
                   <div
                     ref={loginPanelRef}
                     data-active={mode === 'login'}
+                    inert={mode !== 'login'}
+                    aria-hidden={mode !== 'login'}
                     className="auth-panel auth-panel--login"
                   >
-                    <form onSubmit={handleLogin} className="space-y-3.5">
-                      <Field icon={<Mail className="h-4 w-4" />} index={1} error={mode === 'login' ? fieldErrors.email : undefined} errorId="email-login-error">
+                    <h2 className="auth-form-title">Sign in to OpsPilot</h2>
+                    <p className="auth-form-description">Pick up where you left off.</p>
+                    <form onSubmit={handleLogin} noValidate aria-busy={loading} className="space-y-3.5">
+                      <Field icon={<Mail className="h-4 w-4" />} index={1} error={mode === 'login' ? fieldErrors.email : undefined} inputId="email-login" label="Work email" errorId="email-login-error">
                         <input
                           id="email-login"
+                          name="email"
+                          autoComplete="username"
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          inputMode="email"
                           type="email"
                           placeholder="Work Email"
                           value={email}
-                          onChange={(e) => { setEmail(e.target.value); markFieldEdited('email'); }}
+                          onChange={(e) => { setEmail(e.target.value); setError(''); }}
                           {...focusProps('email')}
                           className={inputClass}
                           aria-invalid={Boolean(mode === 'login' && fieldErrors.email)}
@@ -446,24 +520,26 @@ export const AuthPage: React.FC = () => {
                       </Field>
 
                       <div className="relative">
-                        <Field icon={<Lock className="h-4 w-4" />} index={2} error={mode === 'login' ? fieldErrors.password : undefined} errorId="password-login-error">
+                        <Field icon={<Lock className="h-4 w-4" />} index={2} error={mode === 'login' ? fieldErrors.password : undefined} inputId="password-login" label="Password" errorId="password-login-error">
                           <input
                             id="password-login"
+                            name="password"
+                            autoComplete="current-password"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => { setPassword(e.target.value); markFieldEdited('password'); }}
+                            onChange={(e) => { setPassword(e.target.value); setError(''); }}
                             {...focusProps('password')}
                             className={inputClass}
                             aria-invalid={Boolean(mode === 'login' && fieldErrors.password)}
                             aria-describedby={mode === 'login' && fieldErrors.password ? 'password-login-error' : undefined}
                             required
                           />
+                          <RevealButton
+                            shown={showPassword}
+                            onToggle={() => setShowPassword(!showPassword)}
+                          />
                         </Field>
-                        <RevealButton
-                          shown={showPassword}
-                          onToggle={() => setShowPassword(!showPassword)}
-                        />
                       </div>
 
                       <button
@@ -472,7 +548,7 @@ export const AuthPage: React.FC = () => {
                         className="auth-submit-btn mt-4"
                       >
                         <span>{loading ? 'Authenticating...' : 'Sign In'}</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
+                        {loading ? <LoaderCircle className="auth-loading-icon h-4 w-4" aria-hidden="true" /> : <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />}
                       </button>
                       <p className="auth-inline-switch">
                         New to OpsPilot? <Link to="/signup">Register</Link>
@@ -484,16 +560,22 @@ export const AuthPage: React.FC = () => {
                   <div
                     ref={signupPanelRef}
                     data-active={mode === 'signup'}
+                    inert={mode !== 'signup'}
+                    aria-hidden={mode !== 'signup'}
                     className="auth-panel auth-panel--signup"
                   >
-                    <form onSubmit={handleSignup} className="space-y-3">
-                      <Field icon={<UserIcon className="h-4 w-4" />} index={1} error={fieldErrors.name} errorId="signup-name-error">
+                    <h2 className="auth-form-title">Create your account</h2>
+                    <p className="auth-form-description">Your workspace starts here.</p>
+                    <form onSubmit={handleSignup} noValidate aria-busy={loading} className="space-y-3">
+                      <Field icon={<UserIcon className="h-4 w-4" />} index={1} error={fieldErrors.name} inputId="signup-name" label="Full name" errorId="signup-name-error">
                         <input
                           id="signup-name"
+                          name="name"
+                          autoComplete="name"
                           type="text"
                           placeholder="Full Name"
                           value={name}
-                          onChange={(e) => { setName(e.target.value); markFieldEdited('name'); }}
+                          onChange={(e) => { setName(e.target.value); setError(''); }}
                           {...focusProps('name')}
                           className={inputClass}
                           aria-invalid={Boolean(fieldErrors.name)}
@@ -502,13 +584,18 @@ export const AuthPage: React.FC = () => {
                         />
                       </Field>
 
-                      <Field icon={<Mail className="h-4 w-4" />} index={2} error={mode === 'signup' ? fieldErrors.email : undefined} errorId="email-signup-error">
+                      <Field icon={<Mail className="h-4 w-4" />} index={2} error={mode === 'signup' ? fieldErrors.email : undefined} inputId="email-signup" label="Work email" errorId="email-signup-error">
                         <input
                           id="email-signup"
+                          name="email"
+                          autoComplete="email"
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          inputMode="email"
                           type="email"
                           placeholder="Work Email"
                           value={email}
-                          onChange={(e) => { setEmail(e.target.value); markFieldEdited('email'); }}
+                          onChange={(e) => { setEmail(e.target.value); setError(''); }}
                           {...focusProps('email')}
                           className={inputClass}
                           aria-invalid={Boolean(mode === 'signup' && fieldErrors.email)}
@@ -518,46 +605,51 @@ export const AuthPage: React.FC = () => {
                       </Field>
 
                       <div className="relative">
-                        <Field icon={<Lock className="h-4 w-4" />} index={3} error={mode === 'signup' ? fieldErrors.password : undefined} errorId="password-signup-error">
+                        <Field icon={<Lock className="h-4 w-4" />} index={3} error={mode === 'signup' ? fieldErrors.password : undefined} inputId="password-signup" label="Password" errorId="password-signup-error">
                           <input
                             id="password-signup"
+                            name="password"
+                            autoComplete="new-password"
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Password"
                             value={password}
-                            onChange={(e) => { setPassword(e.target.value); markFieldEdited('password'); }}
+                            onChange={(e) => { setPassword(e.target.value); setError(''); }}
                             {...focusProps('password')}
                             className={inputClass}
                             aria-invalid={Boolean(mode === 'signup' && fieldErrors.password)}
-                            aria-describedby={mode === 'signup' && fieldErrors.password ? 'password-signup-error' : undefined}
+                            aria-describedby={fieldErrors.password ? 'signup-password-hint password-signup-error' : 'signup-password-hint'}
                             required
                           />
+                          <RevealButton
+                            shown={showPassword}
+                            onToggle={() => setShowPassword(!showPassword)}
+                          />
                         </Field>
-                        <RevealButton
-                          shown={showPassword}
-                          onToggle={() => setShowPassword(!showPassword)}
-                        />
                       </div>
 
                       <div className="relative">
-                        <Field icon={<Lock className="h-4 w-4" />} index={4} error={fieldErrors.confirm} errorId="signup-confirm-error">
+                        <p id="signup-password-hint" className="auth-field-hint">Use 8+ characters with an uppercase letter, a lowercase letter, and a number.</p>
+                        <Field icon={<Lock className="h-4 w-4" />} index={4} error={fieldErrors.confirm} inputId="signup-confirm" label="Confirm password" errorId="signup-confirm-error">
                           <input
                             id="signup-confirm"
+                            name="confirmPassword"
+                            autoComplete="new-password"
                             type={showConfirmPassword ? 'text' : 'password'}
                             placeholder="Confirm"
                             aria-label="Confirm password"
                             value={confirmPassword}
-                            onChange={(e) => { setConfirmPassword(e.target.value); markFieldEdited('confirm'); }}
+                            onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
                             {...focusProps('confirm')}
                             className={inputClass}
                             aria-invalid={Boolean(fieldErrors.confirm)}
                             aria-describedby={fieldErrors.confirm ? 'signup-confirm-error' : undefined}
                             required
                           />
+                          <RevealButton
+                            shown={showConfirmPassword}
+                            onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+                          />
                         </Field>
-                        <RevealButton
-                          shown={showConfirmPassword}
-                          onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
-                        />
                       </div>
 
                       <div className="auth-field">
@@ -565,6 +657,9 @@ export const AuthPage: React.FC = () => {
                           <Shield className="h-4 w-4" />
                         </div>
                         <select
+                          id="signup-role"
+                          name="role"
+                          aria-label="Workspace role"
                           value={role}
                           onChange={(e) => setRole(e.target.value)}
                           className={inputClass}
@@ -580,7 +675,7 @@ export const AuthPage: React.FC = () => {
                         className="auth-submit-btn mt-3"
                       >
                         <span>{loading ? 'Creating...' : 'Create Account'}</span>
-                        <ArrowRight className="h-3.5 w-3.5" />
+                        {loading ? <LoaderCircle className="auth-loading-icon h-4 w-4" aria-hidden="true" /> : <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />}
                       </button>
                       <p className="auth-inline-switch">
                         Already registered? <Link to="/login">Sign in</Link>
@@ -599,13 +694,13 @@ export const AuthPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div data-testid="google-login" className="flex justify-center">
+                <div data-testid="google-login" className="auth-google-login flex justify-center" inert={loading}>
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}
                     onError={() => fail('Google Authentication failed')}
                     shape="pill"
                     size="medium"
-                    width="100%"
+                    text={mode === 'login' ? 'signin_with' : 'signup_with'}
                   />
                 </div>
               </div>
@@ -615,33 +710,33 @@ export const AuthPage: React.FC = () => {
       </main>
 
       {/* Role Selection Modal for Google Login */}
-      {showRoleSelection && createPortal(
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="role-selection-title">
-          <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" aria-hidden="true" />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/70 bg-white p-6 shadow-2xl animate-fade-in-up">
-            <h3 id="role-selection-title" className="font-tech-mono text-sm font-bold uppercase text-black">
-              Select Your Role
-            </h3>
-            <p className="mt-2 text-xs text-gray-600">
-              Please choose a workspace role to finalize your Google registration.
-            </p>
-            <form onSubmit={handleRoleSubmit} className="mt-4 space-y-4">
-              <div className="auth-field">
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="Developer">Role: Developer</option>
-                  <option value="DevOps">Role: DevOps</option>
-                </select>
-              </div>
-              <button type="submit" disabled={loading} className="auth-submit-btn cursor-pointer">
-                <span>{loading ? 'Saving...' : 'Complete Sign Up'}</span>
-              </button>
-            </form>
-          </div>
-        </div>,
+      {createPortal(
+        <dialog ref={roleDialogRef} className="auth-role-dialog" aria-labelledby="role-selection-title" onCancel={closeRoleSelection}>
+          <h3 id="role-selection-title" className="font-tech-mono text-sm font-bold uppercase text-black">
+            Select Your Role
+          </h3>
+          <p className="mt-2 text-xs text-gray-600">
+            Please choose a workspace role to finalize your Google registration.
+          </p>
+          {error && showRoleSelection && <p role="alert" className="auth-field-error mt-3">{error}</p>}
+          <form onSubmit={handleRoleSubmit} className="mt-4 space-y-4">
+            <div className="auth-field">
+              <select
+                aria-label="Workspace role"
+                value={selectedRole}
+                onChange={(e) => setSelectedRole(e.target.value)}
+                className={inputClass}
+              >
+                <option value="Developer">Role: Developer</option>
+                <option value="DevOps">Role: DevOps</option>
+              </select>
+            </div>
+            <button type="submit" disabled={loading} className="auth-submit-btn cursor-pointer">
+              <span>{loading ? 'Saving...' : 'Complete Sign Up'}</span>
+            </button>
+            <button type="button" onClick={closeRoleSelection} className="auth-dialog-cancel">Cancel</button>
+          </form>
+        </dialog>,
         document.body
       )}
     </div>

@@ -163,6 +163,11 @@ export const Infrastructure3DCore: React.FC<{
   const [compact, setCompact] = useState(false);
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const hoveredNodeIdRef = useRef<string | null>(null);
+  const requestRenderRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    requestRenderRef.current?.();
+  }, [ready, compact, activeState, hoveredNodeId]);
 
   useEffect(() => {
     hoveredNodeIdRef.current = hoveredNodeId;
@@ -176,7 +181,8 @@ export const Infrastructure3DCore: React.FC<{
     const container = mountRef.current;
     if (!container) return;
 
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let reducedMotion = motionPreference.matches;
     let width = container.clientWidth || 600;
     let height = container.clientHeight || 540;
     setCompact(width < 600);
@@ -741,12 +747,12 @@ export const Infrastructure3DCore: React.FC<{
     // 10. Loop: frame-rate independent motion, overlay projection, pause when offscreen
     const timer = new THREE.Timer();
     timer.connect(document);
-    const timeScale = reducedMotion ? 0 : 1;
     const projected = new THREE.Vector3();
     const labelAnchor = new THREE.Vector3(0, -2.2, 0);
     let animId = 0;
     let elapsed = 0;
     let visible = true;
+    let resetClock = true;
 
     const toScreen = (v: THREE.Vector3) => {
       projected.copy(v).project(camera);
@@ -754,20 +760,19 @@ export const Infrastructure3DCore: React.FC<{
     };
 
     const animate = () => {
-      if (!visible) {
-        animId = 0;
-        return;
-      }
+      animId = 0;
+      if (!visible || document.hidden) return;
       if (!reducedMotion) animId = requestAnimationFrame(animate);
       // performance.now() keeps the clock monotonic; a negative delta would make the damped easing diverge
       timer.update();
-      const delta = THREE.MathUtils.clamp(timer.getDelta(), 0, 0.1) * timeScale;
+      const delta = resetClock || reducedMotion ? 0 : THREE.MathUtils.clamp(timer.getDelta(), 0, 0.05);
+      resetClock = false;
       elapsed += delta;
       const t = elapsed;
-      const ease = 1 - Math.exp(-delta * 3.5);
+      const ease = reducedMotion ? 1 : 1 - Math.exp(-delta * 3.5);
 
       // Mascot pilot animation & interactive cursor tracking
-      const pointerPosition = readPointerPosition(mousePosRef);
+      const pointerPosition = reducedMotion ? { x: 0, y: 0 } : readPointerPosition(mousePosRef);
       const targetHeadRotY = (pointerPosition.x || 0) * 0.42;
       const targetHeadRotX = -(pointerPosition.y || 0) * 0.28;
       headGroup.rotation.y += (targetHeadRotY - headGroup.rotation.y) * ease;
@@ -785,8 +790,9 @@ export const Infrastructure3DCore: React.FC<{
       const blinkCycle = t % 4.2;
       const isBlinking = blinkCycle > 3.95 && blinkCycle < 4.07;
       const targetBlinkScale = isBlinking ? 0.08 : 1.0;
-      leftEye.scale.y += (targetBlinkScale - leftEye.scale.y) * 0.38;
-      rightEye.scale.y += (targetBlinkScale - rightEye.scale.y) * 0.38;
+      const blinkEase = reducedMotion ? 1 : 1 - Math.exp(-delta * 28);
+      leftEye.scale.y += (targetBlinkScale - leftEye.scale.y) * blinkEase;
+      rightEye.scale.y += (targetBlinkScale - rightEye.scale.y) * blinkEase;
 
       // Zero-G paws floating with subtle phase differences
       leftPaw.position.y = -0.14 + Math.sin(t * 1.8) * 0.014;
@@ -870,7 +876,7 @@ export const Infrastructure3DCore: React.FC<{
         let y = motePos.getY(i) + seed.rise * delta;
         if (y > 2.9) y = -2.9;
         motePos.setY(i, y);
-        motePos.setX(i, motePos.getX(i) + Math.sin(t * 0.4 + seed.phase) * 0.0015);
+        motePos.setX(i, motePos.getX(i) + Math.sin(t * 0.4 + seed.phase) * 0.09 * delta);
       });
       motePos.needsUpdate = true;
 
@@ -883,13 +889,32 @@ export const Infrastructure3DCore: React.FC<{
         group.getWorldPosition(pulsePoint);
         const [x, y] = toScreen(pulsePoint);
         el.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+        el.style.visibility = 'visible';
       });
       if (coreLabelRef.current) {
         const [x, y] = toScreen(labelAnchor);
         coreLabelRef.current.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
+        coreLabelRef.current.style.visibility = 'visible';
       }
       if (reducedMotion) animId = 0;
     };
+
+    const requestRender = () => {
+      if (visible && !document.hidden && !animId) animId = requestAnimationFrame(animate);
+    };
+    requestRenderRef.current = requestRender;
+    const syncPlayback = () => {
+      cancelAnimationFrame(animId);
+      animId = 0;
+      resetClock = true;
+      requestRender();
+    };
+    const onMotionChange = () => {
+      reducedMotion = motionPreference.matches;
+      syncPlayback();
+    };
+    motionPreference.addEventListener('change', onMotionChange);
+    document.addEventListener('visibilitychange', syncPlayback);
 
     const resizeObserver = new ResizeObserver(() => {
       width = container.clientWidth || width;
@@ -899,12 +924,13 @@ export const Infrastructure3DCore: React.FC<{
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, width < 600 ? 1.25 : 1.5));
       renderer.setSize(width, height);
       setCompact(width < 600);
+      requestRender();
     });
     resizeObserver.observe(container);
 
     const visibilityObserver = new IntersectionObserver(([entry]) => {
       visible = entry?.isIntersecting ?? true;
-      if (visible && !animId) animId = requestAnimationFrame(animate);
+      syncPlayback();
     });
     visibilityObserver.observe(container);
 
@@ -914,6 +940,9 @@ export const Infrastructure3DCore: React.FC<{
     return () => {
       cancelAnimationFrame(animId);
       visible = false;
+      requestRenderRef.current = null;
+      motionPreference.removeEventListener('change', onMotionChange);
+      document.removeEventListener('visibilitychange', syncPlayback);
       resizeObserver.disconnect();
       visibilityObserver.disconnect();
       timer.dispose();
@@ -942,7 +971,7 @@ export const Infrastructure3DCore: React.FC<{
       {ready && (
         <>
           {/* Core caption, anchored beneath the floating assembly */}
-          <div ref={coreLabelRef} className="absolute left-0 top-0 z-20 pointer-events-none will-change-transform">
+          <div ref={coreLabelRef} style={{ visibility: 'hidden' }} className="absolute left-0 top-0 z-20 pointer-events-none will-change-transform">
             <div className="-translate-x-1/2 -translate-y-1/2 flex items-center gap-2 whitespace-nowrap rounded-full border border-black/15 bg-white px-3 py-1 shadow-2xs backdrop-blur-md">
               <span className="h-1.5 w-1.5 rounded-full bg-black shadow-[0_0_6px_rgba(0,0,0,0.5)] animate-pulse" />
               <span className="font-tech-mono text-[10px] font-bold tracking-[0.18em] text-black">OPSPILOT // AUTONOMOUS COPILOT</span>
@@ -959,6 +988,7 @@ export const Infrastructure3DCore: React.FC<{
             return (
               <div
                 key={node.id}
+                style={{ visibility: 'hidden' }}
                 ref={(el) => {
                   badgeRefs.current[node.id] = el;
                 }}

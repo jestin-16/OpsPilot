@@ -1,51 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { AuthPage } from './AuthPage';
 import { api } from '../services/api';
 
-vi.mock('../services/api', () => ({
+vi.mock('../services/api', async (importOriginal) => ({
+  ...await importOriginal<typeof import('../services/api')>(),
   api: {
     login: vi.fn(),
     register: vi.fn(),
     googleLogin: vi.fn(),
   },
-  LoginSchema: {
-    safeParse: (data: { email?: string; password?: string }) => {
-      if (!data.email || !data.email.includes('@')) {
-        return { success: false, error: { issues: [{ message: 'Invalid email address' }] } };
-      }
-      if (!data.password || data.password.length < 6) {
-        return { success: false, error: { issues: [{ message: 'Password must be at least 6 characters' }] } };
-      }
-      return { success: true, data };
-    },
-  },
-  SignupSchema: {
-    safeParse: (data: { name?: string; email?: string; password?: string; confirmPassword?: string; role?: string }) => {
-      if (!data.name || data.name.trim().length === 0) {
-        return { success: false, error: { issues: [{ message: 'Name is required' }] } };
-      }
-      if (!data.email || !data.email.includes('@')) {
-        return { success: false, error: { issues: [{ message: 'Invalid email address' }] } };
-      }
-      if (!data.password || data.password.length < 8) {
-        return { success: false, error: { issues: [{ message: 'Password must be at least 8 characters' }] } };
-      }
-      if (data.password !== data.confirmPassword) {
-        return { success: false, error: { issues: [{ message: 'Passwords do not match' }] } };
-      }
-      if (data.role === 'Admin') {
-        return { success: false, error: { issues: [{ message: 'Admin role cannot be self-assigned' }] } };
-      }
-      return { success: true, data: { ...data, role: data.role || 'Developer' } };
-    },
-  },
 }));
 
 vi.mock('@react-oauth/google', () => ({
-  GoogleLogin: () => <div data-testid="google-login">Google Login Mock</div>,
+  GoogleLogin: ({ onSuccess }: { onSuccess: (value: { credential: string }) => void }) => <button type="button" onClick={() => onSuccess({ credential: 'test-google-token' })}>Continue with Google</button>,
 }));
 
 const mockLogin = vi.fn();
@@ -62,7 +32,9 @@ vi.mock('../context/AuthContext', () => ({
 
 describe('AuthPage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', ''); };
+    HTMLDialogElement.prototype.close = function () { this.removeAttribute('open'); };
   });
 
   const renderWithRouter = (initialPath = '/login') => {
@@ -122,7 +94,7 @@ describe('AuthPage', () => {
     });
   });
 
-  it('shows validation error when password is too short during login', async () => {
+  it('focuses the missing password on login submission', async () => {
     const user = userEvent.setup();
     const { container } = renderWithRouter('/login');
     const loginPanel = container.querySelector('.auth-panel--login') as HTMLElement;
@@ -132,10 +104,10 @@ describe('AuthPage', () => {
     const submitBtn = within(loginPanel).getByRole('button', { name: /Sign In/i });
 
     await user.type(emailInput, 'user@opspilot.io');
-    await user.type(passwordInput, '123');
     await user.click(submitBtn);
 
-    expect(screen.getByText('Password must be at least 6 characters')).toBeInTheDocument();
+    expect(screen.getByText('Password is required')).toBeInTheDocument();
+    expect(passwordInput).toHaveFocus();
     expect(api.login).not.toHaveBeenCalled();
   });
 
@@ -212,5 +184,79 @@ describe('AuthPage', () => {
       });
       expect(screen.getByTestId('verify-email')).toBeInTheDocument();
     });
+  });
+
+  it('waits for blur before validating, then clears the field error as it is corrected', async () => {
+    const user = userEvent.setup();
+    renderWithRouter();
+    const input = screen.getByRole('textbox', { name: 'Work email' });
+    await user.type(input, 'alice');
+    expect(input).toHaveAttribute('aria-invalid', 'false');
+    await user.tab();
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    await user.type(input, '@opspilot.io');
+    expect(input).toHaveAttribute('aria-invalid', 'false');
+  });
+
+  it('keeps inactive forms inert and hides passwords when switching modes', async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithRouter();
+    const loginPanel = container.querySelector('.auth-panel--login') as HTMLElement;
+    const signupPanel = container.querySelector('.auth-panel--signup') as HTMLElement;
+    expect(signupPanel).toHaveAttribute('inert');
+    expect(within(loginPanel).getByLabelText('Work email')).toHaveAttribute('autocomplete', 'username');
+    await user.type(within(loginPanel).getByLabelText('Password', { exact: true }), 'Password123');
+    await user.click(screen.getByRole('button', { name: 'Show password' }));
+    await user.click(screen.getByRole('button', { name: /Get Started Free/ }));
+    expect(loginPanel).toHaveAttribute('inert');
+    expect(signupPanel).not.toHaveAttribute('inert');
+    expect(within(signupPanel).getByLabelText('Password', { exact: true })).toHaveAttribute('type', 'password');
+    expect(within(signupPanel).getByLabelText('Password', { exact: true })).toHaveValue('Password123');
+    expect(within(signupPanel).getByLabelText('Password', { exact: true })).toHaveAttribute('autocomplete', 'new-password');
+  });
+
+  it('keeps server errors visible when focus moves without editing', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.login).mockRejectedValueOnce(new Error('Unable to sign in'));
+    renderWithRouter();
+    await user.type(screen.getByRole('textbox', { name: 'Work email' }), 'alice@opspilot.io');
+    await user.type(screen.getByLabelText('Password', { exact: true, selector: '#password-login' }), 'Password123');
+    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    const error = await screen.findByRole('alert');
+    await user.click(screen.getByRole('textbox', { name: 'Work email' }));
+    await user.tab();
+    expect(error).toBeInTheDocument();
+  });
+
+  it('blocks duplicate requests and ignores a login response after switching to signup', async () => {
+    const user = userEvent.setup();
+    let resolveLogin!: (value: Awaited<ReturnType<typeof api.login>>) => void;
+    vi.mocked(api.login).mockReturnValueOnce(new Promise(resolve => { resolveLogin = resolve; }));
+    const { container } = renderWithRouter();
+    await user.type(screen.getByRole('textbox', { name: 'Work email' }), 'alice@opspilot.io');
+    await user.type(screen.getByLabelText('Password', { exact: true, selector: '#password-login' }), 'Password123');
+    const form = container.querySelector('.auth-panel--login form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(api.login).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Authenticating...' })).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: /Get Started Free/ }));
+    await act(async () => resolveLogin({ token: 'test-token' } as Awaited<ReturnType<typeof api.login>>));
+    expect(mockLogin).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { name: 'Create your account' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create Account' })).toBeEnabled();
+  });
+
+  it('shows Google registration errors inside its cancellable role dialog', async () => {
+    const user = userEvent.setup();
+    vi.mocked(api.googleLogin).mockRejectedValueOnce(new Error('Role is required'));
+    vi.mocked(api.googleLogin).mockRejectedValueOnce(new Error('Please retry'));
+    renderWithRouter();
+    await user.click(screen.getByRole('button', { name: 'Continue with Google' }));
+    const dialog = await screen.findByRole('dialog');
+    await user.click(within(dialog).getByRole('button', { name: 'Complete Sign Up' }));
+    expect(await within(dialog).findByRole('alert')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

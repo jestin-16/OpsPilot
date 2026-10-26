@@ -26,7 +26,7 @@ import {
   Rocket, Server, Activity, RefreshCw, AlertCircle, 
   Terminal, Plus, Filter, ChevronDown, CheckCircle2,
   ExternalLink, ArrowUpRight, Cpu, Layers, ShieldCheck,
-  Box, X, Sparkles, Check
+  Box, X, Sparkles, Check, ScrollText
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { errorMessage } from '../services/projectApi';
@@ -36,12 +36,14 @@ const timelineStatus = (variant: string): 'success' | 'error' | 'warning' =>
   variant === 'success' ? 'success' : variant === 'error' ? 'error' : 'warning';
 
 const PROVIDER_LABELS: Record<string, string> = {
-  DOCKER: 'Docker',
+  DOCKER: 'Docker Host',
   KUBERNETES: 'Kubernetes',
   AWS: 'AWS',
   VERCEL: 'Vercel',
   ORACLE_CLOUD: 'Oracle Cloud',
-  GITHUB: 'GitHub',
+  GITHUB: 'GitHub Actions',
+  PROMETHEUS: 'Prometheus',
+  LOKI: 'Loki',
 };
 
 const PROVIDER_ICONS: Record<string, React.ReactNode> = {
@@ -51,6 +53,8 @@ const PROVIDER_ICONS: Record<string, React.ReactNode> = {
   VERCEL: <Layers className="w-4 h-4 text-slate-800 dark:text-slate-200" />,
   ORACLE_CLOUD: <Server className="w-4 h-4 text-rose-500" />,
   GITHUB: <Rocket className="w-4 h-4 text-purple-500" />,
+  PROMETHEUS: <Activity className="w-4 h-4 text-orange-500" />,
+  LOKI: <ScrollText className="w-4 h-4 text-emerald-500" />,
 };
 
 const SEVERITY_LABELS: Record<string, string> = {

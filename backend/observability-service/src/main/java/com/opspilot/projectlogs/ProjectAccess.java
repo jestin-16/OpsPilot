@@ -23,7 +23,7 @@ public class ProjectAccess {
         }
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
-        if (!project.getOwner().getId().equals(user.getId())) {
+        if (!project.getOwner().getId().equals(user.getId()) && !isPrivileged(user)) {
             throw new ForbiddenException("You do not have permission to view logs for this project");
         }
         return project;

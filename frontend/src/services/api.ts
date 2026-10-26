@@ -625,16 +625,6 @@ export const api = {
     return res.data;
   },
 
-  verifyOtp: async (data: { email: string; otp: string }): Promise<RegistrationResponse> => {
-    const res = await axiosInstance.post<RegistrationResponse>('/auth/verify-otp', data);
-    return res.data;
-  },
-
-  resendOtp: async (email: string): Promise<RegistrationResponse> => {
-    const res = await axiosInstance.post<RegistrationResponse>('/auth/resend-otp', { email });
-    return res.data;
-  },
-
   login: async (data: z.infer<typeof LoginSchema>): Promise<AuthResponse> => {
     const validated = LoginSchema.parse(data);
     const res = await axiosInstance.post<AuthResponse>('/auth/login', validated);

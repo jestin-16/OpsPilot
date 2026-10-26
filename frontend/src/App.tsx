@@ -17,7 +17,6 @@ function lazyPage<K extends string>(load: () => Promise<Record<K, React.Componen
   return lazy(() => load().then((module) => ({ default: module[name] })));
 }
 
-const VerifyEmailOTP = lazyPage(() => import('./pages/VerifyEmailOTP'), 'VerifyEmailOTP');
 const Dashboard = lazyPage(() => import('./pages/Dashboard'), 'Dashboard');
 const Projects = lazyPage(() => import('./pages/Projects'), 'Projects');
 const LiveOperations = lazyPage(() => import('./pages/LiveOperations'), 'LiveOperations');
@@ -141,7 +140,7 @@ export const App: React.FC = () => {
             />
             <Route
               path="/verify-email"
-              element={<PublicRoute><VerifyEmailOTP /></PublicRoute>}
+              element={<Navigate to="/login" replace />}
             />
             <Route
               path="/dashboard"

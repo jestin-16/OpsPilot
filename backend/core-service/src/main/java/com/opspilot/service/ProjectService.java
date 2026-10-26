@@ -60,7 +60,9 @@ public class ProjectService {
         if (currentUser == null) {
             return Collections.emptyList();
         }
-        List<Project> projects = projectRepository.findByOwner(currentUser);
+        List<Project> projects = isPrivileged(currentUser)
+                ? projectRepository.findAll()
+                : projectRepository.findByOwner(currentUser);
 
         return projects.stream()
                 .map(this::mapToResponse)
@@ -75,9 +77,14 @@ public class ProjectService {
 
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
 
-        org.springframework.data.domain.Page<Project> projectPage = currentUser == null
-                ? org.springframework.data.domain.Page.empty(pageable)
-                : projectRepository.findByOwner(currentUser, pageable);
+        org.springframework.data.domain.Page<Project> projectPage;
+        if (currentUser == null) {
+            projectPage = org.springframework.data.domain.Page.empty(pageable);
+        } else if (isPrivileged(currentUser)) {
+            projectPage = projectRepository.findAll(pageable);
+        } else {
+            projectPage = projectRepository.findByOwner(currentUser, pageable);
+        }
 
         List<ProjectResponse> content = projectPage.getContent().stream()
                 .map(this::mapToResponse)
@@ -249,15 +256,24 @@ public class ProjectService {
 
     public void verifyOwnerOrAdmin(Project project, User currentUser) {
         boolean isOwner = project.getOwner().getId().equals(currentUser.getId());
-        boolean isAdmin = isAdministrator(currentUser);
+        boolean isPrivileged = isPrivileged(currentUser);
 
-        if (!isOwner && !isAdmin) {
-            throw new ForbiddenException("Only the project owner or an Administrator can access/update/delete this project");
+        if (!isOwner && !isPrivileged) {
+            throw new ForbiddenException("Only the project owner or a DevOps/Administrator can access/update/delete this project");
         }
     }
 
-    private boolean isAdministrator(User user) {
+    private boolean isPrivileged(User user) {
+        if (user == null || user.getRoles() == null) return false;
         return user.getRoles().stream()
+                .anyMatch(r -> r.getRoleName().equalsIgnoreCase("ADMIN") ||
+                               r.getRoleName().equalsIgnoreCase("ROLE_ADMIN") ||
+                               r.getRoleName().equalsIgnoreCase("DEVOPS") ||
+                               r.getRoleName().equalsIgnoreCase("ROLE_DEVOPS"));
+    }
+
+    private boolean isAdministrator(User user) {
+        return user != null && user.getRoles() != null && user.getRoles().stream()
                 .anyMatch(r -> r.getRoleName().equalsIgnoreCase("ADMIN") ||
                                r.getRoleName().equalsIgnoreCase("ROLE_ADMIN"));
     }

@@ -43,7 +43,6 @@ describe('AuthPage', () => {
         <Routes>
           <Route path="/login" element={<AuthPage />} />
           <Route path="/signup" element={<AuthPage />} />
-          <Route path="/verify-email" element={<div data-testid="verify-email">Verify Email Page</div>} />
           <Route path="/monitoring" element={<div data-testid="monitoring-dashboard">Monitoring Dashboard</div>} />
         </Routes>
       </MemoryRouter>
@@ -157,13 +156,12 @@ describe('AuthPage', () => {
     expect(api.register).not.toHaveBeenCalled();
   });
 
-  it('registers successfully and redirects to email verification', async () => {
+  it('registers successfully and returns to sign in without email verification', async () => {
     const user = userEvent.setup();
     (api.register as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      id: 42,
       email: 'newuser@opspilot.io',
-      name: 'New User',
-      roles: ['Developer'],
+      message: 'Account created. Sign in to continue.',
+      verificationRequired: false,
     });
 
     const { container } = renderWithRouter('/signup');
@@ -182,7 +180,8 @@ describe('AuthPage', () => {
         password: 'SecurePass123!',
         role: 'Developer',
       });
-      expect(screen.getByTestId('verify-email')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Sign in to OpsPilot' })).toBeInTheDocument();
+      expect(screen.getByText('Account created. Sign in to continue.')).toBeInTheDocument();
     });
   });
 

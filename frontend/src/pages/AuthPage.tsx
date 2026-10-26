@@ -309,7 +309,7 @@ export const AuthPage: React.FC = () => {
       const { name: validName, email: validEmail, role: validRole } = validation.data;
       const res = await api.register({ name: validName, email: validEmail, password, role: validRole });
       if (request !== requestRef.current) return;
-      navigate(`/verify-email?email=${encodeURIComponent(res.email)}`);
+      navigate('/login', { state: { registrationComplete: true, email: res.email } });
     } catch (err) {
       if (request === requestRef.current) failRequest(err, 'Registration failed');
     } finally {
@@ -504,6 +504,11 @@ export const AuthPage: React.FC = () => {
 
               {/* Form Card */}
               <div className="auth-form-card">
+                {mode === 'login' && location.state?.registrationComplete && !error && (
+                  <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs font-medium text-emerald-700">
+                    Account created. Sign in to continue.
+                  </div>
+                )}
                 {error && !showRoleSelection && (
                   <div
                     role="alert"

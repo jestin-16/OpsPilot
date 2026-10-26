@@ -70,31 +70,16 @@ OpsPilot enforces strict Third Normal Form (3NF) relational integrity across all
 
 ## 📡 REST API Reference
 
-### Email verification configuration
+### Registration
 
-New registrations require email verification before login. Configure these environment variables for the auth service; never commit SMTP credentials:
+New accounts are active immediately. The signup flow is `POST /api/auth/register`, then `POST /api/auth/login`; no verification email, OTP, or SMTP configuration is required. The frontend returns users to sign-in after account creation. Old `/verify-email` links redirect to sign-in.
 
-```text
-MAIL_HOST=smtp.example.com
-MAIL_PORT=587
-MAIL_USERNAME=your-smtp-user
-MAIL_PASSWORD=your-smtp-password
-MAIL_FROM=no-reply@example.com
-MAIL_AUTH=true
-MAIL_STARTTLS=true
-OTP_EXPIRATION_MINUTES=5
-OTP_MAX_ATTEMPTS=5
-OTP_RESEND_COOLDOWN_SECONDS=60
-```
-
-The signup flow is `POST /api/auth/register`, `POST /api/auth/verify-otp`, then normal `POST /api/auth/login`. Existing users are treated as verified by the migration default.
+Migration `V22` activates accounts left pending by the former email verification flow. Previously verified accounts disabled by an administrator remain disabled. The legacy verification columns and OTP table are retained for database compatibility.
 
 ### Authentication & RBAC
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Public | Register a new user (`Admin`, `Developer`, `DevOps`) |
-| `POST` | `/api/auth/verify-otp` | Public | Verify 6-digit registration OTP code |
-| `POST` | `/api/auth/resend-otp` | Public | Resend verification OTP code (with rate limit cooldown) |
 | `POST` | `/api/auth/login` | Public | Authenticate user and issue JWT token |
 | `POST` | `/api/auth/google` | Public | Authenticate or complete registration with Google OAuth |
 
@@ -244,14 +229,6 @@ All paths also exist under `/api/projects/...` (without `v1`).
 | `LOGS_RUNNER_INTERVAL_MS` | observability | `30000` | How often to look for new / changed / disconnected integrations |
 | `LOGS_RUNNER_REFRESH` | observability | `10m` | Re-resolve containers and pods for Docker / Kubernetes streams |
 | `INGEST_MAX_BODY_BYTES` | observability | `5242880` | Largest accepted push body |
-| `MAIL_HOST` | auth | empty | SMTP hostname for registration verification emails |
-| `MAIL_PORT` | auth | `587` | SMTP server port |
-| `MAIL_USERNAME` | auth | empty | SMTP authentication username |
-| `MAIL_PASSWORD` | auth | empty | SMTP authentication password |
-| `MAIL_FROM` | auth | `no-reply@opspilot.io` | Sender email address for OTP delivery |
-| `OTP_EXPIRATION_MINUTES` | auth | `5` | Validity duration of verification OTP |
-| `OTP_MAX_ATTEMPTS` | auth | `5` | Maximum failed attempts allowed before code invalidation |
-| `OTP_RESEND_COOLDOWN_SECONDS` | auth | `60` | Cooldown in seconds before resending an OTP |
 | `VITE_API_BASE_URL` | frontend | `http://localhost:8080/api/v1` | API gateway URL |
 | `VITE_GOOGLE_CLIENT_ID` | frontend | optional | Google OAuth 2.0 Client ID for social registration/login |
 

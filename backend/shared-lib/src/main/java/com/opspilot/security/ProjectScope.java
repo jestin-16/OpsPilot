@@ -80,6 +80,9 @@ public class ProjectScope {
         if (user == null) {
             return Optional.of(List.of());
         }
+        if (isPrivileged(user)) {
+            return Optional.empty();
+        }
         return Optional.of(projects.findIdsByOwner(user));
     }
 }

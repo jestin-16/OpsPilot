@@ -22,6 +22,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,8 +57,10 @@ public class ProjectService {
     private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
     public List<ProjectResponse> getAllProjectsForUser(User currentUser) {
-        boolean isAdmin = isAdministrator(currentUser);
-        List<Project> projects = isAdmin ? projectRepository.findAll() : projectRepository.findByOwner(currentUser);
+        if (currentUser == null) {
+            return Collections.emptyList();
+        }
+        List<Project> projects = projectRepository.findByOwner(currentUser);
 
         return projects.stream()
                 .map(this::mapToResponse)
@@ -72,9 +75,8 @@ public class ProjectService {
 
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
 
-        boolean isAdmin = isAdministrator(currentUser);
-        org.springframework.data.domain.Page<Project> projectPage = isAdmin
-                ? projectRepository.findAll(pageable)
+        org.springframework.data.domain.Page<Project> projectPage = currentUser == null
+                ? org.springframework.data.domain.Page.empty(pageable)
                 : projectRepository.findByOwner(currentUser, pageable);
 
         List<ProjectResponse> content = projectPage.getContent().stream()
@@ -89,6 +91,12 @@ public class ProjectService {
                 projectPage.getTotalPages(),
                 projectPage.isLast()
         );
+    }
+
+    public List<ProjectResponse> getAllProjectsForAdmin() {
+        return projectRepository.findAll().stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     public ProjectResponse getProjectById(Long id, User currentUser) {

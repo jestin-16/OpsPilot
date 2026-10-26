@@ -43,10 +43,9 @@ public class DockerLogSourceService {
         return accessibleSources(user).stream().map(this::toResponse).toList();
     }
 
-    /** Every source in a project the caller may access: all for administrators, otherwise projects they own. */
+    /** Every source in a project owned by the caller. */
     public List<DockerLogSource> accessibleSources(User user) {
         if (user == null) throw new ForbiddenException("Authentication is required");
-        if (isAdmin(user)) return repository.findAllByOrderByCreatedAtDesc();
         List<Long> ids = projectRepository.findByOwner(user).stream().map(Project::getId).toList();
         return ids.isEmpty() ? List.of() : repository.findByProjectIdInOrderByCreatedAtDesc(ids);
     }

@@ -7,7 +7,7 @@ import { ProjectContext, readStoredId, STORAGE_KEY, type ProjectContextValue } f
 
 /** Must sit inside both the Router (reads the :id route param) and the AuthProvider. */
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const routeMatch = useMatch('/projects/:id/*');
   const routeId = routeMatch && /^\d+$/.test(routeMatch.params.id ?? '') ? Number(routeMatch.params.id) : null;
@@ -15,9 +15,9 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [storedId, setStoredId] = useState<number | null>(readStoredId);
 
   const { data: projects = [], isLoading, isError } = useQuery({
-    queryKey: ['projects'],
+    queryKey: ['projects', user?.id],
     queryFn: () => api.getProjects(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && !!user,
     staleTime: 30_000,
   });
 
@@ -30,6 +30,29 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       // storage can be unavailable (private mode); the selection then lasts for this page load only
     }
   }, []);
+
+  // Sync stored project when authentication state changes or user switches
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setStoredId(null);
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+  }, [isAuthenticated]);
+
+  // Ensure storedId belongs to the current user's projects once loaded
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && projects.length > 0) {
+      if (storedId != null && !projects.some((p) => p.id === storedId) && routeId == null) {
+        selectProject(projects[0].id);
+      }
+    } else if (!isLoading && isAuthenticated && projects.length === 0 && storedId != null && routeId == null) {
+      selectProject(null);
+    }
+  }, [isLoading, isAuthenticated, projects, storedId, routeId, selectProject]);
 
   // Opening a project URL makes it the current project.
   useEffect(() => {

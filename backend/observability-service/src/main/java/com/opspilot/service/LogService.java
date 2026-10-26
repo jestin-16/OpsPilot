@@ -34,9 +34,7 @@ public class LogService {
             && (providerName != null && !providerName.equalsIgnoreCase("local"));
 
         if (fetchLocal) {
-            List<LogEntity> localLogs = isPrivileged(currentUser)
-                    ? logRepository.searchLogs(projectId, serviceParam, levelParam, queryParam, page)
-                    : logRepository.searchLogsForOwner(currentUser.getId(), projectId, serviceParam, levelParam, queryParam, page);
+            List<LogEntity> localLogs = logRepository.searchLogsForOwner(currentUser.getId(), projectId, serviceParam, levelParam, queryParam, page);
             localLogs.forEach(log -> log.setProviderSource("local"));
             mergedLogs.addAll(localLogs);
         }

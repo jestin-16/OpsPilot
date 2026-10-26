@@ -93,16 +93,31 @@ The signup flow is `POST /api/auth/register`, `POST /api/auth/verify-otp`, then 
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
 | `POST` | `/api/auth/register` | Public | Register a new user (`Admin`, `Developer`, `DevOps`) |
+| `POST` | `/api/auth/verify-otp` | Public | Verify 6-digit registration OTP code |
+| `POST` | `/api/auth/resend-otp` | Public | Resend verification OTP code (with rate limit cooldown) |
 | `POST` | `/api/auth/login` | Public | Authenticate user and issue JWT token |
+| `POST` | `/api/auth/google` | Public | Authenticate or complete registration with Google OAuth |
 
-### Project Management
+### Project Management & Workspace Scoping
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `GET` | `/api/projects` | Authenticated | List all projects |
-| `GET` | `/api/projects/{id}` | Authenticated | Get project details |
-| `POST` | `/api/projects` | Admin, Developer | Create a new microservice project |
+| `GET` | `/api/projects` | Authenticated | List all projects owned by the authenticated user |
+| `GET` | `/api/projects/{id}` | Authenticated | Get project details (Owner or Platform Admin) |
+| `POST` | `/api/projects` | Admin, Developer | Create a new project (auto-assigned to caller as owner) |
 | `PUT` | `/api/projects/{id}` | Project Owner / Admin | Update project details |
-| `DELETE` | `/api/projects/{id}` | Project Owner / Admin | Delete project |
+| `DELETE` | `/api/projects/{id}` | Project Owner / Admin | Delete project and linked metadata |
+
+### Platform Administration & Governance
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/admin/overview` | Admin | Platform overview, user distribution, and system vitals |
+| `GET` | `/api/v1/admin/projects` | Admin | Cross-workspace project registry for containment and review |
+| `GET` | `/api/v1/admin/audit-logs` | Admin | Centralized audit trail across all platform actions |
+| `GET` | `/api/v1/admin/integrations` | Admin | Platform-wide infrastructure integrations |
+| `POST` | `/api/v1/admin/integrations` | Admin | Configure and test platform integrations |
+| `GET` | `/api/v1/admin/settings` | Admin | View platform governance and rate limiting settings |
+| `PUT` | `/api/v1/admin/settings` | Admin | Update platform governance settings |
+| `GET` | `/api/v1/admin/security/stats` | Admin | Security posture, quarantine counts, and error summaries |
 
 ### Deployments
 OpsPilot records deployments; it does not run them (see *Deployments* below for the three sources).
@@ -146,6 +161,11 @@ Everything starts with a **project**. Inside it you connect the systems you care
 3. **Watch logs**: `/projects/:id/logs` is one stream for every source (filters: source, level, time range, text; pause/resume, auto-scroll, source badges, colour-coded levels). `/projects/:id/logs/:integrationId` is a dedicated page per integration.
 
 The project switcher in the sidebar keeps the selection. Existing global pages (`/logs`, `/pipelines`, `/deployments`, `/incidents`, `/github`) follow the selected project, and a banner offers *Show all projects*. On a new database, migration `V15` moves data created before this flow into a **Default Project**; databases created before Flyway was enabled skip it (see *Database schema* below).
+
+**Multi-Tenant Isolation & Admin Governance**:
+- **Tenant Scope**: Project lists, live logs, Docker log sources, and metrics are strictly bounded to the projects owned by the authenticated developer.
+- **Session Hygiene**: When a user logs out, active project selection cache in local storage (`opspilot_selected_project_id`) is purged, and query cache keys are partitioned by `user.id` to prevent cross-account leakage.
+- **Administrative Governance**: Platform administrators review, quarantine, or delete workloads across all developer workspaces via the dedicated `/admin/projects` portal powered by `GET /api/v1/admin/projects`.
 
 ### Integrations
 
@@ -224,7 +244,16 @@ All paths also exist under `/api/projects/...` (without `v1`).
 | `LOGS_RUNNER_INTERVAL_MS` | observability | `30000` | How often to look for new / changed / disconnected integrations |
 | `LOGS_RUNNER_REFRESH` | observability | `10m` | Re-resolve containers and pods for Docker / Kubernetes streams |
 | `INGEST_MAX_BODY_BYTES` | observability | `5242880` | Largest accepted push body |
+| `MAIL_HOST` | auth | empty | SMTP hostname for registration verification emails |
+| `MAIL_PORT` | auth | `587` | SMTP server port |
+| `MAIL_USERNAME` | auth | empty | SMTP authentication username |
+| `MAIL_PASSWORD` | auth | empty | SMTP authentication password |
+| `MAIL_FROM` | auth | `no-reply@opspilot.io` | Sender email address for OTP delivery |
+| `OTP_EXPIRATION_MINUTES` | auth | `5` | Validity duration of verification OTP |
+| `OTP_MAX_ATTEMPTS` | auth | `5` | Maximum failed attempts allowed before code invalidation |
+| `OTP_RESEND_COOLDOWN_SECONDS` | auth | `60` | Cooldown in seconds before resending an OTP |
 | `VITE_API_BASE_URL` | frontend | `http://localhost:8080/api/v1` | API gateway URL |
+| `VITE_GOOGLE_CLIENT_ID` | frontend | optional | Google OAuth 2.0 Client ID for social registration/login |
 
 Integration endpoints are fetched by the server, so only point them at hosts you trust; `http(s)` only, and link-local addresses (cloud metadata) are refused.
 
@@ -280,6 +309,7 @@ The frontend application will be accessible at `http://localhost:5173`.
 
 ## 🧪 Test Suite Execution
 
+### Running Locally
 - **Backend Unit Tests**:
   ```bash
   cd backend && ./mvnw test
@@ -288,7 +318,17 @@ The frontend application will be accessible at `http://localhost:5173`.
   ```bash
   cd frontend && npm run build
   ```
-- **Frontend Unit Tests** (SSE parser, reconnect/resume, log buffer, integration forms):
+- **Frontend Unit & Integration Tests** (9 suites, 92 tests covering authentication validation, virtualized logs, SSE parser, deployments dialog, and project forms):
   ```bash
   cd frontend && npm test
+  ```
+
+### Running in Docker
+- **Backend Build & Verification**:
+  ```bash
+  docker run --rm -v opspilot-m2-cache:/root/.m2 -v "${PWD}/backend:/app" -w /app maven:3.9-eclipse-temurin-17 mvn test-compile
+  ```
+- **Frontend Container Build**:
+  ```bash
+  docker build -t opspilot-frontend:latest ./frontend
   ```

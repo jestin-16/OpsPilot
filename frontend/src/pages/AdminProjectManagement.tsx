@@ -19,7 +19,7 @@ export const AdminProjectManagement: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      setProjects(await api.getProjects());
+      setProjects(await api.getAdminProjects());
     } catch (requestError) {
       setError(errorMessage(requestError, 'Unable to load projects.'));
     } finally {

@@ -687,6 +687,11 @@ export const api = {
     return res.data.content;
   },
 
+  getAdminProjects: async (): Promise<Project[]> => {
+    const res = await axiosInstance.get<Project[]>('/admin/projects');
+    return res.data;
+  },
+
   getPaginatedProjects: async (page = 0, size = 10, sortBy = 'id', sortDir = 'asc'): Promise<PagedResponse<Project>> => {
     const res = await axiosInstance.get<PagedResponse<Project>>(`/projects?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`);
     return res.data;

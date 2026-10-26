@@ -73,13 +73,10 @@ public class ProjectScope {
     }
 
     /**
-     * The ids of the projects the user may see, for use in a query's IN clause. Empty Optional means "every
-     * project" (ADMIN / DEVOPS), so callers can keep their unfiltered query.
+     * The ids of the projects the user may see, for use in a query's IN clause.
+     * Always scopes to projects added by the authenticated user.
      */
     public Optional<List<Long>> visibleProjectIds(User user) {
-        if (isPrivileged(user)) {
-            return Optional.empty();
-        }
         if (user == null) {
             return Optional.of(List.of());
         }

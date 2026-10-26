@@ -105,4 +105,28 @@ public class ProjectServiceTest {
 
         assertThrows(ForbiddenException.class, () -> projectService.getProjectById(10L, stranger));
     }
+
+    @Test
+    void getAllProjectsForUser_returnsOnlyProjectsOwnedByUser() {
+        Project p1 = new Project("Owned", null, null, owner, "Active");
+        p1.setId(10L);
+        when(projectRepository.findByOwner(owner)).thenReturn(java.util.List.of(p1));
+
+        java.util.List<ProjectResponse> result = projectService.getAllProjectsForUser(owner);
+        assertEquals(1, result.size());
+        assertEquals("Owned", result.get(0).getName());
+        verify(projectRepository, never()).findAll();
+    }
+
+    @Test
+    void getAllProjectsForAdmin_returnsAllProjects() {
+        Project p1 = new Project("P1", null, null, owner, "Active");
+        p1.setId(10L);
+        Project p2 = new Project("P2", null, null, stranger, "Active");
+        p2.setId(20L);
+        when(projectRepository.findAll()).thenReturn(java.util.List.of(p1, p2));
+
+        java.util.List<ProjectResponse> result = projectService.getAllProjectsForAdmin();
+        assertEquals(2, result.size());
+    }
 }

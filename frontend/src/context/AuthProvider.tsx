@@ -11,6 +11,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('opspilot_token');
     localStorage.removeItem('opspilot_user');
     localStorage.removeItem('opspilot_has_session');
+    localStorage.removeItem('opspilot_selected_project_id');
 
     setToken(null);
     setUser(null);

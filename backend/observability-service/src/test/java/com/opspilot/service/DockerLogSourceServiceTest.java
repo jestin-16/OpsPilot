@@ -130,4 +130,20 @@ class DockerLogSourceServiceTest {
         noProject.setProjectId(null);
         assertThrows(IllegalArgumentException.class, () -> service.create(noProject, owner));
     }
+
+    @Test
+    void accessibleSources_returnsOnlySourcesInCallerOwnedProjects() {
+        User user = user(1L, "ADMIN");
+        Project p = new Project();
+        p.setId(10L);
+        when(projects.findByOwner(user)).thenReturn(java.util.List.of(p));
+        DockerLogSource source = new DockerLogSource();
+        source.setProjectId(10L);
+        when(repo.findByProjectIdInOrderByCreatedAtDesc(java.util.List.of(10L))).thenReturn(java.util.List.of(source));
+
+        java.util.List<DockerLogSource> result = service.accessibleSources(user);
+        assertEquals(1, result.size());
+        assertEquals(10L, result.get(0).getProjectId());
+        verify(repo, never()).findAllByOrderByCreatedAtDesc();
+    }
 }

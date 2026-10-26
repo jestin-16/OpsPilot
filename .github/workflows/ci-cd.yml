@@ -102,19 +102,43 @@ jobs:
           $changedFiles | ForEach-Object { Write-Host " - $_" -ForegroundColor DarkGray }
 
           $frontendChanged = [bool]($changedFiles -match "^frontend/") -or [bool]($changedFiles -match "docker-compose\.yml")
-          $backendChanged = [bool]($changedFiles -match "^backend/") -or [bool]($changedFiles -match "docker-compose\.yml")
+          $backendServices = @('service-registry', 'auth-service', 'core-service', 'observability-service', 'log-watcher-service', 'api-gateway')
+          $sharedBackendChanged = [bool]($changedFiles -match "^backend/pom\.xml") -or [bool]($changedFiles -match "^backend/Dockerfile") -or [bool]($changedFiles -match "^backend/shared-lib/") -or [bool]($changedFiles -match "docker-compose\.yml")
+
+          $servicesToBuild = [System.Collections.Generic.List[string]]::new()
+          if ($sharedBackendChanged) {
+            foreach ($svc in $backendServices) { $servicesToBuild.Add($svc) }
+          } else {
+            foreach ($svc in $backendServices) {
+              if ($changedFiles -match "^backend/$svc/") {
+                $servicesToBuild.Add($svc)
+              }
+            }
+          }
 
           if ($frontendChanged) {
             Write-Host "Rebuilding frontend image..." -ForegroundColor Cyan
             docker compose build frontend
+            if ($LASTEXITCODE -ne 0) {
+              Write-Error "Frontend Docker build failed!"
+              exit 1
+            }
           }
 
-          if ($backendChanged) {
-            Write-Host "Rebuilding backend services with managed concurrency..." -ForegroundColor Cyan
-            docker compose --parallel 2 build
+          if ($servicesToBuild.Count -gt 0) {
+            $uniqueServices = $servicesToBuild | Select-Object -Unique
+            Write-Host "Rebuilding changed backend services: $($uniqueServices -join ', ')..." -ForegroundColor Cyan
+            foreach ($svc in $uniqueServices) {
+              Write-Host "Building service: $svc..." -ForegroundColor Cyan
+              docker compose build $svc
+              if ($LASTEXITCODE -ne 0) {
+                Write-Error "Docker Compose build for $svc failed!"
+                exit 1
+              }
+            }
           }
 
-          if (-not $frontendChanged -and -not $backendChanged) {
+          if (-not $frontendChanged -and ($servicesToBuild.Count -eq 0)) {
             Write-Host "No service source changes detected; deploying existing stack images..." -ForegroundColor Green
           }
 

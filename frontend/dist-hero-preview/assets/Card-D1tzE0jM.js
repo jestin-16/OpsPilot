@@ -1,0 +1,1 @@
+import{It as e,ot as t}from"./Button-Uy1NHzyH.js";e();var n=t(),r=({children:e,className:t=``,hoverEffect:r=!1})=>(0,n.jsx)(`div`,{className:`bg-op-surface border border-op-border rounded-2xl p-5 shadow-none ${r?`hover:bg-op-raised hover:border-op-border-strong transition-colors duration-200`:``} ${t}`,children:e});export{r as t};

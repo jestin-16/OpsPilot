@@ -6,10 +6,8 @@ import {
   ArrowUpRight,
   Box,
   Check,
-  CheckCircle2,
   ChevronDown,
   Cloud,
-  Copy,
   Cpu,
   ExternalLink,
   GitBranch,
@@ -18,8 +16,6 @@ import {
   Lock,
   Menu,
   MessageSquare,
-  Play,
-  RefreshCw,
   Rocket,
   Search,
   Server,
@@ -29,12 +25,9 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { LandingHero } from '../components/LandingHero';
 import { AuthMascot } from '../components/AuthMascot';
 import '../styles/landing.css';
-
-const Infrastructure3DCore = React.lazy(() =>
-  import('../components/Infrastructure3DCore').then((module) => ({ default: module.Infrastructure3DCore })),
-);
 
 const NAV_ITEMS = [
   { label: 'Platform', href: '#platform' },
@@ -204,16 +197,8 @@ export const LandingPage: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mascotHop, setMascotHop] = useState(0);
   const [ctaHover, setCtaHover] = useState(false);
-  const [copiedInstall, setCopiedInstall] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
-  // Hero Deck state
-  const [heroViewMode, setHeroViewMode] = useState<'deck' | '3d'>('deck');
-  const [deckTab, setDeckTab] = useState<'pipeline' | 'cluster' | 'logs' | 'audit'>('pipeline');
-  const [isDeploying, setIsDeploying] = useState(false);
-  const [deployStep, setDeployStep] = useState(4); // 1..4 completed
-
-  const mousePosRef = useRef({ x: 0, y: 0 });
   const navRef = useRef<HTMLElement>(null);
 
   // Monitor scroll for nav elevation
@@ -230,37 +215,9 @@ export const LandingPage: React.FC = () => {
     navigate(path);
   };
 
-  const handleCopyInstall = () => {
-    navigator.clipboard.writeText('curl -sSL https://opspilot.dev/install | bash');
-    setCopiedInstall(true);
-    setTimeout(() => setCopiedInstall(false), 2400);
-  };
-
-  const triggerSimulatedDeploy = () => {
-    if (isDeploying) return;
-    setIsDeploying(true);
-    setDeployStep(1);
-
-    setTimeout(() => setDeployStep(2), 900);
-    setTimeout(() => setDeployStep(3), 1900);
-    setTimeout(() => {
-      setDeployStep(4);
-      setIsDeploying(false);
-    }, 3100);
-  };
-
-  const handleMouseMoveGlobal = (e: React.MouseEvent<HTMLElement>) => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.innerWidth < 1024) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    mousePosRef.current = { x, y };
-  };
-
   return (
     <div
       className="landing-root min-h-screen selection:bg-neutral-900 selection:text-white"
-      onMouseMove={handleMouseMoveGlobal}
     >
       {/* Ambient background blur elements */}
       <div className="landing-ambient-glow" aria-hidden="true" />
@@ -367,425 +324,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           HERO SECTION
          ========================================================================= */}
-      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28">
-        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
-          {/* Top Announcement Pill */}
-          <Reveal className="flex justify-center mb-8">
-            <div className="shimmer-badge cursor-pointer" onClick={() => go('/signup')}>
-              <span className="pulse-beacon h-2 w-2 text-emerald-500">
-                <span className="pulse-beacon-ping" />
-                <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              <span className="font-tech-mono text-xs font-semibold text-neutral-800">
-                OpsPilot 2.0 Live · The Autonomous Internal Control Plane
-              </span>
-              <ArrowRight className="h-3 w-3 text-neutral-400" />
-            </div>
-          </Reveal>
-
-          {/* Hero Main Copy */}
-          <Reveal index={1} className="text-center max-w-4xl mx-auto">
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-[-0.04em] text-neutral-950 leading-[1.05]">
-              From code commit <br />
-              <span className="text-neutral-500 font-normal">to runtime clarity.</span>
-            </h1>
-            <p className="mt-6 text-base sm:text-lg lg:text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed">
-              Unify GitHub CI/CD, multi-cluster Kubernetes, Docker daemons, and live Loki telemetry into a single high-velocity developer control plane.
-            </p>
-          </Reveal>
-
-          {/* Hero Action Buttons */}
-          <Reveal index={2} className="mt-9 flex flex-wrap items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={() => go('/signup')}
-              className="btn-primary-glow text-sm px-6 py-3.5"
-            >
-              <span>Start Free Workspace</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
-            <a
-              href="#platform"
-              className="btn-secondary-frosted text-sm px-6 py-3.5"
-            >
-              <span>Explore Architecture</span>
-              <ChevronDown className="h-4 w-4 text-neutral-500" />
-            </a>
-          </Reveal>
-
-          {/* Quick Install Terminal Copy Snippet */}
-          <Reveal index={3} className="mt-8 flex justify-center">
-            <button
-              type="button"
-              onClick={handleCopyInstall}
-              className="group inline-flex items-center gap-3 rounded-full border border-neutral-200/90 bg-white/80 backdrop-blur-md px-4 py-2 font-tech-mono text-[0.73rem] text-neutral-600 shadow-sm transition-all duration-200 hover:border-neutral-300 hover:bg-white"
-              title="Click to copy install command"
-            >
-              <Terminal className="h-3.5 w-3.5 text-neutral-400 group-hover:text-neutral-800 transition-colors" />
-              <span>curl -sSL https://opspilot.dev/install | bash</span>
-              <span className="border-l border-neutral-200 pl-2.5 text-neutral-400 group-hover:text-neutral-900 transition-colors">
-                {copiedInstall ? (
-                  <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-                    <Check className="h-3 w-3" /> Copied
-                  </span>
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </span>
-            </button>
-          </Reveal>
-
-          {/* =========================================================================
-              HERO INTERACTIVE CONTROL DECK & 3D SWITCHER
-             ========================================================================= */}
-          <Reveal index={4} className="mt-14 max-w-5xl mx-auto">
-            {/* View Mode Toggle: Interactive Deck vs 3D Orbit */}
-            <div className="flex items-center justify-between mb-3 px-2">
-              <div className="flex items-center gap-2">
-                <span className="pulse-beacon h-2 w-2 text-emerald-500">
-                  <span className="pulse-beacon-ping" />
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                </span>
-                <span className="font-tech-mono text-[0.72rem] font-semibold text-neutral-600 uppercase tracking-wider">
-                  Live Interactive Console
-                </span>
-              </div>
-              <div className="flex items-center bg-neutral-200/60 p-1 rounded-xl gap-1">
-                <button
-                  type="button"
-                  onClick={() => setHeroViewMode('deck')}
-                  className={`px-3 py-1 rounded-lg font-tech-mono text-[0.7rem] font-semibold transition-all cursor-pointer ${
-                    heroViewMode === 'deck'
-                      ? 'bg-white text-neutral-900 shadow-xs'
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  Control Deck
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setHeroViewMode('3d')}
-                  className={`px-3 py-1 rounded-lg font-tech-mono text-[0.7rem] font-semibold transition-all cursor-pointer ${
-                    heroViewMode === '3d'
-                      ? 'bg-white text-neutral-900 shadow-xs'
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  3D Orbit Core
-                </button>
-              </div>
-            </div>
-
-            {/* Container Window */}
-            <div className="hero-deck-window">
-              {heroViewMode === '3d' ? (
-                /* 3D Holographic Core View */
-                <div className="relative min-h-[500px] flex items-center justify-center p-4">
-                  <React.Suspense
-                    fallback={
-                      <div className="flex flex-col items-center gap-3">
-                        <RefreshCw className="h-6 w-6 animate-spin text-neutral-400" />
-                        <span className="font-tech-mono text-xs text-neutral-500">Initializing 3D Topology...</span>
-                      </div>
-                    }
-                  >
-                    <Infrastructure3DCore activeState={0} mousePosRef={mousePosRef} />
-                  </React.Suspense>
-                </div>
-              ) : (
-                /* High-Fidelity Interactive Deck View */
-                <div>
-                  {/* Deck Header Bar */}
-                  <div className="hero-deck-header">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-3 w-3 rounded-full bg-red-400/80" />
-                        <span className="h-3 w-3 rounded-full bg-amber-400/80" />
-                        <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
-                      </div>
-                      <div className="h-4 w-px bg-neutral-200" />
-                      <div className="flex items-center gap-2 font-tech-mono text-xs font-semibold text-neutral-800">
-                        <Box className="h-3.5 w-3.5 text-neutral-500" />
-                        <span>checkout-worker-api</span>
-                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[0.62rem] text-neutral-600 font-medium border border-neutral-200">
-                          prod · us-east-1
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Sub-Tabs Navigation */}
-                    <div className="hero-deck-tabs-scroll flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setDeckTab('pipeline')}
-                        className={`hero-deck-tab ${deckTab === 'pipeline' ? 'is-active' : ''}`}
-                      >
-                        <GitBranch className="h-3.5 w-3.5" />
-                        <span>Pipeline</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeckTab('cluster')}
-                        className={`hero-deck-tab ${deckTab === 'cluster' ? 'is-active' : ''}`}
-                      >
-                        <Cpu className="h-3.5 w-3.5" />
-                        <span>K8s Cluster</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeckTab('logs')}
-                        className={`hero-deck-tab ${deckTab === 'logs' ? 'is-active' : ''}`}
-                      >
-                        <Terminal className="h-3.5 w-3.5" />
-                        <span>Loki Logs</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeckTab('audit')}
-                        className={`hero-deck-tab ${deckTab === 'audit' ? 'is-active' : ''}`}
-                      >
-                        <ShieldCheck className="h-3.5 w-3.5" />
-                        <span>Audit RBAC</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Deck Content Panel */}
-                  <div className="p-5 sm:p-7 min-h-[340px] flex flex-col justify-between bg-white">
-                    {/* TAB 1: PIPELINE EXECUTION */}
-                    {deckTab === 'pipeline' && (
-                      <div className="space-y-6">
-                        <div className="flex items-center justify-between flex-wrap gap-4">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-tech-mono text-xs font-bold text-neutral-900">
-                                Release #8492 · main
-                              </span>
-                              <span className="font-tech-mono text-[0.68rem] text-neutral-500">
-                                (commit 8f3a2c1)
-                              </span>
-                            </div>
-                            <p className="text-xs text-neutral-500 mt-0.5">
-                              feat(checkout): optimized payment routing latency (-42ms)
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={triggerSimulatedDeploy}
-                            disabled={isDeploying}
-                            className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-white shadow-xs hover:bg-neutral-800 disabled:opacity-60 transition cursor-pointer"
-                          >
-                            <Play className={`h-3 w-3 ${isDeploying ? 'animate-spin' : ''}`} />
-                            <span>{isDeploying ? 'Deploying...' : 'Simulate Rollout'}</span>
-                          </button>
-                        </div>
-
-                        {/* Visual Stage Nodes with Connected Track Line */}
-                        <div className="grid grid-cols-4 gap-2 items-center relative py-4">
-                          {[
-                            { step: 1, name: 'GitHub CI', desc: 'Lint & Test Passed', time: '14.2s' },
-                            { step: 2, name: 'Docker Build', desc: 'opspilot/api:8f3a2c', time: '28.1s' },
-                            { step: 3, name: 'Security Scan', desc: '0 CVEs Found', time: '8.4s' },
-                            { step: 4, name: 'Canary Rollout', desc: '100% Traffic · Pods Ready', time: '12.0s' },
-                          ].map(({ step, name, desc, time }) => {
-                            const isDone = deployStep >= step;
-                            const isCurrent = isDeploying && deployStep === step;
-                            return (
-                              <div
-                                key={step}
-                                className={`pipeline-step-node p-3 rounded-xl border text-center transition-all ${
-                                  isDone
-                                    ? 'border-emerald-200 bg-emerald-50/50 text-emerald-950'
-                                    : isCurrent
-                                    ? 'border-amber-300 bg-amber-50/50 text-amber-950 animate-pulse'
-                                    : 'border-neutral-200 bg-neutral-50 text-neutral-400'
-                                }`}
-                              >
-                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-white shadow-xs border border-inherit">
-                                  {isDone ? (
-                                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                                  ) : isCurrent ? (
-                                    <RefreshCw className="h-3.5 w-3.5 text-amber-600 animate-spin" />
-                                  ) : (
-                                    <span className="font-tech-mono text-xs font-bold">{step}</span>
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-tech-mono text-[0.74rem] font-bold">{name}</p>
-                                  <p className="text-[0.66rem] opacity-75 mt-0.5">{desc}</p>
-                                </div>
-                                <span className="font-tech-mono text-[0.62rem] opacity-60">{time}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        {/* Pipeline Telemetry Strip */}
-                        <div className="flex items-center justify-between border-t border-neutral-100 pt-3 text-[0.72rem] font-tech-mono text-neutral-500">
-                          <span className="flex items-center gap-1.5">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> 18/18 Unit & Integration Tests Green
-                          </span>
-                          <span>Zero Downtime Rolling Update · 3/3 Replicas</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* TAB 2: K8S CLUSTER TOPOLOGY */}
-                    {deckTab === 'cluster' && (
-                      <div className="space-y-5">
-                        <div className="flex items-center justify-between">
-                          <span className="font-tech-mono text-xs font-bold text-neutral-800">
-                            Cluster Topology · prod-us-east-1 (Kubernetes v1.29)
-                          </span>
-                          <span className="font-tech-mono text-xs text-emerald-600 font-semibold flex items-center gap-1">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500" /> All Nodes Healthy
-                          </span>
-                        </div>
-
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3">
-                            <div className="flex justify-between items-center font-tech-mono text-xs">
-                              <span className="font-bold text-neutral-900">node-us-east-1a (m6i.xlarge)</span>
-                              <span className="text-neutral-500">4 Pods</span>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[0.68rem] font-tech-mono text-neutral-600">
-                                <span>CPU Usage</span>
-                                <span>18.4%</span>
-                              </div>
-                              <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
-                                <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '18.4%' }} />
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[0.68rem] font-tech-mono text-neutral-600">
-                                <span>Memory Pressure</span>
-                                <span>34.2%</span>
-                              </div>
-                              <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
-                                <div className="bg-neutral-800 h-1.5 rounded-full" style={{ width: '34.2%' }} />
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3">
-                            <div className="flex justify-between items-center font-tech-mono text-xs">
-                              <span className="font-bold text-neutral-900">node-us-east-1b (m6i.xlarge)</span>
-                              <span className="text-neutral-500">4 Pods</span>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[0.68rem] font-tech-mono text-neutral-600">
-                                <span>CPU Usage</span>
-                                <span>24.8%</span>
-                              </div>
-                              <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
-                                <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '24.8%' }} />
-                              </div>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex justify-between text-[0.68rem] font-tech-mono text-neutral-600">
-                                <span>Memory Pressure</span>
-                                <span>41.0%</span>
-                              </div>
-                              <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
-                                <div className="bg-neutral-800 h-1.5 rounded-full" style={{ width: '41.0%' }} />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-4 gap-2 text-center font-tech-mono text-[0.7rem]">
-                          {['checkout-api-84b', 'payment-gw-29f', 'auth-token-11a', 'order-stream-5c'].map((pod) => (
-                            <div key={pod} className="p-2 border border-neutral-200 rounded-lg bg-white">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block mr-1.5" />
-                              <span className="text-neutral-700">{pod}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* TAB 3: LIVE LOKI LOG STREAM */}
-                    {deckTab === 'logs' && (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between text-xs font-tech-mono text-neutral-600">
-                          <span>Live Loki Tail · stream rate: 382 logs/sec</span>
-                          <span className="text-emerald-600 flex items-center gap-1 font-semibold">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Connected
-                          </span>
-                        </div>
-                        <div className="hero-terminal-stream space-y-1.5">
-                          <div className="flex gap-2">
-                            <span className="token-time">14:02:18.102</span>
-                            <span className="token-ok">[INFO]</span>
-                            <span>GET /api/v2/checkout/status · 200 OK · 14ms</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="token-time">14:02:19.451</span>
-                            <span className="token-ok">[INFO]</span>
-                            <span>GitHub webhook dispatch #8492 received · verified signature</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="token-time">14:02:20.089</span>
-                            <span className="token-cyan">[K8S]</span>
-                            <span>Scaled replica set checkout-worker: 2 → 3 pods</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="token-time">14:02:21.842</span>
-                            <span className="token-warn">[WARN]</span>
-                            <span>Ingress edge latency threshold: p99 48ms (healthy)</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <span className="token-time">14:02:22.310</span>
-                            <span className="token-ok">[INFO]</span>
-                            <span>Canary evaluation nominal · Prometheus error budget: 100%</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* TAB 4: ZERO TRUST AUDIT */}
-                    {deckTab === 'audit' && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between text-xs font-tech-mono">
-                          <span className="font-bold text-neutral-800">Tamper-Proof RBAC Session Log</span>
-                          <span className="text-neutral-500">Zero Trust Enforced</span>
-                        </div>
-                        <div className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden font-tech-mono text-xs">
-                          {[
-                            { action: 'DEPLOY_TRIGGER', user: 'jestin@opspilot.io', role: 'PLATFORM_ADMIN', ip: '10.244.0.12', status: 'AUTHORIZED' },
-                            { action: 'ROLLBACK_READY', user: 'automated-canary', role: 'SYSTEM_DAEMON', ip: 'internal', status: 'VERIFIED' },
-                            { action: 'CONFIG_MUTATE', user: 'sarah.ops@team.com', role: 'OPERATOR', ip: '10.244.1.84', status: 'AUTHORIZED' },
-                          ].map((item, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 bg-white hover:bg-neutral-50">
-                              <div className="flex items-center gap-3">
-                                <span className="font-bold text-neutral-900">{item.action}</span>
-                                <span className="text-neutral-500 text-[0.7rem]">{item.user}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="rounded bg-neutral-100 px-2 py-0.5 text-[0.62rem] text-neutral-700 font-semibold">
-                                  {item.role}
-                                </span>
-                                <span className="text-emerald-600 font-semibold text-[0.68rem]">{item.status}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Footer Info */}
-                    <div className="flex items-center justify-between border-t border-neutral-100 pt-3 text-[0.72rem] font-tech-mono text-neutral-500">
-                      <span>Telemetry source: In-Cluster Prometheus + Loki daemon</span>
-                      <span className="text-neutral-700 font-semibold">Latency: 18ms edge</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </Reveal>
-        </div>
-      </section>
+      <LandingHero />
 
       {/* =========================================================================
           KEY OPERATIONAL METRICS RIBBON

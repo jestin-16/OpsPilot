@@ -5,6 +5,102 @@
 
 @import "tailwindcss";
 
+/* Cohesive editorial finish across the landing page's existing sections. */
+.landing-root {
+  background: #f5f4f0;
+  line-height: 1.65;
+}
+
+.landing-root h1,
+.landing-root h2,
+.landing-root h3 {
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.landing-root h1 { line-height: 1.04; }
+.landing-root p { text-wrap: pretty; }
+.landing-root a { text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.landing-root button { transition-timing-function: var(--landing-ease); }
+.landing-root :focus-visible { outline: 2px solid #718c68; outline-offset: 3px; }
+
+.landing-root [data-reveal] {
+  transform: translateY(16px);
+  transition-duration: 650ms;
+}
+
+.landing-nav-inner { max-width: 84rem; }
+.landing-nav { border-bottom-color: rgba(38, 48, 37, 0.08); }
+.spotlight-card,
+.hero-deck-window,
+.faq-accordion-item { border-radius: 1.1rem; }
+.spotlight-card { box-shadow: 0 8px 32px -24px rgba(33, 44, 31, .26); }
+.spotlight-card:hover { transform: translateY(-2px); }
+.btn-primary-glow { background: #273126; border-color: #273126; box-shadow: 0 5px 16px -8px rgba(39,49,38,.55); }
+.btn-primary-glow:hover { background: #3b4b38; border-color: #3b4b38; }
+.shimmer-badge::after { animation-duration: 7s; }
+.landing-marquee-track { animation-duration: 42s; }
+
+@keyframes landing-drift {
+  0%, 100% { transform: translate3d(-50%, 0, 0); }
+  50% { transform: translate3d(-50%, 12px, 0); }
+}
+.landing-ambient-glow { animation: landing-drift 14s ease-in-out infinite; }
+
+/* Full page visual system */
+html:has(.landing-root) { background: #f5f4f0; }
+.landing-root { --landing-bg:#f5f4f0; --landing-card:#fff; --landing-text-primary:#20251f; --landing-text-secondary:#62695f; --landing-text-muted:#858a81; --landing-border:rgba(32,37,31,.11); --landing-border-hover:rgba(32,37,31,.23); }
+.landing-root > section { position:relative; }
+.landing-root > section:nth-of-type(2n) { background:#eeeee9; }
+.landing-root > section[id] { scroll-margin-top:5.5rem; }
+.landing-root header { background:rgba(245,244,240,.88); }
+.landing-root .landing-dot-grid { opacity:.18!important; background-size:34px 34px; }
+.landing-root .landing-ambient-glow { background:radial-gradient(ellipse,rgba(178,190,164,.23),transparent 70%); filter:blur(95px); }
+.landing-root .btn-primary-glow { background:#344231; border-color:#344231; box-shadow:none; border-radius:.7rem; }
+.landing-root .btn-primary-glow:hover { background:#465741; border-color:#465741; box-shadow:0 8px 22px -12px #344231; }
+.landing-root .btn-secondary-frosted { border-radius:.7rem; background:transparent; box-shadow:none; }
+.landing-root .shimmer-badge { background:#eeeee8; box-shadow:none; border-color:rgba(32,37,31,.10); }
+.landing-root .spotlight-card { border-radius:1rem; background:#fbfbf9; box-shadow:0 2px 12px -10px rgba(25,35,23,.28); }
+.landing-root .hero-deck-window { border-radius:1rem; box-shadow:0 24px 70px -42px rgba(33,42,30,.42); }
+.landing-root .hero-terminal-stream { background:#283027; }
+.landing-root .faq-accordion-item { background:#fafaf7; border-radius:.8rem; }
+.landing-root footer { background:#e9eae4; }
+.landing-root .landing-nav-inner { padding-inline:clamp(1.25rem,5vw,4.5rem); }
+.landing-root .landing-nav {
+  top: .85rem;
+  width: min(calc(100% - 2rem), 78rem);
+  height: 4.35rem;
+  margin: 0 auto;
+  border: 1px solid rgba(39,49,38,.10);
+  border-radius: 999px;
+  background: rgba(250,249,246,.82);
+  box-shadow: none;
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+.landing-root .landing-nav.is-scrolled {
+  background: rgba(250,249,246,.96);
+  border-color: rgba(39,49,38,.14);
+  box-shadow: 0 12px 32px -22px rgba(29,39,27,.48);
+}
+.landing-root .landing-nav-inner { max-width: 88rem; }
+.landing-root .landing-nav-inner > nav { gap: .4rem; padding: .3rem .55rem; border: 1px solid rgba(39,49,38,.08); border-radius: 999px; background: rgba(255,255,255,.5); }
+.landing-root .landing-nav-inner > nav a { padding: .52rem .95rem; border-radius: 999px; color: #687064; font-family: inherit; font-size: .8rem; letter-spacing: -.01em; transition: color .2s ease, background .2s ease, transform .2s ease; }
+.landing-root .landing-nav-inner > nav a:hover { color: #263323; background: #fff; transform: translateY(-1px); }
+.landing-root .landing-nav-inner > button:first-child > div:first-child { width: 2.35rem; height: 2.35rem; border-radius: .72rem; background: #344231; box-shadow: 0 3px 8px -5px #344231; }
+.landing-root .landing-nav-inner > div:last-child { gap: 1rem; }
+.landing-root .landing-nav-inner > div:last-child > button:first-child { font-family: inherit; font-size: .84rem; color: #62695f; }
+.landing-root .landing-nav-inner > div:last-child > button:first-child:hover { color: #263323; }
+.landing-root .landing-nav-inner > div:last-child .btn-primary-glow { padding: .7rem 1.15rem; border-radius: 999px; font-family: inherit; font-size: .8rem; letter-spacing: 0; }
+@media(min-width:768px){.landing-root .landing-nav-inner{padding-inline:clamp(1.25rem,3vw,2.5rem)}.landing-root .landing-nav-inner > button:first-child{gap:.7rem!important}.landing-root .landing-nav-inner > div:last-child{gap:.75rem}}
+@media(max-width:767px){.landing-root .landing-nav{top:.55rem;width:calc(100% - 1.1rem);height:4rem}.landing-root .landing-nav-inner{padding-inline:1rem}.landing-root .landing-nav-inner > div:last-child{gap:.55rem}}
+.landing-root section { padding-block:clamp(4rem,8vw,7.5rem); }
+.landing-root section:first-of-type { padding-top:clamp(4rem,8vw,7rem); padding-bottom:clamp(4rem,7vw,6rem); }
+.landing-root [data-reveal] { transition:opacity .7s ease,transform .7s cubic-bezier(.2,.75,.25,1); }
+@keyframes hero-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.landing-root .hero-deck-window { animation:hero-float 8s ease-in-out infinite; }
+@media(prefers-reduced-motion:reduce){.landing-root .hero-deck-window{animation:none}}
+
 html:has(.landing-root) {
   scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
@@ -13,16 +109,16 @@ html:has(.landing-root) {
 
 /* Base Root Variables */
 .landing-root {
-  --landing-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --landing-ease: cubic-bezier(0.2, 0.75, 0.25, 1);
   --landing-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --landing-bg: #fafafa;
+  --landing-bg: #f7f7f5;
   --landing-card: #ffffff;
-  --landing-text-primary: #09090b;
-  --landing-text-secondary: #52525b;
-  --landing-text-muted: #71717a;
-  --landing-border: rgba(0, 0, 0, 0.08);
-  --landing-border-hover: rgba(0, 0, 0, 0.18);
-  --landing-glow: rgba(99, 102, 241, 0.08);
+  --landing-text-primary: #20231f;
+  --landing-text-secondary: #5d625c;
+  --landing-text-muted: #81867f;
+  --landing-border: rgba(38, 48, 37, 0.10);
+  --landing-border-hover: rgba(38, 48, 37, 0.2);
+  --landing-glow: rgba(111, 139, 105, 0.10);
 
   background-color: var(--landing-bg);
   color: var(--landing-text-primary);
@@ -36,10 +132,10 @@ html:has(.landing-root) {
 
 /* Subtle Dot Grid Background Pattern */
 .landing-dot-grid {
-  background-image: radial-gradient(rgba(0, 0, 0, 0.09) 1px, transparent 1px);
-  background-size: 24px 24px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 100%);
+  background-image: radial-gradient(rgba(45, 59, 42, 0.10) 1px, transparent 1px);
+  background-size: 30px 30px;
+  mask-image: radial-gradient(ellipse 65% 50% at 50% 20%, #000 15%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 65% 50% at 50% 20%, #000 15%, transparent 100%);
 }
 
 /* Ambient Radial Glow */
@@ -124,12 +220,12 @@ html:has(.landing-root) {
   height: 4.5rem;
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(247, 247, 245, 0.84);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   z-index: 50;
-  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+  transition: background-color 400ms ease, border-color 400ms ease, box-shadow 400ms ease;
 }
 
 .landing-nav.is-scrolled {

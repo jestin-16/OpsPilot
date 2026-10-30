@@ -5,15 +5,29 @@ import {
   ArrowRight,
   ArrowUpRight,
   Box,
+  Check,
+  CheckCircle2,
   ChevronDown,
   Cloud,
+  Copy,
   Cpu,
   ExternalLink,
   GitBranch,
+  GitCommit,
+  Layers,
+  Lock,
   Menu,
   MessageSquare,
+  Play,
+  RefreshCw,
+  Rocket,
+  Search,
+  Server,
   ShieldCheck,
+  Sparkles,
+  Terminal,
   X,
+  Zap,
 } from 'lucide-react';
 import { AuthMascot } from '../components/AuthMascot';
 import '../styles/landing.css';
@@ -24,90 +38,54 @@ const Infrastructure3DCore = React.lazy(() =>
 
 const NAV_ITEMS = [
   { label: 'Platform', href: '#platform' },
+  { label: 'Architecture', href: '#architecture' },
   { label: 'Observability', href: '#observability' },
-  { label: 'Infrastructure', href: '#infrastructure' },
-  { label: 'Deployments', href: '#deployments' },
-  { label: 'Product', href: '#product-preview' },
+  { label: 'FAQ', href: '#faq' },
 ];
 
 const INTEGRATIONS = [
   { icon: GitBranch, label: 'GitHub CI/CD' },
-  { icon: Cloud, label: 'AWS Cloud' },
+  { icon: Cloud, label: 'AWS & EKS' },
   { icon: Box, label: 'Docker Engines' },
   { icon: Cpu, label: 'Kubernetes Clusters' },
-  { icon: Activity, label: 'Prometheus & Loki' },
-  { icon: MessageSquare, label: 'Slack & Webhooks' },
+  { icon: Activity, label: 'Prometheus Telemetry' },
+  { icon: Terminal, label: 'Grafana Loki' },
+  { icon: MessageSquare, label: 'Slack Webhooks' },
+  { icon: Server, label: 'Google Cloud GKE' },
+  { icon: Layers, label: 'ArgoCD GitOps' },
 ];
 
 const METRICS = [
-  ['6+', 'Native Integrations'],
-  ['24/7', 'Realtime Telemetry'],
-  ['100%', 'Commit & Owner Context'],
-  ['< 1s', 'Live Log Streaming'],
+  { value: '99.99%', label: 'Deployment Reliability' },
+  { value: '< 450ms', label: 'Telemetry Ingestion' },
+  { value: '100%', label: 'Commit & Owner Context' },
+  { value: '10x', label: 'Faster Incident MTTR' },
 ];
 
-const CAPABILITIES = [
+const FAQ_ITEMS = [
   {
-    id: 'deployments',
-    number: '01',
-    category: 'DELIVERY / CI-CD',
-    title: 'Ship with context',
-    description: 'Track every release from commit to rollout, with clear ownership and fast rollback paths.',
-    panelTitle: 'PIPELINE EXECUTION',
-    panelMeta: '#8491 · PRODUCTION',
-    rows: [
-      ['SOURCE', 'main · 8f3a2c1'],
-      ['BUILD', 'Passed · 12.2s'],
-      ['ROLLOUT', 'Canary · 100%'],
-    ],
+    question: 'How does OpsPilot connect to our existing Kubernetes clusters?',
+    answer:
+      'OpsPilot connects securely via standard kubeconfig credentials or in-cluster ServiceAccounts with read-only metrics and pod telemetry access. It does not require modifying existing CRDs or altering cluster networking.',
   },
   {
-    id: 'infrastructure',
-    number: '02',
-    category: 'RUNTIME / KUBERNETES',
-    title: 'See what is running',
-    description: 'Understand cluster, node, and container health without switching between tools.',
-    panelTitle: 'CLUSTER TOPOLOGY',
-    panelMeta: '2 NODES · 8 PODS',
-    rows: [
-      ['NODE / US-EAST-1A', 'Ready · 14% CPU'],
-      ['NODE / US-EAST-1B', 'Ready · 22% CPU'],
-      ['WORKLOADS', '8 healthy · 0 pending'],
-    ],
+    question: 'Can OpsPilot be deployed entirely on-premise or in an isolated VPC?',
+    answer:
+      'Yes. OpsPilot is engineered as a self-contained containerized stack with Docker Compose and Helm charts. It functions flawlessly in air-gapped VPCs without requiring outbound external telemetry.',
   },
   {
-    id: 'observability',
-    number: '03',
-    category: 'SIGNALS / LOKI + PROMETHEUS',
-    title: 'Follow every signal',
-    description: 'Connect live logs, metrics, and incidents to the change and service behind them.',
-    panelTitle: 'LIVE SIGNAL STREAM',
-    panelMeta: 'LOKI / DEFAULT',
-    rows: [
-      ['14:02:18 · INFO', 'GET /api/health · 12ms'],
-      ['14:02:19 · INFO', 'Webhook received'],
-      ['14:02:21 · WARN', 'Memory usage at 74%'],
-    ],
+    question: 'How do Docker hosts stream logs and health metrics to OpsPilot?',
+    answer:
+      'OpsPilot provides a lightweight, single-binary agent or Docker push ingest path that batches container stdout/stderr streams and Prometheus cgroup metrics with a per-source secret token.',
   },
   {
-    id: 'governance',
-    number: '04',
-    category: 'GOVERNANCE / RBAC',
-    title: 'Operate with confidence',
-    description: 'Keep access clear and operator actions accountable with roles and audit history.',
-    panelTitle: 'AUDIT EVENT',
-    panelMeta: 'VERIFIED SESSION',
-    rows: [
-      ['ACTION', 'USER_LOGIN · SUCCESS'],
-      ['ACTOR', 'admin@opspilot.io'],
-      ['ACCESS', 'ADMIN · JWT verified'],
-    ],
+    question: 'Does OpsPilot replace GitHub Actions or CI runners?',
+    answer:
+      'OpsPilot complements your CI runners. It ingests workflow dispatch webhooks, maps artifacts and commit metadata to target cluster environments, and provides continuous runtime observability.',
   },
 ];
 
-const indexStyle = (i: number) => ({ '--i': i }) as React.CSSProperties;
-
-/** Hook calling back once when the element scrolls into viewport */
+/** Scroll reveal hook using IntersectionObserver */
 function useInView<T extends Element>(onEnter?: () => void) {
   const ref = useRef<T>(null);
   const [inView, setInView] = useState(false);
@@ -132,7 +110,7 @@ function useInView<T extends Element>(onEnter?: () => void) {
         onEnterRef.current?.();
         observer.disconnect();
       },
-      { threshold: 0, rootMargin: '0px 0px 48px 0px' },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' },
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -148,16 +126,17 @@ const Reveal: React.FC<{
   children: React.ReactNode;
 }> = ({ index = 0, className = '', onReveal, children }) => {
   const [ref, inView] = useInView<HTMLDivElement>(onReveal);
+  const style = { '--i': index } as React.CSSProperties;
   return (
-    <div ref={ref} data-reveal style={indexStyle(index)} className={`${className} ${inView ? 'is-revealed' : ''}`}>
+    <div ref={ref} data-reveal style={style} className={`${className} ${inView ? 'is-revealed' : ''}`}>
       {children}
     </div>
   );
 };
 
+/** Number count up animation */
 const CountUp: React.FC<{ value: string }> = ({ value }) => {
-  // Only count up plain figures like "6+" or "100%"; ratios such as "24/7" render as-is.
-  const match = /^(\s*)(\d+)([+%]?)$/.exec(value);
+  const match = /^(\D*)(\d+)(\D*)$/.exec(value);
   const hasNumber = match !== null;
   const target = match ? Number(match[2]) : 0;
   const [shown, setShown] = useState(0);
@@ -171,9 +150,12 @@ const CountUp: React.FC<{ value: string }> = ({ value }) => {
     }
     let frame = 0;
     const start = performance.now();
+    const duration = 900;
     const tick = (now: number) => {
-      const progress = Math.min((now - start) / 800, 1);
-      setShown(Math.round(target * (1 - Math.pow(1 - progress, 3))));
+      const progress = Math.min((now - start) / duration, 1);
+      // Apple-style smooth cubic out
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      setShown(Math.round(target * easeOut));
       if (progress < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -182,66 +164,92 @@ const CountUp: React.FC<{ value: string }> = ({ value }) => {
 
   if (!match) return <span>{value}</span>;
   return (
-    <span ref={ref} className="landing-count font-tech-mono tabular-nums">
-      <span className="sr-only">{value}</span>
-      <span className="landing-count-reserve" aria-hidden="true">{value}</span>
-      <span className="landing-count-value" aria-hidden="true">{match[1]}{shown}{match[3]}</span>
+    <span ref={ref} className="font-tech-mono tabular-nums">
+      {match[1]}{shown}{match[3]}
     </span>
   );
 };
 
-const Eyebrow: React.FC<{ children: React.ReactNode; dot?: boolean }> = ({ children, dot }) => (
-  <div className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-white px-3.5 py-1.5 font-tech-mono text-xs font-bold uppercase tracking-wider text-black shadow-2xs transition-all duration-300 hover:border-black/30">
-    {dot && <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-black shadow-[0_0_6px_rgba(0,0,0,0.5)]" />}
-    {children}
-  </div>
-);
+/** Interactive Spotlight Card with cursor tracking */
+const SpotlightCard: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+}> = ({ children, className = '' }) => {
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mouse-x', `${x}px`);
+    card.style.setProperty('--mouse-y', `${y}px`);
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      className={`spotlight-card ${className}`}
+    >
+      {children}
+    </div>
+  );
+};
 
 export const LandingPage: React.FC = () => {
-  const [activeCapability, setActiveCapability] = useState(0);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [mascotHop, setMascotHop] = useState(0);
   const [ctaHover, setCtaHover] = useState(false);
+  const [copiedInstall, setCopiedInstall] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // Hero Deck state
+  const [heroViewMode, setHeroViewMode] = useState<'deck' | '3d'>('deck');
+  const [deckTab, setDeckTab] = useState<'pipeline' | 'cluster' | 'logs' | 'audit'>('pipeline');
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployStep, setDeployStep] = useState(4); // 1..4 completed
+
   const mousePosRef = useRef({ x: 0, y: 0 });
   const navRef = useRef<HTMLElement>(null);
-  const menuToggleRef = useRef<HTMLButtonElement>(null);
 
+  // Monitor scroll for nav elevation
   useEffect(() => {
-    if (!menuOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      setMenuOpen(false);
-      menuToggleRef.current?.focus();
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
     };
-    const closeOutside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !navRef.current?.contains(event.target)) setMenuOpen(false);
-    };
-    const desktop = window.matchMedia('(min-width: 1161px)');
-    const closeOnDesktop = () => {
-      if (desktop.matches) setMenuOpen(false);
-    };
-    document.addEventListener('keydown', closeOnEscape);
-    document.addEventListener('pointerdown', closeOutside);
-    desktop.addEventListener('change', closeOnDesktop);
-    return () => {
-      document.removeEventListener('keydown', closeOnEscape);
-      document.removeEventListener('pointerdown', closeOutside);
-      desktop.removeEventListener('change', closeOnDesktop);
-    };
-  }, [menuOpen]);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const go = (path: string) => {
     setMenuOpen(false);
     navigate(path);
   };
 
-  const activateNavTarget = (href: string) => {
-    const capabilityIndex = CAPABILITIES.findIndex(({ id }) => href === `#${id}`);
-    if (capabilityIndex >= 0) setActiveCapability(capabilityIndex);
+  const handleCopyInstall = () => {
+    navigator.clipboard.writeText('curl -sSL https://opspilot.dev/install | bash');
+    setCopiedInstall(true);
+    setTimeout(() => setCopiedInstall(false), 2400);
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+  const triggerSimulatedDeploy = () => {
+    if (isDeploying) return;
+    setIsDeploying(true);
+    setDeployStep(1);
+
+    setTimeout(() => setDeployStep(2), 900);
+    setTimeout(() => setDeployStep(3), 1900);
+    setTimeout(() => {
+      setDeployStep(4);
+      setIsDeploying(false);
+    }, 3100);
+  };
+
+  const handleMouseMoveGlobal = (e: React.MouseEvent<HTMLElement>) => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || window.innerWidth < 1024) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
@@ -251,539 +259,974 @@ export const LandingPage: React.FC = () => {
 
   return (
     <div
-      className="landing-root min-h-screen bg-white font-sans antialiased text-black selection:bg-black selection:text-white"
+      className="landing-root min-h-screen selection:bg-neutral-900 selection:text-white"
+      onMouseMove={handleMouseMoveGlobal}
     >
+      {/* Ambient background blur elements */}
+      <div className="landing-ambient-glow" aria-hidden="true" />
+      <div className="landing-dot-grid fixed inset-0 pointer-events-none opacity-40" aria-hidden="true" />
+
       {/* =========================================================================
-          SITE TOP NAVIGATION (CLEAN & INTEGRATED, NOT TRAPPED IN A CARD)
+          SITE NAVIGATION
          ========================================================================= */}
-      <header ref={navRef} className="landing-top-nav">
-        <div className="landing-nav-container">
+      <header ref={navRef} className={`landing-nav ${scrolled ? 'is-scrolled' : ''}`}>
+        <div className="landing-nav-inner">
+          {/* Logo brand */}
           <button
             type="button"
             onClick={() => go('/')}
-            className="hero-wordmark-brand group"
+            className="flex items-center gap-3.5 group cursor-pointer border-0 bg-transparent p-0"
             aria-label="OpsPilot Home"
           >
-            <span className="hero-wordmark-title">OPS<span className="hero-wordmark-divider">/</span>PILOT</span>
-            <span className="hero-wordmark-tag">DEVELOPER PLATFORM</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-900 text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
+              <Zap className="h-4 w-4" />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="font-tech-mono text-[0.92rem] font-bold tracking-tight text-neutral-900">
+                OPS<span className="text-neutral-400">/</span>PILOT
+              </span>
+              <span className="font-tech-mono text-[0.62rem] font-medium tracking-wider text-neutral-500 uppercase">
+                Control Plane
+              </span>
+            </div>
           </button>
 
-          <nav className="hero-nav-links" aria-label="Primary navigation">
+          {/* Navigation links */}
+          <nav className="hidden md:flex items-center gap-7" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                className="hero-nav-link"
-                onClick={() => activateNavTarget(item.href)}
+                className="font-tech-mono text-[0.76rem] font-medium text-neutral-600 transition-colors duration-200 hover:text-neutral-950 flex items-center gap-1"
               >
                 <span>{item.label}</span>
-                <ArrowUpRight className="h-3 w-3 opacity-50" aria-hidden="true" />
               </a>
             ))}
           </nav>
 
-          <div className="hero-nav-actions">
+          {/* Nav actions */}
+          <div className="flex items-center gap-3.5">
             <button
               type="button"
               onClick={() => go('/login')}
-              className="hero-nav-link hero-nav-sign-in"
+              className="hidden sm:inline-flex font-tech-mono text-[0.76rem] font-medium text-neutral-700 hover:text-neutral-950 px-3 py-1.5 transition-colors cursor-pointer"
             >
               Sign in
             </button>
             <button
               type="button"
               onClick={() => go('/dashboard')}
-              className="hero-nav-cta hero-nav-dashboard"
+              className="btn-primary-glow"
             >
-              <span>Open Dashboard</span>
-              <ArrowUpRight className="h-3 w-3" />
+              <span>Launch Console</span>
+              <ArrowUpRight className="h-3.5 w-3.5 opacity-80" />
             </button>
             <button
               type="button"
-              ref={menuToggleRef}
-              onClick={() => setMenuOpen((open) => !open)}
-              className="hero-mobile-toggle"
-              aria-label="Toggle navigation"
-              aria-expanded={menuOpen}
-              aria-controls="landing-mobile-menu"
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 text-neutral-800"
+              aria-label="Toggle menu"
             >
               {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile Drawer Menu */}
-        <nav id="landing-mobile-menu" aria-label="Mobile navigation" className={`hero-mobile-drawer${menuOpen ? ' is-open' : ''}`} inert={!menuOpen}>
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              onClick={() => {
-                activateNavTarget(item.href);
-                setMenuOpen(false);
-              }}
+        {/* Mobile menu dropdown */}
+        {menuOpen && (
+          <div className="md:hidden absolute top-[4.5rem] inset-x-4 bg-white/95 backdrop-blur-xl border border-neutral-200/80 rounded-2xl p-4 shadow-xl flex flex-col gap-2 z-50">
+            {NAV_ITEMS.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                onClick={() => setMenuOpen(false)}
+                className="font-tech-mono text-sm py-2 px-3 text-neutral-800 hover:bg-neutral-100 rounded-lg"
+              >
+                {item.label}
+              </a>
+            ))}
+            <div className="h-px bg-neutral-100 my-1" />
+            <button
+              type="button"
+              onClick={() => go('/dashboard')}
+              className="btn-primary-glow w-full justify-center"
             >
-              {item.label}
-            </a>
-          ))}
-          <button
-            type="button"
-            onClick={() => go('/dashboard')}
-            className="mobile-cta"
-          >
-            Open Dashboard
-          </button>
-          <button
-            type="button"
-            onClick={() => go('/login')}
-          >
-            Sign In
-          </button>
-        </nav>
+              Launch Console
+            </button>
+            <button
+              type="button"
+              onClick={() => go('/login')}
+              className="btn-secondary-frosted w-full justify-center"
+            >
+              Sign In
+            </button>
+          </div>
+        )}
       </header>
 
       {/* =========================================================================
-          HERO SECTION — DIRECT IMMERSIVE PRESENTATION (NO FLOATING CARD WRAPPER)
+          HERO SECTION
          ========================================================================= */}
-      <section
-        className="landing-hero-direct"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => { mousePosRef.current = { x: 0, y: 0 }; }}
-      >
-        {/* Subtle noise grain */}
-        <div className="landing-film-grain" aria-hidden="true" />
-
-        {/* Ambient Amber Platinum Studio Glow */}
-        <div className="hero-ambient-glow" aria-hidden="true" />
-
-        {/* Hero Content Stage: Clean 2-Column Responsive Split */}
-        <div className="hero-stage-container">
-          <div className="hero-split-grid">
-            {/* Single clear platform message */}
-            <div className="hero-editorial-column">
-              <h1 className="hero-single-headline">
-                <span>OpsPilot connects</span>
-                <span>code, deployments,</span>
-                <span className="hero-single-headline-accent">and runtime signals.</span>
-              </h1>
-              <p className="hero-support-copy">
-                See the infrastructure health, logs, and metrics behind every release.
-              </p>
-              <a href="#platform" className="hero-primary-cta">
-                <span>Explore platform</span>
-                <ArrowUpRight className="h-3.5 w-3.5" />
-              </a>
+      <section className="relative pt-12 pb-20 md:pt-20 md:pb-28">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
+          {/* Top Announcement Pill */}
+          <Reveal className="flex justify-center mb-8">
+            <div className="shimmer-badge cursor-pointer" onClick={() => go('/signup')}>
+              <span className="pulse-beacon h-2 w-2 text-emerald-500">
+                <span className="pulse-beacon-ping" />
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              <span className="font-tech-mono text-xs font-semibold text-neutral-800">
+                OpsPilot 2.0 Live · The Autonomous Internal Control Plane
+              </span>
+              <ArrowRight className="h-3 w-3 text-neutral-400" />
             </div>
-            {/* Right Column: Dedicated Interactive 3D Infrastructure Hologram */}
-            <div className="hero-mesh-stage">
-              <React.Suspense fallback={<div className="hero-orb-loading" aria-hidden="true" />}>
-                <Infrastructure3DCore activeState={0} mousePosRef={mousePosRef} />
-              </React.Suspense>
-            </div>
-          </div>
+          </Reveal>
 
-          {/* Center Bottom Scroll Indicator */}
-          <a
-            href="#platform"
-            className="hero-scroll-cue"
-            aria-label="Scroll to platform overview"
-          >
-            <div className="hero-scroll-arrow">
-              <ChevronDown className="h-3.5 w-3.5" />
+          {/* Hero Main Copy */}
+          <Reveal index={1} className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-[-0.04em] text-neutral-950 leading-[1.05]">
+              From code commit <br />
+              <span className="text-neutral-500 font-normal">to runtime clarity.</span>
+            </h1>
+            <p className="mt-6 text-base sm:text-lg lg:text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed">
+              Unify GitHub CI/CD, multi-cluster Kubernetes, Docker daemons, and live Loki telemetry into a single high-velocity developer control plane.
+            </p>
+          </Reveal>
+
+          {/* Hero Action Buttons */}
+          <Reveal index={2} className="mt-9 flex flex-wrap items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={() => go('/signup')}
+              className="btn-primary-glow text-sm px-6 py-3.5"
+            >
+              <span>Start Free Workspace</span>
+              <ArrowRight className="h-4 w-4" />
+            </button>
+            <a
+              href="#platform"
+              className="btn-secondary-frosted text-sm px-6 py-3.5"
+            >
+              <span>Explore Architecture</span>
+              <ChevronDown className="h-4 w-4 text-neutral-500" />
+            </a>
+          </Reveal>
+
+          {/* Quick Install Terminal Copy Snippet */}
+          <Reveal index={3} className="mt-8 flex justify-center">
+            <button
+              type="button"
+              onClick={handleCopyInstall}
+              className="group inline-flex items-center gap-3 rounded-full border border-neutral-200/90 bg-white/80 backdrop-blur-md px-4 py-2 font-tech-mono text-[0.73rem] text-neutral-600 shadow-sm transition-all duration-200 hover:border-neutral-300 hover:bg-white"
+              title="Click to copy install command"
+            >
+              <Terminal className="h-3.5 w-3.5 text-neutral-400 group-hover:text-neutral-800 transition-colors" />
+              <span>curl -sSL https://opspilot.dev/install | bash</span>
+              <span className="border-l border-neutral-200 pl-2.5 text-neutral-400 group-hover:text-neutral-900 transition-colors">
+                {copiedInstall ? (
+                  <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                    <Check className="h-3 w-3" /> Copied
+                  </span>
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </span>
+            </button>
+          </Reveal>
+
+          {/* =========================================================================
+              HERO INTERACTIVE CONTROL DECK & 3D SWITCHER
+             ========================================================================= */}
+          <Reveal index={4} className="mt-14 max-w-5xl mx-auto">
+            {/* View Mode Toggle: Interactive Deck vs 3D Orbit */}
+            <div className="flex items-center justify-between mb-3 px-2">
+              <div className="flex items-center gap-2">
+                <span className="pulse-beacon h-2 w-2 text-emerald-500">
+                  <span className="pulse-beacon-ping" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                <span className="font-tech-mono text-[0.72rem] font-semibold text-neutral-600 uppercase tracking-wider">
+                  Live Interactive Console
+                </span>
+              </div>
+              <div className="flex items-center bg-neutral-200/60 p-1 rounded-xl gap-1">
+                <button
+                  type="button"
+                  onClick={() => setHeroViewMode('deck')}
+                  className={`px-3 py-1 rounded-lg font-tech-mono text-[0.7rem] font-semibold transition-all cursor-pointer ${
+                    heroViewMode === 'deck'
+                      ? 'bg-white text-neutral-900 shadow-xs'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  Control Deck
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHeroViewMode('3d')}
+                  className={`px-3 py-1 rounded-lg font-tech-mono text-[0.7rem] font-semibold transition-all cursor-pointer ${
+                    heroViewMode === '3d'
+                      ? 'bg-white text-neutral-900 shadow-xs'
+                      : 'text-neutral-600 hover:text-neutral-900'
+                  }`}
+                >
+                  3D Orbit Core
+                </button>
+              </div>
             </div>
-          </a>
+
+            {/* Container Window */}
+            <div className="hero-deck-window">
+              {heroViewMode === '3d' ? (
+                /* 3D Holographic Core View */
+                <div className="relative min-h-[500px] flex items-center justify-center p-4">
+                  <React.Suspense
+                    fallback={
+                      <div className="flex flex-col items-center gap-3">
+                        <RefreshCw className="h-6 w-6 animate-spin text-neutral-400" />
+                        <span className="font-tech-mono text-xs text-neutral-500">Initializing 3D Topology...</span>
+                      </div>
+                    }
+                  >
+                    <Infrastructure3DCore activeState={0} mousePosRef={mousePosRef} />
+                  </React.Suspense>
+                </div>
+              ) : (
+                /* High-Fidelity Interactive Deck View */
+                <div>
+                  {/* Deck Header Bar */}
+                  <div className="hero-deck-header">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="h-3 w-3 rounded-full bg-red-400/80" />
+                        <span className="h-3 w-3 rounded-full bg-amber-400/80" />
+                        <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
+                      </div>
+                      <div className="h-4 w-px bg-neutral-200" />
+                      <div className="flex items-center gap-2 font-tech-mono text-xs font-semibold text-neutral-800">
+                        <Box className="h-3.5 w-3.5 text-neutral-500" />
+                        <span>checkout-worker-api</span>
+                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[0.62rem] text-neutral-600 font-medium border border-neutral-200">
+                          prod · us-east-1
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Sub-Tabs Navigation */}
+                    <div className="hero-deck-tabs-scroll flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setDeckTab('pipeline')}
+                        className={`hero-deck-tab ${deckTab === 'pipeline' ? 'is-active' : ''}`}
+                      >
+                        <GitBranch className="h-3.5 w-3.5" />
+                        <span>Pipeline</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeckTab('cluster')}
+                        className={`hero-deck-tab ${deckTab === 'cluster' ? 'is-active' : ''}`}
+                      >
+                        <Cpu className="h-3.5 w-3.5" />
+                        <span>K8s Cluster</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeckTab('logs')}
+                        className={`hero-deck-tab ${deckTab === 'logs' ? 'is-active' : ''}`}
+                      >
+                        <Terminal className="h-3.5 w-3.5" />
+                        <span>Loki Logs</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeckTab('audit')}
+                        className={`hero-deck-tab ${deckTab === 'audit' ? 'is-active' : ''}`}
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        <span>Audit RBAC</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Deck Content Panel */}
+                  <div className="p-5 sm:p-7 min-h-[340px] flex flex-col justify-between bg-white">
+                    {/* TAB 1: PIPELINE EXECUTION */}
+                    {deckTab === 'pipeline' && (
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between flex-wrap gap-4">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-tech-mono text-xs font-bold text-neutral-900">
+                                Release #8492 · main
+                              </span>
+                              <span className="font-tech-mono text-[0.68rem] text-neutral-500">
+                                (commit 8f3a2c1)
+                              </span>
+                            </div>
+                            <p className="text-xs text-neutral-500 mt-0.5">
+                              feat(checkout): optimized payment routing latency (-42ms)
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={triggerSimulatedDeploy}
+                            disabled={isDeploying}
+                            className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-white shadow-xs hover:bg-neutral-800 disabled:opacity-60 transition cursor-pointer"
+                          >
+                            <Play className={`h-3 w-3 ${isDeploying ? 'animate-spin' : ''}`} />
+                            <span>{isDeploying ? 'Deploying...' : 'Simulate Rollout'}</span>
+                          </button>
+                        </div>
+
+                        {/* Visual Stage Nodes with Connected Track Line */}
+                        <div className="grid grid-cols-4 gap-2 items-center relative py-4">
+                          {[
+                            { step: 1, name: 'GitHub CI', desc: 'Lint & Test Passed', time: '14.2s' },
+                            { step: 2, name: 'Docker Build', desc: 'opspilot/api:8f3a2c', time: '28.1s' },
+                            { step: 3, name: 'Security Scan', desc: '0 CVEs Found', time: '8.4s' },
+                            { step: 4, name: 'Canary Rollout', desc: '100% Traffic · Pods Ready', time: '12.0s' },
+                          ].map(({ step, name, desc, time }) => {
+                            const isDone = deployStep >= step;
+                            const isCurrent = isDeploying && deployStep === step;
+                            return (
+                              <div
+                                key={step}
+                                className={`pipeline-step-node p-3 rounded-xl border text-center transition-all ${
+                                  isDone
+                                    ? 'border-emerald-200 bg-emerald-50/50 text-emerald-950'
+                                    : isCurrent
+                                    ? 'border-amber-300 bg-amber-50/50 text-amber-950 animate-pulse'
+                                    : 'border-neutral-200 bg-neutral-50 text-neutral-400'
+                                }`}
+                              >
+                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-white shadow-xs border border-inherit">
+                                  {isDone ? (
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                  ) : isCurrent ? (
+                                    <RefreshCw className="h-3.5 w-3.5 text-amber-600 animate-spin" />
+                                  ) : (
+                                    <span className="font-tech-mono text-xs font-bold">{step}</span>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-tech-mono text-[0.74rem] font-bold">{name}</p>
+                                  <p className="text-[0.66rem] opacity-75 mt-0.5">{desc}</p>
+                                </div>
+                                <span className="font-tech-mono text-[0.62rem] opacity-60">{time}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Pipeline Telemetry Strip */}
+                        <div className="flex items-center justify-between border-t border-neutral-100 pt-3 text-[0.72rem] font-tech-mono text-neutral-500">
+                          <span className="flex items-center gap-1.5">
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> 18/18 Unit & Integration Tests Green
+                          </span>
+                          <span>Zero Downtime Rolling Update · 3/3 Replicas</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TAB 2: K8S CLUSTER TOPOLOGY */}
+                    {deckTab === 'cluster' && (
+                      <div className="space-y-5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-tech-mono text-xs font-bold text-neutral-800">
+                            Cluster Topology · prod-us-east-1 (Kubernetes v1.29)
+                          </span>
+                          <span className="font-tech-mono text-xs text-emerald-600 font-semibold flex items-center gap-1">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500" /> All Nodes Healthy
+                          </span>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3">
+                            <div className="flex justify-between items-center font-tech-mono text-xs">
+                              <span className="font-bold text-neutral-900">node-us-east-1a (m6i.xlarge)</span>
+                              <span className="text-neutral-500">4 Pods</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[0.68rem] font-tech-mono text-neutral-600">
+                                <span>CPU Usage</span>
+                                <span>18.4%</span>
+                              </div>
+                              <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '18.4%' }} />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[0.68rem] font-tech-mono text-neutral-600">
+                                <span>Memory Pressure</span>
+                                <span>34.2%</span>
+                              </div>
+                              <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-neutral-800 h-1.5 rounded-full" style={{ width: '34.2%' }} />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50/50 space-y-3">
+                            <div className="flex justify-between items-center font-tech-mono text-xs">
+                              <span className="font-bold text-neutral-900">node-us-east-1b (m6i.xlarge)</span>
+                              <span className="text-neutral-500">4 Pods</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[0.68rem] font-tech-mono text-neutral-600">
+                                <span>CPU Usage</span>
+                                <span>24.8%</span>
+                              </div>
+                              <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '24.8%' }} />
+                              </div>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex justify-between text-[0.68rem] font-tech-mono text-neutral-600">
+                                <span>Memory Pressure</span>
+                                <span>41.0%</span>
+                              </div>
+                              <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
+                                <div className="bg-neutral-800 h-1.5 rounded-full" style={{ width: '41.0%' }} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-2 text-center font-tech-mono text-[0.7rem]">
+                          {['checkout-api-84b', 'payment-gw-29f', 'auth-token-11a', 'order-stream-5c'].map((pod) => (
+                            <div key={pod} className="p-2 border border-neutral-200 rounded-lg bg-white">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 inline-block mr-1.5" />
+                              <span className="text-neutral-700">{pod}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TAB 3: LIVE LOKI LOG STREAM */}
+                    {deckTab === 'logs' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between text-xs font-tech-mono text-neutral-600">
+                          <span>Live Loki Tail · stream rate: 382 logs/sec</span>
+                          <span className="text-emerald-600 flex items-center gap-1 font-semibold">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> Connected
+                          </span>
+                        </div>
+                        <div className="hero-terminal-stream space-y-1.5">
+                          <div className="flex gap-2">
+                            <span className="token-time">14:02:18.102</span>
+                            <span className="token-ok">[INFO]</span>
+                            <span>GET /api/v2/checkout/status · 200 OK · 14ms</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="token-time">14:02:19.451</span>
+                            <span className="token-ok">[INFO]</span>
+                            <span>GitHub webhook dispatch #8492 received · verified signature</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="token-time">14:02:20.089</span>
+                            <span className="token-cyan">[K8S]</span>
+                            <span>Scaled replica set checkout-worker: 2 → 3 pods</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="token-time">14:02:21.842</span>
+                            <span className="token-warn">[WARN]</span>
+                            <span>Ingress edge latency threshold: p99 48ms (healthy)</span>
+                          </div>
+                          <div className="flex gap-2">
+                            <span className="token-time">14:02:22.310</span>
+                            <span className="token-ok">[INFO]</span>
+                            <span>Canary evaluation nominal · Prometheus error budget: 100%</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TAB 4: ZERO TRUST AUDIT */}
+                    {deckTab === 'audit' && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between text-xs font-tech-mono">
+                          <span className="font-bold text-neutral-800">Tamper-Proof RBAC Session Log</span>
+                          <span className="text-neutral-500">Zero Trust Enforced</span>
+                        </div>
+                        <div className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden font-tech-mono text-xs">
+                          {[
+                            { action: 'DEPLOY_TRIGGER', user: 'jestin@opspilot.io', role: 'PLATFORM_ADMIN', ip: '10.244.0.12', status: 'AUTHORIZED' },
+                            { action: 'ROLLBACK_READY', user: 'automated-canary', role: 'SYSTEM_DAEMON', ip: 'internal', status: 'VERIFIED' },
+                            { action: 'CONFIG_MUTATE', user: 'sarah.ops@team.com', role: 'OPERATOR', ip: '10.244.1.84', status: 'AUTHORIZED' },
+                          ].map((item, i) => (
+                            <div key={i} className="flex items-center justify-between p-3 bg-white hover:bg-neutral-50">
+                              <div className="flex items-center gap-3">
+                                <span className="font-bold text-neutral-900">{item.action}</span>
+                                <span className="text-neutral-500 text-[0.7rem]">{item.user}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="rounded bg-neutral-100 px-2 py-0.5 text-[0.62rem] text-neutral-700 font-semibold">
+                                  {item.role}
+                                </span>
+                                <span className="text-emerald-600 font-semibold text-[0.68rem]">{item.status}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Footer Info */}
+                    <div className="flex items-center justify-between border-t border-neutral-100 pt-3 text-[0.72rem] font-tech-mono text-neutral-500">
+                      <span>Telemetry source: In-Cluster Prometheus + Loki daemon</span>
+                      <span className="text-neutral-700 font-semibold">Latency: 18ms edge</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* =========================================================================
-          VERIFIED NATIVE INTEGRATIONS MARQUEE (STUDIO STYLE)
+          KEY OPERATIONAL METRICS RIBBON
          ========================================================================= */}
-      <div id="integrations" className="landing-trust-strip border-y border-black/10 bg-white py-9">
-        <div className="mx-auto max-w-7xl px-6 lg:px-12">
-          <p className="mb-6 text-center font-tech-mono text-xs font-bold uppercase tracking-[0.2em] text-black">
-            Engineered to unify your existing infrastructure stack
-          </p>
-          <div className="landing-marquee overflow-hidden">
-            <div className="landing-marquee-track">
-              {[0, 1].map((copy) => (
-                <div
-                  key={copy}
-                  aria-hidden={copy === 1}
-                  className="flex shrink-0 items-center gap-14 pr-14 text-black"
-                >
-                  {INTEGRATIONS.map(({ icon: Icon, label }) => (
-                    <div
-                      key={label}
-                      className="group flex items-center gap-3 whitespace-nowrap font-tech-mono text-xs font-bold tracking-tight text-black transition-all duration-300 hover:opacity-70"
-                    >
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-black/15 bg-white text-black transition-colors group-hover:border-black group-hover:bg-black group-hover:text-white shadow-2xs">
-                        <Icon className="h-4 w-4" />
-                      </span>
-                      <span>{label}</span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
+      <section className="border-y border-neutral-200/80 bg-white py-12">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 divide-y lg:divide-y-0 lg:divide-x divide-neutral-100">
+            {METRICS.map(({ value, label }, i) => (
+              <Reveal key={label} index={i} className="pt-4 lg:pt-0 lg:px-6 text-center">
+                <p className="text-3xl sm:text-4xl font-extrabold text-neutral-950 font-tech-mono">
+                  <CountUp value={value} />
+                </p>
+                <p className="mt-2 font-tech-mono text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                  {label}
+                </p>
+              </Reveal>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* =========================================================================
-          KEY OPERATIONAL METRICS COUNTER (STUDIO STYLE)
+          NATIVE INTEGRATIONS CONTINUOUS MARQUEE
          ========================================================================= */}
-      <div className="landing-metrics border-b border-black/10 bg-white">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 sm:grid-cols-4 sm:divide-x sm:divide-black/10">
-          {METRICS.map(([value, label], i) => (
-            <Reveal
-              key={label}
-              index={i}
-              className="group px-6 py-10 text-center transition-colors duration-300 hover:bg-black/[0.02]"
-            >
-              <p className="font-tech-mono text-3xl font-black tracking-tight text-black sm:text-4xl">
-                <CountUp value={value} />
-              </p>
-              <p className="mt-2 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-black transition-colors">
-                {label}
-              </p>
-            </Reveal>
-          ))}
+      <section className="py-12 bg-neutral-50 border-b border-neutral-200/80">
+        <div className="mx-auto max-w-7xl px-5 mb-6 text-center">
+          <p className="font-tech-mono text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">
+            Works out of the box with your production stack
+          </p>
         </div>
-      </div>
+        <div className="landing-marquee">
+          <div className="landing-marquee-track">
+            {[0, 1].map((copy) => (
+              <div key={copy} aria-hidden={copy === 1} className="flex shrink-0 items-center gap-12 pr-12">
+                {INTEGRATIONS.map(({ icon: Icon, label }) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-2.5 font-tech-mono text-xs font-semibold text-neutral-700 bg-white border border-neutral-200/80 rounded-xl px-4 py-2.5 shadow-2xs hover:border-neutral-400 hover:text-neutral-950 transition-all cursor-default"
+                  >
+                    <Icon className="h-4 w-4 text-neutral-500" />
+                    <span>{label}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <main className="studio-section bg-white text-black">
-        {/* =========================================================================
-            CONNECTED PLATFORM CAPABILITY MAP
-           ========================================================================= */}
-        <section id="platform" className="landing-capabilities mx-auto max-w-7xl px-6 py-24 sm:px-8 lg:px-12 lg:py-32">
-          <Reveal className="capabilities-intro max-w-3xl">
-            <Eyebrow dot>The OpsPilot Platform Core</Eyebrow>
-            <h2 className="mt-5 text-4xl font-black leading-[1.08] tracking-tight text-black sm:text-5xl lg:text-6xl">
-              An internal developer platform <br className="hidden sm:inline" />
-              <span className="text-black font-editorial-italic font-normal">built for runtime reality.</span>
+      {/* =========================================================================
+          CAPABILITY BENTO GRID (MINIMALIST & AESTHETIC)
+         ========================================================================= */}
+      <section id="platform" className="py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
+          <Reveal className="max-w-2xl mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 font-tech-mono text-xs font-semibold text-neutral-700 shadow-2xs">
+              <Sparkles className="h-3.5 w-3.5 text-neutral-500" />
+              Core Superpowers
+            </div>
+            <h2 className="mt-4 text-3xl sm:text-5xl font-extrabold tracking-tight text-neutral-950">
+              An internal platform <br />
+              <span className="text-neutral-500 font-normal">engineered for runtime reality.</span>
             </h2>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-black sm:text-lg">
-              Every deployment has a project. Every project has an accountable owner. Every anomaly traces directly to the
-              commit, pipeline stage, or container that produced it.
+            <p className="mt-4 text-base text-neutral-600 leading-relaxed">
+              Every deployment has a project. Every project has an accountable owner. Every anomaly traces directly to the commit, pipeline stage, or container that produced it.
             </p>
           </Reveal>
 
-          <div className="capability-map mt-16 grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
-            <Reveal index={1} className="capability-list-wrap">
-              <div className="capability-list" role="group" aria-label="Platform capabilities">
-                {CAPABILITIES.map((capability, index) => (
-                  <button
-                    key={capability.number}
-                    id={capability.id}
-                    type="button"
-                    aria-pressed={activeCapability === index}
-                    aria-controls="capability-preview"
-                    className={`capability-item${activeCapability === index ? ' is-active' : ''}`}
-                    onClick={() => setActiveCapability(index)}
-                  >
-                    <span className="capability-number">{capability.number}</span>
-                    <span className="capability-copy">
-                      <span className="capability-category">{capability.category}</span>
-                      <span className="capability-title">{capability.title}</span>
-                      <span className="capability-description">{capability.description}</span>
-                    </span>
-                    <ArrowUpRight className="capability-arrow" aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
-            </Reveal>
-
-            <Reveal index={2}>
-              <div id="capability-preview" className="capability-preview" role="region" aria-live="polite" aria-labelledby={CAPABILITIES[activeCapability].id}>
-                <div className="capability-preview-topline">
-                  <span className="capability-preview-brand"><span className="capability-live-dot" /> OPSPILOT / CONTROL PLANE</span>
-                  <span className="capability-preview-index">{CAPABILITIES[activeCapability].number} / 04</span>
-                </div>
-                <div key={activeCapability} className="capability-preview-content">
-                  <div className="capability-preview-heading">
-                    <div>
-                      <span className="capability-preview-label">{CAPABILITIES[activeCapability].category}</span>
-                      <h3>{CAPABILITIES[activeCapability].panelTitle}</h3>
-                    </div>
-                    <span className="capability-preview-meta">{CAPABILITIES[activeCapability].panelMeta}</span>
+          {/* Bento Grid Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Bento Card 1: Wide (2 columns) */}
+            <SpotlightCard className="md:col-span-2 p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-900 border border-neutral-200">
+                    <GitBranch className="h-5 w-5" />
                   </div>
-                  <div className="capability-preview-rows">
-                    {CAPABILITIES[activeCapability].rows.map(([label, value], index) => (
-                      <div className="capability-preview-row" key={label}>
-                        <span className="capability-row-index">0{index + 1}</span>
-                        <span className="capability-row-label">{label}</span>
-                        <span className="capability-row-value">{value}</span>
-                        <span className="capability-row-status" aria-label="Healthy">OK</span>
-                      </div>
-                    ))}
+                  <span className="font-tech-mono text-xs font-bold text-neutral-400">01 / TRACEABILITY</span>
+                </div>
+                <h3 className="text-xl font-bold text-neutral-950">
+                  Full-Lineage Deployment Pipeline
+                </h3>
+                <p className="mt-2 text-sm text-neutral-600 leading-relaxed max-w-lg">
+                  Every rollout records repository SHAs, author identity, Docker build digests, and test coverage before rolling into staging or production.
+                </p>
+              </div>
+
+              {/* Inset mini preview */}
+              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-neutral-50 font-tech-mono text-xs space-y-2">
+                <div className="flex items-center justify-between text-neutral-500 text-[0.7rem]">
+                  <span>PIPELINE #8491</span>
+                  <span className="text-emerald-600 font-semibold">PASSED (28.4s)</span>
+                </div>
+                <div className="flex items-center gap-2 text-neutral-800 font-medium">
+                  <GitCommit className="h-3.5 w-3.5 text-neutral-500" />
+                  <span>main @ 8f3a2c1 · jestin: "feat(checkout): zero downtime migration"</span>
+                </div>
+              </div>
+            </SpotlightCard>
+
+            {/* Bento Card 2: Cluster Topology */}
+            <SpotlightCard className="p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-900 border border-neutral-200">
+                    <Cpu className="h-5 w-5" />
                   </div>
+                  <span className="font-tech-mono text-xs font-bold text-neutral-400">02 / RUNTIME</span>
                 </div>
-                <div className="capability-preview-footer">
-                  <span>PROJECT / CHECKOUT-SERVICE</span>
-                  <span>ALL SYSTEMS NOMINAL <span className="capability-live-dot" /></span>
+                <h3 className="text-xl font-bold text-neutral-950">
+                  Cluster &amp; Pod Health
+                </h3>
+                <p className="mt-2 text-sm text-neutral-600 leading-relaxed">
+                  Real-time node topology, cgroup memory limits, CPU pressure, and restart backoff alerts.
+                </p>
+              </div>
+
+              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-neutral-50 font-tech-mono text-xs space-y-2.5">
+                <div className="flex justify-between items-center text-[0.7rem]">
+                  <span className="text-neutral-500">2 NODES · 8 PODS</span>
+                  <span className="text-emerald-600 font-semibold">100% HEALTHY</span>
+                </div>
+                <div className="h-2 w-full bg-neutral-200 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500 h-full w-[82%]" />
                 </div>
               </div>
-            </Reveal>
-          </div>
-        </section>
+            </SpotlightCard>
 
-        {/* =========================================================================
-            PLATFORM OVERVIEW (EDITORIAL STORY, NO DASHBOARD SCREENSHOT)
-           ========================================================================= */}
-        <section id="product-preview" className="landing-product-story relative isolate overflow-hidden bg-white px-6 py-24 sm:px-8 sm:py-32 lg:px-12 text-black">
-          <div className="mx-auto grid max-w-7xl gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
-            <Reveal>
-              <div className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-white px-3.5 py-1.5 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-black">
-                <span className="h-1.5 w-1.5 rounded-full bg-black" />
-                One connected platform
+            {/* Bento Card 3: Sub-Second Telemetry */}
+            <SpotlightCard className="p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-900 border border-neutral-200">
+                    <Terminal className="h-5 w-5" />
+                  </div>
+                  <span className="font-tech-mono text-xs font-bold text-neutral-400">03 / LOGS</span>
+                </div>
+                <h3 className="text-xl font-bold text-neutral-950">
+                  Sub-Second Loki Logs
+                </h3>
+                <p className="mt-2 text-sm text-neutral-600 leading-relaxed">
+                  Instant real-time log tailing across all container pods with instant regex query filtering.
+                </p>
               </div>
-              <h2 className="mt-6 max-w-xl text-4xl font-black leading-[1.06] tracking-tight text-black sm:text-5xl lg:text-6xl">
-                Clarity from commit <span className="font-editorial-italic font-normal text-black">to runtime.</span>
-              </h2>
-              <p className="mt-6 max-w-lg text-base leading-relaxed text-black sm:text-lg">
-                OpsPilot brings delivery, infrastructure, and operational signals together, so your team can move from a change to its impact with less guesswork.
-              </p>
-              <button
-                type="button"
-                onClick={() => go('/signup')}
-                className="mt-8 px-6 py-3.5 inline-flex items-center gap-2 rounded-full border border-black bg-black font-tech-mono text-xs font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-neutral-800 cursor-pointer"
-              >
-                Explore the platform <ArrowRight className="h-4 w-4" />
-              </button>
-            </Reveal>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              {[
-                { icon: GitBranch, number: '01', title: 'Ship with context', detail: 'Keep every release tied to its repository, commit, owner, and rollout.' },
-                { icon: Cpu, number: '02', title: 'See what is running', detail: 'Understand clusters, containers, and services without changing tools.' },
-                { icon: Activity, number: '03', title: 'Follow every signal', detail: 'Connect logs, metrics, and incidents to the change that caused them.' },
-                { icon: ShieldCheck, number: '04', title: 'Operate with confidence', detail: 'Give each team clear access and keep an accountable audit trail.' },
-              ].map(({ icon: Icon, number, title, detail }, index) => (
-                <Reveal key={number} index={index + 1}>
-                  <article className="story-card h-full rounded-2xl p-6 transition duration-300 sm:p-7 bg-white border border-black/10 text-black">
-                    <div className="flex items-center justify-between">
-                      <Icon className="story-card-icon h-5 w-5 text-black" aria-hidden="true" />
-                      <span className="font-tech-mono text-[10px] font-bold tracking-[0.18em] text-black">{number}</span>
-                    </div>
-                    <h3 className="mt-8 text-lg font-bold text-black">{title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-black">{detail}</p>
-                  </article>
-                </Reveal>
-              ))}
-            </div>
+              <div className="mt-8 p-3 rounded-xl bg-neutral-900 text-emerald-400 font-tech-mono text-[0.68rem] leading-tight space-y-1">
+                <div>&gt; tail -f /var/log/pods/*.log</div>
+                <div className="text-neutral-300">200 OK GET /api/v1/health 4ms</div>
+                <div className="text-emerald-300">● Live log streaming connected</div>
+              </div>
+            </SpotlightCard>
+
+            {/* Bento Card 4: Wide (2 columns) */}
+            <SpotlightCard className="md:col-span-2 p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 text-neutral-900 border border-neutral-200">
+                    <ShieldCheck className="h-5 w-5" />
+                  </div>
+                  <span className="font-tech-mono text-xs font-bold text-neutral-400">04 / GOVERNANCE</span>
+                </div>
+                <h3 className="text-xl font-bold text-neutral-950">
+                  Zero-Trust Access &amp; Audit Trail
+                </h3>
+                <p className="mt-2 text-sm text-neutral-600 leading-relaxed max-w-lg">
+                  Platform RBAC with verified JWT signatures. Every environment secret rotation, deployment rollback, or config mutation is securely preserved.
+                </p>
+              </div>
+
+              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-neutral-50 font-tech-mono text-xs flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-neutral-600" />
+                  <span className="text-neutral-800">RBAC Verified: ADMIN · OPERATOR · VIEWER</span>
+                </div>
+                <span className="text-emerald-600 font-semibold text-[0.7rem] bg-emerald-100/60 px-2 py-0.5 rounded border border-emerald-200">
+                  AUDIT LOG IMMUTABLE
+                </span>
+              </div>
+            </SpotlightCard>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* =========================================================================
-            OPERATIONAL WORKFLOW TIMELINE (STUDIO STYLE)
-           ========================================================================= */}
-        <section id="workflow" className="landing-workflow border-t border-black/10 bg-white py-24 sm:py-32 text-black">
-          <div className="mx-auto grid max-w-7xl gap-14 px-6 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:px-12">
+      {/* =========================================================================
+          OPERATIONAL ARCHITECTURE FLOW ("HOW IT WORKS")
+         ========================================================================= */}
+      <section id="architecture" className="py-24 sm:py-32 bg-white border-y border-neutral-200/80">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             <Reveal>
-              <Eyebrow>Shorter Path To Resolution</Eyebrow>
-              <h2 className="mt-5 text-4xl font-black leading-[1.1] tracking-tight text-black sm:text-5xl">
-                From repository commit to <br className="hidden sm:inline" />
-                reliable runtime<span className="text-black">.</span>
+              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-neutral-700">
+                Continuous Flow
+              </div>
+              <h2 className="mt-5 text-3xl sm:text-5xl font-extrabold tracking-tight text-neutral-950 leading-[1.1]">
+                Unified architecture <br />
+                <span className="text-neutral-500 font-normal">from repository to cluster.</span>
               </h2>
-              <p className="mt-5 max-w-md text-base leading-relaxed text-black">
-                Stop jumping across disconnected terminals, consoles, and cloud dashboards. OpsPilot connects delivery context
-                to runtime diagnostics in a unified workflow.
+              <p className="mt-6 text-base text-neutral-600 leading-relaxed">
+                Traditional setups require 5 tabs: GitHub for PRs, Jenkins or CircleCI for builds, Lens or kubectl for pods, Datadog or Loki for logs, and PagerDuty for alerts. OpsPilot brings all 5 into one unified plane.
               </p>
+
               <div className="mt-8 flex items-center gap-4">
                 <button
                   type="button"
                   onClick={() => go('/signup')}
-                  className="px-6 py-3.5 inline-flex items-center gap-2 rounded-full border border-black bg-black font-tech-mono text-xs font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-neutral-800 cursor-pointer"
+                  className="btn-primary-glow"
                 >
                   <span>Launch Workspace</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
                   onClick={() => go('/login')}
-                  className="px-5 py-3 inline-flex items-center gap-2 rounded-full border border-black/20 bg-white font-tech-mono text-xs font-bold text-black transition-all duration-300 hover:border-black hover:bg-black hover:text-white cursor-pointer"
+                  className="btn-secondary-frosted"
                 >
                   Sign In
                 </button>
               </div>
             </Reveal>
 
-            <div className="relative pl-9">
-              {/* Timeline Signal Rail with travelling pulse */}
-              <div className="pointer-events-none absolute top-10 bottom-10 left-[11px] w-0.5 rounded-full bg-black/15" aria-hidden="true">
-                <span className="workflow-rail-dot absolute left-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black shadow-[0_0_10px_rgba(0,0,0,0.3)]" />
+            {/* Step rail list */}
+            <div className="relative pl-8">
+              {/* Vertical connecting rail with animated pulse */}
+              <div className="absolute top-6 bottom-6 left-3 w-0.5 bg-neutral-200 rounded-full" aria-hidden="true">
+                <span className="arch-rail-dot left-1/2 -translate-x-1/2" />
               </div>
 
-              <div className="grid gap-4">
+              <div className="space-y-6">
                 {[
-                  [
-                    '01',
-                    'Connect the Repository & Owner',
-                    'Register GitHub repositories, configure environments, and link developer teams directly to microservices.',
-                  ],
-                  [
-                    '02',
-                    'Ship with Full Pipeline Traceability',
-                    'Trigger automated deployments with commit hashes, test results, and container images attached to the release.',
-                  ],
-                  [
-                    '03',
-                    'Observe and Remediate Instantly',
-                    'Stream live logs, inspect cluster pods, and trigger rollbacks without hunting for logs in disparate systems.',
-                  ],
-                ].map(([number, title, description], i) => (
-                  <Reveal key={number} index={i + 1}>
-                    <div className="workflow-step group relative flex gap-5 rounded-2xl p-6 bg-white border border-black/10 text-black">
-                      <span
-                        aria-hidden="true"
-                        className="absolute top-1/2 -left-[31px] h-3.5 w-3.5 -translate-y-1/2 rounded-full border-[3px] border-white bg-black transition-all duration-300 group-hover:scale-125 group-hover:bg-black"
-                      />
-                      <span className="workflow-step-number flex h-11 w-11 shrink-0 items-center justify-center rounded-xl font-tech-mono text-sm font-black bg-white text-black border border-black/20">
-                        {number}
-                      </span>
-                      <div>
-                        <h3 className="text-base font-bold text-black">{title}</h3>
-                        <p className="mt-2 text-sm leading-relaxed text-black">{description}</p>
+                  {
+                    step: '01',
+                    title: 'Connect Repositories & Services',
+                    desc: 'Register GitHub repositories, configure microservice owners, and attach environment configuration directly.',
+                  },
+                  {
+                    step: '02',
+                    title: 'Trace Multi-Stage Deployments',
+                    desc: 'Build images with Docker digests, run automated verification suites, and track commit authors automatically.',
+                  },
+                  {
+                    step: '03',
+                    title: 'Zero-Downtime Rollout to Kubernetes',
+                    desc: 'Shift traffic with canary engines, verify pod liveness checks, and safeguard against service degradation.',
+                  },
+                  {
+                    step: '04',
+                    title: 'Sub-Second Telemetry & Incident Audit',
+                    desc: 'Trace unexpected error spikes directly back to the commit and pipeline that caused them in under 2 clicks.',
+                  },
+                ].map(({ step, title, desc }, i) => (
+                  <Reveal key={step} index={i + 1}>
+                    <div className="relative group p-6 rounded-2xl border border-neutral-200/90 bg-neutral-50 hover:bg-white hover:border-neutral-400 transition-all duration-200 shadow-2xs">
+                      <span className="absolute -left-[27px] top-7 h-3 w-3 rounded-full border-2 border-white bg-neutral-900 group-hover:scale-125 transition-transform" />
+                      <div className="flex items-center gap-3 mb-1.5">
+                        <span className="font-tech-mono text-xs font-black text-neutral-400">
+                          {step}
+                        </span>
+                        <h3 className="text-base font-bold text-neutral-900">{title}</h3>
                       </div>
+                      <p className="text-sm text-neutral-600 leading-relaxed pl-7">{desc}</p>
                     </div>
                   </Reveal>
                 ))}
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* =========================================================================
-            CTA BANNER WITH OPSPILOT MASCOT (STUDIO GLASS PANEL)
-           ========================================================================= */}
-        <section className="landing-final-cta bg-white px-6 pb-24 pt-12 sm:px-8 lg:px-12 lg:pb-32 text-black">
-          <Reveal onReveal={() => setMascotHop((n) => n + 1)} className="relative mx-auto max-w-7xl">
+      {/* =========================================================================
+          INTERACTIVE FAQ ACCORDION
+         ========================================================================= */}
+      <section id="faq" className="py-24 sm:py-32">
+        <div className="mx-auto max-w-4xl px-5 sm:px-8">
+          <Reveal className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-neutral-700 shadow-2xs">
+              Answers &amp; Technical Details
+            </div>
+            <h2 className="mt-4 text-3xl sm:text-5xl font-extrabold tracking-tight text-neutral-950">
+              Frequently Asked Questions
+            </h2>
+          </Reveal>
+
+          <div className="space-y-4">
+            {FAQ_ITEMS.map(({ question, answer }, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <Reveal key={idx} index={idx}>
+                  <div className="faq-accordion-item">
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : idx)}
+                      className="w-full flex items-center justify-between p-5 text-left font-tech-mono text-sm sm:text-base font-bold text-neutral-900 hover:text-neutral-700 transition cursor-pointer"
+                    >
+                      <span>{question}</span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 transition-transform duration-300 text-neutral-500 ${
+                          isOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+                    <div className={`faq-accordion-content ${isOpen ? 'is-open' : ''}`}>
+                      <div className="overflow-hidden px-5 pb-5 text-sm leading-relaxed text-neutral-600 font-sans border-t border-neutral-100 pt-3">
+                        {answer}
+                      </div>
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* =========================================================================
+          CTA BANNER WITH OPSPILOT MASCOT
+         ========================================================================= */}
+      <section className="py-20 sm:py-28 bg-white border-t border-neutral-200/80">
+        <div className="mx-auto max-w-5xl px-5 sm:px-8">
+          <Reveal onReveal={() => setMascotHop((n) => n + 1)} className="relative">
+            {/* Interactive mascot with cursor tracking and hover mood */}
             <AuthMascot gaze={null} cover="none" mood={ctaHover ? 'happy' : 'idle'} hopKey={mascotHop} />
-            <div className="cta-panel relative z-10 overflow-hidden px-8 py-16 text-center sm:px-16 sm:py-20 bg-white border border-black/12 shadow-sm text-black">
-              <div className="relative">
-                <div className="inline-flex items-center gap-2 rounded-full border border-black/15 bg-white px-3.5 py-1.5 font-tech-mono text-[11px] font-bold uppercase tracking-wider text-black">
-                  <span className="h-1.5 w-1.5 rounded-full bg-black" />
-                  Start in Minutes
+
+            <div className="relative z-10 rounded-3xl border border-neutral-200/90 bg-neutral-950 p-8 sm:p-14 text-center text-white shadow-2xl overflow-hidden">
+              <div
+                className="absolute inset-0 bg-radial-gradient from-neutral-800/40 via-transparent to-transparent pointer-events-none"
+                aria-hidden="true"
+              />
+
+              <div className="relative max-w-2xl mx-auto space-y-6">
+                <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900/90 px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-neutral-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  Free 14-Day Full Access
                 </div>
-                <h2 className="mx-auto mt-4 max-w-2xl text-3xl font-black leading-[1.15] tracking-tight text-black sm:text-4xl lg:text-5xl">
-                  Take command of your developer platform today<span className="text-black">.</span>
+
+                <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]">
+                  Take command of your developer platform today.
                 </h2>
-                <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-black">
-                  Connect your first project and discover what happens when deployments, clusters, and logs share one unified
-                  workspace.
+
+                <p className="text-neutral-400 text-sm sm:text-base leading-relaxed">
+                  Connect your first GitHub repository and discover what happens when deployments, clusters, and logs share one unified command plane.
                 </p>
-                <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+
+                <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
                   <button
                     type="button"
                     onClick={() => go('/signup')}
                     onMouseEnter={() => setCtaHover(true)}
                     onMouseLeave={() => setCtaHover(false)}
-                    className="px-8 py-4 inline-flex items-center gap-2 rounded-full border border-black bg-black font-tech-mono text-xs font-bold text-white shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-neutral-800 cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-tech-mono text-xs font-bold text-neutral-950 hover:bg-neutral-100 transition-all transform hover:-translate-y-0.5 shadow-md cursor-pointer"
                   >
                     <span>Create Free Workspace</span>
-                    <ArrowRight className="h-4 w-4 text-current" />
+                    <ArrowRight className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => go('/login')}
-                    className="px-7 py-3.5 inline-flex items-center gap-2 rounded-full border border-black/20 bg-white font-tech-mono text-xs font-bold text-black transition-all duration-300 hover:border-black hover:bg-black hover:text-white cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-700 bg-neutral-900/80 px-6 py-3.5 font-tech-mono text-xs font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
                   >
                     <span>Sign In</span>
-                    <ArrowUpRight className="h-3.5 w-3.5 opacity-60" />
+                    <ArrowUpRight className="h-3.5 w-3.5 text-neutral-400" />
                   </button>
                 </div>
               </div>
             </div>
           </Reveal>
-        </section>
-      </main>
+        </div>
+      </section>
 
       {/* =========================================================================
-          MINIMALIST LUXURY FOOTER (MATCHING CINEMATIC AESTHETIC)
+          MINIMALIST LUXURY FOOTER
          ========================================================================= */}
-      <footer className="border-t border-black/10 bg-white text-black">
-        <div className="mx-auto max-w-7xl px-6 pt-16 pb-12 sm:pt-20 sm:pb-16 lg:px-12">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-12 lg:gap-12">
-            {/* Brand Column */}
-            <div className="col-span-2 flex flex-col justify-between md:col-span-4 lg:col-span-5">
-              <div>
-                <button
-                  type="button"
-                  onClick={() => go('/')}
-                  className="group flex items-center gap-3 text-left cursor-pointer"
-                >
-                  <span className="font-tech-mono text-lg font-bold tracking-tight text-black">
-                    ( OPS_PILOT )
-                  </span>
-                </button>
-                <p className="mt-4 max-w-sm text-sm leading-relaxed text-black">
-                  The internal developer platform engineered for high-velocity teams. Unifying deployments, infrastructure,
-                  and live observability into a single command plane.
-                </p>
-                <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-black/15 bg-white px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-black shadow-2xs">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-black opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-black" />
-                  </span>
-                  <span>ALL SYSTEMS OPERATIONAL</span>
-                </div>
+      <footer className="border-t border-neutral-200/80 bg-neutral-50 py-16 text-neutral-600 font-tech-mono text-xs">
+        <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-8 lg:gap-12">
+            {/* Brand Col */}
+            <div className="col-span-2 md:col-span-4 space-y-4">
+              <div className="flex items-center gap-2 text-neutral-900 font-bold text-sm">
+                <Zap className="h-4 w-4" />
+                <span>OPS/PILOT</span>
+              </div>
+              <p className="text-neutral-500 text-xs font-sans max-w-xs leading-relaxed">
+                The internal developer platform engineered for high-velocity teams. Connecting deployments, Kubernetes runtimes, and live telemetry.
+              </p>
+              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 font-tech-mono text-[0.68rem] font-semibold text-neutral-700 shadow-2xs">
+                <span className="pulse-beacon h-2 w-2 text-emerald-500">
+                  <span className="pulse-beacon-ping" />
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                <span>ALL SYSTEMS OPERATIONAL</span>
               </div>
             </div>
 
-            {/* Navigation Columns */}
-            <div className="col-span-1 md:col-span-2 lg:col-span-2">
-              <h3 className="font-tech-mono text-xs font-bold uppercase tracking-wider text-black">
-                Capabilities
-              </h3>
-              <ul className="mt-4 space-y-3 font-tech-mono text-xs text-black">
-                <li><a href="#deployments" className="hover:opacity-70 transition-opacity">Deployments</a></li>
-                <li><a href="#infrastructure" className="hover:opacity-70 transition-opacity">Kubernetes</a></li>
-                <li><a href="#observability" className="hover:opacity-70 transition-opacity">Loki &amp; Logs</a></li>
-                <li><a href="#product-preview" className="hover:opacity-70 transition-opacity">Audit Trails</a></li>
+            {/* Col 1 */}
+            <div className="col-span-1 md:col-span-2 space-y-3">
+              <p className="font-bold uppercase tracking-wider text-neutral-900 text-[0.7rem]">Platform</p>
+              <ul className="space-y-2 text-neutral-600">
+                <li><a href="#platform" className="hover:text-neutral-950 transition-colors">Capabilities</a></li>
+                <li><a href="#architecture" className="hover:text-neutral-950 transition-colors">Architecture</a></li>
+                <li><a href="#faq" className="hover:text-neutral-950 transition-colors">FAQ</a></li>
+                <li><button type="button" onClick={() => go('/dashboard')} className="hover:text-neutral-950 transition-colors cursor-pointer">Console</button></li>
               </ul>
             </div>
 
-            <div className="col-span-1 md:col-span-3 lg:col-span-2">
-              <h3 className="font-tech-mono text-xs font-bold uppercase tracking-wider text-black">
-                Platform
-              </h3>
-              <ul className="mt-4 space-y-3 font-tech-mono text-xs text-black">
-                <li><a href="#platform" className="hover:opacity-70 transition-opacity">Architecture</a></li>
-                <li><a href="#workflow" className="hover:opacity-70 transition-opacity">Workflows</a></li>
-                <li><a href="#integrations" className="hover:opacity-70 transition-opacity">Integrations</a></li>
+            {/* Col 2 */}
+            <div className="col-span-1 md:col-span-3 space-y-3">
+              <p className="font-bold uppercase tracking-wider text-neutral-900 text-[0.7rem]">Observability</p>
+              <ul className="space-y-2 text-neutral-600">
+                <li><span className="text-neutral-500">Grafana Loki Tail</span></li>
+                <li><span className="text-neutral-500">Prometheus Scrapes</span></li>
+                <li><span className="text-neutral-500">Docker Sources</span></li>
                 <li>
                   <a
                     href="https://opspilot.jestin16.dev"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 hover:opacity-70 transition-opacity"
+                    className="inline-flex items-center gap-1 hover:text-neutral-950 transition-colors"
                   >
-                    <span>Production</span>
+                    <span>Production URL</span>
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </li>
               </ul>
             </div>
 
-            <div className="col-span-2 md:col-span-3 lg:col-span-3">
-              <h3 className="font-tech-mono text-xs font-bold uppercase tracking-wider text-black">
-                Access
-              </h3>
-              <p className="mt-4 text-xs leading-relaxed text-black">
-                Ready to explore the internal developer platform?
-              </p>
-              <div className="mt-4 flex items-center gap-3 font-tech-mono text-xs">
+            {/* Col 3 */}
+            <div className="col-span-2 md:col-span-3 space-y-3">
+              <p className="font-bold uppercase tracking-wider text-neutral-900 text-[0.7rem]">Get Started</p>
+              <p className="text-neutral-500 text-xs font-sans">Ready to unify your developer workflow?</p>
+              <div className="flex items-center gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => go('/signup')}
-                  className="rounded-full border border-black bg-black px-5 py-2 font-bold text-white transition hover:bg-neutral-800 cursor-pointer"
+                  className="rounded-lg bg-neutral-900 px-4 py-2 font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
                 >
                   Sign Up
                 </button>
                 <button
                   type="button"
                   onClick={() => go('/login')}
-                  className="rounded-full border border-black/20 bg-white px-5 py-2 font-bold text-black transition hover:border-black hover:bg-black hover:text-white cursor-pointer"
+                  className="rounded-lg border border-neutral-300 bg-white px-4 py-2 font-bold text-neutral-900 hover:bg-neutral-50 transition cursor-pointer"
                 >
                   Sign In
                 </button>
@@ -791,14 +1234,19 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Bottom Copyright & Legal Line */}
-          <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-black/10 pt-8 font-tech-mono text-xs text-black sm:flex-row">
-            <span>&copy; 2026 OpsPilot. Built for dependable delivery.</span>
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-black">
-              <a href="#platform" className="hover:opacity-70 transition-opacity">Platform</a>
-              <a href="#workflow" className="hover:opacity-70 transition-opacity">Workflow</a>
-              <a href="#integrations" className="hover:opacity-70 transition-opacity">Integrations</a>
-              <a href="https://opspilot.jestin16.dev" target="_blank" rel="noreferrer" className="hover:opacity-70 transition-opacity">Live App</a>
+          <div className="mt-14 pt-8 border-t border-neutral-200/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-neutral-500 text-[0.7rem]">
+            <span>&copy; {new Date().getFullYear()} OpsPilot. Built for dependable delivery.</span>
+            <div className="flex items-center gap-6">
+              <a href="#platform" className="hover:text-neutral-900 transition-colors">Platform</a>
+              <a href="#architecture" className="hover:text-neutral-900 transition-colors">Architecture</a>
+              <a href="#faq" className="hover:text-neutral-900 transition-colors">FAQ</a>
+              <button
+                type="button"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="hover:text-neutral-900 transition-colors cursor-pointer"
+              >
+                Back to top ↑
+              </button>
             </div>
           </div>
         </div>

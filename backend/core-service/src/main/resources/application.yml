@@ -31,6 +31,10 @@ kubernetes:
   loopback-host: ${KUBERNETES_LOOPBACK_HOST:}
 
 app:
+  auth:
+    cookie-secure: ${AUTH_COOKIE_SECURE:true}
+  google:
+    client-id: ${GOOGLE_CLIENT_ID:}
   seed:
     # Creates the public demo accounts (admin@opspilot.io etc.). Local development only.
     demo-users: ${DEMO_USERS_ENABLED:false}
@@ -39,14 +43,6 @@ app:
     expiration-ms: 900000
     refresh-expiration-ms: 604800000
 
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://service-registry:8761/eureka/}
-    fetch-registry: true
-    register-with-eureka: true
-  instance:
-    prefer-ip-address: true
 
 management:
   endpoints:

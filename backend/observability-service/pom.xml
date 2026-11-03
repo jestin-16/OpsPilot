@@ -20,11 +20,7 @@
             <artifactId>client-java</artifactId>
             <version>20.0.0</version>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-        </dependency>
-        <dependency>
+                <dependency>
             <groupId>com.opspilot</groupId>
             <artifactId>shared-lib</artifactId>
         </dependency>

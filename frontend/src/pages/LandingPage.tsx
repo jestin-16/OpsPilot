@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { LandingHero } from '../components/LandingHero';
 import { AuthMascot } from '../components/AuthMascot';
+import { OpsPilotLogo } from '../components/OpsPilotLogo';
 import '../styles/landing.css';
 
 const NAV_ITEMS = [
@@ -232,24 +233,14 @@ export const LandingPage: React.FC = () => {
           <button
             type="button"
             onClick={() => go('/')}
-            className="flex items-center gap-3.5 group cursor-pointer border-0 bg-transparent p-0"
+            className="flex items-center group cursor-pointer border-0 bg-transparent p-0"
             aria-label="OpsPilot Home"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-900 text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
-              <Zap className="h-4 w-4" />
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="font-tech-mono text-[0.92rem] font-bold tracking-tight text-neutral-900">
-                OPS<span className="text-neutral-400">/</span>PILOT
-              </span>
-              <span className="font-tech-mono text-[0.62rem] font-medium tracking-wider text-neutral-500 uppercase">
-                Control Plane
-              </span>
-            </div>
+            <OpsPilotLogo size={34} showWordmark={true} />
           </button>
 
           {/* Navigation links */}
-          <nav className="hidden md:flex items-center gap-7" aria-label="Primary navigation">
+          <nav className="hidden md:flex items-center" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => (
               <a
                 key={item.label}
@@ -262,11 +253,11 @@ export const LandingPage: React.FC = () => {
           </nav>
 
           {/* Nav actions */}
-          <div className="flex items-center gap-3.5">
+          <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => go('/login')}
-              className="hidden sm:inline-flex font-tech-mono text-[0.76rem] font-medium text-neutral-700 hover:text-neutral-950 px-3 py-1.5 transition-colors cursor-pointer"
+              className="hidden sm:inline-flex font-tech-mono text-[0.76rem] font-medium text-neutral-600 hover:text-neutral-950 px-3 py-1.5 transition-colors cursor-pointer"
             >
               Sign in
             </button>
@@ -702,9 +693,8 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-12 gap-8 lg:gap-12">
             {/* Brand Col */}
             <div className="col-span-2 md:col-span-4 space-y-4">
-              <div className="flex items-center gap-2 text-neutral-900 font-bold text-sm">
-                <Zap className="h-4 w-4" />
-                <span>OPS/PILOT</span>
+              <div className="flex items-center gap-2">
+                <OpsPilotLogo size={28} showWordmark={true} />
               </div>
               <p className="text-neutral-500 text-xs font-sans max-w-xs leading-relaxed">
                 The internal developer platform engineered for high-velocity teams. Connecting deployments, Kubernetes runtimes, and live telemetry.

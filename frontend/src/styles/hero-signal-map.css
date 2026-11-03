@@ -1,0 +1,96 @@
+﻿/* Fine signal lines keep the illustration quiet and open. */
+.op-signal-map {
+  width: 100%;
+  max-width: 540px;
+  min-width: 0;
+  margin: 0;
+  justify-self: end;
+  animation: op-fade-up 1s ease .2s both;
+}
+
+.op-signal-art {
+  position: relative;
+  width: 100%;
+  padding-block: 20px;
+}
+
+.op-signal-lines {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.op-signal-labels {
+  fill: #8a9085;
+  font-size: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: .02em;
+}
+
+.op-signal-brand {
+  fill: #626d5d;
+  font-size: 10px;
+  font-weight: 500;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.op-signal-traces path,
+.op-signal-resolved {
+  stroke-dasharray: 5 95;
+  animation: op-signal-flow 6s linear infinite;
+}
+
+.op-signal-resolved {
+  stroke-dasharray: 8 92;
+  animation-delay: -1.2s;
+}
+
+.op-signal-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 6px;
+  padding-left: 28px;
+  color: #868b80;
+  font-size: 10px;
+  letter-spacing: .01em;
+}
+
+.op-map-motion {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #8b9485;
+  cursor: pointer;
+}
+
+.op-map-motion:hover { background: #e7eae2; color: #47563e; }
+.op-signal-map.is-paused * { animation-play-state: paused !important; }
+
+@keyframes op-signal-flow {
+  0% { stroke-dashoffset: 5; opacity: 0; }
+  12%, 85% { opacity: .85; }
+  100% { stroke-dashoffset: -100; opacity: 0; }
+}
+
+@media (max-width: 980px) {
+  .op-signal-map { justify-self: center; max-width: 520px; }
+  .op-signal-art { padding-block: 0; }
+}
+
+@media (max-width: 480px) {
+  .op-signal-caption { font-size: 8px; gap: 5px; margin-top: 0; }
+  .op-signal-labels, .op-signal-brand { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .op-signal-map, .op-signal-map * { animation: none !important; }
+  .op-signal-traces, .op-signal-resolved, .op-map-motion { display: none; }
+}

@@ -5,9 +5,11 @@ scrape_configs:
   - job_name: 'opspilot-microservices'
     metrics_path: '/actuator/prometheus'
     scrape_interval: 5s
-    eureka_sd_configs:
-      # Same compose network as the registry; its port is no longer published beyond localhost.
-      - server: 'http://service-registry:8761/eureka'
+    static_configs:
+      - targets:
+        - 'core-service:8082'
+        - 'observability-service:8083'
+        - 'log-watcher-service:8084'
 
   - job_name: 'blackbox'
     metrics_path: /probe

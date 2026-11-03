@@ -1,5 +1,7 @@
-# Ports other than the API gateway (8080) are published on 127.0.0.1 only: they are for local debugging,
-# and the services, database and dashboards should not be reachable from the rest of the network.
+# Microservices architecture: Nginx acts as Edge Ingress API Gateway, routing to:
+# - core-service (port 8082): Identity, RBAC, Projects, CI/CD, Deployments, Incidents
+# - observability-service (port 8083): Telemetry, Prometheus/Loki querying, Ingestion, AI
+# - log-watcher-service (port 8084): Real-time K8s pod streaming & SSE buffers
 
 x-backend-build: &backend-build
   context: ./backend
@@ -24,51 +26,6 @@ services:
       retries: 20
     restart: unless-stopped
 
-  service-registry:
-    image: opspilot-service-registry:latest
-    build:
-      <<: *backend-build
-      args: { SERVICE: service-registry, PORT: "8761" }
-    container_name: opspilot-service-registry
-    environment:
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
-    ports:
-      - "127.0.0.1:8761:8761"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8761/actuator/health || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 10
-      start_period: 30s
-    restart: unless-stopped
-
-  auth-service:
-    image: opspilot-auth-service:latest
-    build:
-      <<: *backend-build
-      args: { SERVICE: auth-service, PORT: "8081" }
-    container_name: opspilot-auth-service
-    env_file:
-      - .env
-    ports:
-      - "127.0.0.1:8081:8081"
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      service-registry:
-        condition: service_healthy
-    environment:
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx256m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/opspilot
-      - SPRING_DATASOURCE_USERNAME=opspilot
-      - SPRING_DATASOURCE_PASSWORD=opspilot
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
-      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
-      - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:?OPSPILOT_ENCRYPTION_KEY must be set in .env (openssl rand -base64 32)}
-      - DEMO_USERS_ENABLED=${DEMO_USERS_ENABLED:-false}
-      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}
-
   core-service:
     image: opspilot-core-service:latest
     build:
@@ -80,8 +37,6 @@ services:
     restart: unless-stopped
     depends_on:
       postgres:
-        condition: service_healthy
-      service-registry:
         condition: service_healthy
     volumes:
       - ~/.kube:/home/opspilot/.kube:ro
@@ -96,9 +51,11 @@ services:
       - SPRING_DATASOURCE_PASSWORD=opspilot
       - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:?OPSPILOT_ENCRYPTION_KEY must be set in .env (openssl rand -base64 32)}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
+      - AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-true}
+      - DEMO_USERS_ENABLED=${DEMO_USERS_ENABLED:-false}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
       - JENKINS_WEBHOOK_SECRET=${JENKINS_WEBHOOK_SECRET:-}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - KUBERNETES_ENABLED=${KUBERNETES_ENABLED:-true}
       - PROMETHEUS_ENABLED=${PROMETHEUS_ENABLED:-true}
       - PROMETHEUS_URL=${PROMETHEUS_URL:-http://prometheus:9090}
@@ -121,8 +78,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      service-registry:
-        condition: service_healthy
       loki:
         condition: service_started
     volumes:
@@ -139,7 +94,6 @@ services:
       - OPSPILOT_ENCRYPTION_KEY=${OPSPILOT_ENCRYPTION_KEY:?OPSPILOT_ENCRYPTION_KEY must be set in .env (openssl rand -base64 32)}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
       - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - KUBERNETES_ENABLED=${KUBERNETES_ENABLED:-true}
       - PROMETHEUS_URL=http://prometheus:9090
       - LOKI_ENABLED=${LOKI_ENABLED:-true}
@@ -159,9 +113,6 @@ services:
     ports:
       - "127.0.0.1:8085:8084"
     restart: unless-stopped
-    depends_on:
-      service-registry:
-        condition: service_healthy
     volumes:
       - ~/.kube:/home/opspilot/.kube:ro
     extra_hosts:
@@ -172,29 +123,12 @@ services:
       - KUBERNETES_LOOPBACK_HOST=${KUBERNETES_LOOPBACK_HOST:-kubernetes}
       - KUBERNETES_MASTER=${KUBERNETES_MASTER:-}
       - SERVER_PORT=8084
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
       - WATCH_NAMESPACE=${WATCH_NAMESPACE:-default}
       - WATCH_LABEL_SELECTOR=${WATCH_LABEL_SELECTOR:-}
       - LOG_BUFFER_MAX_LINES=${LOG_BUFFER_MAX_LINES:-5000}
       - LOG_MASKING_ENABLED=${LOG_MASKING_ENABLED:-true}
       - AUTH_ENABLED=${AUTH_ENABLED:-true}
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in .env (openssl rand -base64 48)}
-
-  api-gateway:
-    image: opspilot-api-gateway:latest
-    build:
-      <<: *backend-build
-      args: { SERVICE: api-gateway, PORT: "8080" }
-    container_name: opspilot-api-gateway
-    environment:
-      - JAVA_TOOL_OPTIONS=-Xms64m -Xmx192m -XX:+UseG1GC -Djava.net.preferIPv4Stack=true
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://service-registry:8761/eureka/
-    ports:
-      - "8080:8080"
-    restart: unless-stopped
-    depends_on:
-      service-registry:
-        condition: service_healthy
 
   frontend:
     image: opspilot-frontend:latest
@@ -208,11 +142,14 @@ services:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
       - "80:80"
+      - "8080:80"
     restart: unless-stopped
     depends_on:
-      - api-gateway
+      - core-service
+      - observability-service
+      - log-watcher-service
 
-  # Third-party images are pinned so a rebuild can't silently pick up a new major version.
+  # Telemetry collection (remote write receiver & Prometheus metric scraping)
   prometheus:
     image: prom/prometheus:v3.14.0
     container_name: opspilot-prometheus
@@ -224,12 +161,8 @@ services:
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    depends_on:
-      service-registry:
-        condition: service_healthy
 
-  # Log store for the push-model Docker monitoring. Internal only: agents push through the OpsPilot
-  # ingest endpoint (token-authenticated), never directly to Loki, so 3100 is intentionally not published.
+  # Internal log store for Docker & K8s monitoring
   loki:
     image: grafana/loki:3.0.0
     container_name: opspilot-loki
@@ -239,13 +172,14 @@ services:
       - loki_data:/loki
     restart: unless-stopped
 
+  # Optional monitoring dashboard: run with `docker compose --profile monitoring up`
   grafana:
     image: grafana/grafana:13.2.0
     container_name: opspilot-grafana
+    profiles: ["monitoring"]
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      # Only applied when the grafana_data volume is first created.
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set in .env}
     volumes:
       - grafana_data:/var/lib/grafana
@@ -255,9 +189,11 @@ services:
       - prometheus
       - postgres
 
+  # Optional synthetic probe exporter: run with `docker compose --profile monitoring up`
   blackbox:
     image: prom/blackbox-exporter:v0.28.0
     container_name: opspilot-blackbox
+    profiles: ["monitoring"]
     ports:
       - "127.0.0.1:9115:9115"
     dns:

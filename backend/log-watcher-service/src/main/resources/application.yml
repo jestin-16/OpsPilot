@@ -29,15 +29,6 @@ app:
   auth:
     enabled: ${AUTH_ENABLED:true}
 
-eureka:
-  client:
-    enabled: ${EUREKA_ENABLED:true}
-    service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://service-registry:8761/eureka/}
-    fetch-registry: true
-    register-with-eureka: true
-  instance:
-    prefer-ip-address: true
 
 management:
   endpoints:

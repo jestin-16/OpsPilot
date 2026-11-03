@@ -97,7 +97,7 @@ export const PipelineDetail: React.FC = () => {
             <Button variant="secondary" onClick={() => fetchDetail(true)} isLoading={refreshing}>
               <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
             </Button>
-            <Button variant="primary" disabled title="Retry safely unsupported in this mock">
+            <Button variant="primary" disabled title="Retry requires active runner integration">
               <RefreshCcw className="w-4 h-4 mr-2" /> Retry Pipeline
             </Button>
           </div>

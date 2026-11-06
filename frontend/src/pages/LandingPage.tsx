@@ -220,10 +220,6 @@ export const LandingPage: React.FC = () => {
     <div
       className="landing-root min-h-screen selection:bg-neutral-900 selection:text-white"
     >
-      {/* Ambient background blur elements */}
-      <div className="landing-ambient-glow" aria-hidden="true" />
-      <div className="landing-dot-grid fixed inset-0 pointer-events-none opacity-40" aria-hidden="true" />
-
       {/* =========================================================================
           SITE NAVIGATION
          ========================================================================= */}
@@ -266,7 +262,7 @@ export const LandingPage: React.FC = () => {
               onClick={() => go('/dashboard')}
               className="btn-primary-glow"
             >
-              <span>Launch Console</span>
+              <span><span className="hidden sm:inline">Launch </span>Console</span>
               <ArrowUpRight className="h-3.5 w-3.5 opacity-80" />
             </button>
             <button
@@ -340,7 +336,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           NATIVE INTEGRATIONS CONTINUOUS MARQUEE
          ========================================================================= */}
-      <section className="py-12 bg-neutral-50 border-b border-neutral-200/80">
+      <section className="py-12 bg-white border-b border-neutral-200/80">
         <div className="mx-auto max-w-7xl px-5 mb-6 text-center">
           <p className="font-tech-mono text-xs font-bold uppercase tracking-[0.2em] text-neutral-500">
             Works out of the box with your production stack
@@ -368,7 +364,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           CAPABILITY BENTO GRID (MINIMALIST & AESTHETIC)
          ========================================================================= */}
-      <section id="platform" className="py-24 sm:py-32">
+      <section id="platform" className="py-24 sm:py-32 bg-white">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
           <Reveal className="max-w-2xl mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3 py-1 font-tech-mono text-xs font-semibold text-neutral-700 shadow-2xs">
@@ -404,7 +400,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               {/* Inset mini preview */}
-              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-neutral-50 font-tech-mono text-xs space-y-2">
+              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-white font-tech-mono text-xs space-y-2">
                 <div className="flex items-center justify-between text-neutral-500 text-[0.7rem]">
                   <span>PIPELINE #8491</span>
                   <span className="text-emerald-600 font-semibold">PASSED (28.4s)</span>
@@ -433,7 +429,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
 
-              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-neutral-50 font-tech-mono text-xs space-y-2.5">
+              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-white font-tech-mono text-xs space-y-2.5">
                 <div className="flex justify-between items-center text-[0.7rem]">
                   <span className="text-neutral-500">2 NODES · 8 PODS</span>
                   <span className="text-emerald-600 font-semibold">100% HEALTHY</span>
@@ -461,10 +457,10 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
 
-              <div className="mt-8 p-3 rounded-xl bg-neutral-900 text-emerald-400 font-tech-mono text-[0.68rem] leading-tight space-y-1">
+              <div className="mt-8 p-3 rounded-xl border border-neutral-200/90 bg-white text-neutral-900 font-tech-mono text-[0.68rem] leading-tight space-y-1">
                 <div>&gt; tail -f /var/log/pods/*.log</div>
-                <div className="text-neutral-300">200 OK GET /api/v1/health 4ms</div>
-                <div className="text-emerald-300">● Live log streaming connected</div>
+                <div className="text-neutral-600">200 OK GET /api/v1/health 4ms</div>
+                <div className="text-emerald-700">● Live log streaming connected</div>
               </div>
             </SpotlightCard>
 
@@ -485,7 +481,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
 
-              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-neutral-50 font-tech-mono text-xs flex items-center justify-between flex-wrap gap-3">
+              <div className="mt-8 p-4 rounded-xl border border-neutral-200/90 bg-white font-tech-mono text-xs flex items-center justify-between flex-wrap gap-3">
                 <div className="flex items-center gap-2">
                   <Lock className="h-4 w-4 text-neutral-600" />
                   <span className="text-neutral-800">RBAC Verified: ADMIN · OPERATOR · VIEWER</span>
@@ -506,7 +502,7 @@ export const LandingPage: React.FC = () => {
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <Reveal>
-              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-neutral-700">
+              <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-neutral-700">
                 Continuous Flow
               </div>
               <h2 className="mt-5 text-3xl sm:text-5xl font-extrabold tracking-tight text-neutral-950 leading-[1.1]">
@@ -567,7 +563,7 @@ export const LandingPage: React.FC = () => {
                   },
                 ].map(({ step, title, desc }, i) => (
                   <Reveal key={step} index={i + 1}>
-                    <div className="relative group p-6 rounded-2xl border border-neutral-200/90 bg-neutral-50 hover:bg-white hover:border-neutral-400 transition-all duration-200 shadow-2xs">
+                    <div className="relative group p-6 rounded-2xl border border-neutral-200/90 bg-white hover:border-neutral-400 transition-all duration-200 shadow-2xs">
                       <span className="absolute -left-[27px] top-7 h-3 w-3 rounded-full border-2 border-white bg-neutral-900 group-hover:scale-125 transition-transform" />
                       <div className="flex items-center gap-3 mb-1.5">
                         <span className="font-tech-mono text-xs font-black text-neutral-400">
@@ -588,7 +584,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           INTERACTIVE FAQ ACCORDION
          ========================================================================= */}
-      <section id="faq" className="py-24 sm:py-32">
+      <section id="faq" className="py-24 sm:py-32 bg-white">
         <div className="mx-auto max-w-4xl px-5 sm:px-8">
           <Reveal className="text-center mb-16">
             <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-neutral-700 shadow-2xs">
@@ -639,14 +635,9 @@ export const LandingPage: React.FC = () => {
             {/* Interactive mascot with cursor tracking and hover mood */}
             <AuthMascot gaze={null} cover="none" mood={ctaHover ? 'happy' : 'idle'} hopKey={mascotHop} />
 
-            <div className="relative z-10 rounded-3xl border border-neutral-200/90 bg-neutral-950 p-8 sm:p-14 text-center text-white shadow-2xl overflow-hidden">
-              <div
-                className="absolute inset-0 bg-radial-gradient from-neutral-800/40 via-transparent to-transparent pointer-events-none"
-                aria-hidden="true"
-              />
-
+            <div className="relative z-10 rounded-3xl border border-neutral-200/90 bg-white p-8 sm:p-14 text-center text-neutral-950 shadow-sm overflow-hidden">
               <div className="relative max-w-2xl mx-auto space-y-6">
-                <div className="inline-flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900/90 px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-neutral-300">
+                <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-3.5 py-1.5 font-tech-mono text-xs font-semibold text-neutral-700">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                   Free 14-Day Full Access
                 </div>
@@ -655,7 +646,7 @@ export const LandingPage: React.FC = () => {
                   Take command of your developer platform today.
                 </h2>
 
-                <p className="text-neutral-400 text-sm sm:text-base leading-relaxed">
+                <p className="text-neutral-600 text-sm sm:text-base leading-relaxed">
                   Connect your first GitHub repository and discover what happens when deployments, clusters, and logs share one unified command plane.
                 </p>
 
@@ -665,7 +656,7 @@ export const LandingPage: React.FC = () => {
                     onClick={() => go('/signup')}
                     onMouseEnter={() => setCtaHover(true)}
                     onMouseLeave={() => setCtaHover(false)}
-                    className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 font-tech-mono text-xs font-bold text-neutral-950 hover:bg-neutral-100 transition-all transform hover:-translate-y-0.5 shadow-md cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full bg-neutral-900 px-7 py-3.5 font-tech-mono text-xs font-bold text-white hover:bg-neutral-800 transition-all transform hover:-translate-y-0.5 shadow-md cursor-pointer"
                   >
                     <span>Create Free Workspace</span>
                     <ArrowRight className="h-4 w-4" />
@@ -673,7 +664,7 @@ export const LandingPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => go('/login')}
-                    className="inline-flex items-center gap-2 rounded-full border border-neutral-700 bg-neutral-900/80 px-6 py-3.5 font-tech-mono text-xs font-bold text-white hover:bg-neutral-800 transition cursor-pointer"
+                    className="inline-flex items-center gap-2 rounded-full border border-neutral-300 bg-white px-6 py-3.5 font-tech-mono text-xs font-bold text-neutral-900 hover:bg-neutral-50 transition cursor-pointer"
                   >
                     <span>Sign In</span>
                     <ArrowUpRight className="h-3.5 w-3.5 text-neutral-400" />
@@ -688,7 +679,7 @@ export const LandingPage: React.FC = () => {
       {/* =========================================================================
           MINIMALIST LUXURY FOOTER
          ========================================================================= */}
-      <footer className="border-t border-neutral-200/80 bg-neutral-50 py-16 text-neutral-600 font-tech-mono text-xs">
+      <footer className="border-t border-neutral-200/80 bg-white py-16 text-neutral-600 font-tech-mono text-xs">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 lg:px-12">
           <div className="grid grid-cols-2 md:grid-cols-12 gap-8 lg:gap-12">
             {/* Brand Col */}

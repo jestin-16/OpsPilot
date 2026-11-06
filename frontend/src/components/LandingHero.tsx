@@ -1,8 +1,7 @@
 import React from 'react';
 import { ArrowDown, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { OpsPilotLogo } from './OpsPilotLogo';
-import { HeroSignalMap } from './HeroSignalMap';
+import { HeroAscii } from './HeroAscii';
 import '../styles/hero.css';
 
 export function LandingHero() {
@@ -14,16 +13,15 @@ export function LandingHero() {
           {/* Left Column: Editorial Headline & Actions */}
           <div className="op-hero-intro">
             <div className="op-hero-brand-wrap">
-              <OpsPilotLogo size={34} className="op-hero-logo" />
-              <p className="op-hero-eyebrow"><span aria-hidden="true" /> YOUR OPERATIONS, SIMPLIFIED</p>
+              <p className="op-hero-eyebrow"><span aria-hidden="true" /> YOUR OPERATIONS, IN SYNC</p>
             </div>
             <h1 id="op-hero-title">
               <span className="op-title-line"><span>Less noise.</span></span>
               <span className="op-title-line op-title-accent"><span>More clarity.</span></span>
             </h1>
             <p className="op-hero-description">
-              Bring your deployments, infrastructure, and logs together.
-              {' '}A calmer way to see it all. A clearer way to move forward.
+              One clear view of your deployments, infrastructure, and logs.
+              {' '}Find your signal. Keep your team moving.
             </p>
             <div className="op-hero-actions">
               <button type="button" className="op-hero-primary" onClick={() => navigate('/signup')}>
@@ -33,9 +31,10 @@ export function LandingHero() {
                 Discover OpsPilot <ArrowDown size={15} strokeWidth={1.5} />
               </a>
             </div>
+            <p className="op-hero-note">Built around your stack. Designed for your focus.</p>
           </div>
 
-          <HeroSignalMap />
+          <HeroAscii />
         </div>
 
         {/* Hero Footer */}

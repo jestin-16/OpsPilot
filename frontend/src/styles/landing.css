@@ -1,6 +1,6 @@
 /* =========================================================================
    OpsPilot — Minimalist & Aesthetic Developer Platform Design System
-   Calm Editorial Palette (Sage, Warm Stone Linen, Slate & White)
+   White page surfaces with dark typography and restrained status accents
    ========================================================================= */
 
 @import "tailwindcss";
@@ -8,14 +8,18 @@
 html:has(.landing-root) {
   scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
-  background-color: #f5f4f0;
+  background-color: #ffffff;
+}
+
+body:has(.landing-root) {
+  background: #ffffff;
 }
 
 /* Base Root Variables */
 .landing-root {
   --landing-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --landing-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --landing-bg: #f5f4f0;
+  --landing-bg: #ffffff;
   --landing-card: #ffffff;
   --landing-text-primary: #242528;
   --landing-text-secondary: #656b6e;
@@ -105,7 +109,7 @@ html:has(.landing-root) {
   margin: 0 auto;
   display: flex;
   align-items: center;
-  background: rgba(245, 244, 240, 0.84);
+  background: #ffffff;
   backdrop-filter: blur(16px) saturate(140%);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   border: 1px solid rgba(38, 48, 37, 0.08);
@@ -116,7 +120,7 @@ html:has(.landing-root) {
 }
 
 .landing-nav.is-scrolled {
-  background: rgba(245, 244, 240, 0.96);
+  background: #ffffff;
   border-color: rgba(38, 48, 37, 0.14);
   box-shadow: 0 4px 20px -4px rgba(36, 48, 38, 0.06), 0 14px 32px -12px rgba(36, 48, 38, 0.04);
 }
@@ -160,6 +164,17 @@ html:has(.landing-root) {
 }
 
 @media (max-width: 767px) {
+  .landing-nav-inner > nav {
+    display: none;
+  }
+  .landing-nav-inner > button {
+    flex-shrink: 0;
+  }
+  .landing-nav .btn-primary-glow {
+    padding: .6rem .8rem;
+    font-size: 10px;
+    white-space: nowrap;
+  }
   .landing-nav {
     top: 0.55rem;
     width: calc(100% - 1.25rem);

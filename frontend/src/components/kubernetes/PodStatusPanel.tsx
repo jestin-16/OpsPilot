@@ -70,7 +70,7 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
     const s = status.toLowerCase();
     if (s === 'running') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-700 border border-emerald-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           Running
         </span>
@@ -78,23 +78,23 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
     }
     if (s.includes('crashloop') || s === 'crashloopbackoff') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">
-          <AlertTriangle className="w-3 h-3 text-rose-400" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-700 border border-rose-500/40 animate-pulse">
+          <AlertTriangle className="w-3 h-3 text-rose-700" />
           CrashLoopBackOff
         </span>
       );
     }
     if (s.includes('oom') || s === 'oomkilled') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-          <HardDrive className="w-3 h-3 text-purple-400" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-500/20 text-purple-700 border border-purple-500/40">
+          <HardDrive className="w-3 h-3 text-purple-700" />
           OOMKilled
         </span>
       );
     }
     if (s === 'pending') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-700 border border-amber-500/20">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
           Pending
         </span>
@@ -102,14 +102,14 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
     }
     if (s === 'failed' || s === 'error') {
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
-          <XCircle className="w-3 h-3 text-rose-400" />
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/10 text-rose-700 border border-rose-500/20">
+          <XCircle className="w-3 h-3 text-rose-700" />
           Failed
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-slate-400 border border-slate-500/20">
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-slate-500/10 text-op-muted border border-slate-500/20">
         <HelpCircle className="w-3 h-3" />
         {status}
       </span>
@@ -119,7 +119,7 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs flex items-center gap-2">
+        <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-700 text-xs flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{error}</span>
         </div>
@@ -127,11 +127,11 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
 
       {watcherStatus && !watcherStatus.connected && (
         watcherStatus.enabled === false || watcherStatus.message?.toLowerCase().includes('disabled') ? (
-          <div role="status" className="flex items-start gap-2 rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3 text-xs text-slate-300">
-            <Layers className="mt-0.5 h-4 w-4 text-slate-400 shrink-0" />
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-slate-700 bg-op-raised px-4 py-3 text-xs text-op-muted">
+            <Layers className="mt-0.5 h-4 w-4 text-op-muted shrink-0" />
             <div>
-              <p className="font-semibold text-slate-200">Kubernetes integration is disabled</p>
-              <p className="mt-1 text-slate-400">Kubernetes monitoring is disabled. Set <code className="text-op-accent">KUBERNETES_ENABLED=true</code> in your environment and provide a reachable cluster endpoint to monitor pods and live logs.</p>
+              <p className="font-semibold text-op-fg">Kubernetes integration is disabled</p>
+              <p className="mt-1 text-op-muted">Kubernetes monitoring is disabled. Set <code className="text-op-accent">KUBERNETES_ENABLED=true</code> in your environment and provide a reachable cluster endpoint to monitor pods and live logs.</p>
             </div>
           </div>
         ) : (
@@ -148,61 +148,61 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
       {/* Cluster Health Metrics Bar */}
       {healthSummary && (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          <div className="bg-[#11141E] border border-white/10 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Total Pods</span>
+          <div className="bg-op-surface border border-op-border rounded-xl p-3 flex flex-col justify-between shadow-sm">
+            <span className="text-[11px] text-op-muted uppercase tracking-wider font-semibold">Total Pods</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-bold text-white font-mono">{healthSummary.totalPods}</span>
-              <span className="text-xs text-slate-500 font-sans">monitored</span>
+              <span className="text-2xl font-bold text-op-fg font-mono">{healthSummary.totalPods}</span>
+              <span className="text-xs text-op-subtle font-sans">monitored</span>
             </div>
           </div>
 
-          <div className="bg-[#11141E] border border-white/10 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Running</span>
+          <div className="bg-op-surface border border-op-border rounded-xl p-3 flex flex-col justify-between shadow-sm">
+            <span className="text-[11px] text-op-muted uppercase tracking-wider font-semibold">Running</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-bold text-emerald-400 font-mono">
+              <span className="text-2xl font-bold text-emerald-700 font-mono">
                 {healthSummary.podsByPhase?.Running || 0}
               </span>
               <span className="text-xs text-emerald-500/70 font-sans">healthy</span>
             </div>
           </div>
 
-          <div className="bg-[#11141E] border border-white/10 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">CrashLoopBackOff</span>
+          <div className="bg-op-surface border border-op-border rounded-xl p-3 flex flex-col justify-between shadow-sm">
+            <span className="text-[11px] text-op-muted uppercase tracking-wider font-semibold">CrashLoopBackOff</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className={`text-2xl font-bold font-mono ${healthSummary.crashLoopPods?.length > 0 ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`}>
+              <span className={`text-2xl font-bold font-mono ${healthSummary.crashLoopPods?.length > 0 ? 'text-rose-700 animate-pulse' : 'text-op-muted'}`}>
                 {healthSummary.crashLoopPods?.length || 0}
               </span>
               <span className="text-xs text-rose-500/70 font-sans">critical</span>
             </div>
           </div>
 
-          <div className="bg-[#11141E] border border-white/10 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">OOMKilled</span>
+          <div className="bg-op-surface border border-op-border rounded-xl p-3 flex flex-col justify-between shadow-sm">
+            <span className="text-[11px] text-op-muted uppercase tracking-wider font-semibold">OOMKilled</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className={`text-2xl font-bold font-mono ${healthSummary.oomKilledPods?.length > 0 ? 'text-purple-400' : 'text-slate-400'}`}>
+              <span className={`text-2xl font-bold font-mono ${healthSummary.oomKilledPods?.length > 0 ? 'text-purple-700' : 'text-op-muted'}`}>
                 {healthSummary.oomKilledPods?.length || 0}
               </span>
-              <span className="text-xs text-purple-400/70 font-sans">memory</span>
+              <span className="text-xs text-purple-700/70 font-sans">memory</span>
             </div>
           </div>
 
-          <div className="bg-[#11141E] border border-white/10 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Total Restarts</span>
+          <div className="bg-op-surface border border-op-border rounded-xl p-3 flex flex-col justify-between shadow-sm">
+            <span className="text-[11px] text-op-muted uppercase tracking-wider font-semibold">Total Restarts</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className={`text-2xl font-bold font-mono ${healthSummary.totalRestarts > 0 ? 'text-amber-400' : 'text-slate-400'}`}>
+              <span className={`text-2xl font-bold font-mono ${healthSummary.totalRestarts > 0 ? 'text-amber-700' : 'text-op-muted'}`}>
                 {healthSummary.totalRestarts}
               </span>
               <span className="text-xs text-amber-500/70 font-sans">events</span>
             </div>
           </div>
 
-          <div className="bg-[#11141E] border border-white/10 rounded-xl p-3 flex flex-col justify-between shadow-sm">
-            <span className="text-[11px] text-slate-400 uppercase tracking-wider font-semibold">Error Rate (15m)</span>
+          <div className="bg-op-surface border border-op-border rounded-xl p-3 flex flex-col justify-between shadow-sm">
+            <span className="text-[11px] text-op-muted uppercase tracking-wider font-semibold">Error Rate (15m)</span>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className={`text-2xl font-bold font-mono ${healthSummary.overallErrorRate > 5 ? 'text-rose-400' : 'text-cyan-400'}`}>
+              <span className={`text-2xl font-bold font-mono ${healthSummary.overallErrorRate > 5 ? 'text-rose-700' : 'text-cyan-700'}`}>
                 {healthSummary.overallErrorRate}%
               </span>
-              <span className="text-xs text-slate-500 font-sans">avg</span>
+              <span className="text-xs text-op-subtle font-sans">avg</span>
             </div>
           </div>
         </div>
@@ -210,11 +210,11 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
 
       {/* Critical Failure Alerts Banner if CrashLoopBackOff or OOMKilled exists */}
       {healthSummary && (healthSummary.crashLoopPods.length > 0 || healthSummary.oomKilledPods.length > 0) && (
-        <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center justify-between shadow-lg">
+        <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-700 text-xs flex items-center justify-between shadow-lg">
           <div className="flex items-center gap-2.5">
-            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 animate-bounce" />
+            <AlertTriangle className="w-5 h-5 text-rose-700 shrink-0 animate-bounce" />
             <div>
-              <span className="font-semibold text-rose-200">Failure Signals Detected: </span>
+              <span className="font-semibold text-rose-700">Failure Signals Detected: </span>
               {healthSummary.crashLoopPods.map(p => (
                 <span key={p.podName} className="mr-3 font-mono">
                   {p.podName} (CrashLoopBackOff, restarts: {p.restartCount})
@@ -227,30 +227,30 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
               ))}
             </div>
           </div>
-          <span className="text-[11px] text-rose-400/80 font-mono shrink-0">Previous logs auto-captured</span>
+          <span className="text-[11px] text-rose-700/80 font-mono shrink-0">Previous logs auto-captured</span>
         </div>
       )}
 
       {/* Pod Status Table */}
-      <div className="bg-[#11141E] border border-white/10 rounded-xl shadow-xl overflow-hidden">
+      <div className="bg-op-surface border border-op-border rounded-xl shadow-xl overflow-hidden">
         {/* Table Controls Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.02]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-op-border bg-op-raised/50">
           <div className="flex items-center gap-2.5">
-            <Layers className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-sm font-semibold text-white">Monitored Pods & Health State</h3>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-white/5 text-slate-400 border border-white/10">
+            <Layers className="w-4 h-4 text-cyan-700" />
+            <h3 className="text-sm font-semibold text-op-fg">Monitored Pods & Health State</h3>
+            <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-op-raised/50 text-op-muted border border-op-border">
               {pods.length} active
             </span>
           </div>
 
           <div className="flex items-center gap-3 text-xs">
             {/* Auto-Refresh Toggle */}
-            <label className="flex items-center gap-2 cursor-pointer text-slate-300 select-none">
+            <label className="flex items-center gap-2 cursor-pointer text-op-muted select-none">
               <input
                 type="checkbox"
                 checked={autoRefresh}
                 onChange={(e) => setAutoRefresh(e.target.checked)}
-                className="rounded bg-white/10 border-white/20 text-cyan-500 focus:ring-0 cursor-pointer"
+                className="rounded bg-op-raised border-white/20 text-cyan-500 focus:ring-0 cursor-pointer"
               />
               <span>Auto-refresh</span>
             </label>
@@ -259,13 +259,13 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
             <button
               onClick={fetchData}
               disabled={loading}
-              className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg border border-op-border bg-op-raised/50 text-op-muted hover:bg-op-raised transition-colors"
               title="Refresh now"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             </button>
 
-            <span className="text-[11px] text-slate-500">
+            <span className="text-[11px] text-op-subtle">
               Updated: {lastRefreshed.toLocaleTimeString()}
             </span>
           </div>
@@ -274,13 +274,13 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
         {/* Table Body */}
         <div className="overflow-x-auto">
           {loading && pods.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 text-sm">
+            <div className="py-16 text-center text-op-subtle text-sm">
               <RefreshCw className="w-6 h-6 mx-auto mb-2 animate-spin opacity-50" />
               Loading cluster pod information...
             </div>
           ) : pods.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 text-sm">
-              <Server className="w-8 h-8 mx-auto mb-2 opacity-30 text-cyan-400" />
+            <div className="py-16 text-center text-op-subtle text-sm">
+              <Server className="w-8 h-8 mx-auto mb-2 opacity-30 text-cyan-700" />
               {watcherStatus?.enabled === false || watcherStatus?.message?.toLowerCase().includes('disabled')
                 ? 'Kubernetes monitoring is disabled. Set KUBERNETES_ENABLED=true in .env to view cluster pods.'
                 : watcherStatus?.connected
@@ -289,7 +289,7 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
             </div>
           ) : (
             <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead className="bg-[#0B0D13] text-slate-400 font-semibold border-b border-white/5 uppercase tracking-wider text-[11px]">
+              <thead className="bg-op-surface text-op-muted font-semibold border-b border-op-border uppercase tracking-wider text-[11px]">
                 <tr>
                   <th className="py-2.5 px-4">Pod Name</th>
                   <th className="py-2.5 px-4">Namespace</th>
@@ -301,7 +301,7 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
                   <th className="py-2.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-slate-200 font-mono">
+              <tbody className="divide-y divide-op-border text-op-fg font-mono">
                 {pods.map((pod) => {
                   const isSelected = pod.name === selectedPodName;
                   const errRate = healthSummary?.errorRatePerPod?.[pod.name] ?? 0;
@@ -313,32 +313,32 @@ export const PodStatusPanel: React.FC<PodStatusPanelProps> = ({
                         isSelected ? 'bg-cyan-500/10' : ''
                       }`}
                     >
-                      <td className="py-3 px-4 font-semibold text-white flex items-center gap-2">
-                        <Terminal className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                      <td className="py-3 px-4 font-semibold text-op-fg flex items-center gap-2">
+                        <Terminal className="w-3.5 h-3.5 text-cyan-700 shrink-0" />
                         <span className="truncate max-w-[220px]" title={pod.name}>{pod.name}</span>
                       </td>
-                      <td className="py-3 px-4 text-slate-400">{pod.namespace}</td>
+                      <td className="py-3 px-4 text-op-muted">{pod.namespace}</td>
                       <td className="py-3 px-4 font-sans">{getStatusBadge(pod.status)}</td>
-                      <td className="py-3 px-4 text-slate-300">{pod.ready}</td>
+                      <td className="py-3 px-4 text-op-muted">{pod.ready}</td>
                       <td className="py-3 px-4">
                         {pod.restarts > 0 ? (
-                          <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-700 border border-amber-500/30">
                             {pod.restarts}
                           </span>
                         ) : (
-                          <span className="text-slate-500">0</span>
+                          <span className="text-op-subtle">0</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-slate-400">{pod.age}</td>
+                      <td className="py-3 px-4 text-op-muted">{pod.age}</td>
                       <td className="py-3 px-4 font-mono">
-                        <span className={errRate > 10 ? 'text-rose-400 font-bold' : errRate > 0 ? 'text-amber-400' : 'text-slate-500'}>
+                        <span className={errRate > 10 ? 'text-rose-700 font-bold' : errRate > 0 ? 'text-amber-700' : 'text-op-subtle'}>
                           {errRate.toFixed(1)}%
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => onSelectPod && onSelectPod(pod.name, pod.namespace)}
-                          className="px-2.5 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-sans text-xs transition-colors"
+                          className="px-2.5 py-1 rounded bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 border border-cyan-500/30 font-sans text-xs transition-colors"
                         >
                           Stream Logs
                         </button>

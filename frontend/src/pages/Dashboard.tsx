@@ -26,7 +26,7 @@ import {
   Rocket, Server, Activity, RefreshCw, AlertCircle, 
   Terminal, Plus, Filter, ChevronDown, CheckCircle2,
   ExternalLink, ArrowUpRight, Cpu, Layers, ShieldCheck,
-  Box, X, Sparkles, Check, ScrollText
+  Box, X, Check, ScrollText
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { errorMessage } from '../services/projectApi';
@@ -435,29 +435,19 @@ export const Dashboard: React.FC = () => {
 
   return (
     <SidebarLayout>
-      <div className="space-y-6 pb-12">
+      <div className="dashboard-overview space-y-6 pb-12">
 
         {/* 1. Hero Command Center Banner */}
-        <div className="relative overflow-hidden rounded-3xl border border-op-border bg-gradient-to-br from-op-surface via-op-surface to-op-raised p-6 lg:p-8 shadow-xs">
-          {/* Ambient Glow Accents */}
-          <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-op-accent/10 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
-
+        <div className="dashboard-intro">
           <div className="relative z-10 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="min-w-0 max-w-2xl">
-              <div className="flex items-center gap-2 mb-2.5">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-op-accent/20 bg-op-accent/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-op-accent">
-                  <Sparkles className="w-3 h-3" /> Operations Hub
-                </span>
-                <span className="text-op-subtle text-xs">·</span>
-                <StatusIndicator status={getSystemStatus()} text={getSystemStatusReason()} />
-              </div>
+              <div className="dashboard-eyebrow">Your operations, at a glance</div>
               
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-op-fg">
-                Command Center
+                Dashboard overview
               </h1>
               <p className="mt-2 text-sm text-op-muted leading-relaxed">
-                Welcome back, <span className="font-semibold text-op-fg">{user?.name || 'Engineer'}</span>. Monitoring {projects.length} microservices, Kubernetes workloads, and live release pipelines in one unified operational pane.
+                Welcome back, <span className="font-medium text-op-fg">{user?.name || 'Engineer'}</span>. A little clarity across your projects, infrastructure, and releases.
               </p>
 
               {/* Quick Telemetry Chips */}
@@ -465,7 +455,7 @@ export const Dashboard: React.FC = () => {
                 {k8sOverview && (
                   <Link
                     to="/kubernetes"
-                    className="inline-flex items-center gap-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 transition-colors"
+                    className="dashboard-telemetry"
                   >
                     <Cpu className="w-3.5 h-3.5" />
                     <span>K3s Cluster: {k8sOverview.runningPods || 15} Pods Online</span>
@@ -474,13 +464,13 @@ export const Dashboard: React.FC = () => {
                 )}
                 <Link
                   to="/docker"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-colors"
+                  className="dashboard-telemetry"
                 >
                   <Box className="w-3.5 h-3.5" />
                   <span>Docker Host: {providerCounts['DOCKER'] || 6} Containers</span>
                   <ArrowUpRight className="w-3 h-3 opacity-70" />
                 </Link>
-                <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <div className="dashboard-telemetry">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>{deployments.length} Production Releases</span>
                 </div>
@@ -488,7 +478,9 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Actions Bar */}
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <div className="flex flex-col items-start gap-4 shrink-0 lg:items-end">
+              <StatusIndicator status={getSystemStatus()} text={getSystemStatusReason()} />
+              <div className="flex flex-wrap items-center gap-2">
               <Button 
                 variant="secondary" 
                 onClick={() => fetchData(true)} 
@@ -506,6 +498,7 @@ export const Dashboard: React.FC = () => {
                 <Plus className="w-4 h-4" />
                 <span>New Project</span>
               </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -521,7 +514,7 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* 2. Unified Scope & Resource Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-op-border bg-op-surface p-3 shadow-xs">
+        <div className="dashboard-filterbar flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2.5">
             <div className="flex items-center gap-1.5 px-1 text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">
               <Filter className="w-3.5 h-3.5 text-op-muted" /> Filters:
@@ -595,11 +588,11 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* 3. Key Metrics KPI Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          <Card className="flex flex-col justify-between hoverEffect">
+        <div className="dashboard-metrics grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <Card className="flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Workloads in Scope</span>
-              <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <div className="dashboard-metric-icon">
                 <Layers className="w-5 h-5" />
               </div>
             </div>
@@ -611,10 +604,10 @@ export const Dashboard: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="flex flex-col justify-between hoverEffect">
+          <Card className="flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Healthy Workloads</span>
-              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <div className="dashboard-metric-icon">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
             </div>
@@ -627,7 +620,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="flex flex-col justify-between hoverEffect">
+          <Card className="flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Active Incidents</span>
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${
@@ -651,10 +644,10 @@ export const Dashboard: React.FC = () => {
             </div>
           </Card>
 
-          <Card className="flex flex-col justify-between hoverEffect">
+          <Card className="flex flex-col justify-between">
             <div className="flex items-center justify-between mb-4">
               <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">CI/CD Success Rate</span>
-              <div className="w-10 h-10 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+              <div className="dashboard-metric-icon">
                 <Activity className="w-5 h-5" />
               </div>
             </div>
@@ -666,7 +659,7 @@ export const Dashboard: React.FC = () => {
               {/* Progress bar */}
               <div className="mt-2 h-1.5 w-full bg-op-raised rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-purple-500 rounded-full transition-all duration-500" 
+                  className="h-full bg-op-sage rounded-full transition-all duration-500"
                   style={{ width: `${pipelineSuccessRate}%` }} 
                 />
               </div>
@@ -678,8 +671,8 @@ export const Dashboard: React.FC = () => {
         <Card>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-bold text-op-fg">Infrastructure Topology</h3>
-              <p className="text-xs text-op-muted mt-0.5">Click any provider to filter the command center</p>
+              <h3 className="text-base font-bold text-op-fg">Connected infrastructure</h3>
+              <p className="text-xs text-op-muted mt-0.5">Select a provider to explore its resources</p>
             </div>
             {filterProvider !== 'ALL' && (
               <button 
@@ -692,7 +685,7 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="dashboard-providers grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {BREAKDOWN_PROVIDERS.map(provider => {
               const count = providerCounts[provider] || 0;
               const isSelected = filterProvider === provider;
@@ -700,15 +693,16 @@ export const Dashboard: React.FC = () => {
                 <button
                   key={provider}
                   type="button"
+                  aria-pressed={isSelected}
                   onClick={() => setFilterProvider(isSelected ? 'ALL' : provider)}
                   className={`group relative flex flex-col justify-between p-4 rounded-2xl border text-left transition-all duration-200 active:scale-[0.98] ${
                     isSelected
-                      ? 'border-op-accent bg-op-accent/10 shadow-sm ring-2 ring-op-accent/30'
+                      ? 'border-op-sage bg-op-sage-soft'
                       : 'border-op-border bg-op-raised/50 hover:bg-op-raised hover:border-op-border-strong'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-3">
-                    <span className="p-2 rounded-xl bg-op-surface border border-op-border group-hover:scale-105 transition-transform">
+                    <span className="dashboard-provider-icon">
                       {PROVIDER_ICONS[provider] || <Server className="w-4 h-4 text-op-muted" />}
                     </span>
                     {isSelected && (
@@ -718,7 +712,7 @@ export const Dashboard: React.FC = () => {
                     )}
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-op-muted uppercase tracking-wider mb-0.5 truncate">
+                    <p className="text-xs font-medium text-op-muted mb-1 truncate">
                       {PROVIDER_LABELS[provider]}
                     </p>
                     <p className="text-2xl font-black text-op-fg">
@@ -815,10 +809,10 @@ export const Dashboard: React.FC = () => {
           {/* Right Column: Recent Activity Feed & Kubernetes Node Status */}
           <div className="space-y-6 min-w-0">
             {/* Cluster Status Quick Card */}
-            <Card className="bg-gradient-to-br from-blue-500/5 via-op-surface to-op-surface border-blue-500/20">
+            <Card>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <div className="dashboard-metric-icon">
                     <Cpu className="w-4 h-4" />
                   </div>
                   <div>

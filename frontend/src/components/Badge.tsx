@@ -8,11 +8,11 @@ interface BadgeProps {
 
 export const Badge: React.FC<BadgeProps> = ({ children, variant = 'neutral', className = '' }) => {
   const variants = {
-    success: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    warning: 'bg-amber-100 text-amber-800 border-amber-200',
-    error: 'bg-rose-100 text-rose-800 border-rose-200',
-    info: 'bg-sky-100 text-sky-800 border-sky-200',
-    neutral: 'bg-slate-100 text-slate-800 border-slate-200',
+    success: 'bg-op-sage-soft text-op-sage border-op-sage/15',
+    warning: 'bg-amber-50 text-amber-800 border-amber-200/70',
+    error: 'bg-rose-50 text-rose-800 border-rose-200/70',
+    info: 'bg-sky-50 text-sky-800 border-sky-200/70',
+    neutral: 'bg-op-raised text-op-muted border-op-border',
   };
 
   return (

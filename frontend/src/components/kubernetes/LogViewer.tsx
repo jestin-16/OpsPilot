@@ -288,28 +288,28 @@ export const LogViewer: React.FC<LogViewerProps> = ({
     switch (lvl) {
       case 'ERROR':
       case 'FATAL':
-        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">ERR</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-rose-500/20 text-rose-700 border border-rose-500/30">ERR</span>;
       case 'WARN':
       case 'WARNING':
-        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">WRN</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-500/20 text-amber-700 border border-amber-500/30">WRN</span>;
       case 'DEBUG':
-        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">DBG</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-blue-500/20 text-blue-700 border border-blue-500/30">DBG</span>;
       case 'TRACE':
-        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">TRC</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-purple-500/20 text-purple-700 border border-purple-500/30">TRC</span>;
       default:
-        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-500/20 text-slate-300 border border-slate-500/30">INF</span>;
+        return <span className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-slate-500/20 text-op-muted border border-slate-500/30">INF</span>;
     }
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0B0D13] text-slate-100 rounded-xl border border-white/10 shadow-2xl overflow-hidden font-mono">
+    <div className="flex flex-col h-full bg-op-surface text-op-fg rounded-xl border border-op-border shadow-2xl overflow-hidden font-mono">
       {/* Top Header & Controls Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#11141E] border-b border-white/10 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-op-surface border-b border-op-border text-xs">
         {/* Left: Pod & Container Selectors */}
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-            <Terminal className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span className="font-semibold text-slate-200">Pod:</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-op-raised/50 border border-op-border text-op-muted">
+            <Terminal className="w-4 h-4 text-emerald-700 shrink-0" />
+            <span className="font-semibold text-op-fg">Pod:</span>
             <select
               value={selectedPod}
               onChange={(e) => {
@@ -321,26 +321,26 @@ export const LogViewer: React.FC<LogViewerProps> = ({
                 }
                 setLogs([]);
               }}
-              className="bg-transparent border-none text-emerald-400 focus:outline-none cursor-pointer max-w-[200px] truncate"
+              className="bg-transparent border-none text-emerald-700 focus:outline-none cursor-pointer max-w-[200px] truncate"
             >
               {pods.map(p => (
-                <option key={`${p.namespace}/${p.name}`} value={p.name} className="bg-[#11141E] text-slate-200">
+                <option key={`${p.namespace}/${p.name}`} value={p.name} className="bg-op-surface text-op-fg">
                   {p.name} ({p.status})
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-300">
-            <span className="text-slate-400">Container:</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-op-raised/50 border border-op-border text-op-muted">
+            <span className="text-op-muted">Container:</span>
             <select
               value={selectedContainer}
               onChange={(e) => setSelectedContainer(e.target.value)}
-              className="bg-transparent border-none text-cyan-400 focus:outline-none cursor-pointer max-w-[140px] truncate"
+              className="bg-transparent border-none text-cyan-700 focus:outline-none cursor-pointer max-w-[140px] truncate"
             >
-              <option value="ALL" className="bg-[#11141E] text-slate-200">ALL</option>
+              <option value="ALL" className="bg-op-surface text-op-fg">ALL</option>
               {availableContainers.map(c => (
-                <option key={c} value={c} className="bg-[#11141E] text-slate-200">{c}</option>
+                <option key={c} value={c} className="bg-op-surface text-op-fg">{c}</option>
               ))}
             </select>
           </div>
@@ -348,13 +348,13 @@ export const LogViewer: React.FC<LogViewerProps> = ({
           {/* Connection State Badge */}
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[11px] font-sans">
             {connectionState === 'connected' && (
-              <span className="flex items-center gap-1.5 text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+              <span className="flex items-center gap-1.5 text-emerald-700 border-emerald-500/30 bg-emerald-500/10">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 Live Stream
               </span>
             )}
             {connectionState === 'reconnecting' && (
-              <span className="flex items-center gap-1.5 text-amber-400 border-amber-500/30 bg-amber-500/10">
+              <span className="flex items-center gap-1.5 text-amber-700 border-amber-500/30 bg-amber-500/10">
                 <RefreshCw className="w-3 h-3 animate-spin" />
                 Reconnecting ({reconnectAttempts})
               </span>
@@ -362,7 +362,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
             {connectionState === 'lost' && (
               <button
                 onClick={connectSSE}
-                className="flex items-center gap-1.5 text-rose-400 hover:text-rose-300 transition-colors"
+                className="flex items-center gap-1.5 text-rose-700 hover:text-rose-700 transition-colors"
                 title="Click to reconnect"
               >
                 <WifiOff className="w-3 h-3" />
@@ -371,7 +371,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
             )}
           </div>
           {watcherMessage && (
-            <span role="status" className="max-w-[340px] text-[11px] text-amber-300" title={watcherMessage}>
+            <span role="status" className="max-w-[340px] text-[11px] text-amber-700" title={watcherMessage}>
               {watcherMessage}
             </span>
           )}
@@ -384,8 +384,8 @@ export const LogViewer: React.FC<LogViewerProps> = ({
             onClick={() => setIsFollowing(f => !f)}
             className={`flex items-center gap-1 px-2.5 py-1 rounded border text-xs font-sans transition-colors ${
               isFollowing
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                ? 'bg-emerald-500/20 text-emerald-700 border-emerald-500/40 hover:bg-emerald-500/30'
+                : 'bg-op-raised/50 text-op-muted border-op-border hover:bg-op-raised'
             }`}
             title={isFollowing ? "Stop following stream" : "Start following stream"}
           >
@@ -397,8 +397,8 @@ export const LogViewer: React.FC<LogViewerProps> = ({
             onClick={() => setIsPaused(p => !p)}
             className={`flex items-center gap-1 px-2.5 py-1 rounded border text-xs font-sans transition-colors ${
               isPaused
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
-                : 'bg-white/5 text-slate-300 border-white/10 hover:bg-white/10'
+                ? 'bg-amber-500/20 text-amber-700 border-amber-500/40 hover:bg-amber-500/30'
+                : 'bg-op-raised/50 text-op-muted border-op-border hover:bg-op-raised'
             }`}
             title={isPaused ? "Resume Live Stream" : "Pause Live Stream"}
           >
@@ -417,8 +417,8 @@ export const LogViewer: React.FC<LogViewerProps> = ({
             }}
             className={`flex items-center gap-1 px-2.5 py-1 rounded border text-xs font-sans transition-colors ${
               autoScroll
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                : 'bg-white/5 text-slate-400 border-white/10 hover:bg-white/10'
+                ? 'bg-cyan-500/20 text-cyan-700 border-cyan-500/40'
+                : 'bg-op-raised/50 text-op-muted border-op-border hover:bg-op-raised'
             }`}
             title="Auto-scroll to newest line"
           >
@@ -430,7 +430,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
           <button
             onClick={handleDownload}
             disabled={logs.length === 0}
-            className="p-1.5 rounded border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white disabled:opacity-40 transition-colors"
+            className="p-1.5 rounded border border-op-border bg-op-raised/50 text-op-muted hover:bg-op-raised hover:text-op-fg disabled:opacity-40 transition-colors"
             title="Download Logs as .txt"
           >
             <Download className="w-3.5 h-3.5" />
@@ -439,7 +439,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
           {/* Clear Logs */}
           <button
             onClick={handleClear}
-            className="p-1.5 rounded border border-white/10 bg-white/5 text-slate-300 hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-500/30 transition-colors"
+            className="p-1.5 rounded border border-op-border bg-op-raised/50 text-op-muted hover:bg-rose-500/20 hover:text-rose-700 hover:border-rose-500/30 transition-colors"
             title="Clear buffer"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -448,22 +448,22 @@ export const LogViewer: React.FC<LogViewerProps> = ({
       </div>
 
       {/* Second Toolbar: Search & Level Filter */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 bg-[#0E1119] border-b border-white/5 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2 bg-op-raised border-b border-op-border text-xs">
         {/* Search Input */}
         <div className="flex items-center gap-2 flex-1 max-w-md">
           <div className="relative w-full">
-            <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-op-subtle absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search logs... (case-insensitive)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#151926] border border-white/10 rounded-md pl-8 pr-16 py-1 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+              className="w-full bg-op-raised border border-op-border rounded-md pl-8 pr-16 py-1 text-xs text-op-fg placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
             />
             <button
               onClick={() => setIsRegex(r => !r)}
               className={`absolute right-2 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] rounded border font-mono transition-colors ${
-                isRegex ? 'bg-cyan-500/30 text-cyan-300 border-cyan-500/50' : 'bg-transparent text-slate-500 border-white/10'
+                isRegex ? 'bg-cyan-500/30 text-cyan-700 border-cyan-500/50' : 'bg-transparent text-op-subtle border-op-border'
               }`}
               title="Toggle Regex mode"
             >
@@ -471,7 +471,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
             </button>
           </div>
           {searchQuery && (
-            <span className="text-[11px] text-slate-400 shrink-0">
+            <span className="text-[11px] text-op-muted shrink-0">
               {filteredLogs.length} matches
             </span>
           )}
@@ -479,15 +479,15 @@ export const LogViewer: React.FC<LogViewerProps> = ({
 
         {/* Level Filters */}
         <div className="flex items-center gap-1 text-[11px] font-sans">
-          <Filter className="w-3 h-3 text-slate-500 mr-1" />
+          <Filter className="w-3 h-3 text-op-subtle mr-1" />
           {['ALL', 'ERROR', 'WARN', 'INFO', 'DEBUG'].map((lvl) => (
             <button
               key={lvl}
               onClick={() => setLevelFilter(lvl)}
               className={`px-2 py-0.5 rounded transition-colors ${
                 levelFilter === lvl
-                  ? 'bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  ? 'bg-cyan-500/20 text-cyan-700 font-semibold border border-cyan-500/40'
+                  : 'text-op-muted hover:text-op-fg hover:bg-op-raised/50'
               }`}
             >
               {lvl}
@@ -496,7 +496,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
         </div>
 
         {/* Total lines count */}
-        <div className="text-[11px] text-slate-400 font-mono">
+        <div className="text-[11px] text-op-muted font-mono">
           <span>{filteredLogs.length}</span>
           <span className="text-slate-600"> / {logs.length} lines</span>
         </div>
@@ -506,12 +506,12 @@ export const LogViewer: React.FC<LogViewerProps> = ({
       <div
         ref={viewportRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto bg-[#07090E] p-2 relative select-text"
+        className="flex-1 overflow-y-auto bg-op-canvas p-2 relative select-text"
         style={{ minHeight: '380px' }}
       >
         {filteredLogs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 py-20 font-sans">
-            <Terminal className="w-10 h-10 mb-2 opacity-30 text-cyan-400" />
+          <div className="flex flex-col items-center justify-center h-full text-op-subtle py-20 font-sans">
+            <Terminal className="w-10 h-10 mb-2 opacity-30 text-cyan-700" />
             <p className="text-sm font-medium">No log entries found</p>
             <p className="text-xs text-slate-600 mt-1">
               {isPaused ? 'Streaming is paused.' : 'Waiting for incoming Kubernetes container output...'}
@@ -536,12 +536,12 @@ export const LogViewer: React.FC<LogViewerProps> = ({
                 return (
                   <div
                     key={`${actualIndex}-${log.timestamp}`}
-                    className={`flex items-center gap-2.5 px-2 text-[12px] leading-[28px] h-[28px] whitespace-nowrap overflow-hidden text-ellipsis border-b border-white/[0.02] hover:bg-white/[0.04] transition-colors ${
-                      isError ? 'bg-rose-950/20 text-rose-200' : isWarn ? 'bg-amber-950/20 text-amber-200' : 'text-slate-300'
+                    className={`flex items-center gap-2.5 px-2 text-[12px] leading-[28px] h-[28px] whitespace-nowrap overflow-hidden text-ellipsis border-b border-white/[0.02] hover:bg-op-sage-soft transition-colors ${
+                      isError ? 'bg-rose-950/20 text-rose-700' : isWarn ? 'bg-amber-950/20 text-amber-700' : 'text-op-muted'
                     }`}
                   >
                     {/* Timestamp */}
-                    <span className="text-slate-500 text-[11px] shrink-0 font-mono select-none">
+                    <span className="text-op-subtle text-[11px] shrink-0 font-mono select-none">
                       {log.timestamp ? log.timestamp.split('T')[1]?.replace('Z', '') || log.timestamp : '-'}
                     </span>
 
@@ -549,12 +549,12 @@ export const LogViewer: React.FC<LogViewerProps> = ({
                     <span className="shrink-0">{getLevelBadge(log.level)}</span>
 
                     {/* Container badge */}
-                    <span className="text-cyan-400/80 text-[11px] shrink-0 max-w-[100px] truncate select-none">
+                    <span className="text-cyan-700/80 text-[11px] shrink-0 max-w-[100px] truncate select-none">
                       [{log.container}]
                     </span>
 
                     {/* Log Message */}
-                    <span className="font-mono text-slate-200 truncate flex-1" title={log.message}>
+                    <span className="font-mono text-op-fg truncate flex-1" title={log.message}>
                       {log.message}
                     </span>
                   </div>
@@ -566,15 +566,15 @@ export const LogViewer: React.FC<LogViewerProps> = ({
       </div>
 
       {/* Bottom Status Footer */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[#0B0D13] border-t border-white/5 text-[11px] text-slate-500 font-sans">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-op-surface border-t border-op-border text-[11px] text-op-subtle font-sans">
         <div className="flex items-center gap-3">
-          <span>Namespace: <strong className="text-slate-400 font-mono">{selectedNamespace}</strong></span>
-          <span>Pod: <strong className="text-slate-400 font-mono">{selectedPod || 'None'}</strong></span>
+          <span>Namespace: <strong className="text-op-muted font-mono">{selectedNamespace}</strong></span>
+          <span>Pod: <strong className="text-op-muted font-mono">{selectedPod || 'None'}</strong></span>
         </div>
         <div className="flex items-center gap-2">
-          <span>Buffer: <strong className="text-emerald-400 font-mono">{logs.length}</strong> / 10,000</span>
+          <span>Buffer: <strong className="text-emerald-700 font-mono">{logs.length}</strong> / 10,000</span>
           <span>•</span>
-          <span>Rendering: <strong className="text-cyan-400 font-mono">{visibleItems.length}</strong> DOM nodes</span>
+          <span>Rendering: <strong className="text-cyan-700 font-mono">{visibleItems.length}</strong> DOM nodes</span>
         </div>
       </div>
     </div>

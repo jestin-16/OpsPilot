@@ -37,9 +37,9 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
 
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
-      <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 bg-[#242528]/30 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
       <div 
-        className={`relative z-10 w-full ${sizeClasses[size]} bg-op-surface rounded-2xl shadow-2xl border border-op-border overflow-hidden flex flex-col max-h-[90vh] animate-fade-in-up`}
+        className={`relative z-10 w-full ${sizeClasses[size]} bg-op-surface rounded-3xl shadow-xl border border-op-border overflow-hidden flex flex-col max-h-[90vh] animate-fade-in-up`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"

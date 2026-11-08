@@ -3,8 +3,6 @@
    White page surfaces with dark typography and restrained status accents
    ========================================================================= */
 
-@import "tailwindcss";
-
 html:has(.landing-root) {
   scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;

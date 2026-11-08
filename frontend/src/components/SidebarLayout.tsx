@@ -26,7 +26,10 @@ import {
   Gauge,
   KeyRound,
   Eye,
+  ChevronRight,
 } from 'lucide-react';
+import { OpsPilotLogo } from './OpsPilotLogo';
+import '../styles/dashboard.css';
 import { canAccessRole } from '../utils/roles';
 import { useProject } from '../context/ProjectContext';
 import { ProjectSwitcher } from './project/ProjectSwitcher';
@@ -198,8 +201,13 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   ], [pid, currentProject, projectIntegrations, unreadCount]);
 
+  const activePage = navGroups.flatMap(group => group.items)
+    .filter(item => isItemActive(item.path, location.pathname))
+    .sort((a, b) => b.path.length - a.path.length)[0]?.name ?? 'Workspace';
+
   return (
-    <div className="flex h-screen overflow-hidden bg-op-canvas text-op-fg dark:bg-slate-950 dark:text-slate-100 font-sans">
+    <div className="dashboard-shell flex h-dvh overflow-hidden bg-op-canvas text-op-fg font-sans">
+      <a href="#dashboard-content" className="dashboard-skip-link">Skip to content</a>
       {mobileNavOpen && (
         <button 
           type="button" 
@@ -209,26 +217,15 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
         />
       )}
       
-      <aside className={`fixed inset-y-3 left-3 z-40 flex w-[min(84vw,256px)] flex-col justify-between overflow-hidden rounded-2xl border border-op-border bg-op-surface dark:bg-slate-900/95 dark:border-slate-800 shadow-xl backdrop-blur-2xl transition-transform duration-200 md:relative md:inset-auto md:z-10 md:m-3 md:w-[256px] md:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)] md:translate-x-0'}`}>
+      <aside id="dashboard-navigation" aria-label="Workspace navigation" className={`dashboard-sidebar fixed inset-y-3 left-3 z-40 flex w-[min(86vw,248px)] shrink-0 flex-col justify-between rounded-3xl border border-op-border bg-op-surface transition-transform duration-200 md:relative md:inset-auto md:z-20 md:m-4 md:mr-0 md:w-[232px] md:translate-x-0 ${mobileNavOpen ? 'translate-x-0' : '-translate-x-[calc(100%+1rem)] md:translate-x-0'}`}>
         
         {/* Top Header Deck (Logo & Switcher) */}
-        <div className="shrink-0 z-20 bg-op-surface dark:bg-slate-900 border-b border-op-border dark:border-slate-800/80">
+        <div className="shrink-0 z-20 border-b border-op-border">
           {/* Logo Brand Header */}
-          <div className="flex items-center px-4 py-3 gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center shadow-xs border border-slate-200/80 overflow-hidden shrink-0 transform transition-transform hover:scale-105">
-              <img src="/opspilot-logo.png" alt="OpsPilot Logo" className="w-full h-full object-cover scale-[1.2]" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-[17px] tracking-tight text-op-fg dark:text-white">
-                  OpsPilot
-                </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="System operational" />
-              </div>
-              <span className="text-[9px] font-bold tracking-[0.16em] block text-op-muted uppercase">
-                Operations Platform
-              </span>
-            </div>
+          <div className="flex items-center px-5 py-6 gap-3">
+            <Link to="/dashboard" aria-label="OpsPilot dashboard" className="flex-1 min-w-0">
+              <OpsPilotLogo size={34} showWordmark />
+            </Link>
             <button 
               type="button" 
               aria-label="Close navigation" 
@@ -244,7 +241,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
         </div>
 
         {/* Scrollable Navigation Items */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-5 [scrollbar-width:thin] [scrollbar-color:#e2e8f0_transparent] dark:[scrollbar-color:#334155_transparent]">
+        <div className="dashboard-nav-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-5">
           <nav className="space-y-5">
             {navGroups.map((group) => {
               const groupItems = group.items.filter((item) => canAccessRole(user?.roles, [...item.roles]));
@@ -254,7 +251,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
               return (
                 <div key={group.title} className="space-y-1">
                   <div className="flex items-center justify-between px-2 mb-1.5">
-                    <span className="text-[9px] font-extrabold text-op-muted uppercase tracking-[0.16em] truncate">
+                    <span className="text-[9px] font-medium text-op-muted uppercase tracking-[0.13em] truncate">
                       {group.title}
                     </span>
                     {group.badge && (
@@ -272,15 +269,16 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                         <Link
                           key={item.name}
                           to={item.path}
-                          className={`group flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-150 active:scale-[0.98] ${
+                          aria-current={isActive ? 'page' : undefined}
+                          className={`dashboard-nav-link group flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-colors duration-150 ${
                             isActive
-                              ? 'bg-op-accent/10 text-op-accent border border-op-accent/25 font-bold shadow-xs dark:bg-op-accent/15 dark:text-op-accent'
-                              : 'text-op-muted hover:bg-op-raised hover:text-op-fg dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800/60'
+                              ? 'bg-op-sage-soft text-op-sage'
+                              : 'text-op-muted hover:bg-op-raised hover:text-op-fg'
                           }`}
                         >
                           <Icon className={`w-4 h-4 shrink-0 transition-transform duration-150 ${
                             isActive
-                              ? 'text-op-accent'
+                              ? 'text-op-sage'
                               : 'text-op-muted group-hover:text-op-fg group-hover:scale-105'
                           }`} />
                           <span className="truncate flex-1">{item.name}</span>
@@ -296,7 +294,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
                           )}
 
                           {isActive && !item.badge && (
-                            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-op-accent" />
+                            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-op-sage" />
                           )}
                         </Link>
                       );
@@ -309,7 +307,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
         </div>
 
         {/* User Profile Footer */}
-        <div className="p-3 border-t border-op-border dark:border-slate-800/80 bg-op-surface dark:bg-slate-900 shrink-0">
+        <div className="p-3 border-t border-op-border shrink-0">
           <div className="flex items-center justify-between p-2 rounded-xl bg-op-raised/50 border border-op-border dark:border-slate-800 hover:bg-op-raised transition-colors">
             <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
               <div className="w-8 h-8 rounded-full bg-op-accent text-white flex items-center justify-center shrink-0 text-xs font-bold shadow-xs">
@@ -331,6 +329,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
               onClick={handleLogout}
               className="p-1.5 rounded-lg text-op-muted hover:text-rose-600 hover:bg-rose-500/10 transition-colors shrink-0 ml-1"
               title="Log out"
+              aria-label="Log out"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -339,26 +338,26 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
       </aside>
 
       {/* Main Content Viewport */}
-      <main className="relative flex-1 overflow-y-auto">
-        <div className="mx-auto min-h-full w-full max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
-          {/* Mobile Top Bar */}
-          <div className="mb-4 flex items-center justify-between gap-3 md:hidden rounded-2xl border border-op-border bg-op-surface p-3 shadow-xs">
-            <div className="flex items-center gap-3">
-              <button 
-                type="button" 
-                aria-label="Open navigation" 
-                onClick={() => setMobileNavOpen(true)} 
-                className="rounded-xl border border-op-border bg-op-raised p-2 text-op-fg hover:bg-op-surface transition-colors"
-              >
+      <main id="dashboard-content" tabIndex={-1} className="dashboard-main relative min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto min-h-full w-full max-w-[1600px] px-4 pb-8 pt-4 sm:px-6 lg:px-9">
+          <header className="dashboard-topbar mb-8 flex min-h-14 items-center justify-between gap-3 rounded-full border border-op-border bg-op-surface px-4 sm:px-5">
+            <div className="flex min-w-0 items-center gap-3">
+              <button type="button" aria-label="Open navigation" aria-expanded={mobileNavOpen} aria-controls="dashboard-navigation" onClick={() => setMobileNavOpen(true)} className="rounded-full p-2 text-op-muted hover:bg-op-raised md:hidden">
                 <Menu className="h-4 w-4" />
               </button>
-              <span className="font-extrabold text-sm tracking-tight text-op-fg">OPSPILOT</span>
+              <span className="hidden text-xs text-op-muted sm:inline">Workspace</span>
+              <ChevronRight className="hidden h-3 w-3 text-op-subtle sm:block" />
+              <span className="truncate text-xs font-medium">{activePage}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-semibold text-op-muted">Online</span>
+            <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+              <Link to="/guide" className="hidden items-center gap-1.5 text-xs text-op-muted hover:text-op-fg sm:flex"><BookOpen className="h-3.5 w-3.5" /> Guide</Link>
+              <Link to="/notifications" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ''}`} className="relative rounded-full p-2 text-op-muted hover:bg-op-raised">
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />}
+              </Link>
+              <Link to="/profile" aria-label="Your profile" className="flex h-8 w-8 items-center justify-center rounded-full bg-op-sage-soft text-xs font-semibold text-op-sage">{(user?.name || user?.email || 'U').charAt(0).toUpperCase()}</Link>
             </div>
-          </div>
+          </header>
 
           {/* Active Scoped Project Notice */}
           {pid != null && SCOPED_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`)) && (
@@ -376,7 +375,7 @@ export const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ childre
             </div>
           )}
 
-          {children}
+          <div className="dashboard-page">{children}</div>
         </div>
       </main>
     </div>

@@ -39,12 +39,12 @@ export const Input: React.FC<InputProps> = ({
           type={inputType}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${inputId}-error` : undefined}
-          className={`w-full bg-op-input text-op-fg text-sm rounded-lg border ${
+          className={`w-full bg-op-input text-op-fg text-sm rounded-xl border ${
             error ? 'border-op-danger focus:border-op-danger' : 'border-op-border-strong focus:border-op-accent'
           } ${
             icon ? 'pl-9' : 'pl-3'
           } ${isPasswordType ? 'pr-10' : 'pr-3'} py-2.5 outline-none focus:ring-2 ${
-            error ? 'focus:ring-op-danger/40' : 'focus:ring-op-accent/40'
+            error ? 'focus:ring-op-danger/20' : 'focus:ring-op-sage/20'
           } placeholder-op-subtle transition-all font-medium ${className}`}
           {...props}
         />

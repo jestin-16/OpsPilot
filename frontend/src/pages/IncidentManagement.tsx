@@ -93,11 +93,11 @@ export const IncidentManagement: React.FC = () => {
   
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'OPEN': return 'bg-rose-500/20 text-rose-400 border-rose-500/30';
-      case 'INVESTIGATING': return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
-      case 'MITIGATED': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
-      case 'RESOLVED': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      default: return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
+      case 'OPEN': return 'bg-rose-500/20 text-rose-700 border-rose-500/30';
+      case 'INVESTIGATING': return 'bg-amber-500/20 text-amber-700 border-amber-500/30';
+      case 'MITIGATED': return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
+      case 'RESOLVED': return 'bg-emerald-500/20 text-emerald-700 border-emerald-500/30';
+      default: return 'bg-slate-500/20 text-op-muted border-slate-500/30';
     }
   };
 
@@ -178,7 +178,7 @@ export const IncidentManagement: React.FC = () => {
                             <span>•</span>
                             <span>{new Date(incident.createdAt).toLocaleString()}</span>
                             <span>•</span>
-                            <span className="font-bold text-slate-300">{incident.project?.projectName}</span>
+                            <span className="font-bold text-op-muted">{incident.project?.projectName}</span>
                             {incident.affectedService && (
                               <>
                                 <span>•</span>
@@ -201,14 +201,14 @@ export const IncidentManagement: React.FC = () => {
         </div>
 
         {/* Detail Sidebar */}
-        <div className={`fixed right-0 top-16 bottom-0 w-[400px] bg-[#121214] border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedIncident ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col text-op-fg`}>
+        <div className={`fixed right-0 top-16 bottom-0 w-full max-w-[400px] bg-op-surface border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedIncident ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col text-op-fg`}>
           {selectedIncident && (
             <>
-              <div className="flex items-center justify-between p-5 border-b border-white/10 sticky top-0 bg-[#121214] z-10">
+              <div className="flex items-center justify-between p-5 border-b border-op-border sticky top-0 bg-op-surface z-10">
                 <h3 className="text-lg font-bold flex items-center gap-2">
                   Incident #{selectedIncident.id}
                 </h3>
-                <button onClick={() => setSelectedIncident(null)} className="p-1.5 hover:bg-white/10 rounded-lg text-op-muted transition-colors">
+                <button onClick={() => setSelectedIncident(null)} className="p-1.5 hover:bg-op-raised rounded-lg text-op-muted transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -222,13 +222,13 @@ export const IncidentManagement: React.FC = () => {
                     <span className={`px-2 py-1 rounded text-xs font-bold border ${getStatusColor(selectedIncident.status)}`}>
                       {selectedIncident.status}
                     </span>
-                    <span className="px-2 py-1 rounded text-xs font-bold bg-slate-800 border border-slate-700 text-slate-300">
+                    <span className="px-2 py-1 rounded text-xs font-bold bg-op-raised border border-op-border text-op-muted">
                       Severity: {selectedIncident.severity}
                     </span>
                   </div>
                 </div>
 
-                <div className="bg-black/30 p-4 rounded-xl border border-white/5 space-y-3 text-sm">
+                <div className="bg-op-raised p-4 rounded-xl border border-op-border space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-op-muted">Project</span>
                     <span className="font-bold">{selectedIncident.project?.projectName}</span>
@@ -244,14 +244,14 @@ export const IncidentManagement: React.FC = () => {
                   {selectedIncident.resolvedAt && (
                     <div className="flex justify-between">
                       <span className="text-op-muted">Resolved</span>
-                      <span className="text-emerald-400">{new Date(selectedIncident.resolvedAt).toLocaleString()}</span>
+                      <span className="text-emerald-700">{new Date(selectedIncident.resolvedAt).toLocaleString()}</span>
                     </div>
                   )}
                 </div>
 
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-2">Description</h4>
-                  <div className="bg-op-raised/50 p-4 rounded-lg text-sm border border-op-border text-slate-300 whitespace-pre-wrap">
+                  <div className="bg-op-raised/50 p-4 rounded-lg text-sm border border-op-border text-op-muted whitespace-pre-wrap">
                     {selectedIncident.description || 'No description provided.'}
                   </div>
                 </div>
@@ -270,7 +270,7 @@ export const IncidentManagement: React.FC = () => {
                         </div>
                       )}
                       {selectedIncident.relatedDeployment && (
-                        <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 text-sm">
+                        <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-700 text-sm">
                           <Rocket className="w-5 h-5" />
                           <div>
                             <div className="font-bold">Deployment #{selectedIncident.relatedDeployment.id}</div>
@@ -285,13 +285,13 @@ export const IncidentManagement: React.FC = () => {
                 <div className="pt-4 border-t border-op-border">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3">Update Status</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    <button onClick={() => handleUpdateStatus(selectedIncident.id, 'INVESTIGATING')} className="px-3 py-2 bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-sm font-bold transition-colors">
+                    <button onClick={() => handleUpdateStatus(selectedIncident.id, 'INVESTIGATING')} className="px-3 py-2 bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 border border-amber-500/30 rounded-lg text-sm font-bold transition-colors">
                       Investigating
                     </button>
-                    <button onClick={() => handleUpdateStatus(selectedIncident.id, 'MITIGATED')} className="px-3 py-2 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-sm font-bold transition-colors">
+                    <button onClick={() => handleUpdateStatus(selectedIncident.id, 'MITIGATED')} className="px-3 py-2 bg-blue-500/20 text-blue-700 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-sm font-bold transition-colors">
                       Mitigated
                     </button>
-                    <button onClick={() => handleUpdateStatus(selectedIncident.id, 'RESOLVED')} className="px-3 py-2 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg text-sm font-bold transition-colors col-span-2">
+                    <button onClick={() => handleUpdateStatus(selectedIncident.id, 'RESOLVED')} className="px-3 py-2 bg-emerald-500/20 text-emerald-700 hover:bg-emerald-500/30 border border-emerald-500/30 rounded-lg text-sm font-bold transition-colors col-span-2">
                       Mark as Resolved
                     </button>
                   </div>

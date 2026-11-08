@@ -8,8 +8,7 @@ import {
   FolderGit2,
   Blocks,
   ShieldAlert,
-  Clock,
-  LayoutDashboard
+  Clock
 } from 'lucide-react';
 
 import { Card } from '../components/Card';
@@ -42,26 +41,22 @@ export const AdminDashboard: React.FC = () => {
     <SidebarLayout>
       <div className="space-y-6 pb-12">
         {/* Header */}
-        <div className="relative overflow-hidden rounded-3xl border border-op-border bg-gradient-to-br from-op-surface via-op-surface to-op-raised p-6 lg:p-8 shadow-xs">
+        <div className="dashboard-intro">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-op-accent/20 bg-op-accent/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-op-accent">
-                  Admin Platform
-                </span>
-              </div>
+              <div className="dashboard-eyebrow">Your platform, at a glance</div>
               <h1 className="text-3xl font-black tracking-tight text-op-fg flex items-center gap-3">
-                <LayoutDashboard className="w-7 h-7 text-op-accent" /> Welcome Back, {user?.name || 'Administrator'}
+                Dashboard overview
               </h1>
               <p className="text-sm font-medium mt-1 text-op-muted">
-                Platform administration, governance, and audit telemetry.
+                Welcome back, {user?.name || 'Administrator'}. Your people, projects, and platform activity in one place.
               </p>
             </div>
           </div>
         </div>
 
         {/* Highlights Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="dashboard-metrics grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
           <HighlightCard icon={Users} label="Total Users" value={overview?.userCount.toString() || '...'} loading={loading} />
           <HighlightCard icon={UserCheck} label="Active Users" value={overview?.activeUserCount.toString() || '...'} loading={loading} />
           <HighlightCard icon={FolderGit2} label="Projects" value={overview?.projectCount.toString() || '...'} loading={loading} />
@@ -70,7 +65,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Audit Logs Table */}
-        <Card className="p-0 overflow-hidden flex flex-col mt-8 border-none">
+        <Card className="p-0 overflow-hidden flex flex-col mt-8">
           <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Recent Platform Activity
@@ -130,14 +125,14 @@ export const AdminDashboard: React.FC = () => {
 };
 
 const HighlightCard: React.FC<{ icon: React.ElementType; label: string; value: string; loading: boolean }> = ({ icon: Icon, label, value, loading }) => (
-  <Card hoverEffect className="relative overflow-hidden group p-6 border-none bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700">
-    <div className="flex justify-between items-start">
-      <div className="w-11 h-11 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+  <Card hoverEffect className="relative overflow-hidden group">
+    <div className="flex justify-between items-center gap-2 mb-6">
+      <span className="text-xs text-op-muted">{label}</span>
+      <div className="dashboard-metric-icon shrink-0">
         <Icon className="w-5 h-5" />
       </div>
     </div>
-    <h3 className="font-semibold text-xs mt-5 text-gray-500 dark:text-gray-400 uppercase tracking-wider">{label}</h3>
-    <p className="text-3xl font-bold mt-1.5 text-gray-900 dark:text-white">
+    <p className="text-3xl font-medium text-op-fg">
       {loading ? <span className="animate-pulse">...</span> : value}
     </p>
   </Card>

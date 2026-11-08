@@ -152,19 +152,19 @@ export const DeploymentDetail: React.FC = () => {
           <div className="lg:col-span-2 space-y-4">
             <h3 className="text-lg font-bold text-op-fg">Project logs around this deployment</h3>
             <p className="text-xs text-op-muted -mt-2">From 5 minutes before to 15 minutes after it was deployed.</p>
-            <Card className="p-0 overflow-hidden bg-[#1E1E1E] border-none shadow-xl">
-              <div className="bg-[#2D2D2D] px-4 py-3 flex items-center gap-2 border-b border-[#404040]">
-                <Terminal className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-semibold text-slate-200">Logs</span>
+            <Card className="p-0 overflow-hidden bg-op-surface border-none shadow-xl">
+              <div className="bg-op-raised px-4 py-3 flex items-center gap-2 border-b border-op-border">
+                <Terminal className="w-4 h-4 text-op-muted" />
+                <span className="text-sm font-semibold text-op-fg">Logs</span>
               </div>
               <div className="p-6 text-sm font-mono overflow-x-auto whitespace-pre-wrap max-h-[500px] overflow-y-auto leading-relaxed flex flex-col gap-1">
                 {logs.length > 0 ? logs.map(l => (
                   <div key={l.logId} className="flex gap-4">
-                    <span className="text-slate-500 shrink-0">{new Date(l.timestamp).toLocaleTimeString()}</span>
-                    <span className="text-slate-400 shrink-0">[{l.sourceService}]</span>
-                    <span className={l.logLevel === 'ERROR' ? 'text-rose-400' : l.logLevel === 'WARN' ? 'text-amber-300' : 'text-slate-300'}>{l.message}</span>
+                    <span className="text-op-subtle shrink-0">{new Date(l.timestamp).toLocaleTimeString()}</span>
+                    <span className="text-op-muted shrink-0">[{l.sourceService}]</span>
+                    <span className={l.logLevel === 'ERROR' ? 'text-rose-700' : l.logLevel === 'WARN' ? 'text-amber-700' : 'text-op-muted'}>{l.message}</span>
                   </div>
-                )) : <span className="text-slate-500 italic">No logs from this project around the deployment.</span>}
+                )) : <span className="text-op-subtle italic">No logs from this project around the deployment.</span>}
               </div>
             </Card>
           </div>

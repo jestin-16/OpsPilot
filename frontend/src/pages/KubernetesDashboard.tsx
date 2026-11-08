@@ -132,7 +132,7 @@ export const KubernetesDashboard: React.FC = () => {
     if (s === 'running' || s === 'ready' || s === 'active') return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
     if (s === 'failed' || s === 'notready' || s === 'error') return 'bg-rose-500/10 text-rose-500 border-rose-500/20';
     if (s === 'pending') return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-    return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
+    return 'bg-slate-500/10 text-op-subtle border-slate-500/20';
   };
 
   return (
@@ -154,7 +154,7 @@ export const KubernetesDashboard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Link
                   to="/kubernetes/logs"
-                  className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-700 border border-cyan-500/30 text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Terminal className="w-4 h-4" /> Open live pod logs
                 </Link>
@@ -240,10 +240,10 @@ export const KubernetesDashboard: React.FC = () => {
                     </div>
 
                     {overview.status === 'Disabled' && (
-                      <div className="p-5 rounded-xl border border-white/10 bg-white/5 text-slate-300 text-sm flex items-start gap-3">
-                        <Server className="w-5 h-5 shrink-0 mt-0.5 text-slate-400" />
+                      <div className="p-5 rounded-xl border border-op-border bg-op-raised/50 text-op-muted text-sm flex items-start gap-3">
+                        <Server className="w-5 h-5 shrink-0 mt-0.5 text-op-muted" />
                         <div>
-                          <div className="font-semibold text-slate-200">Kubernetes Integration Disabled</div>
+                          <div className="font-semibold text-op-fg">Kubernetes Integration Disabled</div>
                           <p className="text-xs text-op-muted mt-1 leading-relaxed">
                             {overview.message ?? 'Kubernetes monitoring is disabled.'} To enable Kubernetes monitoring, set <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">KUBERNETES_ENABLED=true</code> in your <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">.env</code> file.
                           </p>
@@ -252,10 +252,10 @@ export const KubernetesDashboard: React.FC = () => {
                     )}
 
                     {overview.status === 'Disconnected' && (
-                      <div className="p-5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-400" />
+                      <div className="p-5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-sm flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-700" />
                         <div>
-                          <div className="font-semibold text-amber-200">Kubernetes Cluster Disconnected</div>
+                          <div className="font-semibold text-amber-700">Kubernetes Cluster Disconnected</div>
                           <p className="text-xs text-op-muted mt-1 leading-relaxed">
                             {overview.message ?? 'OpsPilot cannot reach the Kubernetes API.'} Configure a kubeconfig or set <code className="px-1.5 py-0.5 bg-op-raised text-op-fg rounded border border-op-border text-[11px]">KUBERNETES_MASTER</code> to an endpoint reachable from the core-service container.
                           </p>
@@ -418,17 +418,17 @@ export const KubernetesDashboard: React.FC = () => {
         </div>
 
         {/* Pod Details Sidebar */}
-        <div className={`fixed right-0 top-16 bottom-0 w-[500px] bg-[#121214] border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedPod ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col text-op-fg`}>
+        <div className={`fixed right-0 top-16 bottom-0 w-full max-w-[500px] bg-op-surface border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedPod ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col text-op-fg`}>
           {selectedPod && (
             <>
-              <div className="flex items-center justify-between p-5 border-b border-white/10 sticky top-0 bg-[#121214] z-10">
+              <div className="flex items-center justify-between p-5 border-b border-op-border sticky top-0 bg-op-surface z-10">
                 <div>
                   <h3 className="text-lg font-bold flex items-center gap-2">
                     <Box className="w-5 h-5 text-op-accent" /> {selectedPod.name}
                   </h3>
                   <div className="text-xs text-op-muted mt-1 font-mono">{selectedPod.namespace}</div>
                 </div>
-                <button onClick={() => setSelectedPod(null)} className="p-1.5 hover:bg-white/10 rounded-lg text-op-muted transition-colors">
+                <button onClick={() => setSelectedPod(null)} className="p-1.5 hover:bg-op-raised rounded-lg text-op-muted transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -452,10 +452,10 @@ export const KubernetesDashboard: React.FC = () => {
                     {/* Metadata */}
                     <div>
                       <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3">Metadata</h4>
-                      <div className="bg-black/30 p-4 rounded-xl text-sm border border-white/5 space-y-3">
+                      <div className="bg-op-raised p-4 rounded-xl text-sm border border-op-border space-y-3">
                         <div className="grid grid-cols-3">
                           <span className="text-op-muted">Pod IP</span>
-                          <span className="col-span-2 font-mono text-emerald-400">{podDetails.status?.podIP || '-'}</span>
+                          <span className="col-span-2 font-mono text-emerald-700">{podDetails.status?.podIP || '-'}</span>
                         </div>
                         <div className="grid grid-cols-3">
                           <span className="text-op-muted">Node</span>
@@ -480,7 +480,7 @@ export const KubernetesDashboard: React.FC = () => {
                     <div>
                       <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3">Containers</h4>
                       {podDetails.spec?.containers?.map((c: KubernetesContainerSpec, i: number) => (
-                        <div key={i} className="bg-black/30 p-4 rounded-xl text-sm border border-white/5 mb-3">
+                        <div key={i} className="bg-op-raised p-4 rounded-xl text-sm border border-op-border mb-3">
                           <div className="font-bold mb-1">{c.name}</div>
                           <div className="text-xs text-op-muted font-mono break-all">{c.image}</div>
                         </div>
@@ -492,7 +492,7 @@ export const KubernetesDashboard: React.FC = () => {
                       <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3 flex items-center gap-2">
                         <Terminal className="w-4 h-4" /> Latest Logs
                       </h4>
-                      <div className="bg-black border border-white/10 p-4 rounded-xl text-xs font-mono text-slate-300 max-h-64 overflow-y-auto whitespace-pre-wrap">
+                      <div className="bg-op-raised border border-op-border p-4 rounded-xl text-xs font-mono text-op-fg max-h-64 overflow-y-auto whitespace-pre-wrap">
                         {podDetails.logs || 'No logs available.'}
                       </div>
                     </div>
@@ -503,12 +503,12 @@ export const KubernetesDashboard: React.FC = () => {
                         <h4 className="text-xs font-bold uppercase tracking-wider text-op-muted mb-3">Recent Events</h4>
                         <div className="space-y-2">
                           {podDetails.events.map((e: KubernetesEvent, i: number) => (
-                            <div key={i} className="bg-black/30 p-3 rounded-xl border border-white/5 text-xs">
+                            <div key={i} className="bg-op-raised p-3 rounded-xl border border-op-border text-xs">
                               <div className="flex justify-between mb-1">
-                                <span className={`font-bold ${e.type === 'Warning' ? 'text-rose-400' : 'text-emerald-400'}`}>{e.reason}</span>
+                                <span className={`font-bold ${e.type === 'Warning' ? 'text-rose-700' : 'text-emerald-700'}`}>{e.reason}</span>
                                 <span className="text-op-muted">{formatDateTime(e.lastTimestamp || e.eventTime)}</span>
                               </div>
-                              <div className="text-slate-400">{e.message}</div>
+                              <div className="text-op-muted">{e.message}</div>
                             </div>
                           ))}
                         </div>

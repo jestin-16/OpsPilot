@@ -17,12 +17,12 @@ interface TableProps<T> {
 
 export function Table<T>({ data, columns, keyExtractor, onRowClick, className = '', emptyMessage = 'No data available' }: TableProps<T>) {
   return (
-    <div className={`w-full overflow-x-auto rounded-xl border border-op-border bg-op-surface ${className}`}>
+    <div className={`op-table w-full overflow-x-auto rounded-2xl border border-op-border bg-op-surface ${className}`}>
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="bg-op-raised border-b border-op-border">
             {columns.map((col) => (
-            <th key={col.key} className="px-5 py-3.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-op-muted whitespace-nowrap">
+            <th key={col.key} className="px-5 py-3.5 text-[11px] font-medium tracking-wide text-op-muted whitespace-nowrap">
                 {col.header}
               </th>
             ))}

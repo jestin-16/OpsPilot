@@ -187,7 +187,7 @@ export const GithubActivity: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="text-xs font-bold text-slate-400 bg-slate-800 px-3 py-1 rounded-full border border-slate-700">
+                        <div className="text-xs font-bold text-op-muted bg-op-raised px-3 py-1 rounded-full border border-op-border">
                           {commit.projectName}
                         </div>
                       </div>
@@ -199,7 +199,7 @@ export const GithubActivity: React.FC = () => {
                             <GitCommit className="w-4 h-4" /> Commit
                           </div>
                           <ArrowRight className="w-4 h-4 opacity-50" />
-                          <div className={`flex items-center gap-2 ${pipeline.status === 'SUCCESS' ? 'text-emerald-400' : pipeline.status === 'FAILED' ? 'text-rose-400' : 'text-amber-400'}`}>
+                          <div className={`flex items-center gap-2 ${pipeline.status === 'SUCCESS' ? 'text-emerald-700' : pipeline.status === 'FAILED' ? 'text-rose-700' : 'text-amber-700'}`}>
                             <PlayCircle className="w-4 h-4" /> Pipeline {pipeline.status}
                           </div>
                         </div>
@@ -213,18 +213,18 @@ export const GithubActivity: React.FC = () => {
         </div>
 
         {/* Detail Sidebar */}
-        <div className={`fixed right-0 top-16 bottom-0 w-[400px] bg-[#121214] border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedCommit ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col text-op-fg`}>
+        <div className={`fixed right-0 top-16 bottom-0 w-full max-w-[400px] bg-op-surface border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedCommit ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col text-op-fg`}>
           {selectedCommit && (() => {
             const pipeline = getPipelineForCommit(selectedCommit.commitSha, selectedCommit.projectId);
             const deployment = getDeploymentForCommit(selectedCommit.commitSha, selectedCommit.projectId);
             
             return (
               <>
-                <div className="flex items-center justify-between p-5 border-b border-white/10 sticky top-0 bg-[#121214] z-10">
+                <div className="flex items-center justify-between p-5 border-b border-op-border sticky top-0 bg-op-surface z-10">
                   <h3 className="text-lg font-bold flex items-center gap-2">
                     <GitCommit className="w-5 h-5 text-op-accent" /> Commit Details
                   </h3>
-                  <button onClick={() => setSelectedCommit(null)} className="p-1.5 hover:bg-white/10 rounded-lg text-op-muted transition-colors">
+                  <button onClick={() => setSelectedCommit(null)} className="p-1.5 hover:bg-op-raised rounded-lg text-op-muted transition-colors">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
@@ -233,9 +233,9 @@ export const GithubActivity: React.FC = () => {
                   {/* Summary */}
                   <div>
                     <h4 className="font-bold text-lg mb-2">{selectedCommit.message}</h4>
-                    <div className="flex flex-col gap-2 text-sm text-op-muted bg-black/30 p-4 rounded-xl border border-white/5">
+                    <div className="flex flex-col gap-2 text-sm text-op-muted bg-op-raised p-4 rounded-xl border border-op-border">
                       <div className="flex justify-between"><span>SHA</span><span className="font-mono text-op-accent">{selectedCommit.commitSha}</span></div>
-                      <div className="flex justify-between"><span>Project</span><span className="font-bold text-slate-300">{selectedCommit.projectName}</span></div>
+                      <div className="flex justify-between"><span>Project</span><span className="font-bold text-op-muted">{selectedCommit.projectName}</span></div>
                       <div className="flex justify-between"><span>Author</span><span>{selectedCommit.author}</span></div>
                       <div className="flex justify-between"><span>Branch</span><span>{selectedCommit.branchName}</span></div>
                       <div className="flex justify-between"><span>Date</span><span>{new Date(selectedCommit.timestamp).toLocaleString()}</span></div>
@@ -251,7 +251,7 @@ export const GithubActivity: React.FC = () => {
                       
                       {/* Step 1: Commit */}
                       <div className="relative">
-                        <div className="absolute -left-[29px] bg-op-accent w-5 h-5 rounded-full border-4 border-[#121214]"></div>
+                        <div className="absolute -left-[29px] bg-op-accent w-5 h-5 rounded-full border-4 border-op-surface"></div>
                         <div className="font-bold text-sm text-op-accent">Code Committed</div>
                         <div className="text-xs text-op-muted">{new Date(selectedCommit.timestamp).toLocaleString()}</div>
                       </div>
@@ -259,7 +259,7 @@ export const GithubActivity: React.FC = () => {
                       {/* Step 2: Pipeline */}
                       {pipeline ? (
                         <div className="relative">
-                          <div className={`absolute -left-[29px] w-5 h-5 rounded-full border-4 border-[#121214] ${
+                          <div className={`absolute -left-[29px] w-5 h-5 rounded-full border-4 border-op-surface ${
                             pipeline.status === 'SUCCESS' ? 'bg-emerald-500' : pipeline.status === 'FAILED' ? 'bg-rose-500' : 'bg-amber-500'
                           }`}></div>
                           <div className="font-bold text-sm flex items-center gap-2">
@@ -269,15 +269,15 @@ export const GithubActivity: React.FC = () => {
                         </div>
                       ) : (
                         <div className="relative opacity-50">
-                          <div className="absolute -left-[29px] bg-slate-600 w-5 h-5 rounded-full border-4 border-[#121214]"></div>
-                          <div className="font-bold text-sm text-slate-400">No Pipeline Run Found</div>
+                          <div className="absolute -left-[29px] bg-slate-600 w-5 h-5 rounded-full border-4 border-op-surface"></div>
+                          <div className="font-bold text-sm text-op-muted">No Pipeline Run Found</div>
                         </div>
                       )}
 
                       {/* Step 3: Deployment */}
                       {deployment ? (
                         <div className="relative">
-                          <div className={`absolute -left-[29px] w-5 h-5 rounded-full border-4 border-[#121214] ${
+                          <div className={`absolute -left-[29px] w-5 h-5 rounded-full border-4 border-op-surface ${
                             isSuccessfulDeployment(deployment.status) ? 'bg-emerald-500' : 'bg-amber-500'
                           }`}></div>
                           <div className="font-bold text-sm flex items-center gap-2">
@@ -288,8 +288,8 @@ export const GithubActivity: React.FC = () => {
                         </div>
                       ) : (
                         <div className="relative opacity-50">
-                          <div className="absolute -left-[29px] bg-slate-600 w-5 h-5 rounded-full border-4 border-[#121214]"></div>
-                          <div className="font-bold text-sm text-slate-400">No Deployment Found</div>
+                          <div className="absolute -left-[29px] bg-slate-600 w-5 h-5 rounded-full border-4 border-op-surface"></div>
+                          <div className="font-bold text-sm text-op-muted">No Deployment Found</div>
                         </div>
                       )}
 

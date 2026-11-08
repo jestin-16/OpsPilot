@@ -159,10 +159,10 @@ export const Projects: React.FC = () => {
             {projects.map((project) => (
               <div
                 key={project.id}
-                className="glass-panel border-t-[3px] border-t-op-accent rounded-2xl p-6 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+                className="op-card bg-op-surface border border-op-border rounded-[20px] p-6 hover:border-op-border-strong transition-colors duration-200 flex flex-col justify-between group"
               >
                 <div>
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex flex-wrap justify-between items-start gap-3 mb-4">
                     <Link to={`/projects/${project.id}`}>
                       <h3 className="text-lg font-bold text-slate-800 truncate group-hover:text-op-accent hover:underline transition-colors">{project.projectName}</h3>
                     </Link>

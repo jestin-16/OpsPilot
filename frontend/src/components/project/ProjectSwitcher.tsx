@@ -76,19 +76,19 @@ export const ProjectSwitcher: React.FC = () => {
     if (!env) return null;
     const lower = env.toLowerCase();
     if (lower === 'prod' || lower === 'production') {
-      return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 uppercase">PROD</span>;
+      return <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/80 uppercase">PROD</span>;
     }
     if (lower === 'staging') {
-      return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80 uppercase">STG</span>;
+      return <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80 uppercase">STG</span>;
     }
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 uppercase">DEV</span>;
+    return <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-sky-50 text-sky-700 border border-sky-200/80 uppercase">DEV</span>;
   };
 
   return (
     <div className="px-3 pb-3 relative" ref={dropdownRef}>
       {/* Header Label + Quick Add Button */}
       <div className="flex items-center justify-between px-1 mb-1.5">
-        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
           <span>Project Scope</span>
           {currentProject && (
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" title="Scoped to active project" />
@@ -125,7 +125,7 @@ export const ProjectSwitcher: React.FC = () => {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-bold text-op-fg dark:text-white truncate block">
+            <span className="text-xs font-medium text-op-fg dark:text-white truncate block">
               {projectsLoading
                 ? 'Loading projects...'
                 : projectsError
@@ -177,7 +177,7 @@ export const ProjectSwitcher: React.FC = () => {
                   <Layers className="w-3 h-3" />
                 </div>
                 <div className="text-left">
-                  <span className="block text-xs font-bold">All Projects</span>
+                  <span className="block text-xs font-medium">All Projects</span>
                   <span className="block text-[9.5px] font-normal text-op-muted">View across all systems</span>
                 </div>
               </div>
@@ -207,13 +207,13 @@ export const ProjectSwitcher: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate min-w-0">
-                      <div className={`w-5 h-5 rounded-md flex items-center justify-center text-white shrink-0 text-[10px] font-bold ${
+                      <div className={`w-5 h-5 rounded-md flex items-center justify-center text-white shrink-0 text-[10px] font-medium ${
                         isSelected ? 'bg-op-accent' : 'bg-op-muted'
                       }`}>
                         {pName.charAt(0).toUpperCase()}
                       </div>
                       <div className="text-left truncate">
-                        <span className="block text-xs font-bold truncate">{pName}</span>
+                        <span className="block text-xs font-medium truncate">{pName}</span>
                         {p.environment && (
                           <span className="block text-[9.5px] font-normal text-op-muted uppercase tracking-tight">
                             {p.environment}

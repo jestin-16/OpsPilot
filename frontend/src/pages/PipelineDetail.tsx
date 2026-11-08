@@ -187,11 +187,11 @@ export const PipelineDetail: React.FC = () => {
         </div>
 
         {/* Logs Console */}
-        <Card className="p-0 overflow-hidden bg-[#1E1E1E] border-none shadow-xl">
-          <div className="bg-[#2D2D2D] px-4 py-3 flex items-center justify-between border-b border-[#404040]">
+        <Card className="p-0 overflow-hidden bg-op-surface border-none shadow-xl">
+          <div className="bg-op-raised px-4 py-3 flex items-center justify-between border-b border-op-border">
             <div className="flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-slate-400" />
-              <span className="text-sm font-semibold text-slate-200">Execution Logs</span>
+              <Terminal className="w-4 h-4 text-op-muted" />
+              <span className="text-sm font-semibold text-op-fg">Execution Logs</span>
             </div>
             {logs?.exitCode !== undefined && (
               <Badge variant={logs.exitCode === 0 ? 'success' : 'error'} className="bg-opacity-20 border-opacity-20">
@@ -199,8 +199,8 @@ export const PipelineDetail: React.FC = () => {
               </Badge>
             )}
           </div>
-          <div className="p-6 text-sm font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap max-h-[500px] overflow-y-auto leading-relaxed">
-            {logs?.logs ? logs.logs : <span className="text-slate-500 italic">No logs available for this pipeline run.</span>}
+          <div className="p-6 text-sm font-mono text-op-muted overflow-x-auto whitespace-pre-wrap max-h-[500px] overflow-y-auto leading-relaxed">
+            {logs?.logs ? logs.logs : <span className="text-op-subtle italic">No logs available for this pipeline run.</span>}
           </div>
         </Card>
 

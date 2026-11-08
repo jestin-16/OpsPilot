@@ -163,7 +163,7 @@ export const LogManagement: React.FC = () => {
       case 'WARN':
         return <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">WARN</span>;
       case 'DEBUG':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-slate-500/10 text-slate-500 border border-slate-500/20">DEBUG</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-slate-500/10 text-op-subtle border border-slate-500/20">DEBUG</span>;
       case 'INFO':
       default:
         return <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider bg-sky-500/10 text-sky-500 border border-sky-500/20">INFO</span>;
@@ -296,7 +296,7 @@ export const LogManagement: React.FC = () => {
           )}
 
           {/* Log Table */}
-          <div className="flex-1 overflow-auto bg-[#0A0A0B]">
+          <div className="flex-1 overflow-auto bg-op-surface">
             {loading && logs.length === 0 ? (
               <div className="flex justify-center py-20 text-op-muted">Loading logs...</div>
             ) : filteredLogs.length === 0 ? (
@@ -306,7 +306,7 @@ export const LogManagement: React.FC = () => {
               </div>
             ) : (
               <table className="w-full text-left text-sm font-mono whitespace-nowrap">
-                <thead className="sticky top-0 bg-[#121214] text-op-muted border-b border-white/5 z-10 shadow-sm">
+                <thead className="sticky top-0 bg-op-surface text-op-muted border-b border-op-border z-10 shadow-sm">
                   <tr>
                     <th className="py-2.5 px-4 font-semibold w-48">Timestamp</th>
                     <th className="py-2.5 px-4 font-semibold w-24">Level</th>
@@ -315,20 +315,20 @@ export const LogManagement: React.FC = () => {
                     <th className="py-2.5 px-4 font-semibold">Message</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5 text-[#E0E0E0]">
+                <tbody className="divide-y divide-op-border text-op-fg">
                   {paginatedLogs.map((log) => (
                     <tr
                       key={log.logId}
                       onClick={() => setSelectedLog(log)}
-                      className={`cursor-pointer hover:bg-white/[0.02] transition-colors ${selectedLog?.logId === log.logId ? 'bg-white/[0.04]' : ''}`}
+                      className={`cursor-pointer hover:bg-op-raised/50 transition-colors ${selectedLog?.logId === log.logId ? 'bg-op-sage-soft' : ''}`}
                     >
-                      <td className="py-2 px-4 text-[#888888] text-xs">
+                      <td className="py-2 px-4 text-op-subtle text-xs">
                         {new Date(log.timestamp + (!log.timestamp.endsWith('Z') ? 'Z' : '')).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 })}
                       </td>
                       <td className="py-2 px-4">{getLevelBadge(log.logLevel)}</td>
-                      <td className="py-2 px-4 text-[#A8A8A8] truncate max-w-[160px]">{log.sourceService}</td>
-                      <td className="py-2 px-4 text-[#A8A8A8] truncate max-w-[120px]">{log.project?.projectName || '-'}</td>
-                      <td className="py-2 px-4 truncate max-w-xl text-[#D4D4D4]">{log.message}</td>
+                      <td className="py-2 px-4 text-op-muted truncate max-w-[160px]">{log.sourceService}</td>
+                      <td className="py-2 px-4 text-op-muted truncate max-w-[120px]">{log.project?.projectName || '-'}</td>
+                      <td className="py-2 px-4 truncate max-w-xl text-op-fg">{log.message}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -362,7 +362,7 @@ export const LogManagement: React.FC = () => {
         </div>
 
         {/* Detail Sidebar */}
-        <div className={`fixed right-0 top-16 bottom-0 w-[400px] bg-op-surface border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedLog ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col`}>
+        <div className={`fixed right-0 top-16 bottom-0 w-full max-w-[400px] bg-op-surface border-l border-op-border shadow-2xl transition-transform duration-300 transform ${selectedLog ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto z-20 flex flex-col`}>
           {selectedLog && (
             <>
               <div className="flex items-center justify-between p-5 border-b border-op-border bg-op-surface sticky top-0 z-10">
@@ -383,7 +383,7 @@ export const LogManagement: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs font-bold text-op-muted uppercase tracking-wider mb-1 block">Message</label>
-                    <div className="bg-[#121214] border border-white/5 p-4 rounded-lg text-sm text-[#D4D4D4] font-mono whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
+                    <div className="bg-op-surface border border-op-border p-4 rounded-lg text-sm text-op-fg font-mono whitespace-pre-wrap break-words max-h-96 overflow-y-auto">
                       {selectedLog.message}
                     </div>
                   </div>

@@ -39,7 +39,7 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <SidebarLayout>
-      <div className="space-y-6 pb-12">
+      <div className="dashboard-overview">
         {/* Header */}
         <div className="dashboard-intro">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -56,7 +56,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Highlights Row */}
-        <div className="dashboard-metrics grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+        <div className="dashboard-metrics dashboard-metrics-five">
           <HighlightCard icon={Users} label="Total Users" value={overview?.userCount.toString() || '...'} loading={loading} />
           <HighlightCard icon={UserCheck} label="Active Users" value={overview?.activeUserCount.toString() || '...'} loading={loading} />
           <HighlightCard icon={FolderGit2} label="Projects" value={overview?.projectCount.toString() || '...'} loading={loading} />
@@ -65,15 +65,17 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Audit Logs Table */}
-        <Card className="p-0 overflow-hidden flex flex-col mt-8">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <h3 className="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Recent Platform Activity
-            </h3>
+        <Card className="dashboard-panel dashboard-audit">
+          <div className="dashboard-panel-heading">
+            <div>
+              <h2>Recent platform activity</h2>
+              <p>A clear trail of changes across your workspace</p>
+            </div>
+            <Clock className="w-4 h-4 text-op-muted" />
           </div>
-          <div className="overflow-x-auto">
+          <div className="op-table overflow-x-auto rounded-xl border border-op-border">
             <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
+              <thead className="bg-op-raised border-b border-op-border">
                 <tr>
                   <th className="py-3 px-6 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Timestamp</th>
                   <th className="py-3 px-6 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Actor</th>
@@ -82,7 +84,7 @@ export const AdminDashboard: React.FC = () => {
                   <th className="py-3 px-6 font-semibold text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wider">Details</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-op-border">
                 {loading ? (
                   <tr>
                     <td colSpan={5} className="py-12 text-center text-gray-500 dark:text-gray-400 font-medium">Loading audit logs...</td>
@@ -126,7 +128,7 @@ export const AdminDashboard: React.FC = () => {
 
 const HighlightCard: React.FC<{ icon: React.ElementType; label: string; value: string; loading: boolean }> = ({ icon: Icon, label, value, loading }) => (
   <Card hoverEffect className="relative overflow-hidden group">
-    <div className="flex justify-between items-center gap-2 mb-6">
+    <div className="dashboard-metric-heading">
       <span className="text-xs text-op-muted">{label}</span>
       <div className="dashboard-metric-icon shrink-0">
         <Icon className="w-5 h-5" />

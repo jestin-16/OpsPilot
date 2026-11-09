@@ -141,6 +141,21 @@ describe('AuthPage', () => {
     });
   });
 
+  it('populates demo credentials with valid password when clicking demo access pill', async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithRouter('/login');
+    const loginPanel = container.querySelector('.auth-panel--login') as HTMLElement;
+
+    const devButton = screen.getByRole('button', { name: /Developer/i });
+    await user.click(devButton);
+
+    const emailInput = within(loginPanel).getByPlaceholderText('Work Email');
+    const passwordInput = within(loginPanel).getByPlaceholderText('Password');
+
+    expect(emailInput).toHaveValue('developer@opspilot.io');
+    expect(passwordInput).toHaveValue('Password123!');
+  });
+
   it('shows validation error when passwords do not match in signup', async () => {
     const user = userEvent.setup();
     const { container } = renderWithRouter('/signup');

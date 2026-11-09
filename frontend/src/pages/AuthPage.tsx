@@ -476,7 +476,7 @@ export const AuthPage: React.FC = () => {
                     disabled={loading}
                     onClick={() => {
                       setEmail(acc.email);
-                      setPassword('password123');
+                      setPassword('Password123!');
                       setError('');
                       setEditedFields({});
                       setServerFieldErrors({});

@@ -111,6 +111,9 @@ export const Dashboard: React.FC = () => {
   const [filterProject, setFilterProject] = useState('ALL');
   const [filterProvider, setFilterProvider] = useState('ALL');
   const [filterSeverity, setFilterSeverity] = useState('ALL');
+  const [showAllDeployments, setShowAllDeployments] = useState(false);
+  const [showAllIssues, setShowAllIssues] = useState(false);
+  const [showAllActivity, setShowAllActivity] = useState(false);
 
   const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -224,7 +227,7 @@ export const Dashboard: React.FC = () => {
         resource: alert.resource,
         resolved: ['RESOLVED', 'CLOSED', 'FIXED'].includes(alert.status.toUpperCase()),
       })),
-    ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 6);
+    ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [scopedIncidents, scopedAlerts]);
 
   const scopedEvents = useMemo(() => {
@@ -400,6 +403,7 @@ export const Dashboard: React.FC = () => {
     if (criticalResources > 0) return 'error';
     if (health?.overallStatus === 'CRITICAL') return 'error';
     if (health?.overallStatus === 'DEGRADED' || health?.overallStatus === 'OPERATIONAL_WITH_WARNINGS' || warningResources > 0) return 'pending';
+    if (!health && resources.length === 0) return 'inactive';
     return 'active';
   };
 
@@ -408,6 +412,7 @@ export const Dashboard: React.FC = () => {
     if (health?.overallStatus === 'CRITICAL') return 'Integrations Critical';
     if (health?.overallStatus === 'DEGRADED') return 'Degraded Performance';
     if (health?.overallStatus === 'OPERATIONAL_WITH_WARNINGS' || warningResources > 0) return 'Operational with Warnings';
+    if (!health && resources.length === 0) return 'Status unavailable';
     return 'All Systems Operational';
   };
 
@@ -435,7 +440,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <SidebarLayout>
-      <div className="dashboard-overview space-y-6 pb-12">
+      <div className="dashboard-overview">
 
         {/* 1. Hero Command Center Banner */}
         <div className="dashboard-intro">
@@ -447,7 +452,7 @@ export const Dashboard: React.FC = () => {
                 Dashboard overview
               </h1>
               <p className="mt-2 text-sm text-op-muted leading-relaxed">
-                Welcome back, <span className="font-medium text-op-fg">{user?.name || 'Engineer'}</span>. A little clarity across your projects, infrastructure, and releases.
+                Welcome back, <span className="font-medium text-op-fg">{user?.name || 'Engineer'}</span>. Here’s what’s happening across your workspace.
               </p>
 
               {/* Quick Telemetry Chips */}
@@ -458,7 +463,7 @@ export const Dashboard: React.FC = () => {
                     className="dashboard-telemetry"
                   >
                     <Cpu className="w-3.5 h-3.5" />
-                    <span>K3s Cluster: {k8sOverview.runningPods || 15} Pods Online</span>
+                    <span>{k8sOverview.runningPods} running pods</span>
                     <ArrowUpRight className="w-3 h-3 opacity-70" />
                   </Link>
                 )}
@@ -467,12 +472,12 @@ export const Dashboard: React.FC = () => {
                   className="dashboard-telemetry"
                 >
                   <Box className="w-3.5 h-3.5" />
-                  <span>Docker Host: {providerCounts['DOCKER'] || 6} Containers</span>
+                  <span>{providerCounts['DOCKER'] ?? 0} containers</span>
                   <ArrowUpRight className="w-3 h-3 opacity-70" />
                 </Link>
                 <div className="dashboard-telemetry">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>{deployments.length} Production Releases</span>
+                  <span>{deployments.length} releases</span>
                 </div>
               </div>
             </div>
@@ -588,10 +593,10 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* 3. Key Metrics KPI Grid */}
-        <div className="dashboard-metrics grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="dashboard-metrics dashboard-metrics-four">
           <Card className="flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Workloads in Scope</span>
+            <div className="dashboard-metric-heading">
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Workloads</span>
               <div className="dashboard-metric-icon">
                 <Layers className="w-5 h-5" />
               </div>
@@ -599,14 +604,14 @@ export const Dashboard: React.FC = () => {
             <div>
               <div className="text-3xl font-black text-op-fg tracking-tight">{filteredResources.length}</div>
               <p className="mt-1 text-xs text-op-muted">
-                {k8sOverview ? `${k8sOverview.runningPods || 15} Pods · ${providerCounts['DOCKER'] || 6} Containers` : 'Active pods & containers'}
+                Pods, containers & services
               </p>
             </div>
           </Card>
 
           <Card className="flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Healthy Workloads</span>
+            <div className="dashboard-metric-heading">
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Healthy workloads</span>
               <div className="dashboard-metric-icon">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
@@ -614,15 +619,15 @@ export const Dashboard: React.FC = () => {
             <div>
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{healthyResources}</span>
-                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">100% OK</span>
+                <span className="text-xs text-op-muted">{filteredResources.length ? `${Math.round(healthyResources / filteredResources.length * 100)}% healthy` : 'No data yet'}</span>
               </div>
-              <p className="mt-1 text-xs text-op-muted">Passing readiness & liveness probes</p>
+              <p className="mt-1 text-xs text-op-muted">{warningResources} warnings · {criticalResources} critical</p>
             </div>
           </Card>
 
           <Card className="flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Active Incidents</span>
+            <div className="dashboard-metric-heading">
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Active incidents</span>
               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${
                 criticalResources > 0 || scopedIncidents.some(i => i.status === 'OPEN')
                   ? 'bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400'
@@ -645,8 +650,8 @@ export const Dashboard: React.FC = () => {
           </Card>
 
           <Card className="flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">CI/CD Success Rate</span>
+            <div className="dashboard-metric-heading">
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-op-muted">Pipeline success</span>
               <div className="dashboard-metric-icon">
                 <Activity className="w-5 h-5" />
               </div>
@@ -667,11 +672,11 @@ export const Dashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* 4. Interactive Infrastructure Breakdown */}
-        <Card>
-          <div className="flex items-center justify-between mb-4">
+        {/* Infrastructure, delivery and operational detail */}
+        <Card className="dashboard-panel dashboard-infrastructure">
+          <div className="dashboard-panel-heading">
             <div>
-              <h3 className="text-base font-bold text-op-fg">Connected infrastructure</h3>
+              <h2 className="text-base font-bold text-op-fg">Connected infrastructure</h2>
               <p className="text-xs text-op-muted mt-0.5">Select a provider to explore its resources</p>
             </div>
             {filterProvider !== 'ALL' && (
@@ -685,7 +690,7 @@ export const Dashboard: React.FC = () => {
             )}
           </div>
 
-          <div className="dashboard-providers grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="dashboard-providers">
             {BREAKDOWN_PROVIDERS.map(provider => {
               const count = providerCounts[provider] || 0;
               const isSelected = filterProvider === provider;
@@ -695,27 +700,27 @@ export const Dashboard: React.FC = () => {
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => setFilterProvider(isSelected ? 'ALL' : provider)}
-                  className={`group relative flex flex-col justify-between p-4 rounded-2xl border text-left transition-all duration-200 active:scale-[0.98] ${
+                  className={`dashboard-provider border text-left transition-colors ${
                     isSelected
                       ? 'border-op-sage bg-op-sage-soft'
                       : 'border-op-border bg-op-raised/50 hover:bg-op-raised hover:border-op-border-strong'
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full mb-3">
+                  <div className="dashboard-provider-symbol">
                     <span className="dashboard-provider-icon">
                       {PROVIDER_ICONS[provider] || <Server className="w-4 h-4 text-op-muted" />}
                     </span>
                     {isSelected && (
-                      <span className="w-5 h-5 rounded-full bg-op-accent text-white flex items-center justify-center text-[10px]">
+                      <span className="dashboard-provider-check">
                         <Check className="w-3 h-3" />
                       </span>
                     )}
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-op-muted mb-1 truncate">
+                  <div className="dashboard-provider-details">
+                    <p className="text-xs font-medium text-op-muted">
                       {PROVIDER_LABELS[provider]}
                     </p>
-                    <p className="text-2xl font-black text-op-fg">
+                    <p className="text-xl font-medium text-op-fg">
                       {count}
                     </p>
                   </div>
@@ -725,14 +730,11 @@ export const Dashboard: React.FC = () => {
           </div>
         </Card>
 
-        {/* 5. Middle Section: Recent Releases & Operational Incidents */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6 min-w-0">
-            {/* Deployments Card */}
-            <Card>
-              <div className="flex items-center justify-between mb-4">
+        <div className="dashboard-detail-grid">
+          <Card className="dashboard-panel dashboard-releases">
+              <div className="dashboard-panel-heading">
                 <div>
-                  <h3 className="text-base font-bold text-op-fg">Recent Deployments</h3>
+                  <h2 className="text-base font-bold text-op-fg">Recent deployments</h2>
                   <p className="text-xs text-op-muted mt-0.5">Live release status across production and staging</p>
                 </div>
                 <Link 
@@ -745,21 +747,25 @@ export const Dashboard: React.FC = () => {
 
               {scopedDeployments.length > 0 ? (
                 <Table 
-                  data={scopedDeployments.slice(0, 6)} 
+                  data={showAllDeployments ? scopedDeployments : scopedDeployments.slice(0, 5)}
                   columns={deploymentColumns} 
                   keyExtractor={(d) => d.id} 
                 />
               ) : (
                 <EmptyState title="No Deployments Found" description="No deployments match your selected project filter." icon={<Rocket />} />
               )}
+              {scopedDeployments.length > 5 && (
+                <button type="button" className="dashboard-expand" aria-expanded={showAllDeployments} onClick={() => setShowAllDeployments(value => !value)}>
+                  {showAllDeployments ? 'Show less' : `Show all ${scopedDeployments.length} releases`}
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAllDeployments ? 'rotate-180' : ''}`} />
+                </button>
+              )}
             </Card>
-
-            {/* Incidents & Alerts Card */}
-            <Card>
-              <div className="flex items-center justify-between mb-4">
+          <Card className="dashboard-panel dashboard-issues">
+              <div className="dashboard-panel-heading">
                 <div>
-                  <h3 className="text-base font-bold text-op-fg">Alerts & Incidents</h3>
-                  <p className="text-xs text-op-muted mt-0.5">Operational anomalies and automated AI diagnosis</p>
+                  <h2 className="text-base font-bold text-op-fg">Alerts & incidents</h2>
+                  <p className="text-xs text-op-muted mt-0.5">Issues that need your attention</p>
                 </div>
                 <Link 
                   to="/incidents" 
@@ -770,8 +776,8 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {issueFeed.length > 0 ? (
-                <div className="divide-y divide-op-border">
-                  {issueFeed.map(issue => (
+                <div className="dashboard-feed divide-y divide-op-border">
+                  {(showAllIssues ? issueFeed : issueFeed.slice(0, 5)).map(issue => (
                     <div key={issue.id} className="flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
                       <div className="min-w-0">
                         <div className="flex min-w-0 items-center gap-2">
@@ -782,9 +788,9 @@ export const Dashboard: React.FC = () => {
                               ? 'bg-sky-500' 
                               : issue.severity.toUpperCase() === 'WARNING' || issue.severity.toUpperCase() === 'WARN' 
                               ? 'bg-amber-500' 
-                              : 'bg-rose-500 animate-pulse'
+                              : 'bg-rose-500'
                           }`} />
-                          <p className="truncate text-sm font-semibold text-op-fg">{issue.title}</p>
+                          <p className="break-words text-sm font-medium text-op-fg">{issue.title}</p>
                         </div>
                         <p className="mt-1 pl-4.5 text-xs text-op-muted">
                           {issue.kind} · <span className="font-semibold">{issue.severity}</span>
@@ -803,77 +809,58 @@ export const Dashboard: React.FC = () => {
               ) : (
                 <EmptyState title="All Systems Clear" description="No operational incidents match your filters." icon={<ShieldCheck />} />
               )}
+              {issueFeed.length > 5 && (
+                <button type="button" className="dashboard-expand" aria-expanded={showAllIssues} onClick={() => setShowAllIssues(value => !value)}>
+                  {showAllIssues ? 'Show less' : `Show all ${issueFeed.length} issues`}
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAllIssues ? 'rotate-180' : ''}`} />
+                </button>
+              )}
             </Card>
-          </div>
-
-          {/* Right Column: Recent Activity Feed & Kubernetes Node Status */}
-          <div className="space-y-6 min-w-0">
-            {/* Cluster Status Quick Card */}
-            <Card>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="dashboard-metric-icon">
-                    <Cpu className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-bold text-op-fg">K3s Kubernetes Cluster</h4>
-                    <p className="text-[11px] text-op-muted">Connected & Healthy</p>
-                  </div>
-                </div>
-                <Badge variant="success">Online</Badge>
-              </div>
-
-              <div className="space-y-2 mt-4 pt-3 border-t border-op-border text-xs">
-                <div className="flex justify-between items-center text-op-muted">
-                  <span>Control Node:</span>
-                  <span className="font-mono font-bold text-op-fg">{k8sOverview?.nodeCount || 1} Node (ffdad87fc733)</span>
-                </div>
-                <div className="flex justify-between items-center text-op-muted">
-                  <span>Running Pods:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">{k8sOverview?.runningPods || 15} Active</span>
-                </div>
-                <div className="flex justify-between items-center text-op-muted">
-                  <span>Namespaces:</span>
-                  <span className="font-semibold text-op-fg">production, default, kube-system</span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-op-border flex items-center justify-between">
-                <Link to="/kubernetes" className="text-xs font-semibold text-op-accent hover:underline flex items-center gap-1">
-                  Cluster & Workloads <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
-                <Link to="/kubernetes/logs" className="text-xs font-semibold text-op-muted hover:text-op-fg flex items-center gap-1">
-                  Live Pod Logs <ArrowUpRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </Card>
-
-            {/* Live Activity Feed */}
-            <Card>
-              <div className="flex justify-between items-center gap-3 mb-3">
+          <Card className="dashboard-panel dashboard-activity">
+              <div className="dashboard-panel-heading">
                 <div>
-                  <h3 className="text-base font-bold text-op-fg">Live Activity</h3>
-                  <p className="text-xs text-op-muted mt-0.5">Stream of deployments, logs, and events</p>
+                  <h2 className="text-base font-bold text-op-fg">Recent activity</h2>
+                  <p className="text-xs text-op-muted mt-0.5">Latest deployments, logs, and events</p>
                 </div>
                 <Badge variant="info" className="shrink-0">{activityFeed.length} events</Badge>
               </div>
 
               {activityFeed.length > 0 ? (
-                <div className="max-h-[520px] overflow-y-auto pr-2 pt-2 custom-scrollbar">
-                  <Timeline events={activityFeed} />
+                <div className="dashboard-feed pr-2 pt-2">
+                  <Timeline events={showAllActivity ? activityFeed : activityFeed.slice(0, 5)} />
                 </div>
               ) : (
                 <EmptyState title="No Activity" description="No recent events, alerts, or deployments found." />
               )}
+              {activityFeed.length > 5 && (
+                <button type="button" className="dashboard-expand" aria-expanded={showAllActivity} onClick={() => setShowAllActivity(value => !value)}>
+                  {showAllActivity ? 'Show less' : `Show all ${activityFeed.length} events`}
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showAllActivity ? 'rotate-180' : ''}`} />
+                </button>
+              )}
             </Card>
-
-            {/* Infrastructure Health */}
-            <Card>
-              <h3 className="text-base font-bold text-op-fg mb-3">Integration Status</h3>
+          <Card className="dashboard-panel dashboard-cluster">
+            <div className="dashboard-panel-heading">
+              <div><h2>Kubernetes cluster</h2><p>Nodes and workloads at a glance</p></div>
+              <Badge variant={k8sOverview?.status === 'Healthy' ? 'success' : 'neutral'}>{k8sOverview?.status || 'Unavailable'}</Badge>
+            </div>
+            <div className="dashboard-cluster-stats">
+              <div><span>Nodes</span><strong>{k8sOverview?.nodeCount ?? '—'}</strong></div>
+              <div><span>Running pods</span><strong>{k8sOverview?.runningPods ?? '—'}</strong></div>
+              <div><span>Failed pods</span><strong className={k8sOverview?.failedPods ? 'text-rose-600' : ''}>{k8sOverview?.failedPods ?? '—'}</strong></div>
+            </div>
+            <p className="text-xs text-op-muted leading-relaxed">{k8sOverview?.message || (k8sOverview ? `${k8sOverview.podCount} total pods reported by your cluster.` : 'Connect a cluster to see workload health here.')}</p>
+            <div className="dashboard-panel-footer">
+              <Link to="/kubernetes">Cluster & workloads <ArrowUpRight className="h-3.5 w-3.5" /></Link>
+              <Link to="/kubernetes/logs">Pod logs <ArrowUpRight className="h-3.5 w-3.5" /></Link>
+            </div>
+          </Card>
+          <Card className="dashboard-panel dashboard-integrations">
+              <div className="dashboard-panel-heading"><div><h2>Integration status</h2><p>Connection health across your providers</p></div><Server className="h-4 w-4 text-op-muted" /></div>
               {health?.integrations && health.integrations.length > 0 ? (
-                <div className="space-y-2.5">
+                <div className="dashboard-integration-list">
                   {health.integrations.map(integration => (
-                    <div key={integration.provider} className="flex items-center justify-between p-2.5 border border-op-border rounded-xl bg-op-raised/60 hover:bg-op-raised transition-colors">
+                    <div key={integration.provider} className="dashboard-integration-row">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span className="p-1.5 rounded-lg bg-op-surface border border-op-border">
                           {PROVIDER_ICONS[integration.provider] || <Server className="w-3.5 h-3.5 text-op-muted" />}
@@ -881,7 +868,7 @@ export const Dashboard: React.FC = () => {
                         <div className="min-w-0">
                           <p className="font-semibold text-xs text-op-fg truncate">{PROVIDER_LABELS[integration.provider] ?? integration.provider}</p>
                           {integration.message && (
-                            <p className="text-[10px] text-op-muted truncate max-w-[150px]">{integration.message}</p>
+                            <p className="text-xs text-op-muted break-words">{integration.message}</p>
                           )}
                         </div>
                       </div>
@@ -897,7 +884,6 @@ export const Dashboard: React.FC = () => {
                 <EmptyState title="No Integrations" description="Health metrics are unavailable." />
               )}
             </Card>
-          </div>
         </div>
 
       </div>

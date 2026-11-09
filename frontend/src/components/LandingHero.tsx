@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowDown, ArrowUpRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { HeroAscii } from './HeroAscii';
+import { SignalNetworkAnimation } from './SignalNetworkAnimation';
 import '../styles/hero.css';
 
 export function LandingHero() {
@@ -34,7 +34,7 @@ export function LandingHero() {
             <p className="op-hero-note">Built around your stack. Designed for your focus.</p>
           </div>
 
-          <HeroAscii />
+          <SignalNetworkAnimation />
         </div>
 
         {/* Hero Footer */}

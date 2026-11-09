@@ -232,16 +232,16 @@ export const LandingPage: React.FC = () => {
             className="flex items-center group cursor-pointer border-0 bg-transparent p-0"
             aria-label="OpsPilot Home"
           >
-            <OpsPilotLogo size={34} showWordmark={true} />
+            <OpsPilotLogo size={36} showWordmark={true} variant="forest" />
           </button>
 
           {/* Navigation links */}
-          <nav className="hidden md:flex items-center" aria-label="Primary navigation">
+          <nav className="hidden md:flex items-center gap-9" aria-label="Primary navigation">
             {NAV_ITEMS.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                className="font-tech-mono text-[0.76rem] font-medium text-neutral-600 transition-colors duration-200 hover:text-neutral-950 flex items-center gap-1"
+                className="text-[0.92rem] font-medium text-[#171918] transition-colors duration-150 hover:text-[#183B32] flex items-center"
               >
                 <span>{item.label}</span>
               </a>
@@ -249,26 +249,26 @@ export const LandingPage: React.FC = () => {
           </nav>
 
           {/* Nav actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-5">
             <button
               type="button"
               onClick={() => go('/login')}
-              className="hidden sm:inline-flex font-tech-mono text-[0.76rem] font-medium text-neutral-600 hover:text-neutral-950 px-3 py-1.5 transition-colors cursor-pointer"
+              className="hidden sm:inline-flex text-[0.92rem] font-medium text-[#171918] hover:text-[#183B32] px-2 py-1 transition-colors cursor-pointer bg-transparent border-0"
             >
               Sign in
             </button>
             <button
               type="button"
               onClick={() => go('/dashboard')}
-              className="btn-primary-glow"
+              className="inline-flex items-center gap-2 rounded-full bg-[#183B32] hover:bg-[#122C25] px-5 py-2.5 text-[0.88rem] font-medium text-white shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
             >
-              <span><span className="hidden sm:inline">Launch </span>Console</span>
-              <ArrowUpRight className="h-3.5 w-3.5 opacity-80" />
+              <span>Launch Console</span>
+              <ArrowUpRight className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 text-neutral-800"
+              className="md:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-[#E8EAE7] text-[#171918]"
               aria-label="Toggle menu"
             >
               {menuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}

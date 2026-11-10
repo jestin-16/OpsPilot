@@ -1,23 +1,23 @@
 /* =========================================================================
-   OpsPilot — Minimalist & Aesthetic Developer Platform Design System
+   OpsPilot â€” Minimalist & Aesthetic Developer Platform Design System
    White page surfaces with dark typography and restrained status accents
    ========================================================================= */
 
 html:has(.landing-root) {
   scroll-behavior: smooth;
   scroll-padding-top: 5.5rem;
-  background-color: #FAFAF8;
+  background-color: #ffffff;
 }
 
 body:has(.landing-root) {
-  background: #FAFAF8;
+  background: #ffffff;
 }
 
 /* Base Root Variables */
 .landing-root {
   --landing-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --landing-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --landing-bg: #FAFAF8;
+  --landing-bg: #ffffff;
   --landing-card: #ffffff;
   --landing-text-primary: #171918;
   --landing-text-secondary: #858585;
@@ -44,7 +44,7 @@ body:has(.landing-root) {
 .landing-root p { text-wrap: pretty; }
 .landing-root a { text-decoration-thickness: 1px; text-underline-offset: 4px; }
 .landing-root button { transition-timing-function: var(--landing-ease); }
-.landing-root :focus-visible { outline: 2px solid #718c68; outline-offset: 3px; }
+.landing-root :focus-visible { outline: 2px solid #111111; outline-offset: 3px; }
 
 .font-tech-mono {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -94,94 +94,144 @@ body:has(.landing-root) {
   transform: translateY(0);
 }
 
-/* -------------------------------------------------------------------------
-   Floating Pill Site Navigation — Seamless with Hero & Page Background
-   ------------------------------------------------------------------------- */
+/* Compact reference-inspired navigation. */
 .landing-nav {
   position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
+  z-index: 50;
   width: 100%;
   max-width: 1260px;
-  height: 4.75rem;
+  height: 84px;
   margin: 0 auto;
-  display: flex;
-  align-items: center;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  z-index: 50;
-  transition: background-color 250ms ease, box-shadow 250ms ease;
+  background: #fff;
+  transition: box-shadow 200ms ease;
 }
-
 .landing-nav.is-scrolled {
-  background: rgba(250, 250, 248, 0.94);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 1px 0 rgba(232, 234, 231, 0.8);
+  background: rgb(255 255 255 / 96%);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 0 #ededed;
 }
-
 .landing-nav-inner {
-  width: 100%;
-  margin: 0 auto;
-  padding: 0 clamp(1rem, 2.5vw, 1.85rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 32px;
+  height: 100%;
+  padding-inline: 30px;
 }
-
-.landing-nav-inner > nav {
+.landing-nav-brand {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 8px;
+  color: #111;
+  text-decoration: none;
+}
+.landing-nav-brand > span {
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: -0.065em;
+  line-height: 1;
+}
+.landing-nav-links {
   display: flex;
   align-items: center;
-  gap: 2.25rem;
-  padding: 0;
-  border: none;
-  background: transparent;
-  box-shadow: none;
+  justify-content: center;
+  gap: clamp(24px, 3.2vw, 44px);
 }
-
-.landing-nav-inner > nav a {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0;
-  color: #171918;
-  font-family: inherit;
-  font-size: 0.92rem;
+.landing-nav-links a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: #242424;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.landing-nav-links a::after {
+  position: absolute;
+  right: 0;
+  bottom: 5px;
+  left: 0;
+  height: 1px;
+  background: #111;
+  content: '';
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 180ms ease;
+}
+.landing-nav-links a[aria-current]::after,
+.landing-nav-links a:hover::after { transform: scaleX(1); }
+.landing-nav-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.landing-nav-launch {
+  min-height: 42px;
+  padding: 0 22px;
+  border: 1px solid #111;
+  border-radius: 999px;
+  background: #111;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 180ms ease;
+}
+.landing-nav-launch:hover { background: #333; }
+.landing-nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
   background: transparent;
-  transition: color 150ms ease;
+  color: #111;
+  cursor: pointer;
 }
-
-.landing-nav-inner > nav a:hover {
-  color: #183B32;
-  background: transparent;
-  box-shadow: none;
+.landing-nav-toggle:hover { background: #f5f5f5; }
+.landing-nav-toggle svg { width: 19px; height: 19px; }
+.landing-mobile-menu { display: none; }
+@media (max-width: 1023px) {
+  .landing-nav { height: 74px; }
+  .landing-nav-inner { gap: 16px; padding-inline: 24px; }
+  .landing-nav-links { display: none; }
+  .landing-nav-toggle { display: flex; }
+  .landing-mobile-menu {
+    position: absolute;
+    top: calc(100% - 2px);
+    right: 24px;
+    left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px;
+    border: 1px solid #e8e8e8;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 15px 35px -15px #0003;
+  }
+  .landing-mobile-menu a[aria-current] { background: #f4f4f4; color: #111; }
 }
-
-@media (max-width: 767px) {
-  .landing-nav-inner > nav {
-    display: none;
-  }
-  .landing-nav-inner > button {
-    flex-shrink: 0;
-  }
-  .landing-nav .btn-primary-glow {
-    padding: .6rem .8rem;
-    font-size: 10px;
-    white-space: nowrap;
-  }
-  .landing-nav {
-    top: 0.55rem;
-    width: calc(100% - 1.25rem);
-    height: 3.85rem;
-  }
-  .landing-nav-inner {
-    padding-inline: 0.85rem;
-  }
+@media (max-width: 480px) {
+  .landing-nav { height: 70px; }
+  .landing-nav-inner { padding-inline: 22px; gap: 10px; }
+  .landing-nav-brand { gap: 6px; }
+  .landing-nav-brand > span { font-size: 21px; }
+  .landing-nav-actions { gap: 5px; }
+  .landing-nav-launch { min-height: 38px; padding-inline: 14px; font-size: 10px; }
 }
-
+@media (max-width: 350px) {
+  .landing-nav-inner { padding-inline: 16px; }
+  .landing-nav-brand > span { font-size: 19px; }
+  .landing-nav-launch { padding-inline: 10px; }
+}
 /* -------------------------------------------------------------------------
    Spotlight Card Effect (Interactive Mouse Tracking Radial Glow)
    ------------------------------------------------------------------------- */
@@ -429,6 +479,9 @@ body:has(.landing-root) {
    Responsive Tweaks & Accessibility
    ------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
+  html:has(.landing-root) {
+    scroll-behavior: auto;
+  }
   .landing-root *,
   .landing-root *::before,
   .landing-root *::after {

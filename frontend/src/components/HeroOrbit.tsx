@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Activity, Box, GitBranch, Pause, Play } from 'lucide-react';
 import { OpsPilotMark } from './OpsPilotLogo';
 
@@ -11,9 +11,27 @@ const ORBITS = [
 /** Decorative workflow illustration; does not represent live service data. */
 export function HeroOrbit() {
   const [paused, setPaused] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [tabVisible, setTabVisible] = useState(true);
+  const figureRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const figure = figureRef.current;
+    const observer = 'IntersectionObserver' in window
+      ? new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting))
+      : null;
+    if (figure) observer?.observe(figure);
+    const updateVisibility = () => setTabVisible(!document.hidden);
+    updateVisibility();
+    document.addEventListener('visibilitychange', updateVisibility);
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener('visibilitychange', updateVisibility);
+    };
+  }, []);
 
   return (
-    <figure className={`op-orbit${paused ? ' is-paused' : ''}`} aria-label="Animated illustration connecting code, deployments, and monitoring through OpsPilot">
+    <figure ref={figureRef} data-motion data-motion-order="1" className={`op-orbit${paused || !visible || !tabVisible ? ' is-paused' : ''}`} aria-label="Animated illustration connecting code, deployments, and monitoring through OpsPilot">
       <div className="op-orbit-art" aria-hidden="true">
         <div className="op-orbit-grid" />
         <svg className="op-orbit-paths" viewBox="0 0 600 540" fill="none">

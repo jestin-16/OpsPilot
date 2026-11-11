@@ -7,7 +7,7 @@ export function LandingHero() {
   return (
     <section className="op-hero-section" aria-labelledby="op-hero-title">
       <div className="op-hero-container">
-        <div className="op-hero-intro">
+        <div className="op-hero-intro" data-motion>
           <p className="op-hero-eyebrow"><span aria-hidden="true" /> THE DEVELOPER CONTROL PLANE</p>
           <h1 id="op-hero-title" className="op-hero-headline">Less noise.<br />More control.</h1>
           <p className="op-hero-description">

@@ -1,0 +1,50 @@
+/* A quiet, monochrome close to the landing page. */
+.op-footer { padding: 64px 30px 24px; border-top: 1px solid #e6e6e6; background: #f8f8f8; color: #171717; }
+.op-footer-container { max-width: 1200px; margin-inline: auto; }
+.op-footer-main { display: grid; grid-template-columns: 1.8fr 1fr 1fr; gap: 70px; }
+.op-footer-logo { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; }
+.op-footer-brand .op-footer-statement { margin: 22px 0 0; color: #333; font-size: 28px; font-weight: 500; line-height: 1.3; letter-spacing: -.045em; }
+.op-footer-description { margin: 14px 0 0; font-size: 12px; line-height: 1.9; color: #707070; }
+.op-footer-links { min-width: 0; padding-top: 13px; }
+.landing-root .op-footer-links h2 { margin: 0 0 22px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .09em; text-transform: uppercase; color: #777; }
+.op-footer-links a { display: flex; align-items: center; justify-content: space-between; gap: 18px; width: fit-content; min-width: 155px; min-height: 44px; color: #555; font-size: 12px; text-decoration: none; transition: color 160ms ease; }
+.op-footer-links a > svg { color: #898989; transition: transform 160ms ease, color 160ms ease; }
+.op-footer-links a:hover { color: #111; }
+.op-footer-links a:hover > svg { transform: translate(2px, -2px); color: #111; }
+.op-footer-links .op-footer-start { margin-top: 8px; color: #171717; font-weight: 500; border-bottom: 1px solid #ccc; }
+.op-footer-links .op-footer-start:hover > svg { transform: translateX(3px); }
+.op-footer-signature { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-top: 50px; padding-bottom: 36px; user-select: none; }
+.op-footer-signature > span { display: block; color: #dedede; font-size: clamp(90px, 14vw, 195px); font-weight: 500; letter-spacing: -.075em; line-height: .95; }
+.op-footer-signature > p { margin: 0 0 8px; color: #767676; font-family: var(--font-mono); font-size: 9px; line-height: 1.9; letter-spacing: .12em; }
+.op-footer-bottom { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-top: 18px; border-top: 1px solid #dedede; color: #737373; font-size: 10px; }
+.op-footer-bottom > p { margin: 0; }
+.op-footer-top { display: inline-flex; align-items: center; gap: 13px; min-height: 44px; color: #555; text-decoration: none; white-space: nowrap; }
+.op-footer-top > span { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #d7d7d7; border-radius: 50%; color: #333; transition: color 160ms ease, background-color 160ms ease; }
+.op-footer-top:hover > span { background: #202020; color: #fff; border-color: #202020; }
+@media (max-width: 900px) {
+  .op-footer-main { grid-template-columns: 1.5fr 1fr 1fr; gap: 32px; }
+  .op-footer-links a { min-width: 0; width: 100%; }
+  .op-footer-signature { margin-top: 44px; }
+}
+@media (max-width: 640px) {
+  .op-footer { padding: 42px 24px 20px; }
+  .op-footer-main { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; }
+  .op-footer-brand { grid-column: 1 / -1; }
+  .op-footer-brand .op-footer-statement { margin-top: 18px; font-size: 26px; }
+  .op-footer-links { padding-top: 0; }
+  .landing-root .op-footer-links h2 { margin-bottom: 12px; font-size: 9px; }
+  .op-footer-links a { font-size: 11px; gap: 8px; }
+  .op-footer-signature { align-items: start; flex-direction: column; gap: 15px; margin-top: 42px; padding-bottom: 26px; }
+  .op-footer-signature > span { font-size: clamp(76px, 18vw, 115px); }
+  .op-footer-signature > p { font-size: 7px; letter-spacing: .05em; margin-bottom: 3px; }
+  .op-footer-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 15px; font-size: 9px; }
+  .op-footer-bottom > p { grid-column: 1; font-size: 8px; }
+  .op-footer-top { grid-column: 2; grid-row: 1 / 3; gap: 8px; }
+}
+@media (max-width: 360px) {
+  .op-footer { padding-inline: 20px; }
+  .op-footer-main { gap: 28px 20px; }
+  .op-footer-signature { align-items: start; flex-direction: column; gap: 14px; }
+  .op-footer-signature > span { font-size: 76px; }
+  .op-footer-signature > p { font-size: 7px; }
+}

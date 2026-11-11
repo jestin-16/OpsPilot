@@ -1,0 +1,113 @@
+/* Shared rhythm for the existing monochrome landing components. */
+.landing-composed { --section-space: 88px; }
+.landing-container { max-width: 1200px; margin-inline: auto; }
+.landing-skip-link { position: fixed; top: -80px; left: 20px; z-index: 100; padding: 12px 20px; background: #fff; border: 1px solid #222; border-radius: 6px; }
+.landing-skip-link:focus { top: 12px; }
+.landing-composed .landing-nav { height: 76px; }
+.landing-composed .landing-nav-launch { display: inline-flex; align-items: center; justify-content: center; gap: 13px; text-decoration: none; }
+.landing-nav-signin { display: inline-flex; align-items: center; min-height: 44px; margin-right: 8px; color: #666; font-size: 11px; text-decoration: none; }
+.landing-nav-signin:hover { color: #111; }
+.landing-composed .landing-mobile-menu a { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; min-height: 44px; color: #444; font-size: 12px; text-decoration: none; border-radius: 7px; }
+.landing-composed .landing-mobile-menu a:hover { background: #f5f5f5; }
+.landing-composed .op-hero-section { padding-block: 64px 44px; }
+.landing-composed .op-hero-container { grid-template-columns: 1fr 1fr; gap: 56px; }
+.landing-composed .op-hero-intro { padding-bottom: 0; }
+.landing-composed .op-hero-headline { font-weight: 500; letter-spacing: -.06em; }
+.landing-composed .op-hero-description { max-width: 365px; font-size: 14px; line-height: 1.9; }
+.landing-composed .op-hero-workflow { margin-top: 30px; }
+.landing-composed .op-orbit-tracer, .landing-composed .op-orbit-particle { animation-duration: 26s; }
+.landing-composed .op-orbit-node { animation-name: landing-orbit-breathe; animation-duration: 9s; }
+.landing-composed .op-orbit-core-face { animation: none; }
+.landing-composed .op-orbit-wave i { animation-duration: 3.6s; }
+.landing-hero-end { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 15px 0 25px; color: #777; }
+.landing-hero-end > span { font: 8px var(--font-mono); letter-spacing: .09em; }
+.landing-hero-end a { display: inline-flex; align-items: center; gap: 12px; min-height: 44px; font-size: 10px; color: #555; text-decoration: none; }
+.landing-hero-end a svg { transition: transform 180ms ease; }
+.landing-hero-end a:hover svg { transform: translateY(3px); }
+.landing-stack { padding: 27px 30px; border-block: 1px solid #e9e9e9; background: #fafafa; }
+.landing-stack-inner { display: flex; align-items: center; gap: 65px; }
+.landing-stack p { flex-shrink: 0; margin: 0; font-size: 11px; line-height: 1.8; color: #737373; }
+.landing-stack strong { font-weight: 500; color: #444; }
+.landing-stack ul { display: flex; flex: 1; justify-content: space-between; flex-wrap: wrap; gap: 22px; list-style: none; padding: 0; margin: 0; }
+.landing-stack li { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 500; color: #666; }
+.landing-workflow { padding: var(--section-space) 30px; }
+.landing-section-intro { display: flex; align-items: end; justify-content: space-between; gap: 35px; margin-bottom: 42px; }
+.landing-section-index { display: flex; align-items: center; gap: 12px; margin: 0 0 18px; color: #737373; font: 9px var(--font-mono); letter-spacing: .09em; }
+.landing-section-intro h2 { margin: 0; font-size: clamp(32px, 3.6vw, 48px); line-height: 1.18; font-weight: 500; letter-spacing: -.055em; }
+.landing-section-intro h2 span { color: #777; }
+.landing-section-intro > p { max-width: 330px; margin: 0 0 4px; color: #666; font-size: 13px; line-height: 1.9; }
+.landing-workflow-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 44px; list-style: none; padding: 0; margin: 0; }
+.landing-step-rail { display: flex; align-items: center; gap: 16px; margin-bottom: 23px; }
+.landing-step-rail > span:first-child { color: #888; font: 10px var(--font-mono); }
+.landing-step-rail > svg { color: #666; }
+.landing-step-line { height: 1px; flex: 1; background: #e1e1e1; transform-origin: left; }
+.landing-workflow-steps h3 { margin: 0; font-size: 18px; font-weight: 500; letter-spacing: -.035em; }
+.landing-workflow-steps p { margin: 12px 0 20px; max-width: 310px; color: #666; font-size: 12px; line-height: 1.85; }
+.landing-step-note { display: block; font: 8px var(--font-mono); color: #777; letter-spacing: .01em; }
+.landing-composed .platform-section { padding-block: var(--section-space) 50px; border-block: 1px solid #ededed; background: #fafafa; }
+.landing-composed .platform-section-heading h2, .landing-composed .observability-heading h2 { font-size: clamp(32px, 3.6vw, 48px); }
+.landing-composed .platform-stage { border-radius: 16px; background: #f0f0f0; }
+.landing-composed .platform-preview { border-radius: 10px; }
+.landing-composed .platform-section-footer { margin-top: 26px; }
+.landing-composed .observability-section { padding-block: var(--section-space) 55px; }
+.landing-composed .observability-demo { border-radius: 16px; }
+.landing-composed .observability-event, .landing-composed .observability-filters button { transition: background-color 160ms ease, color 160ms ease; }
+.landing-composed .observability-detail h3 { animation: landing-detail-in 220ms ease both; }
+.landing-closing { padding: 65px 30px 82px; }
+.landing-closing-inner { position: relative; padding: 66px 25px 0; border-top: 1px solid #e7e7e7; text-align: center; }
+.landing-closing-mark { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 25px; border: 1px solid #e5e5e5; border-radius: 16px; box-shadow: 0 5px 15px -10px #0004; transform: rotate(-7deg); }
+.landing-closing .landing-section-index { justify-content: center; font-size: 8px; }
+.landing-closing h2 { margin: 0; color: #171717; font-size: clamp(40px, 4.6vw, 64px); font-weight: 500; line-height: 1.12; letter-spacing: -.06em; }
+.landing-closing h2 span { color: #777; }
+.landing-closing-inner > p:not(.landing-section-index) { margin: 22px 0 0; color: #666; font-size: 13px; line-height: 1.9; }
+.landing-closing-actions { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 28px; margin-top: 27px; }
+.landing-composed .op-hero-primary { border-radius: 999px; }
+.landing-composed .op-hero-primary svg { transition: transform 180ms ease; }
+.landing-composed .op-hero-primary:hover svg { transform: translate(2px, -2px); }
+.landing-composed .op-footer { padding-top: 48px; }
+.landing-composed .op-footer-signature { margin-top: 34px; }
+@keyframes landing-orbit-breathe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes landing-detail-in { from { opacity: .4; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 1260px) { .landing-hero-end { margin-inline: 30px; } }
+@media (max-width: 1023px) {
+  .landing-composed .landing-nav { height: 70px; }
+  .landing-composed .op-hero-container { gap: 25px; }
+  .landing-stack-inner { gap: 30px; }
+  .landing-stack li { font-size: 11px; }
+  .landing-workflow-steps { gap: 25px; }
+}
+@media (max-width: 760px) {
+  .landing-composed { --section-space: 60px; }
+  .landing-nav-signin { display: none; }
+  .landing-composed .op-hero-section { padding: 46px 24px 22px; }
+  .landing-composed .op-hero-container { grid-template-columns: minmax(0, 1fr); gap: 25px; }
+  .landing-composed .op-orbit { max-width: 370px; }
+  .landing-hero-end { margin-inline: 24px; padding-bottom: 20px; }
+  .landing-hero-end > span { max-width: 150px; font-size: 7px; line-height: 1.8; }
+  .landing-stack { padding: 25px 24px; }
+  .landing-stack-inner { flex-direction: column; gap: 22px; }
+  .landing-stack p { text-align: center; }
+  .landing-stack p br { display: none; }
+  .landing-stack p strong { margin-left: 4px; }
+  .landing-stack ul { justify-content: center; gap: 20px 28px; }
+  .landing-workflow { padding-inline: 24px; }
+  .landing-section-intro { display: block; margin-bottom: 32px; }
+  .landing-section-intro > p { margin-top: 18px; }
+  .landing-workflow-steps { grid-template-columns: 1fr; gap: 28px; }
+  .landing-step-rail { margin-bottom: 15px; }
+  .landing-workflow-steps p { max-width: 460px; margin-bottom: 12px; }
+  .landing-composed .platform-section { padding-bottom: 35px; }
+  .landing-closing { padding: 25px 24px 60px; }
+  .landing-closing-inner { padding: 45px 0 0; }
+}
+@media (max-width: 420px) {
+  .landing-composed .landing-nav-launch { gap: 7px; }
+  .landing-composed .op-hero-section { padding-inline: 22px; }
+  .landing-workflow { padding-inline: 20px; }
+  .landing-section-index { font-size: 8px; }
+  .landing-closing-actions { gap: 20px; }
+  .landing-closing .op-hero-primary { font-size: 11px; padding-inline: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-composed *, .landing-composed *::before, .landing-composed *::after { animation: none !important; transition: none !important; }
+}

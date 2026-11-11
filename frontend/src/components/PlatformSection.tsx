@@ -1,10 +1,10 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Activity, ArrowRight, ArrowUpRight, Check, CheckCheck, ChevronRight, GitBranch, GitCommitHorizontal, LockKeyhole, Server, Terminal } from 'lucide-react';
 import { OpsPilotMark } from './OpsPilotLogo';
 import '../styles/platform.css';
 
 const CAPABILITIES = [
-  { id: 'deployments', shortLabel: 'Deployments', label: 'Deploy with context.', description: 'Follow each release from commit to production. Know what shipped, where it runs, and who owns it.', icon: GitBranch, view: 'Deployment pipeline' },
+  { id: 'deployments', shortLabel: 'Deployments', label: 'Track every release.', description: 'Follow each release from commit to production. Know what shipped, where it runs, and who owns it.', icon: GitBranch, view: 'Deployment pipeline' },
   { id: 'infrastructure', shortLabel: 'Infrastructure', label: 'Know your runtime.', description: 'See cluster, node, and pod health together. Spot resource pressure and restarts in one clear view.', icon: Server, view: 'Infrastructure overview' },
   { id: 'logs', shortLabel: 'Logs & signals', label: 'Find the signal.', description: 'Follow container logs and filter the noise. Find the events that explain your service’s behavior.', icon: Terminal, view: 'Service logs' },
   { id: 'access', shortLabel: 'Access & roles', label: 'Keep access intentional.', description: 'Give everyone the right level of access. Keep changes and their owners visible in an audit trail.', icon: LockKeyhole, view: 'Access and activity' },
@@ -51,10 +51,10 @@ function PlatformPreview({ view }: { view: CapabilityId }) {
       <div className="platform-preview-heading"><span className="platform-demo-icon"><LockKeyhole size={20} /></span><div><h3>Workspace access</h3><p>Roles &amp; permissions</p></div><span className="platform-demo-status">RBAC</span></div>
       <div className="platform-roles">
         {[
-          ['Admin', 'Manage workspace and access'], ['Operator', 'Deploy and manage services'], ['Viewer', 'View projects and telemetry'],
+          ['Admin', 'Manage workspace and access'], ['DevOps', 'Monitor infrastructure and deployments'], ['Developer', 'Manage projects and integrations'],
         ].map(([role, description]) => <div key={role}><span className="platform-role-avatar">{role[0]}</span><div><strong>{role}</strong><p>{description}</p></div><Check size={14} /></div>)}
       </div>
-      <div className="platform-audit"><span>AUDIT TRAIL</span><p><span className="platform-audit-dot" />Deployment approved <span>Operator · 2m ago</span></p></div>
+      <div className="platform-audit"><span>AUDIT TRAIL</span><p><span className="platform-audit-dot" />Deployment recorded <span>DevOps · 2m ago</span></p></div>
       <div className="platform-demo-note"><LockKeyhole size={14} /><span>Clear permissions. Accountable changes.</span></div>
     </>
   );
@@ -67,27 +67,21 @@ export function PlatformSection() {
   return (
     <section id="platform" className="platform-section" aria-labelledby="platform-title">
       <div className="platform-container">
-        <div className="platform-section-heading">
-          <div><p className="platform-eyebrow"><span>01</span> THE PLATFORM</p><h2 id="platform-title">Everything connected.<br /><span>Nothing in your way.</span></h2></div>
+        <div className="platform-section-heading" data-motion>
+          <div><p className="platform-eyebrow"><span>02 /</span> THE PLATFORM</p><h2 id="platform-title">Everything connected.<br /><span>Nothing in your way.</span></h2></div>
           <p className="platform-section-description">From the first commit to the last log line. A shared home for your releases, your runtime, and the people behind them.</p>
         </div>
-        <div className="platform-explorer">
-          <div className="platform-capabilities" role="group" aria-label="Explore platform capabilities">
-            {CAPABILITIES.map(({ id, shortLabel, label, description, icon: Icon }, index) => (
-              <button type="button" key={id} className="platform-capability" aria-pressed={selected === id} aria-controls="platform-preview" onClick={() => setSelected(id)}>
-                <span className="platform-capability-top">
-                  <span className="platform-capability-symbol" aria-hidden="true"><Icon size={20} strokeWidth={1.5} /></span>
-                  <span className="platform-capability-number">0{index + 1}</span>
+        <div className="platform-explorer" data-motion>
+          <div className="platform-options" role="group" aria-label="Explore platform capabilities">
+            {CAPABILITIES.map(({ id, shortLabel, label, description, icon: Icon }) => (
+              <button type="button" key={id} className="platform-option" aria-pressed={selected === id} aria-controls="platform-preview" onClick={() => setSelected(id)}>
+                <span className="platform-option-icon" aria-hidden="true"><Icon size={19} strokeWidth={1.5} /></span>
+                <span className="platform-option-copy">
+                  <span className="platform-option-title">{label}</span>
+                  <span className="platform-option-short">{shortLabel}</span>
+                  <span className="platform-option-description">{description}</span>
                 </span>
-                <span className="platform-capability-copy">
-                  <span className="platform-capability-title">{label}</span>
-                  <span className="platform-capability-short-title">{shortLabel}</span>
-                  <span className="platform-capability-description">{description}</span>
-                </span>
-                <span className="platform-capability-footer" aria-hidden="true">
-                  <span>{selected === id ? 'In view' : 'Explore'}</span>
-                  <span className="platform-capability-icon"><ArrowUpRight size={16} /></span>
-                </span>
+                <ArrowUpRight className="platform-option-arrow" size={16} aria-hidden="true" />
               </button>
             ))}
           </div>
@@ -101,7 +95,7 @@ export function PlatformSection() {
             <p className="platform-sample-caption">Product illustration <span aria-hidden="true">/</span> Sample workspace data</p>
           </div>
         </div>
-        <div className="platform-section-footer"><p>Less switching. More building.</p><a href="#architecture">See how it connects <ArrowRight size={15} aria-hidden="true" /></a></div>
+        <div className="platform-section-footer"><p>One workspace. Every perspective.</p><a href="#observability">Look closer at your signals <ArrowRight size={15} aria-hidden="true" /></a></div>
       </div>
     </section>
   );

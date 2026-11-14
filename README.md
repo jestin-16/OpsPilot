@@ -1,311 +1,338 @@
-# OpsPilot — AI-Assisted Internal Developer Platform (IDP)
+# OpsPilot — AI-Assisted Internal Developer Platform (IDP) & Observability Workbench
 
-OpsPilot is an enterprise-grade Internal Developer Platform (IDP) designed to unify project management, continuous deployment, Docker container orchestrations, Kubernetes cluster monitoring, Actuator system metrics, structured JSON logging, Kafka event notifications, GitHub Actions webhooks, and AI-assisted root-cause diagnosis into a single cohesive, high-performance web dashboard.
+[![Production URL](https://img.shields.io/badge/Production%20Live-opspilot.jestin16.dev-0ea5e9?style=for-the-badge&logo=cloudflare&logoColor=white)](https://opspilot.jestin16.dev)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-8.1-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-v4-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15%20Alpine-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-v3.14-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)](https://prometheus.io/)
+[![Loki](https://img.shields.io/badge/Grafana%20Loki-v3.0-F46800?style=for-the-badge&logo=grafana&logoColor=white)](https://grafana.com/oss/loki/)
+
+**OpsPilot** is an enterprise-grade Internal Developer Platform (IDP) and intelligent AIOps telemetry workbench designed to unify project workspace isolation, continuous deployment tracking, Docker and Kubernetes cluster telemetry, structured high-throughput log ingestion (NDJSON/JSON), Prometheus metrics, real-time Server-Sent Events (SSE) streaming, and administrative governance into a single cohesive, high-performance web experience.
 
 ---
 
 ## 🏗️ System Architecture
 
+OpsPilot is engineered as a containerized microservices ecosystem with high-throughput edge routing, encrypted secret vaults, and real-time event streaming:
+
 ```mermaid
 graph TD
-    Client[React 18 SPA + TypeScript + Tailwind CSS]
-    Gateway[Spring Cloud Gateway API Gateway / JWT Security]
+    User([User / Browser])
+    Cloudflare[Cloudflare Edge Tunnel - opspilot.jestin16.dev]
     
-    subgraph "Backend Core (Spring Boot 3 + Java 17+)"
-        AuthService[Auth & RBAC Service]
-        ProjService[Project & Audit Service]
-        DeployService[Deployment Records]
-        K8sService[Kubernetes Service]
-        LogService[Structured JSON Log Service]
-        NotifService[Notification & Kafka Event Service]
-        MonitorService[Actuator Prometheus Monitoring]
-        CiCdService[GitHub Actions Webhook Receiver]
-        AiService[AI Root-Cause Correlation Engine]
+    subgraph Ingress & Presentation Layer
+        Nginx[Nginx Alpine Edge Proxy - Port 80/8080]
+        Frontend[React 19 + TypeScript + Tailwind v4 + Three.js]
     end
 
-    subgraph "Data & Event Persistence"
-        PostgreSQL[(PostgreSQL 3NF Store / H2 DB)]
-        Redis[(Redis Cache / Sessions)]
-        Kafka[(Apache Kafka Event Bus)]
+    subgraph "Backend Microservices (Spring Boot 3 + Java 17+)"
+        CoreService[core-service :8082<br/>Auth, RBAC, Projects, CI/CD, Deployments, Incidents]
+        ObsService[observability-service :8083<br/>Log Store, SSE Streamer, Ingest Webhooks, AI Diagnosis]
+        WatcherService[log-watcher-service :8084<br/>Fabric8 K8s Pod Watcher & SSE Buffer]
+        SharedLib[shared-lib<br/>Flyway V1-V22, AES-256 Encryption, Connector Contracts]
     end
 
-    Client --> Gateway
-    Gateway --> AuthService
-    Gateway --> ProjService
-    Gateway --> DeployService
-    Gateway --> K8sService
-    Gateway --> LogService
-    Gateway --> NotifService
-    Gateway --> MonitorService
-    Gateway --> CiCdService
-    Gateway --> AiService
+    subgraph "Telemetry, Observability & Persistence"
+        PostgreSQL[(PostgreSQL 15 Store<br/>3NF Schema & Audit Trails)]
+        Loki[(Grafana Loki v3.0<br/>High-Volume Log Store)]
+        Prometheus[(Prometheus v3.14<br/>Metrics & Remote Write)]
+        Grafana[Grafana Dashboards :3000]
+        Blackbox[Blackbox Exporter :9115]
+    end
 
-    DeployService --> PostgreSQL
-    DeployService --> Kafka
-    NotifService --> Kafka
-    LogService --> PostgreSQL
-    AiService --> LogService
-    AiService --> DeployService
+    subgraph "External Integrations"
+        DockerDaemon[Docker Engine TCP]
+        K8sCluster[Kubernetes Cluster API]
+        GitHubCI[GitHub Actions / Webhooks]
+        JenkinsCI[Jenkins CI Server]
+        NodeSDK[Node.js SDK @opspilot/logger]
+    end
+
+    User -->|HTTPS :443| Cloudflare
+    Cloudflare -->|TLS Tunnel| Nginx
+    Nginx -->|Static Assets| Frontend
+    Nginx -->|/api/v1/projects, /api/v1/auth| CoreService
+    Nginx -->|/api/v1/logs, /api/v1/ingest| ObsService
+    Nginx -->|/api/v1/k8s/stream| WatcherService
+
+    CoreService -.-> SharedLib
+    ObsService -.-> SharedLib
+    WatcherService -.-> SharedLib
+
+    CoreService --> PostgreSQL
+    ObsService --> PostgreSQL
+    ObsService --> Loki
+    ObsService --> Prometheus
+    WatcherService --> K8sCluster
+    
+    Prometheus --> CoreService
+    Prometheus --> ObsService
+    Grafana --> Prometheus
+    Grafana --> PostgreSQL
+    Blackbox --> Nginx
+
+    DockerDaemon --> ObsService
+    K8sCluster --> ObsService
+    GitHubCI --> CoreService
+    JenkinsCI --> CoreService
+    NodeSDK -->|NDJSON/JSON Ingest| ObsService
 ```
 
 ---
 
-## 🗄️ Relational 3NF Database Schema Overview
+## 🌟 Key Platform Features
 
-OpsPilot enforces strict Third Normal Form (3NF) relational integrity across all platform entities:
+### 1. Modern Visual Experience & Landing Showcase
+- **Three.js 3D Signal Network**: Dynamic particle and node network visualizer simulating ingress and cluster packet telemetry.
+- **Interactive Terminal ASCII Art**: Hand-crafted animated ASCII aesthetic celebrating hacker-first developer tooling.
+- **Hero Orbit Animation**: Rotating real-time ecosystem status rings tracking Kubernetes, Docker, and CI/CD states.
+- **Responsive Dark Theme**: High-contrast, accessibility-first design system tuned for incident response and long DevOps shifts.
+
+### 2. Multi-Tenant Project Workspace Scoping
+- **Strict Tenant Isolation**: Workspaces, live logs, Docker log sources, and metrics are isolated by project ownership.
+- **Session Hygiene**: Local storage and query cache partitioning by `user.id` ensures zero data bleed between users.
+- **Role-Based Access Control (RBAC)**: Fine-grained permissions for `Admin`, `Developer`, and `DevOps` personas.
+- **Admin Governance Portal**: Platform administrators review cross-workspace activity, inspect audit logs, configure quotas, and quarantine suspicious workloads.
+
+### 3. Real-Time Telemetry & Log Streaming
+- **Server-Sent Events (SSE)**: Resilient live log tailing using standard `fetch` streams with automatic reconnects and `Last-Event-ID` offset recovery.
+- **Virtualized High-Volume Viewer**: Render up to 5,000 log lines in memory with zero UI lag powered by `@tanstack/react-virtual`.
+- **Log Source Badges & Level Filtering**: Instant client-side and server-side filtering by service, log level (`DEBUG`, `INFO`, `WARN`, `ERROR`), and regex patterns.
+
+### 4. Comprehensive Infrastructure Connectors
+- **Docker Engine API**: Direct TCP communication to discover containers, fetch historical logs, and inspect container health.
+- **Kubernetes Cluster Monitoring**: Pod lifecycle management, container log streaming via service-account bearer tokens or in-cluster credentials.
+- **CI/CD Integrations**: Native support for GitHub Actions (webhooks, workflow runs, commit timeline) and Jenkins (build status, live console outputs).
+- **Encrypted Secret Storage**: All sensitive credentials (tokens, private keys, passwords) are encrypted at rest with **AES-256-GCM**.
+
+### 5. Official Node.js SDK (`@opspilot/logger`)
+- Instant log forwarding and console overriding for Node.js / Express / Next.js / Serverless apps with zero boilerplate.
+
+---
+
+## 🗄️ Database Architecture & Flyway Migrations
+
+OpsPilot enforces strict Third Normal Form (3NF) relational integrity across PostgreSQL. Migrations are managed deterministically with **Flyway** (`V1` through `V22` in `shared-lib`):
 
 - **`Users`**: `(user_id PK, name, email UNIQUE, password_hash, created_at)`
-- **`Roles`**: `(role_id PK, role_name UNIQUE)` — Pre-seeded roles: `Admin`, `Developer`, `DevOps`
+- **`Roles`**: `(role_id PK, role_name UNIQUE)` — Pre-seeded: `Admin`, `Developer`, `DevOps`
 - **`User_Roles`**: `(user_id FK, role_id FK)`
-- **`Projects`**: `(project_id PK, project_name, description, repository_url, owner_id FK->Users, status, created_at)`
-- **`Deployments`**: `(deployment_id PK, project_id FK->Projects, deployed_by FK->Users, version, environment, status, deployed_at)`
-- **`Containers`**: `(container_id PK, deployment_id FK->Deployments, image_name, container_status, created_at)`
-- **`Pods`**: `(pod_id PK, container_id FK->Containers, node_name, pod_status, cpu_usage, memory_usage)`
-- **`Logs`**: `(log_id PK, deployment_id FK->Deployments NULLABLE, source_service, log_level, message, timestamp)`
-- **`Notifications`**: `(notification_id PK, user_id FK->Users NULLABLE, deployment_id FK->Deployments NULLABLE, message, type, is_read, created_at)`
+- **`Projects`**: `(project_id PK, project_name, slug, description, repository_url, owner_id FK->Users, environment, status, created_at)`
+- **`Integrations`**: `(integration_id PK, project_id FK->Projects, name, provider, category, status, config_json, encrypted_secrets, created_at)`
+- **`Deployments`**: `(deployment_id PK, project_id FK->Projects, deployed_by FK->Users NULLABLE, version, environment, status, url, deployed_at)`
 - **`Pipeline_Runs`**: `(run_id PK, project_id FK->Projects, event_type, branch, commit_sha, commit_message, author, status, created_at)`
+- **`Logs`**: `(log_id PK, project_id FK->Projects, integration_id FK NULLABLE, source_service, log_level, message, metadata, timestamp)`
+- **`Incidents`**: `(incident_id PK, project_id FK->Projects, title, description, severity, status, created_at)`
 - **`Audit_Logs`**: `(audit_id PK, user_id FK->Users, action, details, timestamp)`
 
 ---
 
 ## 📡 REST API Reference
 
-### Registration
+All endpoints are served under `/api/v1/` through the Edge Gateway.
 
-New accounts are active immediately. The signup flow is `POST /api/auth/register`, then `POST /api/auth/login`; no verification email, OTP, or SMTP configuration is required. The frontend returns users to sign-in after account creation. Old `/verify-email` links redirect to sign-in.
-
-Migration `V22` activates accounts left pending by the former email verification flow. Previously verified accounts disabled by an administrator remain disabled. The legacy verification columns and OTP table are retained for database compatibility.
-
-### Authentication & RBAC
+### Authentication & Single Sign-On
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `POST` | `/api/auth/register` | Public | Register a new user (`Admin`, `Developer`, `DevOps`) |
-| `POST` | `/api/auth/login` | Public | Authenticate user and issue JWT token |
-| `POST` | `/api/auth/google` | Public | Authenticate or complete registration with Google OAuth |
+| `POST` | `/api/v1/auth/register` | Public | Register new account (`Developer` or `DevOps`) |
+| `POST` | `/api/v1/auth/login` | Public | Authenticate with credentials and receive JWT |
+| `POST` | `/api/v1/auth/google-login` | Public | Single Sign-On with verified Google OAuth `idToken` |
+| `GET` | `/api/v1/auth/me` | Authenticated | Retrieve current session profile and active roles |
 
-### Project Management & Workspace Scoping
+### Project Workspace Management
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `GET` | `/api/projects` | Authenticated | List all projects owned by the authenticated user |
-| `GET` | `/api/projects/{id}` | Authenticated | Get project details (Owner or Platform Admin) |
-| `POST` | `/api/projects` | Admin, Developer | Create a new project (auto-assigned to caller as owner) |
-| `PUT` | `/api/projects/{id}` | Project Owner / Admin | Update project details |
-| `DELETE` | `/api/projects/{id}` | Project Owner / Admin | Delete project and linked metadata |
+| `GET` | `/api/v1/projects` | Authenticated | List all projects owned by caller |
+| `GET` | `/api/v1/projects/{id}` | Authenticated | Retrieve project details |
+| `POST` | `/api/v1/projects` | Developer, Admin | Create a new project workspace |
+| `PUT` | `/api/v1/projects/{id}` | Owner, Admin | Update project configuration |
+| `DELETE` | `/api/v1/projects/{id}` | Owner, Admin | Teardown project workspace and linked resources |
+
+### Connectors & Integrations
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `GET` | `/api/v1/projects/{id}/integrations` | Project Member | List all configured connectors |
+| `POST` | `/api/v1/projects/{id}/integrations` | Project Member | Add connector (`DOCKER`, `KUBERNETES`, `GITHUB`, `JENKINS`, `APP_LOGS`) |
+| `POST` | `/api/v1/projects/{id}/integrations/{iid}/test` | Project Member | Validate connectivity and update health status |
+| `GET` | `/api/v1/projects/{id}/integrations/{iid}/resources` | Project Member | Query available containers, namespaces, or pods |
+| `DELETE` | `/api/v1/projects/{id}/integrations/{iid}` | Project Member | Disconnect and purge connector configuration |
+
+### Ingestion & Live Log Streaming
+| Method | Endpoint | Access | Description |
+|---|---|---|---|
+| `POST` | `/api/v1/ingest/{projectId}` | Bearer Token | Ingest application logs (JSON array, NDJSON, plain text) |
+| `POST` | `/api/v1/ingest/webhook/{token}` | Webhook Token | External log webhook ingestion URL |
+| `POST` | `/api/v1/ingest/{projectId}/deployments` | Bearer Token | CI deployment reporting endpoint |
+| `GET` | `/api/v1/projects/{id}/logs` | Project Member | Query historical indexed logs with pagination and filters |
+| `GET` | `/api/v1/projects/{id}/logs/stream` | Project Member | Real-time Server-Sent Events (SSE) log stream |
 
 ### Platform Administration & Governance
 | Method | Endpoint | Access | Description |
 |---|---|---|---|
-| `GET` | `/api/v1/admin/overview` | Admin | Platform overview, user distribution, and system vitals |
-| `GET` | `/api/v1/admin/projects` | Admin | Cross-workspace project registry for containment and review |
-| `GET` | `/api/v1/admin/audit-logs` | Admin | Centralized audit trail across all platform actions |
-| `GET` | `/api/v1/admin/integrations` | Admin | Platform-wide infrastructure integrations |
-| `POST` | `/api/v1/admin/integrations` | Admin | Configure and test platform integrations |
-| `GET` | `/api/v1/admin/settings` | Admin | View platform governance and rate limiting settings |
-| `PUT` | `/api/v1/admin/settings` | Admin | Update platform governance settings |
-| `GET` | `/api/v1/admin/security/stats` | Admin | Security posture, quarantine counts, and error summaries |
-
-### Deployments
-OpsPilot records deployments; it does not run them (see *Deployments* below for the three sources).
-
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/projects/{id}/deployments` | Project owner, DevOps, Admin | Deployment history for a project |
-| `POST` | `/api/projects/{id}/deployments` | Project owner, DevOps, Admin | Record a deployment (`version`, `environment`, optional `status`, `url`) |
-| `POST` | `/api/v1/ingest/{projectId}/deployments` | Bearer ingest token | A CI pipeline reports a deployment |
-| `GET` | `/api/deployments/{id}/logs` | Project owner, DevOps, Admin | The project's logs around the deployment |
-
-### Infrastructure Management
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/kubernetes/pods` | Authenticated | List Minikube / K8s pods |
-
-### Monitoring, Logs & Notifications
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/api/monitoring/metrics` | Authenticated | Get Actuator CPU, memory & HTTP metrics |
-| `GET` | `/api/logs` | Authenticated | Search structured JSON logs by service/level/query |
-| `POST` | `/api/logs` | Authenticated | Ingest custom log entries |
-| `GET` | `/api/notifications` | Authenticated | Get Kafka deployment event notifications |
-| `PUT` | `/api/notifications/{id}/read` | Authenticated | Mark notification as read |
-
-### CI/CD & AI Assistant
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/api/webhooks/github` | Public | Webhook listener for GitHub Actions push/workflow events |
-| `GET` | `/api/cicd/runs` | Authenticated | Fetch GitHub Actions pipeline runs |
-| `POST` | `/api/ai/query` | Authenticated | Run timestamp-correlation AI root cause diagnosis |
+| `GET` | `/api/v1/admin/overview` | Admin | Cross-workspace metrics, user distribution, and health vitals |
+| `GET` | `/api/v1/admin/projects` | Admin | Global project registry for containment and governance |
+| `GET` | `/api/v1/admin/audit-logs` | Admin | Platform-wide security and operational audit trail |
+| `GET` | `/api/v1/admin/settings` | Admin | View rate limiting and system-wide policies |
+| `PUT` | `/api/v1/admin/settings` | Admin | Update system policies and ingestion caps |
 
 ---
 
-## 🧭 Project-first flow: connect, then watch
+## 📦 Official Node.js SDK (`@opspilot/logger`)
 
-Everything starts with a **project**. Inside it you connect the systems you care about and watch all their logs in one live dashboard.
-
-1. **Create a project** (`/projects` → *Create Project*): name, environment (`dev` / `staging` / `prod`), optional repository.
-2. **Connect integrations** (`/projects/:id/integrations`): each card has *Connect*, *Configure*, *Test* and *Disconnect*.
-3. **Watch logs**: `/projects/:id/logs` is one stream for every source (filters: source, level, time range, text; pause/resume, auto-scroll, source badges, colour-coded levels). `/projects/:id/logs/:integrationId` is a dedicated page per integration.
-
-The project switcher in the sidebar keeps the selection. Existing global pages (`/logs`, `/pipelines`, `/deployments`, `/incidents`, `/github`) follow the selected project, and a banner offers *Show all projects*. On a new database, migration `V15` moves data created before this flow into a **Default Project**; databases created before Flyway was enabled skip it (see *Database schema* below).
-
-**Multi-Tenant Isolation & Admin Governance**:
-- **Tenant Scope**: Project lists, live logs, Docker log sources, and metrics are strictly bounded to the projects owned by the authenticated developer.
-- **Session Hygiene**: When a user logs out, active project selection cache in local storage (`opspilot_selected_project_id`) is purged, and query cache keys are partitioned by `user.id` to prevent cross-account leakage.
-- **Administrative Governance**: Platform administrators review, quarantine, or delete workloads across all developer workspaces via the dedicated `/admin/projects` portal powered by `GET /api/v1/admin/projects`.
-
-### Integrations
-
-| Type | Reads from | Settings (secrets in *italics*) | Notes |
-|---|---|---|---|
-| **Docker** | Docker Engine API over TCP | `host`, `containers`, *`caCert`* | Container picker on its page. Unix sockets are not supported; expose the API over TCP or a socket proxy. |
-| **Kubernetes** | Kubernetes API | `apiServer`, `namespace`, `podName`, `labelSelector`, `container`, *`token`*, *`caCert`* | Uses the in-cluster service account when no `apiServer` is set. Needs `get/list pods` and `get pods/log`. Kubeconfig files are not parsed; use a service-account token. |
-| **Git** (`GITHUB`) | GitHub REST API + webhooks | `repo`, `apiBaseUrl`, `pollSeconds`, *`token`*, *`webhookSecret`* | Pushes, pull requests, workflow runs as a timeline; `deployment` / `deployment_status` events become the project's deployments. GitLab is not implemented. |
-| **CI/CD** | GitHub Actions or Jenkins | GitHub: `repo`, *`token`*. Jenkins: `baseUrl`, `job`, *`username`*, *`apiToken`* | Run list; opening a run reads its jobs/steps (GitHub) or console (Jenkins). The Jenkins live stream reports build state changes. |
-| **App Logs** | Pushed by your app | `app` | An ingest token is shown **once** at creation. |
-
-Secrets are split from settings by the server, encrypted at rest (AES-256-GCM), never returned by any API, and masked in error messages and log lines. Editing an integration keeps stored secrets unless you send new ones.
-
-### Deployments
-
-A deployment record comes from one of three places; OpsPilot never deploys anything itself.
-
-1. **GitHub** (automatic): add a Git integration with a `webhookSecret`, and in the repository's webhook settings subscribe to *Deployments* and *Deployment statuses*. Deploying to a GitHub environment (for example from an Actions job with `environment: production`) then records the deployment, follows its status, and keeps the environment URL.
-2. **Any CI system**: report it with an App Logs integration's ingest token. Send the same `id` again to update the status.
-   ```bash
-   curl -X POST "$API/api/v1/ingest/{projectId}/deployments"      -H "Authorization: Bearer opl_..." -H "Content-Type: application/json"      -d '{"id":"build-512","version":"v2.8.4","environment":"production","status":"success","url":"https://app.example.com"}'
-   ```
-   `status`: `in_progress`, `success`, `failure` or `inactive` (default `success`).
-3. **By hand**: *Projects → Deployments → Record deployment*, or `POST /api/v1/projects/{id}/deployments` with a user token.
-
-A deployment's logs are the project's logs from five minutes before it to fifteen minutes after its last status update. Deployments created by the simulator in earlier versions are labelled *Simulated (legacy)*; `scripts/db/delete_simulated_deployments.sql` removes them.
-
-### Sending application logs
+The OpsPilot Node.js SDK allows developers to stream structured application logs to OpsPilot with zero manual log piping:
 
 ```bash
-curl -X POST "$API/api/v1/ingest/{projectId}" \
-  -H "Authorization: Bearer opl_..." -H "Content-Type: application/json" \
-  -d '[{"level":"ERROR","message":"payment failed","order_id":"A-1042"}]'
+npm install opspilot-logger
 ```
 
-Accepts a JSON object, an array, `{"logs":[...]}`, NDJSON, or plain text (one entry per line); up to 1,000 entries and `INGEST_MAX_BODY_BYTES` per request. `message`, `level` and `timestamp` (ISO-8601 or epoch seconds/ms) are understood; other simple fields become searchable metadata. The integration page shows a ready-made Django logging handler.
+### Usage Example
+```javascript
+const { initOpsPilot } = require('opspilot-logger');
 
-GitHub webhooks (optional, for instant Git events): payload URL `/api/v1/ingest/{projectId}/github/{integrationId}`, content type JSON, secret = the integration's `webhookSecret`. Deliveries are verified with `X-Hub-Signature-256`.
+// Initialize once at the top of your index.js / server.js
+initOpsPilot({
+  webhookUrl: 'https://opspilot.jestin16.dev/api/v1/ingest/webhook/<YOUR_TOKEN>',
+  sourceService: 'orders-microservice',
+  batchSize: 10,         // Batch before flushing (default: 10)
+  flushIntervalMs: 5000  // Maximum flush delay (default: 5000ms)
+});
 
-### Project, integration and log API
-
-All paths also exist under `/api/projects/...` (without `v1`).
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` `GET` `PUT` `DELETE` | `/api/v1/projects[/{id}]` | Project CRUD (`name`, `description`, `environment`, `repositoryUrl`; `slug` is generated) |
-| `GET` `POST` | `/api/v1/projects/{id}/integrations` | List / create (`provider`, `name`, `category`, `config{}`, `secrets{}`) |
-| `GET` `PUT` `DELETE` | `/api/v1/projects/{id}/integrations/{iid}` | Read / update / delete |
-| `POST` | `.../integrations/{iid}/test` | Run the connection test; returns the integration with `status` and `statusMessage` |
-| `POST` | `.../integrations/{iid}/disconnect` | Stop collecting |
-| `GET` | `.../integrations/{iid}/resources?kind=containers\|namespaces\|pods` | Pickers |
-| `GET` | `.../integrations/{iid}/history?...` | Read straight from the source (selectors: `container`, `namespace`, `pod`, `run`, `build`) |
-| `GET` | `/api/v1/projects/{id}/logs?integrationId&type&level&from&to&q&container&namespace&pod&page&size` | Stored logs, newest first |
-| `GET` | `/api/v1/projects/{id}/logs/stream?...` | Server-sent events with the same filters; 15 s keepalive; honours `Last-Event-ID` to replay what was missed |
-| `POST` | `/api/v1/ingest/{projectId}` | Push logs (Bearer ingest token) |
-| `POST` | `/api/v1/ingest/{projectId}/deployments` | Report a deployment from CI (Bearer ingest token) |
-
-### How it fits together
-
-- **core-service** owns projects and integrations, the `IntegrationConnector` implementations' *test / discover / history* calls, and encrypted credentials.
-- **observability-service** owns the log store: it runs a `ConnectorRunner` that follows every `CONNECTED` pull integration (reconnecting with backoff), accepts pushes, serves the query and SSE endpoints, and fans new lines out to live viewers.
-- Connectors implement `IntegrationConnector` (`testConnection`, `streamLogs`, `fetchHistory`) in `shared-lib`, so a new source type is one class plus a form definition in `frontend/src/lib/integrationTypes.ts`.
-- The browser reads the stream with `fetch` (not `EventSource`, which cannot send the `Authorization` header), reconnects automatically, and resumes from the last event id. At most 5,000 lines are kept in memory and the list is virtualized.
-
-### Configuration
-
-| Variable | Service | Default | Purpose |
-|---|---|---|---|
-| `JWT_SECRET` | auth, core, observability, log-watcher | **required** | Signs login tokens; must be identical in every service and at least 32 bytes. `openssl rand -base64 48`. Changing it signs everyone out |
-| `DEMO_USERS_ENABLED` | auth, core, observability | `false` | Creates the public demo accounts (`admin@opspilot.io` / `Password123!` etc.). Local development only |
-| `AUTH_COOKIE_SECURE` | auth | `true` | Send the refresh cookie over HTTPS only; `false` for plain-HTTP local development |
-| `GITHUB_WEBHOOK_SECRET` | core, observability | empty | Secret for the global GitHub webhook URLs. Empty = those URLs refuse every delivery; per-project and per-source webhook URLs use their own secrets |
-| `JENKINS_WEBHOOK_SECRET` | core | empty | Token for the global Jenkins webhook URL; empty = refused |
-| `OPSPILOT_ENCRYPTION_KEY` | auth, core, observability | **required** | Key for stored credentials (AES-256-GCM). Services refuse to start without it; changing it makes stored secrets unreadable. Values written before it was required are re-encrypted under it on core-service's next start. `openssl rand -base64 32` |
-| `LOGS_RUNNER_ENABLED` | observability | `true` | Follow pull integrations (set `false` on replicas that should only serve reads) |
-| `LOGS_RUNNER_INTERVAL_MS` | observability | `30000` | How often to look for new / changed / disconnected integrations |
-| `LOGS_RUNNER_REFRESH` | observability | `10m` | Re-resolve containers and pods for Docker / Kubernetes streams |
-| `INGEST_MAX_BODY_BYTES` | observability | `5242880` | Largest accepted push body |
-| `VITE_API_BASE_URL` | frontend | `http://localhost:8080/api/v1` | API gateway URL |
-| `VITE_GOOGLE_CLIENT_ID` | frontend | optional | Google OAuth 2.0 Client ID for social registration/login |
-
-Integration endpoints are fetched by the server, so only point them at hosts you trust; `http(s)` only, and link-local addresses (cloud metadata) are refused.
-
-### Database schema
-
-Flyway owns the schema (`backend/shared-lib/src/main/resources/db/migration`) and Hibernate only validates it (`ddl-auto: validate`), so a service refuses to start if its entities and the database disagree. Change the schema by adding a new `V<n>__description.sql`; never edit one that has shipped.
-
-Flyway was not actually on the classpath before `V18`, so databases created earlier were built by Hibernate and have no `flyway_schema_history`. On first start they are baselined at version 17 and `V18` brings them in line; empty databases run every migration from `V1`. auth, core and observability all run Flyway, and its PostgreSQL lock lets them start at the same time.
+// All standard console output is captured and sent to OpsPilot
+console.log("Order processed successfully", { orderId: "ORD-9481", amount: 149.99 });
+console.error("Payment gateway timeout", { gateway: "Stripe", attempt: 3 });
+```
 
 ---
 
-## 🎨 Locked Dark Theme Design System
+## 🎨 Locked Dark Theme Design Tokens
 
-OpsPilot strictly implements a high-contrast dark theme optimized for DevOps operations:
+OpsPilot adheres strictly to a high-contrast dark theme optimized for technical operations:
 
-| Token Name | Hex Code | Usage |
+| Token Name | Hex Code | Purpose |
 |---|---|---|
-| Main Background | `#060B18` | Application background |
-| Card Background | `#0F1B2E` | Component cards and panels |
-| Panel Secondary | `#13233B` | Input fields, dropdowns, and table headers |
-| Borders | `#1E2D45` | Card and divider borders |
-| Primary Accent | `#38BDF8` | Buttons, links, primary indicators (Cyan) |
-| AI Accent | `#A78BFA` | AI Assistant badges, cards, and highlights (Violet) |
-| Warning Accent | `#F59E0B` | Warning badges and alerts (Amber) |
-| Primary Text | `#F8FAFC` | Headings, labels, and table content |
-| Muted Text | `#94A3B8` | Subtitles, metadata, and placeholder text |
+| **Main Background** | `#060B18` | Root application background |
+| **Card Background** | `#0F1B2E` | Container cards, panels, and modal backdrops |
+| **Panel Secondary** | `#13233B` | Table headers, dropdown menus, and input fields |
+| **Borders** | `#1E2D45` | Component dividers, gridlines, and card borders |
+| **Primary Accent** | `#38BDF8` | Buttons, navigation links, and primary signals (Sky Cyan) |
+| **AI / Diagnostic Accent** | `#A78BFA` | Root-cause analysis, assistant widgets (Violet) |
+| **Warning Accent** | `#F59E0B` | Critical alerts, threshold warnings (Amber) |
+| **Primary Text** | `#F8FAFC` | Headings, labels, and table typography |
+| **Muted Text** | `#94A3B8` | Subtitles, timestamps, and metadata |
 
 ---
 
-## 🚀 Quickstart Run Instructions
+## 🚀 Quickstart & Setup Guide
 
-### Prerequisites
-- Java 17+ / Java 26
-- Maven 3.9+ (`./mvnw`)
-- Node.js 18+ & npm
+### Option 1: Docker Compose (Recommended)
 
-### 1. Run Spring Boot Backend
+Start the entire microservices stack with a single command:
+
+```bash
+# 1. Clone repository
+git clone https://github.com/jestin-16/OpsPilot.git
+cd OpsPilot
+
+# 2. Configure environment variables
+cp .env.example .env
+# Ensure JWT_SECRET and OPSPILOT_ENCRYPTION_KEY are populated:
+# openssl rand -base64 48 -> JWT_SECRET
+# openssl rand -base64 32 -> OPSPILOT_ENCRYPTION_KEY
+
+# 3. Launch full stack
+docker compose up -d
+```
+
+#### Access Points:
+- **Web Dashboard**: `http://localhost:80` (or `http://localhost:8080`)
+- **API Gateway**: `http://localhost:8080/api/v1/`
+- **PostgreSQL Database**: `localhost:5432` (`opspilot` / `opspilot`)
+
+#### Optional Monitoring Stack:
+Launch Prometheus, Grafana, and Blackbox Exporter:
+```bash
+docker compose --profile monitoring up -d
+```
+- **Grafana Dashboard**: `http://localhost:3000` (Default login: `admin` / `${GRAFANA_ADMIN_PASSWORD}`)
+- **Prometheus Metrics**: `http://localhost:9090`
+
+---
+
+### Option 2: Local Development Setup
+
+#### Prerequisites
+- **Java 17+** (JDK 17 or JDK 21)
+- **Maven 3.9+** (or use `./mvnw`)
+- **Node.js 18+ & npm**
+- **Docker Engine** (for local PostgreSQL and Loki)
+
+#### 1. Start Infrastructure Services
+```bash
+docker compose up -d postgres loki prometheus
+```
+
+#### 2. Run Backend Microservices
 ```bash
 cd backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=h2
-```
-The backend server runs on `http://localhost:8080`.
 
-### 2. Run React Frontend
+# Run Core Service
+./mvnw spring-boot:run -pl core-service
+
+# Run Observability Service (in separate terminal)
+./mvnw spring-boot:run -pl observability-service
+
+# Run Log Watcher Service (in separate terminal)
+./mvnw spring-boot:run -pl log-watcher-service
+```
+
+#### 3. Run Frontend Development Server
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-The frontend application will be accessible at `http://localhost:5173`.
+The Vite development server will open at `http://localhost:5173`.
 
 ---
 
-## 🧪 Test Suite Execution
+## 🧪 Automated Testing & Verification
 
-### Running Locally
-- **Backend Unit Tests**:
-  ```bash
-  cd backend && ./mvnw test
-  ```
-- **Frontend Typecheck & Production Build**:
-  ```bash
-  cd frontend && npm run build
-  ```
-- **Frontend Unit & Integration Tests** (9 suites, 92 tests covering authentication validation, virtualized logs, SSE parser, deployments dialog, and project forms):
-  ```bash
-  cd frontend && npm test
-  ```
+### Frontend Test Suite
+Covers authentication forms, virtualized logs, SSE parser, deployment modals, and project creation:
+```bash
+cd frontend
+npm test
+```
+*Result: 9 test suites, 92+ tests passing.*
 
-### Running in Docker
-- **Backend Build & Verification**:
-  ```bash
-  docker run --rm -v opspilot-m2-cache:/root/.m2 -v "${PWD}/backend:/app" -w /app maven:3.9-eclipse-temurin-17 mvn test-compile
-  ```
-- **Frontend Container Build**:
-  ```bash
-  docker build -t opspilot-frontend:latest ./frontend
-  ```
+### Frontend Production Build & Typecheck
+```bash
+cd frontend
+npm run build
+```
+
+### Backend Microservices Tests
+Runs unit tests with Flyway migrations against an in-memory test configuration:
+```bash
+cd backend
+./mvnw test
+```
+
+---
+
+## 🌐 Production Hosting & Edge Deployment
+
+OpsPilot is hosted in production at **[https://opspilot.jestin16.dev](https://opspilot.jestin16.dev)** using a zero-trust edge topology:
+1. **Edge Network**: Cloudflare acts as the global edge proxy, handling SSL termination, DDoS protection, and rate limiting.
+2. **Secure Ingress**: Cloudflare Tunnel securely relays traffic directly to the local Nginx ingress container without exposing public ports.
+3. **Container Isolation**: Internal microservices communicate over an isolated Docker network.
+
+---
+
+## 📄 License & Authors
+
+OpsPilot is created and maintained by **[jestin-16](https://github.com/jestin-16)**.  
+Licensed under the [MIT License](LICENSE).
